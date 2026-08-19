@@ -1,0 +1,363 @@
+package nsui;
+
+import java.lang.foreign.MemorySegment;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
+import java.util.concurrent.ConcurrentHashMap;
+
+import nsui.objc.NsuiForeign;
+import nsui.objc.ObjC;
+import nsui.objc.Scratch;
+import nsui.objc.Sig;
+import static nsui.objc.Sig.Arg;
+import static nsui.objc.Sig.Ret;
+
+/**
+ * NSView — a drawable view. Extends NSObject; the drawing is handed off to a
+ * Java {@link Drawable} via a runtime-created ObjC subclass of NSView whose
+ * {@code drawRect:} is an FFM upcall stub into Java.
+ *
+ * <p>Dispatch is keyed by the native peer address: {@link #create} registers the
+ * {@link Drawable}, and the upcall target looks it up when AppKit asks the view
+ * to draw on the main thread. The subclass also overrides {@code dealloc} to
+ * unregister the drawable, so the registry can never grow stale or leak.
+ *
+ * <p>Upcall targets ({@link #drawRectImpl}, {@link #deallocImpl}) are static and
+ * capture-free — they are registered for native-image in NsuiFeature.
+ */
+public class NSView extends NSObject {
+
+    /**
+     * Java-side drawing callback, invoked from AppKit's drawRect: on the main thread.
+     *
+     * <p><strong>Dirty-rect contract:</strong> the {@code dirtyRect} passed to {@link #draw}
+     * is the region AppKit currently requires the view to redraw, expressed in the view's
+     * own coordinate system (see {@link #isFlipped()} for the y-axis orientation). When the
+     * view is invalidated via {@link #setNeedsDisplayInRect(NSRect)}, AppKit unions the
+     * invalidated rects and passes that union through {@code drawRect:}. Drawing may be
+     * clipped to {@code dirtyRect} (and on a layer-backed view, clipped to the view's
+     * backing region), so a draw method must not assume it is being asked to repaint the
+     * whole bounds. To guarantee coverage of everything that is currently marked dirty,
+     * draw at least the area bounded by {@code dirtyRect}; painting inside that rect is
+     * sufficient in practice.
+     */
+    public interface Drawable {
+        void draw(MemorySegment ctx, NSRect dirtyRect);
+    }
+
+    /** Drawable registry, keyed by peer address (the view's id). */
+    private static final ConcurrentHashMap<Long, Drawable> DRAWABLES = new ConcurrentHashMap<>();
+
+    // ---- runtime ObjC class + upcall stubs, created ONCE lazily (NEVER in a static initializer) ----
+    private static volatile boolean initialized;
+    private static MemorySegment drawableClass;
+    private static MemorySegment drawRectStub;
+    private static MemorySegment deallocStub;
+
+    // ---- resolved once per process (rule: resolve-once, invokeExact on hot paths) ----
+    private static MethodHandle hInitFrame;   // (id, SEL, NSRect) -> id
+    private static MethodHandle hSetFrame;    // (id, SEL, NSRect) -> void
+    private static MethodHandle hNeedsRect;   // (id, SEL, NSRect) -> void   [setNeedsDisplayInRect:]
+    private static MethodHandle hAutoMask;   // (id, SEL, long) -> void        [setAutoresizingMask:]
+    private static MethodHandle hBacking;     // (id, SEL) -> double         [backingScaleFactor]
+    private static MethodHandle hConvBacking; // (id, SEL, NSRect) -> NSRect [convertRectToBacking:]
+    private static MethodHandle hGetDouble;   // (id, SEL) -> double
+    private static MethodHandle hSetDouble;   // (id, SEL, double) -> void
+    private static MethodHandle hGetSize;     // (id, SEL) -> NSSize
+    private static MethodHandle hSetSize;     // (id, SEL, NSSize) -> void
+
+    /** Wrap a native NSView id (e.g. a box's contentView) as an NSView. */
+    public static NSView wrap(MemorySegment peer) {
+        return (peer == null || peer.address() == 0) ? null : new NSView(peer);
+    }
+
+    protected NSView(MemorySegment peer) {
+        super(peer);
+    }
+
+    /** alloc + initWithFrame: and register the Java drawable for this view. */
+    public static NSView create(NSRect frame, Drawable drawable) {
+        ensureInit();
+        MemorySegment v = ObjC.msgSendId(drawableClass, ObjC.sel("alloc"));
+        try {
+            v = (MemorySegment) hInitFrame.invokeExact(v, ObjC.sel("initWithFrame:"), frame.toSegment());
+        } catch (Throwable t) {
+            throw new RuntimeException("initWithFrame: failed", t);
+        }
+        NSView view = new NSView(v);
+        DRAWABLES.put(v.address(), drawable);
+        return view;
+    }
+
+    private static synchronized void ensureInit() {
+        if (initialized) return;
+        drawableClass = ObjC.makeClass("NSView", "NSUIViewImpl");
+        try {
+            MethodHandle drawTarget = MethodHandles.lookup().findStatic(NSView.class, "drawRectImpl",
+                    MethodType.methodType(void.class, MemorySegment.class, MemorySegment.class, MemorySegment.class));
+            drawRectStub = ObjC.upcall(drawTarget, NsuiForeign.drawRectUpcall());
+            MethodHandle deallocTarget = MethodHandles.lookup().findStatic(NSView.class, "deallocImpl",
+                    MethodType.methodType(void.class, MemorySegment.class, MemorySegment.class));
+            deallocStub = ObjC.upcall(deallocTarget, NsuiForeign.deallocUpcall());
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException("cannot bind NSView upcall targets", e);
+        }
+        if (!ObjC.addMethod(drawableClass, "drawRect:", drawRectStub, "v@:{CGRect={CGPoint=dd}{CGSize=dd}}")) {
+            throw new RuntimeException("class_addMethod drawRect: failed");
+        }
+        if (!ObjC.addMethod(drawableClass, "dealloc", deallocStub, "v@:")) {
+            throw new RuntimeException("class_addMethod dealloc failed");
+        }
+        hInitFrame = ObjC.handle(Sig.of(Ret.ID, Arg.RECT));
+        hSetFrame = ObjC.handle(Sig.of(Ret.VOID, Arg.RECT));
+        hNeedsRect = ObjC.handle(Sig.of(Ret.VOID, Arg.RECT));
+        hAutoMask = ObjC.handle(Sig.of(Ret.VOID, Arg.INT));
+        hBacking = ObjC.handle(Sig.of(Ret.DOUBLE));
+        hConvBacking = ObjC.handle(Sig.of(Ret.RECT, Arg.RECT));
+        hGetDouble = ObjC.handle(Sig.of(Ret.DOUBLE));
+        hSetDouble = ObjC.handle(Sig.of(Ret.VOID, Arg.DOUBLE));
+        hGetSize = ObjC.handle(Sig.of(Ret.SIZE));
+        hSetSize = ObjC.handle(Sig.of(Ret.VOID, Arg.SIZE));
+        initialized = true;
+    }
+
+    /** FFM upcall target: {@code -(void)drawRect:(NSRect)dirtyRect} — called by AppKit on the main thread. */
+    public static void drawRectImpl(MemorySegment self, MemorySegment sel, MemorySegment rect) {
+        Drawable d = DRAWABLES.get(self.address());
+        if (d == null) return;
+        MemorySegment ctx = ObjC.msgSendId(ObjC.cls("NSGraphicsContext"), ObjC.sel("currentContext"));
+        ctx = ObjC.msgSendId(ctx, ObjC.sel("graphicsPort"));
+        // Every draw call's input marshalling (rects, cstrings) goes through the
+        // per-turn scratch arena — recycled per draw pass instead of immortal.
+        Scratch.beginTurn();
+        try {
+            d.draw(ctx, NSRect.fromSegment(rect));
+        } finally {
+            Scratch.endTurn();
+        }
+    }
+
+    /**
+     * FFM upcall target: {@code -(void)dealloc} — unregister the drawable, then chain
+     * to {@code [super dealloc]} via objc_msgSendSuper so the native object is released.
+     * Public because NsuiFeature (nsui.objc) resolves it at build time.
+     */
+    public static void deallocImpl(MemorySegment self, MemorySegment sel) {
+        DRAWABLES.remove(self.address());
+        MemorySegment superStruct = ObjC.superStruct(self, ObjC.classGetSuperclass(drawableClass));
+        ObjC.msgSendSuperVoid(superStruct, sel);
+    }
+
+    /** Number of live drawables (diagnostics/tests: must return to 0 after views are released). */
+    public static int drawableCount() {
+        return DRAWABLES.size();
+    }
+
+    // ---------------------------------------------------------------- instance API
+
+    /** addSubview: — attach a child view. */
+    public void addSubview(NSView subview) {
+        ObjC.msgSendVoidId(peer, ObjC.sel("addSubview:"), subview.peer());
+    }
+
+    /** setFrame: — reposition/resize in the superview's coordinates. */
+    public void setFrame(NSRect frame) {
+        try {
+            hSetFrame.invokeExact(peer, ObjC.sel("setFrame:"), frame.toSegment());
+        } catch (Throwable t) {
+            throw new RuntimeException("setFrame: failed", t);
+        }
+    }
+
+    /**
+     * setAutoresizingMask: — how the view resizes when its superview (the window's
+     * content view) resizes. NSViewAutoresizing bits: MinXMargin=1 WidthSizable=2
+     * MaxXMargin=4 MinYMargin=8 HeightSizable=16 MaxYMargin=32. The margin bits pin
+     * the corresponding edge; the Sizable bits let the dimension flex. Without a mask
+     * a subview keeps its absolute frame and does not track window resizes.
+     */
+    public void setAutoresizingMask(long mask) {
+        try {
+            hAutoMask.invokeExact(peer, ObjC.sel("setAutoresizingMask:"), mask);
+        } catch (Throwable t) {
+            throw new RuntimeException("setAutoresizingMask: failed", t);
+        }
+    }
+
+
+    /** bounds — the view's own coordinate system (origin usually {0,0}). */
+    public NSRect bounds() {
+        return NSRect.fromSegment(ObjC.msgSendRect(peer, ObjC.sel("bounds")));
+    }
+
+    /** frame — the view's frame in its superview's coordinates (struct return). */
+    public NSRect frame() {
+        return NSRect.fromSegment(ObjC.msgSendRect(peer, ObjC.sel("frame")));
+    }
+
+    /** setNeedsDisplay: — request a redraw on the next run-loop pass. */
+    public void setNeedsDisplay(boolean flag) {
+        ObjC.msgSendVoidBool(peer, ObjC.sel("setNeedsDisplay:"), flag);
+    }
+
+    /**
+     * setNeedsDisplayInRect: — mark only the given region, in the view's own coordinate
+     * system, as needing redraw. AppKit unions repeated invalidations and passes the
+     * resulting (possibly expanded) rect to {@code drawRect:}; drawing may be clipped to it.
+     * This is the cost-saving entry point for dirty-rect rendering: a view that only repaints
+     * {@code rect} avoids a full-bounds redraw.
+     */
+    public void setNeedsDisplayInRect(NSRect rect) {
+        try {
+            hNeedsRect.invokeExact(peer, ObjC.sel("setNeedsDisplayInRect:"), rect.toSegment());
+        } catch (Throwable t) {
+            throw new RuntimeException("setNeedsDisplayInRect: failed", t);
+        }
+    }
+
+    /**
+     * backingScaleFactor — the view's backing store scale (1.0 for a non-Retina screen,
+     * 2.0 for Retina). Combined with {@link #setWantsLayer(boolean)} this is the basis for
+     * correct Retina/backing-scale rendering: drawing coordinates are in points while the
+     * backing store is pixels, so device-space sizes equal point sizes times this factor.
+     */
+    public double backingScaleFactor() {
+        try {
+            return (double) hBacking.invokeExact(peer, ObjC.sel("backingScaleFactor"));
+        } catch (Throwable t) {
+            throw new RuntimeException("backingScaleFactor failed", t);
+        }
+    }
+
+    /** convertRectToBacking: — a point-space rect in the view's coordinates -> backing pixels. */
+    public NSRect convertRectToBacking(NSRect rect) {
+        try {
+            return NSRect.fromSegment((MemorySegment) hConvBacking.invokeExact(
+                    (java.lang.foreign.SegmentAllocator) java.lang.foreign.Arena.global(), peer,
+                    ObjC.sel("convertRectToBacking:"), rect.toSegment()));
+        } catch (Throwable t) {
+            throw new RuntimeException("convertRectToBacking: failed", t);
+        }
+    }
+
+    /** window — the NSWindow this view is installed in (null if none). */
+    public NSObject window() {
+        return NSObject.wrap(ObjC.msgSendId(peer, ObjC.sel("window")));
+    }
+
+    /** setWantsLayer: — opt into layer-backed drawing. */
+    public void setWantsLayer(boolean flag) {
+        ObjC.msgSendVoidBool(peer, ObjC.sel("setWantsLayer:"), flag);
+    }
+
+    /** wantsLayer — whether the view is layer-backed. */
+    public boolean wantsLayer() {
+        return ObjC.msgSendBool(peer, ObjC.sel("wantsLayer"));
+    }
+
+    /** isFlipped — whether the view's y-axis points up (NO for a plain NSView). */
+    public boolean isFlipped() {
+        return ObjC.msgSendBool(peer, ObjC.sel("isFlipped"));
+    }
+
+    // ---------------------------------------------------------------- additional getters — completeness
+
+    /** autoresizingMask — NSAutoresizingMaskOptions. */
+    public long autoresizingMask() {
+        return ObjC.msgSendLong(peer, ObjC.sel("autoresizingMask"));
+    }
+
+    /** autoresizesSubviews. */
+    public boolean autoresizesSubviews() {
+        return ObjC.msgSendBool(peer, ObjC.sel("autoresizesSubviews"));
+    }
+
+    /** setAutoresizesSubviews:. */
+    public void setAutoresizesSubviews(boolean flag) {
+        ObjC.msgSendVoidBool(peer, ObjC.sel("setAutoresizesSubviews:"), flag);
+    }
+
+    /** translatesAutoresizingMaskIntoConstraints. */
+    public boolean translatesAutoresizingMaskIntoConstraints() {
+        return ObjC.msgSendBool(peer, ObjC.sel("translatesAutoresizingMaskIntoConstraints"));
+    }
+
+    /** displayIfNeeded — display the view if needed. */
+    public void displayIfNeeded() {
+        ObjC.msgSendVoid(peer, ObjC.sel("displayIfNeeded"));
+    }
+
+    /** displayIfNeededInRect: — display if needed in rect. */
+    public void displayIfNeededInRect(NSRect rect) {
+        try {
+            hNeedsRect.invokeExact(peer, ObjC.sel("displayIfNeededInRect:"), rect.toSegment());
+        } catch (Throwable t) {
+            throw new RuntimeException("displayIfNeededInRect: failed", t);
+        }
+    }
+
+    /** layoutSubtreeIfNeeded — layout the subtree if needed. */
+    public void layoutSubtreeIfNeeded() {
+        ObjC.msgSendVoid(peer, ObjC.sel("layoutSubtreeIfNeeded"));
+    }
+
+    /** intrinsicContentSize — the view's intrinsic content size. */
+    public NSSize intrinsicContentSize() {
+        try {
+            MemorySegment s = (MemorySegment) hGetSize.invokeExact((java.lang.foreign.SegmentAllocator) java.lang.foreign.Arena.global(), peer, ObjC.sel("intrinsicContentSize"));
+            return NSSize.fromSegment(s);
+        } catch (Throwable t) {
+            throw new RuntimeException("intrinsicContentSize failed", t);
+        }
+    }
+
+    /** alphaValue — view alpha 0..1. */
+    public double alphaValue() {
+        try {
+            return (double) hGetDouble.invokeExact(peer, ObjC.sel("alphaValue"));
+        } catch (Throwable t) {
+            throw new RuntimeException("alphaValue failed", t);
+        }
+    }
+
+    /** setAlphaValue:. */
+    public void setAlphaValue(double alpha) {
+        try {
+            hSetDouble.invokeExact(peer, ObjC.sel("setAlphaValue:"), alpha);
+        } catch (Throwable t) {
+            throw new RuntimeException("setAlphaValue: failed", t);
+        }
+    }
+
+    /** isHidden. */
+    public boolean isHidden() {
+        return ObjC.msgSendBool(peer, ObjC.sel("isHidden"));
+    }
+
+    /** setHidden:. */
+    public void setHidden(boolean flag) {
+        ObjC.msgSendVoidBool(peer, ObjC.sel("setHidden:"), flag);
+    }
+
+    /** isHiddenOrHasHiddenAncestor. */
+    public boolean isHiddenOrHasHiddenAncestor() {
+        return ObjC.msgSendBool(peer, ObjC.sel("isHiddenOrHasHiddenAncestor"));
+    }
+
+    /** superview — parent view. */
+    public NSView superview() {
+        MemorySegment v = ObjC.msgSendId(peer, ObjC.sel("superview"));
+        return NSView.wrap(v);
+    }
+
+    /** isOpaque — whether the view is opaque. */
+    public boolean isOpaque() {
+        return ObjC.msgSendBool(peer, ObjC.sel("isOpaque"));
+    }
+
+    /** invalidateIntrinsicContentSize. */
+    public void invalidateIntrinsicContentSize() {
+        ObjC.msgSendVoid(peer, ObjC.sel("invalidateIntrinsicContentSize"));
+    }
+}

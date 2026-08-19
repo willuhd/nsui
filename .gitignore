@@ -1,0 +1,10 @@
+out/
+.DS_Store
+*.class
+*.bundle
+# Demos / Main — library is package nsui; demos live outside git
+*Demo.java
+Main.java
+demos/
+demo/
+example/

@@ -499,7 +499,7 @@ public final class NSWindow extends NSObject {
                 java.lang.invoke.MethodHandle target = java.lang.invoke.MethodHandles.lookup().findStatic(
                         NSWindow.class, "sheetCompletionBridge",
                         java.lang.invoke.MethodType.methodType(void.class, MemorySegment.class, long.class, java.util.function.IntConsumer.class));
-                java.lang.invoke.MethodHandle bound = target.bindTo(completionHandler);
+                java.lang.invoke.MethodHandle bound = java.lang.invoke.MethodHandles.insertArguments(target, 2, completionHandler);
                 // block signature: void(^)(NSModalResponse) -> void with blockSelf leading
                 java.lang.foreign.FunctionDescriptor fd = java.lang.foreign.FunctionDescriptor.ofVoid(
                         (java.lang.foreign.ValueLayout) java.lang.foreign.Linker.nativeLinker().canonicalLayouts().get("void*"),
@@ -511,7 +511,8 @@ public final class NSWindow extends NSObject {
                         (java.lang.foreign.ValueLayout) java.lang.foreign.Linker.nativeLinker().canonicalLayouts().get("long")));
             }
             java.lang.invoke.MethodHandle h = ObjC.handle(nsui.objc.Sig.of(nsui.objc.Sig.Ret.VOID, nsui.objc.Sig.Arg.ID, nsui.objc.Sig.Arg.ID));
-            h.invokeExact(peer, ObjC.sel("beginSheet:completionHandler:"), sheet.peer(), block == null ? MemorySegment.NULL : block);
+            MemorySegment blk = (block == null || block.address() == 0) ? MemorySegment.NULL : block;
+            h.invokeExact(peer, ObjC.sel("beginSheet:completionHandler:"), sheet.peer(), (MemorySegment) blk);
         } catch (Throwable t) {
             throw new RuntimeException("beginSheet:completionHandler: failed", t);
         }
@@ -522,7 +523,8 @@ public final class NSWindow extends NSObject {
         if (sheet == null) return;
         try {
             java.lang.invoke.MethodHandle h = ObjC.handle(nsui.objc.Sig.of(nsui.objc.Sig.Ret.VOID, nsui.objc.Sig.Arg.ID, nsui.objc.Sig.Arg.ID));
-            h.invokeExact(peer, ObjC.sel("beginSheet:completionHandler:"), sheet.peer(), completionHandlerBlock == null ? MemorySegment.NULL : completionHandlerBlock);
+            MemorySegment blk2 = (completionHandlerBlock == null || completionHandlerBlock.address() == 0) ? MemorySegment.NULL : completionHandlerBlock;
+            h.invokeExact(peer, ObjC.sel("beginSheet:completionHandler:"), sheet.peer(), (MemorySegment) blk2);
         } catch (Throwable t) {
             throw new RuntimeException("beginSheet:completionHandler: failed", t);
         }

@@ -9,9 +9,7 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSMutableData — mutable data wrapper.
- */
+/// NSMutableData — mutable data wrapper.
 public final class NSMutableData extends NSData {
 
     private static volatile boolean initMut;
@@ -24,14 +22,14 @@ public final class NSMutableData extends NSData {
         return (peer == null || peer.address() == 0) ? null : new NSMutableData(peer);
     }
 
-    /** [NSMutableData data] */
+    /// [NSMutableData data]
     public static NSMutableData data() {
         ensureMutInit();
         MemorySegment s = ObjC.msgSendId(ObjC.cls("NSMutableData"), ObjC.sel("data"));
         return wrap(s);
     }
 
-    /** [NSMutableData dataWithCapacity:] */
+    /// [NSMutableData dataWithCapacity:]
     public static NSMutableData dataWithCapacity(long capacity) {
         ensureMutInit();
         try {
@@ -41,7 +39,7 @@ public final class NSMutableData extends NSData {
         } catch (Throwable t) { throw new RuntimeException("dataWithCapacity: failed", t); }
     }
 
-    /** [NSMutableData dataWithLength:] */
+    /// [NSMutableData dataWithLength:]
     public static NSMutableData dataWithLength(long length) {
         ensureMutInit();
         try {
@@ -60,7 +58,7 @@ public final class NSMutableData extends NSData {
         initMut = true;
     }
 
-    /** appendBytes:length: — appends Java bytes via native call if possible, else no-op. */
+    /// appendBytes:length: — appends Java bytes via native call if possible, else no-op.
     public void appendBytes(byte[] bytes) {
         if (bytes == null || bytes.length == 0) return;
         ensureMutInit();
@@ -71,7 +69,7 @@ public final class NSMutableData extends NSData {
         } catch (Throwable t) { throw new RuntimeException("appendBytes:length: failed", t); }
     }
 
-    /** increaseLengthBy: */
+    /// increaseLengthBy:
     public void increaseLengthBy(long extra) {
         ensureMutInit();
         try {
@@ -80,14 +78,14 @@ public final class NSMutableData extends NSData {
         } catch (Throwable t) { throw new RuntimeException("increaseLengthBy: failed", t); }
     }
 
-    /** setLength: */
+    /// setLength:
     public void setLength(long length) {
         ensureMutInit();
         try { hSetLength.invokeExact(peer, ObjC.sel("setLength:"), length); }
         catch (Throwable t) { throw new RuntimeException("setLength: failed", t); }
     }
 
-    /** appendData: */
+    /// appendData:
     public void appendData(NSData other) {
         ensureMutInit();
         if (other == null) return;
@@ -97,7 +95,7 @@ public final class NSMutableData extends NSData {
         } catch (Throwable t) { throw new RuntimeException("appendData: failed", t); }
     }
 
-    /** resetBytesInRange: */
+    /// resetBytesInRange:
     public void resetBytesInRange(NSRange range) {
         ensureMutInit();
         try {

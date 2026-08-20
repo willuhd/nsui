@@ -8,11 +8,9 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSScrollView — a view that scrolls its document view (e.g. an {@link NSTableView})
- * and draws scroller knobs. Thin, 1:1, stateless wrapper over the native
- * {@code NSScrollView}: each method maps to one {@code objc_msgSend} selector.
- */
+/// NSScrollView — a view that scrolls its document view (e.g. an `NSTableView`)
+/// and draws scroller knobs. Thin, 1:1, stateless wrapper over the native
+/// `NSScrollView`: each method maps to one `objc_msgSend` selector.
 public final class NSScrollView extends NSView {
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
@@ -44,7 +42,7 @@ public final class NSScrollView extends NSView {
         initialized = true;
     }
 
-    /** {@code [[NSScrollView alloc] initWithFrame:frame]} — a new scroll view. */
+    /// `[[NSScrollView alloc] initWithFrame:frame]` — a new scroll view.
     public static NSScrollView create(NSRect frame) {
         ensureInit();
         MemorySegment v = ObjC.msgSendId(ObjC.cls("NSScrollView"), ObjC.sel("alloc"));
@@ -61,7 +59,7 @@ public final class NSScrollView extends NSView {
 
     // ---------------------------------------------------------------- instance API
 
-    /** [scroll setDocumentView:] — the scrollable document (the table). */
+    /// [scroll setDocumentView:] — the scrollable document (the table).
     public void setDocumentView(NSView documentView) {
         try {
             hVoidId.invokeExact(peer, ObjC.sel("setDocumentView:"), documentView.peer());
@@ -70,7 +68,7 @@ public final class NSScrollView extends NSView {
         }
     }
 
-    /** [scroll setHasVerticalScroller:] — show/hide the vertical scroller. */
+    /// [scroll setHasVerticalScroller:] — show/hide the vertical scroller.
     public void setHasVerticalScroller(boolean flag) {
         try {
             hVoidBool.invokeExact(peer, ObjC.sel("setHasVerticalScroller:"), flag);
@@ -79,7 +77,7 @@ public final class NSScrollView extends NSView {
         }
     }
 
-    /** [scroll setHasHorizontalScroller:] — show/hide the horizontal scroller. */
+    /// [scroll setHasHorizontalScroller:] — show/hide the horizontal scroller.
     public void setHasHorizontalScroller(boolean flag) {
         try {
             hVoidBool.invokeExact(peer, ObjC.sel("setHasHorizontalScroller:"), flag);
@@ -88,7 +86,7 @@ public final class NSScrollView extends NSView {
         }
     }
 
-    /** [scroll setAutohidesScrollers:] — auto-hide scrollers when not needed. */
+    /// [scroll setAutohidesScrollers:] — auto-hide scrollers when not needed.
     public void setAutohidesScrollers(boolean flag) {
         try {
             hVoidBool.invokeExact(peer, ObjC.sel("setAutohidesScrollers:"), flag);
@@ -97,7 +95,7 @@ public final class NSScrollView extends NSView {
         }
     }
 
-    /** [scroll setBorderType:] — the border style (NSBezelBorder=1, NSLineBorder=2, NSNoBorder=0, ...). */
+    /// [scroll setBorderType:] — the border style (NSBezelBorder=1, NSLineBorder=2, NSNoBorder=0, ...).
     public void setBorderType(long borderType) {
         try {
             hVoidInt.invokeExact(peer, ObjC.sel("setBorderType:"), borderType);
@@ -108,35 +106,35 @@ public final class NSScrollView extends NSView {
 
     // ---------------------------------------------------------------- additional — completeness
 
-    /** [scroll documentView] — the document view (may be nil). */
+    /// [scroll documentView] — the document view (may be nil).
     public NSView documentView() {
         MemorySegment v = ObjC.msgSendId(peer, ObjC.sel("documentView"));
         return NSView.wrap(v);
     }
 
-    /** [scroll contentView] — the clip view. */
+    /// [scroll contentView] — the clip view.
     public NSView contentView() {
         MemorySegment v = ObjC.msgSendId(peer, ObjC.sel("contentView"));
         return NSView.wrap(v);
     }
 
-    /** [scroll backgroundColor]. */
+    /// [scroll backgroundColor].
     public NSColor backgroundColor() {
         MemorySegment c = ObjC.msgSendId(peer, ObjC.sel("backgroundColor"));
         return NSColor.wrap(c);
     }
 
-    /** [scroll setBackgroundColor:]. */
+    /// [scroll setBackgroundColor:].
     public void setBackgroundColor(NSColor color) {
         ObjC.msgSendVoidId(peer, ObjC.sel("setBackgroundColor:"), (MemorySegment) (color == null ? MemorySegment.NULL : color.peer()));
     }
 
-    /** [scroll drawsBackground]. */
+    /// [scroll drawsBackground].
     public boolean drawsBackground() {
         return ObjC.msgSendBool(peer, ObjC.sel("drawsBackground"));
     }
 
-    /** [scroll setDrawsBackground:]. */
+    /// [scroll setDrawsBackground:].
     public void setDrawsBackground(boolean flag) {
         try {
             hVoidBool.invokeExact(peer, ObjC.sel("setDrawsBackground:"), flag);
@@ -145,27 +143,27 @@ public final class NSScrollView extends NSView {
         }
     }
 
-    /** [scroll hasVerticalScroller]. */
+    /// [scroll hasVerticalScroller].
     public boolean hasVerticalScroller() {
         return ObjC.msgSendBool(peer, ObjC.sel("hasVerticalScroller"));
     }
 
-    /** [scroll hasHorizontalScroller]. */
+    /// [scroll hasHorizontalScroller].
     public boolean hasHorizontalScroller() {
         return ObjC.msgSendBool(peer, ObjC.sel("hasHorizontalScroller"));
     }
 
-    /** [scroll autohidesScrollers]. */
+    /// [scroll autohidesScrollers].
     public boolean autohidesScrollers() {
         return ObjC.msgSendBool(peer, ObjC.sel("autohidesScrollers"));
     }
 
-    /** [scroll allowsMagnification]. */
+    /// [scroll allowsMagnification].
     public boolean allowsMagnification() {
         return ObjC.msgSendBool(peer, ObjC.sel("allowsMagnification"));
     }
 
-    /** [scroll setAllowsMagnification:]. */
+    /// [scroll setAllowsMagnification:].
     public void setAllowsMagnification(boolean flag) {
         try {
             hVoidBool.invokeExact(peer, ObjC.sel("setAllowsMagnification:"), flag);
@@ -174,7 +172,7 @@ public final class NSScrollView extends NSView {
         }
     }
 
-    /** [scroll magnification] — double. */
+    /// [scroll magnification] — double.
     public double magnification() {
         try {
             return (double) hGetDouble.invokeExact(peer, ObjC.sel("magnification"));
@@ -183,7 +181,7 @@ public final class NSScrollView extends NSView {
         }
     }
 
-    /** [scroll setMagnification:]. */
+    /// [scroll setMagnification:].
     public void setMagnification(double mag) {
         try {
             hSetDouble.invokeExact(peer, ObjC.sel("setMagnification:"), mag);
@@ -192,7 +190,7 @@ public final class NSScrollView extends NSView {
         }
     }
 
-    /** [scroll maxMagnification]. */
+    /// [scroll maxMagnification].
     public double maxMagnification() {
         try {
             return (double) hGetDouble.invokeExact(peer, ObjC.sel("maxMagnification"));
@@ -201,7 +199,7 @@ public final class NSScrollView extends NSView {
         }
     }
 
-    /** [scroll setMaxMagnification:]. */
+    /// [scroll setMaxMagnification:].
     public void setMaxMagnification(double mag) {
         try {
             hSetDouble.invokeExact(peer, ObjC.sel("setMaxMagnification:"), mag);
@@ -210,7 +208,7 @@ public final class NSScrollView extends NSView {
         }
     }
 
-    /** [scroll minMagnification]. */
+    /// [scroll minMagnification].
     public double minMagnification() {
         try {
             return (double) hGetDouble.invokeExact(peer, ObjC.sel("minMagnification"));
@@ -219,7 +217,7 @@ public final class NSScrollView extends NSView {
         }
     }
 
-    /** [scroll setMinMagnification:]. */
+    /// [scroll setMinMagnification:].
     public void setMinMagnification(double mag) {
         try {
             hSetDouble.invokeExact(peer, ObjC.sel("setMinMagnification:"), mag);
@@ -228,7 +226,7 @@ public final class NSScrollView extends NSView {
         }
     }
 
-    /** [scroll contentSize] — NSSize readonly. */
+    /// [scroll contentSize] — NSSize readonly.
     public NSSize contentSize() {
         try {
             MemorySegment s = (MemorySegment) hGetSize.invokeExact((java.lang.foreign.SegmentAllocator) java.lang.foreign.Arena.global(), peer, ObjC.sel("contentSize"));
@@ -238,7 +236,7 @@ public final class NSScrollView extends NSView {
         }
     }
 
-    /** [scroll documentVisibleRect] — NSRect readonly. */
+    /// [scroll documentVisibleRect] — NSRect readonly.
     public NSRect documentVisibleRect() {
         try {
             MemorySegment r = (MemorySegment) hGetRect.invokeExact((java.lang.foreign.SegmentAllocator) java.lang.foreign.Arena.global(), peer, ObjC.sel("documentVisibleRect"));
@@ -248,7 +246,7 @@ public final class NSScrollView extends NSView {
         }
     }
 
-    /** [scroll borderType]. */
+    /// [scroll borderType].
     public long borderType() {
         return ObjC.msgSendLong(peer, ObjC.sel("borderType"));
     }

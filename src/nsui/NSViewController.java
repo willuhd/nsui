@@ -8,21 +8,19 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSViewController — minimal wrapper over AppKit's NSViewController.
- * Thin 1:1 wrapper; holds the content view for NSPopover and other containers.
- *
- * <p>Typical status-popover usage (shown directly from status item click):
- * <pre>
- *   NSStatusItem item = NSStatusBar.systemStatusBar().statusItem();
- *   item.setSFSymbol("magnifyingglass"); // or "star.fill" via NSImage.imageNamed
- *   NSView content = NSView.create(new NSRect(0,0,280,140), (ctx, dirty)->{});
- *   NSPopover pop = NSPopover.create();
- *   pop.setContentView(content); // wraps in an NSViewController
- *   item.attachPopover(pop);     // target/action on statusItem button toggles popover
- * </pre>
- * Explicitly: {@code button().setImage(NSImage.imageNamed("magnifyingglass"))} for SF Symbols.
- */
+/// NSViewController — minimal wrapper over AppKit's NSViewController.
+/// Thin 1:1 wrapper; holds the content view for NSPopover and other containers.
+///
+/// Typical status-popover usage (shown directly from status item click):
+/// ```
+///   NSStatusItem item = NSStatusBar.systemStatusBar().statusItem();
+///   item.setSFSymbol("magnifyingglass"); // or "star.fill" via NSImage.imageNamed
+///   NSView content = NSView.create(new NSRect(0,0,280,140), (ctx, dirty)->{});
+///   NSPopover pop = NSPopover.create();
+///   pop.setContentView(content); // wraps in an NSViewController
+///   item.attachPopover(pop);     // target/action on statusItem button toggles popover
+/// ```
+/// Explicitly: `button().setImage(NSImage.imageNamed("magnifyingglass"))` for SF Symbols.
 public class NSViewController extends NSObject {
 
     private static volatile boolean initialized;
@@ -45,7 +43,7 @@ public class NSViewController extends NSObject {
         return (peer == null || peer.address() == 0) ? null : new NSViewController(peer);
     }
 
-    /** alloc + init */
+    /// alloc + init
     public static NSViewController create() {
         ensureInit();
         MemorySegment p = ObjC.msgSendId(ObjC.cls("NSViewController"), ObjC.sel("alloc"));
@@ -54,7 +52,7 @@ public class NSViewController extends NSObject {
         return new NSViewController(p);
     }
 
-    /** view — the controller's view (may be nil if not loaded). */
+    /// view — the controller's view (may be nil if not loaded).
     public NSView view() {
         ensureInit();
         try {
@@ -65,7 +63,7 @@ public class NSViewController extends NSObject {
         }
     }
 
-    /** setView: */
+    /// setView:
     public void setView(NSView view) {
         ensureInit();
         try {
@@ -76,7 +74,7 @@ public class NSViewController extends NSObject {
         }
     }
 
-    /** Convenience: create with a view already set. */
+    /// Convenience: create with a view already set.
     public static NSViewController withView(NSView view) {
         NSViewController vc = create();
         vc.setView(view);

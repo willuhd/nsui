@@ -8,11 +8,9 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSArray — typed wrapper over a native {@code NSArray} (id).
- * Thin, stateless: every method maps to one {@code objc_msgSend}.
- * Works for both NSArray and NSMutableArray (the latter adds mutating selectors).
- */
+/// NSArray — typed wrapper over a native `NSArray` (id).
+/// Thin, stateless: every method maps to one `objc_msgSend`.
+/// Works for both NSArray and NSMutableArray (the latter adds mutating selectors).
 public final class NSArray extends NSObject {
 
     private static volatile boolean initialized;
@@ -26,19 +24,19 @@ public final class NSArray extends NSObject {
         ensureInit();
     }
 
-    /** Wrap a native NSArray id (null for nil). */
+    /// Wrap a native NSArray id (null for nil).
     public static NSArray wrap(MemorySegment peer) {
         return (peer == null || peer.address() == 0) ? null : new NSArray(peer);
     }
 
-    /** Create an empty mutable array via {@code [NSMutableArray array]}. */
+    /// Create an empty mutable array via `[NSMutableArray array]`.
     public static NSArray array() {
         ensureInit();
         MemorySegment arr = ObjC.msgSendId(ObjC.cls("NSArray"), ObjC.sel("array"));
         return wrap(arr);
     }
 
-    /** Create an empty mutable array via {@code [NSMutableArray array]}. */
+    /// Create an empty mutable array via `[NSMutableArray array]`.
     public static NSArray mutableArray() {
         ensureInit();
         MemorySegment arr = ObjC.msgSendId(ObjC.cls("NSMutableArray"), ObjC.sel("array"));
@@ -54,7 +52,7 @@ public final class NSArray extends NSObject {
         initialized = true;
     }
 
-    /** count — number of elements. */
+    /// count — number of elements.
     public long count() {
         ensureInit();
         try {
@@ -64,10 +62,10 @@ public final class NSArray extends NSObject {
         }
     }
 
-    /** isEmpty — convenience. */
+    /// isEmpty — convenience.
     public boolean isEmpty() { return count() == 0; }
 
-    /** objectAtIndex: — element at index (0-based). */
+    /// objectAtIndex: — element at index (0-based).
     public MemorySegment objectAtIndex(long index) {
         ensureInit();
         try {
@@ -78,19 +76,19 @@ public final class NSArray extends NSObject {
         }
     }
 
-    /** Typed objectAtIndex returning NSObject wrapper. */
+    /// Typed objectAtIndex returning NSObject wrapper.
     public NSObject objectAt(long index) {
         MemorySegment seg = objectAtIndex(index);
         return seg == null ? null : NSObject.wrap(seg);
     }
 
-    /** Typed NSString at index. */
+    /// Typed NSString at index.
     public NSString stringAt(long index) {
         MemorySegment seg = objectAtIndex(index);
         return seg == null ? null : NSString.wrap(seg);
     }
 
-    /** lastObject — last element or null. */
+    /// lastObject — last element or null.
     public MemorySegment lastObject() {
         ensureInit();
         try {
@@ -101,7 +99,7 @@ public final class NSArray extends NSObject {
         }
     }
 
-    /** addObject: — mutating (for NSMutableArray). */
+    /// addObject: — mutating (for NSMutableArray).
     public void addObject(NSObject object) {
         ensureInit();
         if (object == null) throw new IllegalArgumentException("addObject: null");
@@ -112,7 +110,7 @@ public final class NSArray extends NSObject {
         }
     }
 
-    /** addObject: with raw segment. */
+    /// addObject: with raw segment.
     public void addObject(MemorySegment object) {
         ensureInit();
         if (object == null || object.address() == 0) throw new IllegalArgumentException("addObject: null");
@@ -123,7 +121,7 @@ public final class NSArray extends NSObject {
         }
     }
 
-    /** containsObject: — convenience linear search via count/objectAtIndex. */
+    /// containsObject: — convenience linear search via count/objectAtIndex.
     public boolean containsObject(MemorySegment object) {
         if (object == null || object.address() == 0) return false;
         long n = count();
@@ -134,7 +132,7 @@ public final class NSArray extends NSObject {
         return false;
     }
 
-    /** toList — snapshot as List<MemorySegment>. */
+    /// toList — snapshot as List.
     public java.util.List<MemorySegment> toList() {
         long n = count();
         java.util.List<MemorySegment> list = new java.util.ArrayList<>((int) n);

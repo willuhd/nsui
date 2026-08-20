@@ -8,7 +8,7 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/** NSMenuItem — a menu entry with title, action selector and key equivalent. */
+/// NSMenuItem — a menu entry with title, action selector and key equivalent.
 public final class NSMenuItem extends NSObject {
 
     private static volatile boolean initialized;
@@ -29,13 +29,13 @@ public final class NSMenuItem extends NSObject {
         return (peer == null || peer.address() == 0) ? null : new NSMenuItem(peer);
     }
 
-    /** alloc + init (a plain, empty item). */
+    /// alloc + init (a plain, empty item).
     public static NSMenuItem create() {
         MemorySegment item = ObjC.msgSendId(ObjC.cls("NSMenuItem"), ObjC.sel("alloc"));
         return new NSMenuItem(ObjC.msgSendId(item, ObjC.sel("init")));
     }
 
-    /** alloc + initWithTitle:action:keyEquivalent:. */
+    /// alloc + initWithTitle:action:keyEquivalent:.
     public static NSMenuItem withTitle(String title, String action, String keyEquivalent) {
         MemorySegment item = ObjC.msgSendId(ObjC.cls("NSMenuItem"), ObjC.sel("alloc"));
         return new NSMenuItem(ObjC.msgSendIdIdSelId(item,
@@ -84,21 +84,17 @@ public final class NSMenuItem extends NSObject {
     public void setKeyEquivalentModifierMask(long m) { ObjC.msgSendVoidLong(peer, ObjC.sel("setKeyEquivalentModifierMask:"), m); }
 
     // ---- image ---- (menu-list icons, not menubar bar)
-    /**
-     * [item image] — menu-list icon. NSMenuItem.setImage renders in the dropdown menu list
-     * (File → New, Edit → Cut, etc.), not the menubar bar itself. Top-level App/File/Edit/View
-     * bar items should remain text; attach icons only to dropdown list items. For NSStatusItem bar,
-     * use NSStatusBar/NSStatusItem button image (status agent), not this.
-     */
+    /// [item image] — menu-list icon. NSMenuItem.setImage renders in the dropdown menu list
+    /// (File → New, Edit → Cut, etc.), not the menubar bar itself. Top-level App/File/Edit/View
+    /// bar items should remain text; attach icons only to dropdown list items. For NSStatusItem bar,
+    /// use NSStatusBar/NSStatusItem button image (status agent), not this.
     public NSImage image() {
         MemorySegment p = ObjC.msgSendId(peer, ObjC.sel("image"));
         return (p == null || p.address() == 0) ? null : NSImage.wrap(p);
     }
-    /**
-     * [item setImage:] — attach a menu-list icon to a dropdown item. Works for menu lists
-     * (File/Edit/View/App menus) via NSMenu; do not use to iconify the menubar bar top-level items.
-     * Safe to pass null to clear. Prefer {@link NSMenu#attachMenuItemIcon} helper for named images.
-     */
+    /// [item setImage:] — attach a menu-list icon to a dropdown item. Works for menu lists
+    /// (File/Edit/View/App menus) via NSMenu; do not use to iconify the menubar bar top-level items.
+    /// Safe to pass null to clear. Prefer `attachMenuItemIcon` helper for named images.
     public void setImage(NSImage img) { ObjC.msgSendVoidId(peer, ObjC.sel("setImage:"), (MemorySegment) (img == null ? MemorySegment.NULL : img.peer())); }
     public NSImage onStateImage() {
         MemorySegment p = ObjC.msgSendId(peer, ObjC.sel("onStateImage"));
@@ -126,11 +122,11 @@ public final class NSMenuItem extends NSObject {
     // ---- view ----
     public MemorySegment view() { return ObjC.msgSendId(peer, ObjC.sel("view")); }
     public void setView(MemorySegment v) { ObjC.msgSendVoidId(peer, ObjC.sel("setView:"), (MemorySegment) (v == null ? MemorySegment.NULL : v)); }
-    /** Typed overload: embed any NSView (including NSSearchField) as the menu item's custom view. */
+    /// Typed overload: embed any NSView (including NSSearchField) as the menu item's custom view.
     public void setView(NSView view) { setView(view == null ? MemorySegment.NULL : view.peer()); }
-    /** Convenience for NSSearchField embedding: typed helper. */
+    /// Convenience for NSSearchField embedding: typed helper.
     public void setSearchFieldView(NSSearchField field) { setView((NSView) field); }
-    /** If the item's view is an NSSearchField, wrap it; otherwise null (also null if view is nil). */
+    /// If the item's view is an NSSearchField, wrap it; otherwise null (also null if view is nil).
     public NSSearchField viewAsSearchField() {
         MemorySegment v = view();
         if (v == null || v.address() == 0) return null;
@@ -141,12 +137,12 @@ public final class NSMenuItem extends NSObject {
         } catch (Throwable ignored) {}
         return NSSearchField.wrap(v);
     }
-    /** Typed view accessor as NSView (null if nil). */
+    /// Typed view accessor as NSView (null if nil).
     public NSView viewAsView() {
         MemorySegment v = view();
         return (v == null || v.address() == 0) ? null : NSView.wrap(v);
     }
-    /** Whether this item currently hosts a custom view (e.g., NSSearchField). */
+    /// Whether this item currently hosts a custom view (e.g., NSSearchField).
     public boolean hasCustomView() {
         MemorySegment v = view();
         return v != null && v.address() != 0;

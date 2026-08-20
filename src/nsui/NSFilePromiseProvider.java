@@ -8,10 +8,8 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSFilePromiseProvider — minimal wrapper over native {@code NSFilePromiseProvider}.
- * Used for dragging file promises (e.g., drag-out).
- */
+/// NSFilePromiseProvider — minimal wrapper over native `NSFilePromiseProvider`.
+/// Used for dragging file promises (e.g., drag-out).
 public final class NSFilePromiseProvider extends NSObject {
 
     private static volatile boolean initialized;
@@ -27,7 +25,7 @@ public final class NSFilePromiseProvider extends NSObject {
         return (peer == null || peer.address() == 0) ? null : new NSFilePromiseProvider(peer);
     }
 
-    /** [[NSFilePromiseProvider alloc] initWithFileType:delegate:] */
+    /// [[NSFilePromiseProvider alloc] initWithFileType:delegate:]
     public static NSFilePromiseProvider create(String fileType, NSObject delegate) {
         ensureInit();
         try {
@@ -47,7 +45,7 @@ public final class NSFilePromiseProvider extends NSObject {
         initialized = true;
     }
 
-    /** fileType */
+    /// fileType
     public String fileType() {
         ensureInit();
         try {
@@ -56,7 +54,7 @@ public final class NSFilePromiseProvider extends NSObject {
         } catch (Throwable t) { throw new RuntimeException("fileType failed", t); }
     }
 
-    /** delegate */
+    /// delegate
     public NSObject delegate() {
         ensureInit();
         try {
@@ -65,7 +63,7 @@ public final class NSFilePromiseProvider extends NSObject {
         } catch (Throwable t) { throw new RuntimeException("delegate failed", t); }
     }
 
-    /** userInfo — optional metadata. */
+    /// userInfo — optional metadata.
     public NSObject userInfo() {
         ensureInit();
         try {
@@ -75,7 +73,7 @@ public final class NSFilePromiseProvider extends NSObject {
         } catch (Throwable t) { return null; }
     }
 
-    /** setUserInfo: */
+    /// setUserInfo:
     public void setUserInfo(NSObject info) {
         ensureInit();
         try {

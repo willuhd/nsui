@@ -8,16 +8,14 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSCollectionViewItem — the prototype/item for an NSCollectionView.
- * Thin, 1:1, stateless wrapper over the native {@code NSCollectionViewItem}
- * (an NSViewController subclass). Follows the project template: volatile
- * initialized, synchronized ensureInit, ObjC.handle(Sig.of...), invokeExact,
- * static create/wrap.
- *
- * <p>Minimal: init, view, representedObject. The item's view is configured
- * by the data source; the collection view clones the prototype for each index.
- */
+/// NSCollectionViewItem — the prototype/item for an NSCollectionView.
+/// Thin, 1:1, stateless wrapper over the native `NSCollectionViewItem`
+/// (an NSViewController subclass). Follows the project template: volatile
+/// initialized, synchronized ensureInit, ObjC.handle(Sig.of...), invokeExact,
+/// static create/wrap.
+///
+/// Minimal: init, view, representedObject. The item's view is configured
+/// by the data source; the collection view clones the prototype for each index.
 public final class NSCollectionViewItem extends NSObject {
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
@@ -33,7 +31,7 @@ public final class NSCollectionViewItem extends NSObject {
         ensureInit();
     }
 
-    /** Wrap an existing NSCollectionViewItem peer. */
+    /// Wrap an existing NSCollectionViewItem peer.
     public static NSCollectionViewItem wrap(MemorySegment peer) {
         return (peer == null || peer.address() == 0) ? null : new NSCollectionViewItem(peer);
     }
@@ -48,7 +46,7 @@ public final class NSCollectionViewItem extends NSObject {
         initialized = true;
     }
 
-    /** {@code [[NSCollectionViewItem alloc] init]} — minimal item with no nib. */
+    /// `[[NSCollectionViewItem alloc] init]` — minimal item with no nib.
     public static NSCollectionViewItem create() {
         ensureInit();
         MemorySegment p = ObjC.msgSendId(ObjC.cls("NSCollectionViewItem"), ObjC.sel("alloc"));
@@ -61,7 +59,7 @@ public final class NSCollectionViewItem extends NSObject {
         return new NSCollectionViewItem(p);
     }
 
-    /** {@code [[NSCollectionViewItem alloc] initWithNibName:bundle:]} */
+    /// `[[NSCollectionViewItem alloc] initWithNibName:bundle:]`
     public static NSCollectionViewItem create(String nibName, MemorySegment bundle) {
         ensureInit();
         MemorySegment p = ObjC.msgSendId(ObjC.cls("NSCollectionViewItem"), ObjC.sel("alloc"));
@@ -78,7 +76,7 @@ public final class NSCollectionViewItem extends NSObject {
 
     // ---------------------------------------------------------------- instance API
 
-    /** [item view] — the item's view (NSView peer or nil). */
+    /// [item view] — the item's view (NSView peer or nil).
     public NSView view() {
         try {
             MemorySegment v = (MemorySegment) hGetId.invokeExact(peer, ObjC.sel("view"));
@@ -88,7 +86,7 @@ public final class NSCollectionViewItem extends NSObject {
         }
     }
 
-    /** [item setView:] */
+    /// [item setView:]
     public void setView(NSView view) {
         try {
             MemorySegment v = (view == null || view.peer() == null || view.peer().address() == 0) ? MemorySegment.NULL : view.peer();
@@ -98,7 +96,7 @@ public final class NSCollectionViewItem extends NSObject {
         }
     }
 
-    /** [item representedObject] — the model object for this item (id). */
+    /// [item representedObject] — the model object for this item (id).
     public MemorySegment representedObject() {
         try {
             return (MemorySegment) hGetId.invokeExact(peer, ObjC.sel("representedObject"));
@@ -107,7 +105,7 @@ public final class NSCollectionViewItem extends NSObject {
         }
     }
 
-    /** [item setRepresentedObject:] */
+    /// [item setRepresentedObject:]
     public void setRepresentedObject(MemorySegment object) {
         try {
             MemorySegment o = (object == null || object.address() == 0) ? MemorySegment.NULL : object;
@@ -117,17 +115,17 @@ public final class NSCollectionViewItem extends NSObject {
         }
     }
 
-    /** [item isSelected] */
+    /// [item isSelected]
     public boolean isSelected() {
         return ObjC.msgSendBool(peer, ObjC.sel("isSelected"));
     }
 
-    /** [item setSelected:] */
+    /// [item setSelected:]
     public void setSelected(boolean flag) {
         ObjC.msgSendVoidBool(peer, ObjC.sel("setSelected:"), flag);
     }
 
-    /** [item highlightState] — NSInteger. */
+    /// [item highlightState] — NSInteger.
     public long highlightState() {
         return ObjC.msgSendLong(peer, ObjC.sel("highlightState"));
     }

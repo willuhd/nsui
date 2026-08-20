@@ -8,16 +8,14 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSToolbar — an AppKit toolbar. Thin, 1:1, stateless wrapper over the native
- * {@code NSToolbar}: each method maps to one {@code objc_msgSend} selector, no
- * cached Java state beyond the peer. Follows the project template: volatile
- * initialized, synchronized ensureInit, ObjC.handle(Sig.of...), invokeExact,
- * static create/wrap.
- *
- * <p>Created via {@code [[NSToolbar alloc] initWithIdentifier:]}; displayMode,
- * allowsUserCustomization, delegate, and item insertion mirror AppKit.
- */
+/// NSToolbar — an AppKit toolbar. Thin, 1:1, stateless wrapper over the native
+/// `NSToolbar`: each method maps to one `objc_msgSend` selector, no
+/// cached Java state beyond the peer. Follows the project template: volatile
+/// initialized, synchronized ensureInit, ObjC.handle(Sig.of...), invokeExact,
+/// static create/wrap.
+///
+/// Created via `[[NSToolbar alloc] initWithIdentifier:]`; displayMode,
+/// allowsUserCustomization, delegate, and item insertion mirror AppKit.
 public final class NSToolbar extends NSObject {
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
@@ -36,7 +34,7 @@ public final class NSToolbar extends NSObject {
         ensureInit();
     }
 
-    /** Wrap an existing NSToolbar peer (e.g. from window.toolbar). */
+    /// Wrap an existing NSToolbar peer (e.g. from window.toolbar).
     public static NSToolbar wrap(MemorySegment peer) {
         return (peer == null || peer.address() == 0) ? null : new NSToolbar(peer);
     }
@@ -54,7 +52,7 @@ public final class NSToolbar extends NSObject {
         initialized = true;
     }
 
-    /** {@code [[NSToolbar alloc] initWithIdentifier:identifier]} — a new toolbar. */
+    /// `[[NSToolbar alloc] initWithIdentifier:identifier]` — a new toolbar.
     public static NSToolbar create(String identifier) {
         ensureInit();
         MemorySegment p = ObjC.msgSendId(ObjC.cls("NSToolbar"), ObjC.sel("alloc"));
@@ -67,18 +65,18 @@ public final class NSToolbar extends NSObject {
         return new NSToolbar(p);
     }
 
-    /** identifier — the toolbar's identifier string. */
+    /// identifier — the toolbar's identifier string.
     public String identifier() {
         return ObjC.toString(ObjC.msgSendId(peer, ObjC.sel("identifier")));
     }
 
     // ---- displayMode ----
-    /** [toolbar displayMode] — NSToolbarDisplayMode (0=default, 1=iconAndLabel, 2=iconOnly, 3=labelOnly). */
+    /// [toolbar displayMode] — NSToolbarDisplayMode (0=default, 1=iconAndLabel, 2=iconOnly, 3=labelOnly).
     public long displayMode() {
         return ObjC.msgSendLong(peer, ObjC.sel("displayMode"));
     }
 
-    /** [toolbar setDisplayMode:] — NSToolbarDisplayMode. */
+    /// [toolbar setDisplayMode:] — NSToolbarDisplayMode.
     public void setDisplayMode(long mode) {
         try {
             hSetDisplayMode.invokeExact(peer, ObjC.sel("setDisplayMode:"), mode);
@@ -88,12 +86,12 @@ public final class NSToolbar extends NSObject {
     }
 
     // ---- allowsUserCustomization ----
-    /** [toolbar allowsUserCustomization]. */
+    /// [toolbar allowsUserCustomization].
     public boolean allowsUserCustomization() {
         return ObjC.msgSendBool(peer, ObjC.sel("allowsUserCustomization"));
     }
 
-    /** [toolbar setAllowsUserCustomization:] */
+    /// [toolbar setAllowsUserCustomization:]
     public void setAllowsUserCustomization(boolean flag) {
         try {
             hSetAllowsCustom.invokeExact(peer, ObjC.sel("setAllowsUserCustomization:"), flag);
@@ -103,12 +101,12 @@ public final class NSToolbar extends NSObject {
     }
 
     // ---- visible ----
-    /** [toolbar isVisible]. */
+    /// [toolbar isVisible].
     public boolean isVisible() {
         return ObjC.msgSendBool(peer, ObjC.sel("isVisible"));
     }
 
-    /** [toolbar setVisible:] */
+    /// [toolbar setVisible:]
     public void setVisible(boolean flag) {
         try {
             hSetVisible.invokeExact(peer, ObjC.sel("setVisible:"), flag);
@@ -118,12 +116,12 @@ public final class NSToolbar extends NSObject {
     }
 
     // ---- showsBaselineSeparator ----
-    /** [toolbar showsBaselineSeparator]. */
+    /// [toolbar showsBaselineSeparator].
     public boolean showsBaselineSeparator() {
         return ObjC.msgSendBool(peer, ObjC.sel("showsBaselineSeparator"));
     }
 
-    /** [toolbar setShowsBaselineSeparator:] */
+    /// [toolbar setShowsBaselineSeparator:]
     public void setShowsBaselineSeparator(boolean flag) {
         try {
             hSetShowsBaseline.invokeExact(peer, ObjC.sel("setShowsBaselineSeparator:"), flag);
@@ -133,12 +131,12 @@ public final class NSToolbar extends NSObject {
     }
 
     // ---- delegate ----
-    /** [toolbar delegate] — id (may be nil -> NULL). */
+    /// [toolbar delegate] — id (may be nil -> NULL).
     public MemorySegment delegate() {
         return ObjC.msgSendId(peer, ObjC.sel("delegate"));
     }
 
-    /** [toolbar setDelegate:] — delegate object (DelegateProxy or any id). */
+    /// [toolbar setDelegate:] — delegate object (DelegateProxy or any id).
     public void setDelegate(MemorySegment delegate) {
         try {
             hSetDelegate.invokeExact(peer, ObjC.sel("setDelegate:"), (MemorySegment) ((MemorySegment) (delegate == null ? MemorySegment.NULL : delegate)));
@@ -148,7 +146,7 @@ public final class NSToolbar extends NSObject {
     }
 
     // ---- items ----
-    /** [toolbar insertItemWithItemIdentifier:atIndex:] */
+    /// [toolbar insertItemWithItemIdentifier:atIndex:]
     public void insertItemWithItemIdentifier(String identifier, long index) {
         try {
             hInsertItem.invokeExact(peer, ObjC.sel("insertItemWithItemIdentifier:atIndex:"), ObjC.nsstring(identifier), index);
@@ -157,7 +155,7 @@ public final class NSToolbar extends NSObject {
         }
     }
 
-    /** Raw peer variant: insertItemWithItemIdentifier:atIndex: with id identifier. */
+    /// Raw peer variant: insertItemWithItemIdentifier:atIndex: with id identifier.
     public void insertItemWithItemIdentifier(MemorySegment identifier, long index) {
         try {
             MemorySegment arg = (identifier == null || identifier.address() == 0) ? MemorySegment.NULL : identifier;
@@ -167,7 +165,7 @@ public final class NSToolbar extends NSObject {
         }
     }
 
-    /** [toolbar removeItemAtIndex:] */
+    /// [toolbar removeItemAtIndex:]
     public void removeItemAtIndex(long index) {
         try {
             hRemoveItem.invokeExact(peer, ObjC.sel("removeItemAtIndex:"), index);
@@ -176,27 +174,27 @@ public final class NSToolbar extends NSObject {
         }
     }
 
-    /** [toolbar items] — NSArray of NSToolbarItem peers (id). May be nil. */
+    /// [toolbar items] — NSArray of NSToolbarItem peers (id). May be nil.
     public MemorySegment items() {
         return ObjC.msgSendId(peer, ObjC.sel("items"));
     }
 
-    /** [toolbar visibleItems] — NSArray of visible items. */
+    /// [toolbar visibleItems] — NSArray of visible items.
     public MemorySegment visibleItems() {
         return ObjC.msgSendId(peer, ObjC.sel("visibleItems"));
     }
 
-    /** [toolbar selectedItemIdentifier] — NSString id or nil. */
+    /// [toolbar selectedItemIdentifier] — NSString id or nil.
     public MemorySegment selectedItemIdentifier() {
         return ObjC.msgSendId(peer, ObjC.sel("selectedItemIdentifier"));
     }
 
-    /** [toolbar setSelectedItemIdentifier:] with String. */
+    /// [toolbar setSelectedItemIdentifier:] with String.
     public void setSelectedItemIdentifier(String identifier) {
         ObjC.msgSendVoidId(peer, ObjC.sel("setSelectedItemIdentifier:"), identifier == null ? MemorySegment.NULL : ObjC.nsstring(identifier));
     }
 
-    /** [toolbar allowsExtension] etc via generic bool accessors. */
+    /// [toolbar allowsExtension] etc via generic bool accessors.
     public boolean autosavesConfiguration() {
         return ObjC.msgSendBool(peer, ObjC.sel("autosavesConfiguration"));
     }

@@ -8,16 +8,14 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSSplitView — a pane-splitting container with draggable dividers.
- * Thin, 1:1, stateless wrapper over a native {@code NSSplitView}: every method
- * maps to one {@code objc_msgSend} selector.
- *
- * <p>It is an {@link NSView}, so it fits any view hierarchy. Subviews are added
- * via {@link #addSubview(NSView)} (exposed as {@link #addArrangedSubview(NSView)}
- * for API parity with {@link NSStackView}). Orientation is {@code vertical}
- * (left/right split, {@code true}) vs horizontal (top/bottom, {@code false}).
- */
+/// NSSplitView — a pane-splitting container with draggable dividers.
+/// Thin, 1:1, stateless wrapper over a native `NSSplitView`: every method
+/// maps to one `objc_msgSend` selector.
+///
+/// It is an `NSView`, so it fits any view hierarchy. Subviews are added
+/// via `addSubview` (exposed as `addArrangedSubview`
+/// for API parity with `NSStackView`). Orientation is `vertical`
+/// (left/right split, `true`) vs horizontal (top/bottom, `false`).
 public final class NSSplitView extends NSView {
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
@@ -34,7 +32,7 @@ public final class NSSplitView extends NSView {
         ensureInit();
     }
 
-    /** Wrap a native NSSplitView id as an NSSplitView. */
+    /// Wrap a native NSSplitView id as an NSSplitView.
     public static NSSplitView wrap(MemorySegment peer) {
         return (peer == null || peer.address() == 0) ? null : new NSSplitView(peer);
     }
@@ -50,7 +48,7 @@ public final class NSSplitView extends NSView {
         initialized = true;
     }
 
-    /** {@code [[NSSplitView alloc] initWithFrame:frame]} — a new split view at the given rect. */
+    /// `[[NSSplitView alloc] initWithFrame:frame]` — a new split view at the given rect.
     public static NSSplitView create(NSRect frame) {
         ensureInit();
         MemorySegment p = ObjC.msgSendId(ObjC.cls("NSSplitView"), ObjC.sel("alloc"));
@@ -67,7 +65,7 @@ public final class NSSplitView extends NSView {
 
     // ---------------------------------------------------------------- isVertical
 
-    /** [splitView isVertical] — {@code YES} for left/right split, {@code NO} for top/bottom. */
+    /// [splitView isVertical] — `YES` for left/right split, `NO` for top/bottom.
     public boolean isVertical() {
         ensureInit();
         try {
@@ -77,7 +75,7 @@ public final class NSSplitView extends NSView {
         }
     }
 
-    /** [splitView setVertical:] — set the stacking axis. */
+    /// [splitView setVertical:] — set the stacking axis.
     public void setVertical(boolean flag) {
         ensureInit();
         try {
@@ -89,7 +87,7 @@ public final class NSSplitView extends NSView {
 
     // ---------------------------------------------------------------- dividerStyle
 
-    /** [splitView dividerStyle] — {@code NSSplitViewDividerStyle} (NSInteger). */
+    /// [splitView dividerStyle] — `NSSplitViewDividerStyle` (NSInteger).
     public long dividerStyle() {
         ensureInit();
         try {
@@ -99,7 +97,7 @@ public final class NSSplitView extends NSView {
         }
     }
 
-    /** [splitView setDividerStyle:] — {@code NSSplitViewDividerStyle}. */
+    /// [splitView setDividerStyle:] — `NSSplitViewDividerStyle`.
     public void setDividerStyle(long style) {
         ensureInit();
         try {
@@ -111,24 +109,20 @@ public final class NSSplitView extends NSView {
 
     // ---------------------------------------------------------------- arranged subview mimic
 
-    /**
-     * addArrangedSubview: — mimic via {@code addSubview:} for API parity with
-     * {@link NSStackView}. NSSplitView panes are plain subviews; this is an alias
-     * for {@link #addSubview(NSView)}.
-     */
+    /// addArrangedSubview: — mimic via `addSubview:` for API parity with
+    /// `NSStackView`. NSSplitView panes are plain subviews; this is an alias
+    /// for `addSubview`.
     public void addArrangedSubview(NSView subview) {
         addSubview(subview);
     }
 
     // ---------------------------------------------------------------- divider position
 
-    /**
-     * [splitView setPosition:ofDividerAtIndex:] — set the position of a divider.
-     * Uses {@code Sig.of(VOID,DOUBLE,INT)} exactly as specified.
-     *
-     * @param position     the new position in points along the split axis
-     * @param dividerIndex index of the divider (0 .. subviewCount-2)
-     */
+    /// [splitView setPosition:ofDividerAtIndex:] — set the position of a divider.
+    /// Uses `Sig.of(VOID,DOUBLE,INT)` exactly as specified.
+    ///
+    /// @param position     the new position in points along the split axis
+    /// @param dividerIndex index of the divider (0 .. subviewCount-2)
     public void setPositionOfDividerAtIndex(double position, long dividerIndex) {
         ensureInit();
         try {
@@ -138,10 +132,8 @@ public final class NSSplitView extends NSView {
         }
     }
 
-    /**
-     * Alias matching the ObjC selector spelling: {@code setPosition:ofDividerAtIndex:}.
-     * Delegates to {@link #setPositionOfDividerAtIndex(double, long)}.
-     */
+    /// Alias matching the ObjC selector spelling: `setPosition:ofDividerAtIndex:`.
+    /// Delegates to `setPositionOfDividerAtIndex`.
     public void setPosition(double position, long dividerIndex) {
         setPositionOfDividerAtIndex(position, dividerIndex);
     }

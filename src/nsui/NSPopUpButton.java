@@ -8,20 +8,18 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSPopUpButton — an AppKit pull-down / pop-up menu control. Thin, 1:1,
- * stateless wrapper over a native {@code NSPopUpButton} (SWT-style): every
- * method maps to one {@code objc_msgSend} selector, no cached Java state
- * beyond the peer. It is an {@link NSControl} (an {@link NSView}), so it fits
- * any view hierarchy and supports enable/disable and target/action wiring via
- * {@link #setTarget}/{@link NSControl#setAction}.
- *
- * <p>Target/action: AppKit fires the button's action (by default the shared
- * {@code "selectionChanged:"} mechanism) on <em>user</em> interaction. A
- * programmatic {@code selectItemAtIndex:} does NOT trigger the action; the
- * wiring is exercised by sending the selector to the target directly (see the
- * tests). {@code setTarget}/{@code setAction} are inherited from NSControl.
- */
+/// NSPopUpButton — an AppKit pull-down / pop-up menu control. Thin, 1:1,
+/// stateless wrapper over a native `NSPopUpButton` (SWT-style): every
+/// method maps to one `objc_msgSend` selector, no cached Java state
+/// beyond the peer. It is an `NSControl` (an `NSView`), so it fits
+/// any view hierarchy and supports enable/disable and target/action wiring via
+/// `setTarget`/`setAction`.
+///
+/// Target/action: AppKit fires the button's action (by default the shared
+/// `"selectionChanged:"` mechanism) on *user* interaction. A
+/// programmatic `selectItemAtIndex:` does NOT trigger the action; the
+/// wiring is exercised by sending the selector to the target directly (see the
+/// tests). `setTarget`/`setAction` are inherited from NSControl.
 public final class NSPopUpButton extends NSControl {
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
@@ -51,7 +49,7 @@ public final class NSPopUpButton extends NSControl {
         initialized = true;
     }
 
-    /** {@code [[NSPopUpButton alloc] initWithFrame:frame]} — a new popup at the given rect. */
+    /// `[[NSPopUpButton alloc] initWithFrame:frame]` — a new popup at the given rect.
     public static NSPopUpButton create(NSRect frame) {
         ensureInit();
         MemorySegment b = ObjC.msgSendId(ObjC.cls("NSPopUpButton"), ObjC.sel("alloc"));
@@ -68,7 +66,7 @@ public final class NSPopUpButton extends NSControl {
 
     // ---------------------------------------------------------------- instance API
 
-    /** [popup addItemWithTitle:] — append an item to the menu. */
+    /// [popup addItemWithTitle:] — append an item to the menu.
     public void addItemWithTitle(String title) {
         try {
             hAddItem.invokeExact(peer, ObjC.sel("addItemWithTitle:"), ObjC.nsstring(title));
@@ -77,12 +75,12 @@ public final class NSPopUpButton extends NSControl {
         }
     }
 
-    /** [popup removeAllItems] — remove every item from the menu. */
+    /// [popup removeAllItems] — remove every item from the menu.
     public void removeAllItems() {
         ObjC.msgSendVoid(peer, ObjC.sel("removeAllItems"));
     }
 
-    /** [popup removeItemAtIndex:] — remove the item at the given index. */
+    /// [popup removeItemAtIndex:] — remove the item at the given index.
     public void removeItemAtIndex(long index) {
         try {
             hSelect.invokeExact(peer, ObjC.sel("removeItemAtIndex:"), index);
@@ -91,7 +89,7 @@ public final class NSPopUpButton extends NSControl {
         }
     }
 
-    /** [popup removeItemWithTitle:] — remove the first item with the given title. */
+    /// [popup removeItemWithTitle:] — remove the first item with the given title.
     public void removeItemWithTitle(String title) {
         try {
             hAddItem.invokeExact(peer, ObjC.sel("removeItemWithTitle:"), ObjC.nsstring(title));
@@ -100,7 +98,7 @@ public final class NSPopUpButton extends NSControl {
         }
     }
 
-    /** [popup insertItemWithTitle:atIndex:] — insert an item at the given index. */
+    /// [popup insertItemWithTitle:atIndex:] — insert an item at the given index.
     public void insertItemWithTitleAtIndex(String title, long index) {
         try {
             hInsert.invokeExact(peer, ObjC.sel("insertItemWithTitle:atIndex:"), ObjC.nsstring(title), index);
@@ -109,7 +107,7 @@ public final class NSPopUpButton extends NSControl {
         }
     }
 
-    /** [popup selectItemAtIndex:] — select the item at the given index. */
+    /// [popup selectItemAtIndex:] — select the item at the given index.
     public void selectItemAtIndex(long index) {
         try {
             hSelect.invokeExact(peer, ObjC.sel("selectItemAtIndex:"), index);
@@ -118,7 +116,7 @@ public final class NSPopUpButton extends NSControl {
         }
     }
 
-    /** [popup selectItemWithTitle:] — select the item with the given title. */
+    /// [popup selectItemWithTitle:] — select the item with the given title.
     public void selectItemWithTitle(String title) {
         try {
             hSelectTitle.invokeExact(peer, ObjC.sel("selectItemWithTitle:"), ObjC.nsstring(title));
@@ -127,17 +125,17 @@ public final class NSPopUpButton extends NSControl {
         }
     }
 
-    /** [popup indexOfSelectedItem] — index of the current selection, or -1 if none. */
+    /// [popup indexOfSelectedItem] — index of the current selection, or -1 if none.
     public long indexOfSelectedItem() {
         return ObjC.msgSendLong(peer, ObjC.sel("indexOfSelectedItem"));
     }
 
-    /** [popup numberOfItems] — number of items in the menu. */
+    /// [popup numberOfItems] — number of items in the menu.
     public long numberOfItems() {
         return ObjC.msgSendLong(peer, ObjC.sel("numberOfItems"));
     }
 
-    /** [popup itemTitleAtIndex:] — the title of the item at the given index. */
+    /// [popup itemTitleAtIndex:] — the title of the item at the given index.
     public String itemTitleAtIndex(long index) {
         try {
             MemorySegment title = (MemorySegment) hItemTitle.invokeExact(peer, ObjC.sel("itemTitleAtIndex:"), index);
@@ -147,73 +145,73 @@ public final class NSPopUpButton extends NSControl {
         }
     }
 
-    /** [popup titleOfSelectedItem] — the title of the currently selected item. */
+    /// [popup titleOfSelectedItem] — the title of the currently selected item.
     public String titleOfSelectedItem() {
         return ObjC.toString(ObjC.msgSendId(peer, ObjC.sel("titleOfSelectedItem")));
     }
 
-    /** [popup selectedItem] — the currently selected NSMenuItem id (or nil). */
+    /// [popup selectedItem] — the currently selected NSMenuItem id (or nil).
     public MemorySegment selectedItem() {
         return ObjC.msgSendId(peer, ObjC.sel("selectedItem"));
     }
 
-    /** [popup itemArray] — array of NSMenuItem ids. */
+    /// [popup itemArray] — array of NSMenuItem ids.
     public MemorySegment itemArray() {
         return ObjC.msgSendId(peer, ObjC.sel("itemArray"));
     }
 
-    /** [popup itemTitles] — copy of titles array. */
+    /// [popup itemTitles] — copy of titles array.
     public MemorySegment itemTitles() {
         return ObjC.msgSendId(peer, ObjC.sel("itemTitles"));
     }
 
-    /** [popup lastItem] — the last NSMenuItem id (or nil). */
+    /// [popup lastItem] — the last NSMenuItem id (or nil).
     public MemorySegment lastItem() {
         return ObjC.msgSendId(peer, ObjC.sel("lastItem"));
     }
 
-    /** [popup pullsDown] — YES if pull-down style. */
+    /// [popup pullsDown] — YES if pull-down style.
     public boolean isPullsDown() {
         return ObjC.msgSendBool(peer, ObjC.sel("pullsDown"));
     }
 
-    /** [popup setPullsDown:] — YES renders as a pull-down button instead of a pop-up. */
+    /// [popup setPullsDown:] — YES renders as a pull-down button instead of a pop-up.
     public void setPullsDown(boolean flag) {
         ObjC.msgSendVoidBool(peer, ObjC.sel("setPullsDown:"), flag);
     }
 
-    /** [popup autoenablesItems] — whether menu items are auto-enabled. */
+    /// [popup autoenablesItems] — whether menu items are auto-enabled.
     public boolean autoenablesItems() {
         return ObjC.msgSendBool(peer, ObjC.sel("autoenablesItems"));
     }
 
-    /** [popup setAutoenablesItems:] — set auto-enables behavior. */
+    /// [popup setAutoenablesItems:] — set auto-enables behavior.
     public void setAutoenablesItems(boolean flag) {
         ObjC.msgSendVoidBool(peer, ObjC.sel("setAutoenablesItems:"), flag);
     }
 
-    /** [popup menu] — the NSMenu id. */
+    /// [popup menu] — the NSMenu id.
     public MemorySegment menu() {
         return ObjC.msgSendId(peer, ObjC.sel("menu"));
     }
 
-    /** [popup setMenu:] — set the menu. */
+    /// [popup setMenu:] — set the menu.
     public void setMenu(MemorySegment menu) {
         ObjC.msgSendVoidId(peer, ObjC.sel("setMenu:"), menu);
     }
 
-    /** Typed menu accessor. */
+    /// Typed menu accessor.
     public NSMenu menuTyped() {
         MemorySegment m = ObjC.msgSendId(peer, ObjC.sel("menu"));
         return (m == null || m.address() == 0) ? null : NSMenu.wrap(m);
     }
 
-    /** [popup preferredEdge] — edge the menu presents from. */
+    /// [popup preferredEdge] — edge the menu presents from.
     public long preferredEdge() {
         return ObjC.msgSendLong(peer, ObjC.sel("preferredEdge"));
     }
 
-    /** [popup setPreferredEdge:] — set the preferred edge (NSRectEdge). */
+    /// [popup setPreferredEdge:] — set the preferred edge (NSRectEdge).
     public void setPreferredEdge(long edge) {
         ObjC.msgSendVoidLong(peer, ObjC.sel("setPreferredEdge:"), edge);
     }

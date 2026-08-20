@@ -8,11 +8,9 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSDictionary — minimal typed wrapper over a native {@code NSDictionary} (id).
- * Thin, stateless: every method maps to one {@code objc_msgSend}.
- * Works for both NSDictionary and NSMutableDictionary.
- */
+/// NSDictionary — minimal typed wrapper over a native `NSDictionary` (id).
+/// Thin, stateless: every method maps to one `objc_msgSend`.
+/// Works for both NSDictionary and NSMutableDictionary.
 public final class NSDictionary extends NSObject {
 
     private static volatile boolean initialized;
@@ -27,19 +25,19 @@ public final class NSDictionary extends NSObject {
         ensureInit();
     }
 
-    /** Wrap a native NSDictionary id (null for nil). */
+    /// Wrap a native NSDictionary id (null for nil).
     public static NSDictionary wrap(MemorySegment peer) {
         return (peer == null || peer.address() == 0) ? null : new NSDictionary(peer);
     }
 
-    /** Create an empty dictionary via {@code [NSDictionary dictionary]}. */
+    /// Create an empty dictionary via `[NSDictionary dictionary]`.
     public static NSDictionary dictionary() {
         ensureInit();
         MemorySegment d = ObjC.msgSendId(ObjC.cls("NSDictionary"), ObjC.sel("dictionary"));
         return wrap(d);
     }
 
-    /** Create an empty mutable dictionary via {@code [NSMutableDictionary dictionary]}. */
+    /// Create an empty mutable dictionary via `[NSMutableDictionary dictionary]`.
     public static NSDictionary mutableDictionary() {
         ensureInit();
         MemorySegment d = ObjC.msgSendId(ObjC.cls("NSMutableDictionary"), ObjC.sel("dictionary"));
@@ -56,7 +54,7 @@ public final class NSDictionary extends NSObject {
         initialized = true;
     }
 
-    /** count — number of key/value pairs. */
+    /// count — number of key/value pairs.
     public long count() {
         ensureInit();
         try {
@@ -68,7 +66,7 @@ public final class NSDictionary extends NSObject {
 
     public boolean isEmpty() { return count() == 0; }
 
-    /** objectForKey: — value for key or null. */
+    /// objectForKey: — value for key or null.
     public MemorySegment objectForKey(MemorySegment key) {
         ensureInit();
         if (key == null || key.address() == 0) return null;
@@ -80,18 +78,18 @@ public final class NSDictionary extends NSObject {
         }
     }
 
-    /** Typed objectForKey with NSObject key. */
+    /// Typed objectForKey with NSObject key.
     public MemorySegment objectForKey(NSObject key) {
         return objectForKey(key == null ? null : key.peer());
     }
 
-    /** objectForKey: with NSString key convenience. */
+    /// objectForKey: with NSString key convenience.
     public MemorySegment objectForKey(String key) {
         if (key == null) return null;
         return objectForKey(ObjC.nsstring(key));
     }
 
-    /** setObject:forKey: — mutating (NSMutableDictionary). */
+    /// setObject:forKey: — mutating (NSMutableDictionary).
     public void setObjectForKey(MemorySegment object, MemorySegment key) {
         ensureInit();
         if (object == null || object.address() == 0) throw new IllegalArgumentException("setObject: null");
@@ -103,13 +101,13 @@ public final class NSDictionary extends NSObject {
         }
     }
 
-    /** setObject:forKey: with NSObject args. */
+    /// setObject:forKey: with NSObject args.
     public void setObjectForKey(NSObject object, NSObject key) {
         setObjectForKey((MemorySegment) (object == null ? MemorySegment.NULL : object.peer()),
                 (MemorySegment) (key == null ? MemorySegment.NULL : key.peer()));
     }
 
-    /** removeObjectForKey: — mutating. */
+    /// removeObjectForKey: — mutating.
     public void removeObjectForKey(MemorySegment key) {
         ensureInit();
         if (key == null || key.address() == 0) return;
@@ -120,7 +118,7 @@ public final class NSDictionary extends NSObject {
         }
     }
 
-    /** allKeys — returns NSArray of keys. */
+    /// allKeys — returns NSArray of keys.
     public NSArray allKeys() {
         ensureInit();
         try {

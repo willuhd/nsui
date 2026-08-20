@@ -8,10 +8,8 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSTouchBar — minimal wrap over AppKit NSTouchBar.
- * Thin 1:1, stateless: every method maps to one objc_msgSend.
- */
+/// NSTouchBar — minimal wrap over AppKit NSTouchBar.
+/// Thin 1:1, stateless: every method maps to one objc_msgSend.
 public final class NSTouchBar extends NSObject {
 
     private static volatile boolean initialized;
@@ -40,7 +38,7 @@ public final class NSTouchBar extends NSObject {
         initialized = true;
     }
 
-    /** alloc + init — empty touch bar. */
+    /// alloc + init — empty touch bar.
     public static NSTouchBar create() {
         ensureInit();
         MemorySegment p = ObjC.msgSendId(ObjC.cls("NSTouchBar"), ObjC.sel("alloc"));
@@ -49,7 +47,7 @@ public final class NSTouchBar extends NSObject {
         return new NSTouchBar(p);
     }
 
-    /** setDelegate: — object that provides items (id). */
+    /// setDelegate: — object that provides items (id).
     public void setDelegate(MemorySegment delegate) {
         ensureInit();
         try {
@@ -59,12 +57,12 @@ public final class NSTouchBar extends NSObject {
         }
     }
 
-    /** setDelegate: typed overload. */
+    /// setDelegate: typed overload.
     public void setDelegate(NSObject delegate) {
         setDelegate(delegate == null ? MemorySegment.NULL : delegate.peer());
     }
 
-    /** delegate — raw id. */
+    /// delegate — raw id.
     public MemorySegment delegate() {
         ensureInit();
         try {
@@ -74,7 +72,7 @@ public final class NSTouchBar extends NSObject {
         }
     }
 
-    /** setCustomizationIdentifier: — NSString identifier. */
+    /// setCustomizationIdentifier: — NSString identifier.
     public void setCustomizationIdentifier(String identifier) {
         ensureInit();
         MemorySegment s = identifier == null ? MemorySegment.NULL : ObjC.nsstring(identifier);
@@ -85,7 +83,7 @@ public final class NSTouchBar extends NSObject {
         }
     }
 
-    /** customizationIdentifier — string or null. */
+    /// customizationIdentifier — string or null.
     public String customizationIdentifier() {
         ensureInit();
         try {
@@ -96,7 +94,7 @@ public final class NSTouchBar extends NSObject {
         }
     }
 
-    /** itemIdentifiers — NSArray of NSString identifiers. */
+    /// itemIdentifiers — NSArray of NSString identifiers.
     public NSArray itemIdentifiers() {
         ensureInit();
         try {
@@ -114,12 +112,12 @@ public final class NSTouchBar extends NSObject {
         }
     }
 
-    /** defaultItemIdentifiers — alias. */
+    /// defaultItemIdentifiers — alias.
     public NSArray defaultItemIdentifiers() {
         return itemIdentifiers();
     }
 
-    /** setDefaultItemIdentifiers: — NSArray of identifiers. */
+    /// setDefaultItemIdentifiers: — NSArray of identifiers.
     public void setDefaultItemIdentifiers(NSArray identifiers) {
         ensureInit();
         try {
@@ -129,7 +127,7 @@ public final class NSTouchBar extends NSObject {
         }
     }
 
-    /** setCustomizationAllowedItemIdentifiers: */
+    /// setCustomizationAllowedItemIdentifiers:
     public void setCustomizationAllowedItemIdentifiers(NSArray ids) {
         ensureInit();
         try {
@@ -139,7 +137,7 @@ public final class NSTouchBar extends NSObject {
         }
     }
 
-    /** customizationAllowedItemIdentifiers */
+    /// customizationAllowedItemIdentifiers
     public NSArray customizationAllowedItemIdentifiers() {
         ensureInit();
         try {

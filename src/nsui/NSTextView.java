@@ -8,17 +8,15 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSTextView — a rich-text view (NSView -> NSText -> NSTextView).
- * Thin 1:1 wrapper over native {@code NSTextView}: every method maps to
- * one {@code objc_msgSend} selector, no cached Java state beyond the peer.
- * Mirrors the native hierarchy so {@code isKindOfClass:} works for
- * NSTextView / NSText / NSView.
- *
- * <p>MVP: wraps the concrete AppKit class {@code NSTextView} directly via
- * {@code alloc/initWithFrame:}. Lazy {@code ensureInit} + {@code ObjC.handle}
- * follows the existing NSView/Control pattern (resolve-once, invokeExact).
- */
+/// NSTextView — a rich-text view (NSView -> NSText -> NSTextView).
+/// Thin 1:1 wrapper over native `NSTextView`: every method maps to
+/// one `objc_msgSend` selector, no cached Java state beyond the peer.
+/// Mirrors the native hierarchy so `isKindOfClass:` works for
+/// NSTextView / NSText / NSView.
+///
+/// MVP: wraps the concrete AppKit class `NSTextView` directly via
+/// `alloc/initWithFrame:`. Lazy `ensureInit` + `ObjC.handle`
+/// follows the existing NSView/Control pattern (resolve-once, invokeExact).
 public class NSTextView extends NSText {
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
@@ -40,7 +38,7 @@ public class NSTextView extends NSText {
         initialized = true;
     }
 
-    /** {@code [[NSTextView alloc] initWithFrame:frame]} — a new text view at the given rect. */
+    /// `[[NSTextView alloc] initWithFrame:frame]` — a new text view at the given rect.
     public static NSTextView create(NSRect frame) {
         ensureInit();
         MemorySegment v = ObjC.msgSendId(ObjC.cls("NSTextView"), ObjC.sel("alloc"));
@@ -79,12 +77,12 @@ public class NSTextView extends NSText {
 
     // ---- NSTextView-specific ----
 
-    /** [textView usesFontPanel] — whether the font panel is used. */
+    /// [textView usesFontPanel] — whether the font panel is used.
     public boolean usesFontPanel() {
         return ObjC.msgSendBool(peer, ObjC.sel("usesFontPanel"));
     }
 
-    /** [textView setUsesFontPanel:] — enable/disable the font panel. */
+    /// [textView setUsesFontPanel:] — enable/disable the font panel.
     public void setUsesFontPanel(boolean flag) {
         ObjC.msgSendVoidBool(peer, ObjC.sel("setUsesFontPanel:"), flag);
     }
@@ -151,13 +149,13 @@ public class NSTextView extends NSText {
         ObjC.msgSendVoidId(peer, sel, (MemorySegment) (value == null ? MemorySegment.NULL : value.peer()));
     }
 
-    /** [textView textStorage] -> NSTextStorage (NSMutableAttributedString) */
+    /// [textView textStorage] -> NSTextStorage (NSMutableAttributedString)
     public NSMutableAttributedString textStorage() {
         MemorySegment p = ObjC.msgSendId(peer, ObjC.sel("textStorage"));
         return NSMutableAttributedString.wrap(p);
     }
 
-    /** [textView setTextColor:range:] convenience via textStorage */
+    /// [textView setTextColor:range:] convenience via textStorage
     public void setTextColor(NSColor color, NSRange range) {
         NSMutableAttributedString ts = textStorage();
         if (ts != null) {
@@ -167,34 +165,32 @@ public class NSTextView extends NSText {
 
     // ---- NSLayoutManager trio (minimal) ----
 
-    /** [textView layoutManager] -> NSLayoutManager (may be nil). */
+    /// [textView layoutManager] -> NSLayoutManager (may be nil).
     public NSLayoutManager layoutManager() {
         MemorySegment p = ObjC.msgSendId(peer, ObjC.sel("layoutManager"));
         return NSLayoutManager.wrap(p);
     }
 
-    /** [textView textContainer] -> NSTextContainer (may be nil). */
+    /// [textView textContainer] -> NSTextContainer (may be nil).
     public NSTextContainer textContainer() {
         MemorySegment p = ObjC.msgSendId(peer, ObjC.sel("textContainer"));
         return NSTextContainer.wrap(p);
     }
 
-    /** [textView textStorage] as NSTextStorage (typed). */
+    /// [textView textStorage] as NSTextStorage (typed).
     public NSTextStorage textStorageAsStorage() {
         MemorySegment p = ObjC.msgSendId(peer, ObjC.sel("textStorage"));
         return NSTextStorage.wrap(p);
     }
 
-    /**
-     * Wire a full trio manually: storage -> layoutManager -> container -> textView.
-     * Minimal helper — callers that need a custom trio can use this instead of relying
-     * on the default NSTextView initialization.
-     */
+    /// Wire a full trio manually: storage -> layoutManager -> container -> textView.
+    /// Minimal helper — callers that need a custom trio can use this instead of relying
+    /// on the default NSTextView initialization.
     public void replaceTextContainer(NSTextContainer container) {
         ObjC.msgSendVoidId(peer, ObjC.sel("replaceTextContainer:"), (MemorySegment) (container == null ? MemorySegment.NULL : container.peer()));
     }
 
-    /** [textView setTextContainer:] */
+    /// [textView setTextContainer:]
     public void setTextContainer(NSTextContainer container) {
         // Not a real AppKit selector, but keep for API symmetry; forward to replace if available
         MemorySegment sel = ObjC.sel("setTextContainer:");

@@ -8,9 +8,7 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSMutableOrderedSet — mutable ordered set.
- */
+/// NSMutableOrderedSet — mutable ordered set.
 public final class NSMutableOrderedSet extends NSOrderedSet {
 
     private static volatile boolean initMut;
@@ -26,14 +24,14 @@ public final class NSMutableOrderedSet extends NSOrderedSet {
         return (peer == null || peer.address() == 0) ? null : new NSMutableOrderedSet(peer);
     }
 
-    /** [NSMutableOrderedSet orderedSet] */
+    /// [NSMutableOrderedSet orderedSet]
     public static NSMutableOrderedSet orderedSet() {
         ensureMutInit();
         MemorySegment s = ObjC.msgSendId(ObjC.cls("NSMutableOrderedSet"), ObjC.sel("orderedSet"));
         return wrap(s);
     }
 
-    /** [NSMutableOrderedSet orderedSetWithCapacity:] */
+    /// [NSMutableOrderedSet orderedSetWithCapacity:]
     public static NSMutableOrderedSet orderedSetWithCapacity(long capacity) {
         ensureMutInit();
         try {
@@ -54,7 +52,7 @@ public final class NSMutableOrderedSet extends NSOrderedSet {
         initMut = true;
     }
 
-    /** addObject: */
+    /// addObject:
     public void addObject(NSObject object) {
         ensureMutInit();
         if (object == null) throw new IllegalArgumentException("addObject: null");
@@ -69,7 +67,7 @@ public final class NSMutableOrderedSet extends NSOrderedSet {
         catch (Throwable t) { throw new RuntimeException("addObject: failed", t); }
     }
 
-    /** insertObject:atIndex: */
+    /// insertObject:atIndex:
     public void insertObjectAtIndex(NSObject object, long index) {
         ensureMutInit();
         if (object == null) throw new IllegalArgumentException("insertObject: null");
@@ -77,14 +75,14 @@ public final class NSMutableOrderedSet extends NSOrderedSet {
         catch (Throwable t) { throw new RuntimeException("insertObject:atIndex: failed", t); }
     }
 
-    /** removeObjectAtIndex: */
+    /// removeObjectAtIndex:
     public void removeObjectAtIndex(long index) {
         ensureMutInit();
         try { hRemoveAt.invokeExact(peer, ObjC.sel("removeObjectAtIndex:"), index); }
         catch (Throwable t) { throw new RuntimeException("removeObjectAtIndex: failed", t); }
     }
 
-    /** removeObject: */
+    /// removeObject:
     public void removeObject(NSObject object) {
         ensureMutInit();
         if (object == null) return;
@@ -92,14 +90,14 @@ public final class NSMutableOrderedSet extends NSOrderedSet {
         catch (Throwable t) { throw new RuntimeException("removeObject: failed", t); }
     }
 
-    /** removeAllObjects */
+    /// removeAllObjects
     public void removeAllObjects() {
         ensureMutInit();
         try { hRemoveAll.invokeExact(peer, ObjC.sel("removeAllObjects")); }
         catch (Throwable t) { throw new RuntimeException("removeAllObjects failed", t); }
     }
 
-    /** addObjectsFromArray: */
+    /// addObjectsFromArray:
     public void addObjectsFromArray(NSArray array) {
         ensureMutInit();
         if (array == null) return;

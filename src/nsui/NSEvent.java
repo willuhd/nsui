@@ -9,10 +9,8 @@ import nsui.objc.ObjC;
 import nsui.objc.Sig;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSEvent — a native event from the run loop. Thin wrapper; the fields you
- * need are pulled from AppKit on demand.
- */
+/// NSEvent — a native event from the run loop. Thin wrapper; the fields you
+/// need are pulled from AppKit on demand.
 public final class NSEvent extends NSObject {
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
@@ -36,18 +34,18 @@ public final class NSEvent extends NSObject {
         initialized = true;
     }
 
-    /** NSEventType (NSUInteger). 1=leftMouseDown 2=leftMouseUp 10=keyDown 11=keyUp. */
+    /// NSEventType (NSUInteger). 1=leftMouseDown 2=leftMouseUp 10=keyDown 11=keyUp.
     public long type() {
         return ObjC.msgSendLong(peer, ObjC.sel("type"));
     }
 
-    /** NSEventTypeLeftMouseDown (1) / LeftMouseUp (2). */
+    /// NSEventTypeLeftMouseDown (1) / LeftMouseUp (2).
     public boolean isMouseEvent() {
         long t = type();
         return t >= 1 && t <= 9;
     }
 
-    /** NSEventTypeKeyDown (10) / KeyUp (11). */
+    /// NSEventTypeKeyDown (10) / KeyUp (11).
     public boolean isKeyEvent() {
         long t = type();
         return t == 10 || t == 11;
@@ -59,21 +57,17 @@ public final class NSEvent extends NSObject {
         }
     }
 
-    /**
-     * Characters of a KEY event (NSString -> String).
-     *
-     * <p><b>Key events only.</b> Guarded: throws IllegalStateException if not a key event.
-     */
+    /// Characters of a KEY event (NSString -> String).
+    ///
+    /// **Key events only.** Guarded: throws IllegalStateException if not a key event.
     public String characters() {
         requireKeyEvent("characters");
         return ObjC.toString(ObjC.msgSendId(peer, ObjC.sel("characters")));
     }
 
-    /**
-     * [event locationInWindow] — mouse location in the window's base coordinate
-     * system (origin bottom-left). POINT is a GROUP return, so the downcall handle
-     * carries an implicit leading SegmentAllocator for the struct it returns.
-     */
+    /// [event locationInWindow] — mouse location in the window's base coordinate
+    /// system (origin bottom-left). POINT is a GROUP return, so the downcall handle
+    /// carries an implicit leading SegmentAllocator for the struct it returns.
     public NSPoint locationInWindow() {
         try {
             MemorySegment seg = (MemorySegment) hLocation.invokeExact((SegmentAllocator) Arena.global(), peer, ObjC.sel("locationInWindow"));
@@ -83,32 +77,30 @@ public final class NSEvent extends NSObject {
         }
     }
 
-    /** [event modifierFlags] — a bitmask (of NSEventModifierFlags, NSUInteger). */
+    /// [event modifierFlags] — a bitmask (of NSEventModifierFlags, NSUInteger).
     public long modifierFlags() {
         return ObjC.msgSendLong(peer, ObjC.sel("modifierFlags"));
     }
 
-    /**
-     * [event keyCode] — hardware keyboard code.
-     *
-     * <p><b>Key events only.</b> Guarded.
-     */
+    /// [event keyCode] — hardware keyboard code.
+    ///
+    /// **Key events only.** Guarded.
     public long keyCode() {
         requireKeyEvent("keyCode");
         return ObjC.msgSendLong(peer, ObjC.sel("keyCode"));
     }
 
-    /** [event buttonNumber] — which mouse button generated the event. */
+    /// [event buttonNumber] — which mouse button generated the event.
     public long buttonNumber() {
         return ObjC.msgSendLong(peer, ObjC.sel("buttonNumber"));
     }
 
-    /** [event clickCount] — how many clicks this event represents. */
+    /// [event clickCount] — how many clicks this event represents.
     public long clickCount() {
         return ObjC.msgSendLong(peer, ObjC.sel("clickCount"));
     }
 
-    /** [event timestamp] — system time of the event in seconds. */
+    /// [event timestamp] — system time of the event in seconds.
     public double timestamp() {
         try {
             return (double) hDouble.invokeExact(peer, ObjC.sel("timestamp"));
@@ -117,22 +109,20 @@ public final class NSEvent extends NSObject {
         }
     }
 
-    /** [event windowNumber] — the window the event is associated with (0 if none). */
+    /// [event windowNumber] — the window the event is associated with (0 if none).
     public long windowNumber() {
         return ObjC.msgSendLong(peer, ObjC.sel("windowNumber"));
     }
 
-    /**
-     * Characters of a KEY event ignoring the current modifier layout (NSString -> String).
-     *
-     * <p><b>Key events only.</b> Guarded.
-     */
+    /// Characters of a KEY event ignoring the current modifier layout (NSString -> String).
+    ///
+    /// **Key events only.** Guarded.
     public String charactersIgnoringModifiers() {
         requireKeyEvent("charactersIgnoringModifiers");
         return ObjC.toString(ObjC.msgSendId(peer, ObjC.sel("charactersIgnoringModifiers")));
     }
 
-    /** [event isARepeat] — true if key is auto-repeat. Key events only — guarded. */
+    /// [event isARepeat] — true if key is auto-repeat. Key events only — guarded.
     public boolean isARepeat() {
         requireKeyEvent("isARepeat");
         try { return (boolean) hBool.invokeExact(peer, ObjC.sel("isARepeat")); } catch (Throwable t) { throw new RuntimeException("isARepeat failed", t); }
@@ -140,91 +130,91 @@ public final class NSEvent extends NSObject {
 
     // ---- additional accessors (80% completeness) ----
 
-    /** [event subtype] — NSEventSubtype. */
+    /// [event subtype] — NSEventSubtype.
     public long subtype() { return ObjC.msgSendLong(peer, ObjC.sel("subtype")); }
 
-    /** [event eventNumber] */
+    /// [event eventNumber]
     public long eventNumber() { return ObjC.msgSendLong(peer, ObjC.sel("eventNumber")); }
 
-    /** [event data1] */
+    /// [event data1]
     public long data1() { return ObjC.msgSendLong(peer, ObjC.sel("data1")); }
 
-    /** [event data2] */
+    /// [event data2]
     public long data2() { return ObjC.msgSendLong(peer, ObjC.sel("data2")); }
 
-    /** [event pressure] — float but returned as double via handle. */
+    /// [event pressure] — float but returned as double via handle.
     public double pressure() {
         try { return (double) hDouble.invokeExact(peer, ObjC.sel("pressure")); } catch (Throwable t) { throw new RuntimeException("pressure failed", t); }
     }
 
-    /** [event deltaX] */
+    /// [event deltaX]
     public double deltaX() {
         try { return (double) hDouble.invokeExact(peer, ObjC.sel("deltaX")); } catch (Throwable t) { throw new RuntimeException("deltaX failed", t); }
     }
 
-    /** [event deltaY] */
+    /// [event deltaY]
     public double deltaY() {
         try { return (double) hDouble.invokeExact(peer, ObjC.sel("deltaY")); } catch (Throwable t) { throw new RuntimeException("deltaY failed", t); }
     }
 
-    /** [event deltaZ] */
+    /// [event deltaZ]
     public double deltaZ() {
         try { return (double) hDouble.invokeExact(peer, ObjC.sel("deltaZ")); } catch (Throwable t) { throw new RuntimeException("deltaZ failed", t); }
     }
 
-    /** [event scrollingDeltaX] */
+    /// [event scrollingDeltaX]
     public double scrollingDeltaX() {
         try { return (double) hDouble.invokeExact(peer, ObjC.sel("scrollingDeltaX")); } catch (Throwable t) { throw new RuntimeException("scrollingDeltaX failed", t); }
     }
 
-    /** [event scrollingDeltaY] */
+    /// [event scrollingDeltaY]
     public double scrollingDeltaY() {
         try { return (double) hDouble.invokeExact(peer, ObjC.sel("scrollingDeltaY")); } catch (Throwable t) { throw new RuntimeException("scrollingDeltaY failed", t); }
     }
 
-    /** [event hasPreciseScrollingDeltas] */
+    /// [event hasPreciseScrollingDeltas]
     public boolean hasPreciseScrollingDeltas() {
         try { return (boolean) hBool.invokeExact(peer, ObjC.sel("hasPreciseScrollingDeltas")); } catch (Throwable t) { throw new RuntimeException("hasPreciseScrollingDeltas failed", t); }
     }
 
-    /** [event momentumPhase] */
+    /// [event momentumPhase]
     public long momentumPhase() { return ObjC.msgSendLong(peer, ObjC.sel("momentumPhase")); }
 
-    /** [event phase] */
+    /// [event phase]
     public long phase() { return ObjC.msgSendLong(peer, ObjC.sel("phase")); }
 
-    /** [event isDirectionInvertedFromDevice] */
+    /// [event isDirectionInvertedFromDevice]
     public boolean isDirectionInvertedFromDevice() {
         try { return (boolean) hBool.invokeExact(peer, ObjC.sel("isDirectionInvertedFromDevice")); } catch (Throwable t) { throw new RuntimeException("isDirectionInvertedFromDevice failed", t); }
     }
 
-    /** [event trackingNumber] */
+    /// [event trackingNumber]
     public long trackingNumber() { return ObjC.msgSendLong(peer, ObjC.sel("trackingNumber")); }
 
-    /** [event magnification] */
+    /// [event magnification]
     public double magnification() {
         try { return (double) hDouble.invokeExact(peer, ObjC.sel("magnification")); } catch (Throwable t) { throw new RuntimeException("magnification failed", t); }
     }
 
-    /** [event deviceID] — NSUInteger */
+    /// [event deviceID] — NSUInteger
     public long deviceID() { return ObjC.msgSendLong(peer, ObjC.sel("deviceID")); }
 
-    /** [event rotation] — float degrees */
+    /// [event rotation] — float degrees
     public double rotation() {
         try { return (double) hDouble.invokeExact(peer, ObjC.sel("rotation")); } catch (Throwable t) { throw new RuntimeException("rotation failed", t); }
     }
 
-    /** [event absoluteX] */
+    /// [event absoluteX]
     public long absoluteX() { return ObjC.msgSendLong(peer, ObjC.sel("absoluteX")); }
-    /** [event absoluteY] */
+    /// [event absoluteY]
     public long absoluteY() { return ObjC.msgSendLong(peer, ObjC.sel("absoluteY")); }
-    /** [event absoluteZ] */
+    /// [event absoluteZ]
     public long absoluteZ() { return ObjC.msgSendLong(peer, ObjC.sel("absoluteZ")); }
 
-    /** [event buttonMask] — NSEventButtonMask */
+    /// [event buttonMask] — NSEventButtonMask
     public long buttonMask() { return ObjC.msgSendLong(peer, ObjC.sel("buttonMask")); }
 
-    /** [event tilt] — NSPoint {x,y} tilt */
+    /// [event tilt] — NSPoint {x,y} tilt
     public NSPoint tilt() {
         try {
             MemorySegment seg = (MemorySegment) hTilt.invokeExact((SegmentAllocator) Arena.global(), peer, ObjC.sel("tilt"));
@@ -232,29 +222,29 @@ public final class NSEvent extends NSObject {
         } catch (Throwable t) { throw new RuntimeException("tilt failed", t); }
     }
 
-    /** [event tangentialPressure] */
+    /// [event tangentialPressure]
     public double tangentialPressure() {
         try { return (double) hDouble.invokeExact(peer, ObjC.sel("tangentialPressure")); } catch (Throwable t) { throw new RuntimeException("tangentialPressure failed", t); }
     }
 
-    /** [event stage] — pressure stage */
+    /// [event stage] — pressure stage
     public long stage() { return ObjC.msgSendLong(peer, ObjC.sel("stage")); }
 
-    /** [event stageTransition] */
+    /// [event stageTransition]
     public double stageTransition() {
         try { return (double) hDouble.invokeExact(peer, ObjC.sel("stageTransition")); } catch (Throwable t) { throw new RuntimeException("stageTransition failed", t); }
     }
 
-    /** [event associatedEventsMask] */
+    /// [event associatedEventsMask]
     public long associatedEventsMask() { return ObjC.msgSendLong(peer, ObjC.sel("associatedEventsMask")); }
 
-    /** [event window] — NSWindow peer or null. */
+    /// [event window] — NSWindow peer or null.
     public MemorySegment window() {
         MemorySegment w = ObjC.msgSendId(peer, ObjC.sel("window"));
         return (w == null || w.address() == 0) ? null : w;
     }
 
-    /** [event charactersByApplyingModifiers:] — key events only, guarded. */
+    /// [event charactersByApplyingModifiers:] — key events only, guarded.
     public String charactersByApplyingModifiers(long modifiers) {
         requireKeyEvent("charactersByApplyingModifiers:");
         try {
@@ -264,7 +254,7 @@ public final class NSEvent extends NSObject {
         } catch (Throwable t) { throw new RuntimeException("charactersByApplyingModifiers: failed", t); }
     }
 
-    /** [NSEvent mouseLocation] — class property NSPoint */
+    /// [NSEvent mouseLocation] — class property NSPoint
     public static NSPoint mouseLocation() {
         try {
             MemorySegment seg = (MemorySegment) ObjC.handle(Sig.of(Ret.POINT)).invokeExact((SegmentAllocator) Arena.global(), ObjC.cls("NSEvent"), ObjC.sel("mouseLocation"));
@@ -272,27 +262,27 @@ public final class NSEvent extends NSObject {
         } catch (Throwable t) { throw new RuntimeException("mouseLocation failed", t); }
     }
 
-    /** [NSEvent modifierFlags] — class property */
+    /// [NSEvent modifierFlags] — class property
     public static long modifierFlagsStatic() {
         return ObjC.msgSendLong(ObjC.cls("NSEvent"), ObjC.sel("modifierFlags"));
     }
 
-    /** [NSEvent pressedMouseButtons] */
+    /// [NSEvent pressedMouseButtons]
     public static long pressedMouseButtons() {
         return ObjC.msgSendLong(ObjC.cls("NSEvent"), ObjC.sel("pressedMouseButtons"));
     }
 
-    /** [NSEvent doubleClickInterval] */
+    /// [NSEvent doubleClickInterval]
     public static double doubleClickInterval() {
         try { return (double) ObjC.handle(Sig.of(Ret.DOUBLE)).invokeExact(ObjC.cls("NSEvent"), ObjC.sel("doubleClickInterval")); } catch (Throwable t) { throw new RuntimeException("doubleClickInterval failed", t); }
     }
 
-    /** [NSEvent keyRepeatDelay] */
+    /// [NSEvent keyRepeatDelay]
     public static double keyRepeatDelay() {
         try { return (double) ObjC.handle(Sig.of(Ret.DOUBLE)).invokeExact(ObjC.cls("NSEvent"), ObjC.sel("keyRepeatDelay")); } catch (Throwable t) { throw new RuntimeException("keyRepeatDelay failed", t); }
     }
 
-    /** [NSEvent keyRepeatInterval] */
+    /// [NSEvent keyRepeatInterval]
     public static double keyRepeatInterval() {
         try { return (double) ObjC.handle(Sig.of(Ret.DOUBLE)).invokeExact(ObjC.cls("NSEvent"), ObjC.sel("keyRepeatInterval")); } catch (Throwable t) { throw new RuntimeException("keyRepeatInterval failed", t); }
     }

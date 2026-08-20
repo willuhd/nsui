@@ -8,10 +8,8 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSFontManager — controls the Font panel and font conversions.
- * Thin 1:1 wrapper over native {@code NSFontManager}.
- */
+/// NSFontManager — controls the Font panel and font conversions.
+/// Thin 1:1 wrapper over native `NSFontManager`.
 public final class NSFontManager extends NSObject {
 
     private static volatile boolean initialized;
@@ -42,7 +40,7 @@ public final class NSFontManager extends NSObject {
         initialized = true;
     }
 
-    /** {@code +[NSFontManager sharedFontManager]} */
+    /// `+[NSFontManager sharedFontManager]`
     public static NSFontManager sharedFontManager() {
         ensureInit();
         MemorySegment p = ObjC.msgSendId(ObjC.cls("NSFontManager"), ObjC.sel("sharedFontManager"));
@@ -51,7 +49,7 @@ public final class NSFontManager extends NSObject {
 
     // ---- selection ----
 
-    /** [manager selectedFont] -> NSFont */
+    /// [manager selectedFont] -> NSFont
     public NSFont selectedFont() {
         ensureInit();
         try {
@@ -62,7 +60,7 @@ public final class NSFontManager extends NSObject {
         }
     }
 
-    /** [manager setSelectedFont:isMultiple:] */
+    /// [manager setSelectedFont:isMultiple:]
     public void setSelectedFont(NSFont font, boolean isMultiple) {
         ensureInit();
         try {
@@ -72,7 +70,7 @@ public final class NSFontManager extends NSObject {
         }
     }
 
-    /** [manager isMultiple] */
+    /// [manager isMultiple]
     public boolean isMultiple() {
         ensureInit();
         try { return (boolean) hBool.invokeExact(peer, ObjC.sel("isMultiple")); } catch (Throwable t) { throw new RuntimeException("isMultiple failed", t); }
@@ -80,7 +78,7 @@ public final class NSFontManager extends NSObject {
 
     // ---- font conversion ----
 
-    /** [manager convertFont:] -> NSFont */
+    /// [manager convertFont:] -> NSFont
     public NSFont convertFont(NSFont font) {
         ensureInit();
         try {
@@ -91,7 +89,7 @@ public final class NSFontManager extends NSObject {
         }
     }
 
-    /** [manager convertFont:toFace:] */
+    /// [manager convertFont:toFace:]
     public NSFont convertFontToFace(NSFont font, String face) {
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.ID, Arg.ID));
@@ -102,7 +100,7 @@ public final class NSFontManager extends NSObject {
         }
     }
 
-    /** [manager convertFont:toFamily:] */
+    /// [manager convertFont:toFamily:]
     public NSFont convertFontToFamily(NSFont font, String family) {
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.ID, Arg.ID));
@@ -113,7 +111,7 @@ public final class NSFontManager extends NSObject {
         }
     }
 
-    /** [manager convertFont:toSize:] */
+    /// [manager convertFont:toSize:]
     public NSFont convertFontToSize(NSFont font, double size) {
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.ID, Arg.DOUBLE));
@@ -124,7 +122,7 @@ public final class NSFontManager extends NSObject {
         }
     }
 
-    /** [manager convertFont:toHaveTrait:] */
+    /// [manager convertFont:toHaveTrait:]
     public NSFont convertFontToHaveTrait(NSFont font, long trait) {
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.ID, Arg.INT));
@@ -137,7 +135,7 @@ public final class NSFontManager extends NSObject {
 
     // ---- traits / weight ----
 
-    /** [manager traitsOfFont:] -> long (NSFontTraitMask) */
+    /// [manager traitsOfFont:] -> long (NSFontTraitMask)
     public long traitsOfFont(NSFont font) {
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.INT, Arg.ID));
@@ -147,7 +145,7 @@ public final class NSFontManager extends NSObject {
         }
     }
 
-    /** [manager weightOfFont:] -> long (weight index) */
+    /// [manager weightOfFont:] -> long (weight index)
     public long weightOfFont(NSFont font) {
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.INT, Arg.ID));
@@ -157,7 +155,7 @@ public final class NSFontManager extends NSObject {
         }
     }
 
-    /** [manager fontWithFamily:traits:weight:size:] */
+    /// [manager fontWithFamily:traits:weight:size:]
     public NSFont fontWithFamilyTraitsWeightSize(String family, long traits, long weight, double size) {
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.ID, Arg.INT, Arg.INT, Arg.DOUBLE));
@@ -170,19 +168,19 @@ public final class NSFontManager extends NSObject {
 
     // ---- collections ----
 
-    /** [manager availableFonts] -> NSArray ids */
+    /// [manager availableFonts] -> NSArray ids
     public MemorySegment availableFonts() {
         ensureInit();
         try { return (MemorySegment) hGetId.invokeExact(peer, ObjC.sel("availableFonts")); } catch (Throwable t) { throw new RuntimeException("availableFonts failed", t); }
     }
 
-    /** [manager availableFontFamilies] -> NSArray ids */
+    /// [manager availableFontFamilies] -> NSArray ids
     public MemorySegment availableFontFamilies() {
         ensureInit();
         try { return (MemorySegment) hGetId.invokeExact(peer, ObjC.sel("availableFontFamilies")); } catch (Throwable t) { throw new RuntimeException("availableFontFamilies failed", t); }
     }
 
-    /** [manager availableMembersOfFontFamily:] -> NSArray */
+    /// [manager availableMembersOfFontFamily:] -> NSArray
     public MemorySegment availableMembersOfFontFamily(String family) {
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.ID));
@@ -194,7 +192,7 @@ public final class NSFontManager extends NSObject {
 
     // ---- font panel ----
 
-    /** [manager fontPanel:] — create/display font panel */
+    /// [manager fontPanel:] — create/display font panel
     public NSFontPanel fontPanel(boolean create) {
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.BOOL));
@@ -205,29 +203,29 @@ public final class NSFontManager extends NSObject {
         }
     }
 
-    /** [manager orderFrontFontPanel:] */
+    /// [manager orderFrontFontPanel:]
     public void orderFrontFontPanel(MemorySegment sender) {
         ObjC.msgSendVoidId(peer, ObjC.sel("orderFrontFontPanel:"), (MemorySegment) (sender == null ? MemorySegment.NULL : sender));
     }
 
     // ---- action helpers ----
 
-    /** [manager addFontTrait:] */
+    /// [manager addFontTrait:]
     public void addFontTrait(MemorySegment sender) {
         ObjC.msgSendVoidId(peer, ObjC.sel("addFontTrait:"), (MemorySegment) (sender == null ? MemorySegment.NULL : sender));
     }
 
-    /** [manager removeFontTrait:] */
+    /// [manager removeFontTrait:]
     public void removeFontTrait(MemorySegment sender) {
         ObjC.msgSendVoidId(peer, ObjC.sel("removeFontTrait:"), (MemorySegment) (sender == null ? MemorySegment.NULL : sender));
     }
 
-    /** [manager modifyFont:] */
+    /// [manager modifyFont:]
     public void modifyFont(MemorySegment sender) {
         ObjC.msgSendVoidId(peer, ObjC.sel("modifyFont:"), (MemorySegment) (sender == null ? MemorySegment.NULL : sender));
     }
 
-    /** [manager isEnabled] */
+    /// [manager isEnabled]
     public boolean isEnabled() {
         return ObjC.msgSendBool(peer, ObjC.sel("isEnabled"));
     }

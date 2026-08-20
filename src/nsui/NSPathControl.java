@@ -8,16 +8,14 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSPathControl — a control that displays a file system path. Thin, 1:1,
- * stateless wrapper over the native {@code NSPathControl}: each method maps to
- * one {@code objc_msgSend} selector. Follows the project template: volatile
- * initialized, synchronized ensureInit, ObjC.handle(Sig.of...), invokeExact,
- * static create/wrap.
- *
- * <p>Created via {@code [[NSPathControl alloc] initWithFrame:]}; configure
- * via {@code setURL:} / {@code URL} and {@code setPathStyle:}.
- */
+/// NSPathControl — a control that displays a file system path. Thin, 1:1,
+/// stateless wrapper over the native `NSPathControl`: each method maps to
+/// one `objc_msgSend` selector. Follows the project template: volatile
+/// initialized, synchronized ensureInit, ObjC.handle(Sig.of...), invokeExact,
+/// static create/wrap.
+///
+/// Created via `[[NSPathControl alloc] initWithFrame:]`; configure
+/// via `setURL:` / `URL` and `setPathStyle:`.
 public final class NSPathControl extends NSControl {
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
@@ -35,7 +33,7 @@ public final class NSPathControl extends NSControl {
         ensureInit();
     }
 
-    /** Wrap an existing NSPathControl peer. */
+    /// Wrap an existing NSPathControl peer.
     public static NSPathControl wrap(MemorySegment peer) {
         return (peer == null || peer.address() == 0) ? null : new NSPathControl(peer);
     }
@@ -52,7 +50,7 @@ public final class NSPathControl extends NSControl {
         initialized = true;
     }
 
-    /** {@code [[NSPathControl alloc] initWithFrame:frame]} — a new path control. */
+    /// `[[NSPathControl alloc] initWithFrame:frame]` — a new path control.
     public static NSPathControl create(NSRect frame) {
         ensureInit();
         MemorySegment p = ObjC.msgSendId(ObjC.cls("NSPathControl"), ObjC.sel("alloc"));
@@ -67,7 +65,7 @@ public final class NSPathControl extends NSControl {
 
     // ---------------------------------------------------------------- instance API
 
-    /** [control setURL:] — NSURL peer (or nil to clear). */
+    /// [control setURL:] — NSURL peer (or nil to clear).
     public void setURL(MemorySegment url) {
         try {
             MemorySegment u = (url == null || url.address() == 0) ? MemorySegment.NULL : url;
@@ -77,7 +75,7 @@ public final class NSPathControl extends NSControl {
         }
     }
 
-    /** [control URL] — NSURL peer or nil. */
+    /// [control URL] — NSURL peer or nil.
     public MemorySegment URL() {
         try {
             return (MemorySegment) hGetURL.invokeExact(peer, ObjC.sel("URL"));
@@ -86,7 +84,7 @@ public final class NSPathControl extends NSControl {
         }
     }
 
-    /** Convenience: set URL from a file system path string via NSURL fileURLWithPath:. */
+    /// Convenience: set URL from a file system path string via NSURL fileURLWithPath:.
     public void setURLPath(String path) {
         if (path == null) {
             setURL(MemorySegment.NULL);
@@ -96,7 +94,7 @@ public final class NSPathControl extends NSControl {
         setURL(url);
     }
 
-    /** Convenience: get file system path string from NSURL via [URL path]. */
+    /// Convenience: get file system path string from NSURL via [URL path].
     public String URLPath() {
         MemorySegment url = URL();
         if (url == null || url.address() == 0) return null;
@@ -104,7 +102,7 @@ public final class NSPathControl extends NSControl {
         return ObjC.toString(path);
     }
 
-    /** [control pathStyle] — NSPathStyle (0=standard, 1=navigational, 2=popUp). */
+    /// [control pathStyle] — NSPathStyle (0=standard, 1=navigational, 2=popUp).
     public long pathStyle() {
         try {
             return (long) hGetPathStyle.invokeExact(peer, ObjC.sel("pathStyle"));
@@ -113,7 +111,7 @@ public final class NSPathControl extends NSControl {
         }
     }
 
-    /** [control setPathStyle:] — NSPathStyle. */
+    /// [control setPathStyle:] — NSPathStyle.
     public void setPathStyle(long style) {
         try {
             hSetPathStyle.invokeExact(peer, ObjC.sel("setPathStyle:"), style);
@@ -122,7 +120,7 @@ public final class NSPathControl extends NSControl {
         }
     }
 
-    /** [control setDoubleAction:] — SEL for double-click on a path component. */
+    /// [control setDoubleAction:] — SEL for double-click on a path component.
     public void setDoubleAction(String selector) {
         try {
             hSetDoubleAction.invokeExact(peer, ObjC.sel("setDoubleAction:"), (MemorySegment) (selector == null ? MemorySegment.NULL : ObjC.sel(selector)));
@@ -131,7 +129,7 @@ public final class NSPathControl extends NSControl {
         }
     }
 
-    /** [control doubleAction] — SEL id or nil. */
+    /// [control doubleAction] — SEL id or nil.
     public MemorySegment doubleAction() {
         try {
             return (MemorySegment) hGetURL.invokeExact(peer, ObjC.sel("doubleAction"));
@@ -140,12 +138,12 @@ public final class NSPathControl extends NSControl {
         }
     }
 
-    /** [control placeholderString] — NSString. */
+    /// [control placeholderString] — NSString.
     public String placeholderString() {
         return ObjC.toString(ObjC.msgSendId(peer, ObjC.sel("placeholderString")));
     }
 
-    /** [control setPlaceholderString:] */
+    /// [control setPlaceholderString:]
     public void setPlaceholderString(String s) {
         try {
             hSetPlaceholder.invokeExact(peer, ObjC.sel("setPlaceholderString:"), (MemorySegment) (s == null ? MemorySegment.NULL : ObjC.nsstring(s)));
@@ -154,7 +152,7 @@ public final class NSPathControl extends NSControl {
         }
     }
 
-    /** [control isEditable]. */
+    /// [control isEditable].
     public boolean isEditable() {
         return ObjC.msgSendBool(peer, ObjC.sel("isEditable"));
     }
@@ -163,7 +161,7 @@ public final class NSPathControl extends NSControl {
         ObjC.msgSendVoidBool(peer, ObjC.sel("setEditable:"), flag);
     }
 
-    /** [control allowedTypes] — NSArray of UTIs (id). */
+    /// [control allowedTypes] — NSArray of UTIs (id).
     public MemorySegment allowedTypes() {
         return ObjC.msgSendId(peer, ObjC.sel("allowedTypes"));
     }
@@ -172,7 +170,7 @@ public final class NSPathControl extends NSControl {
         ObjC.msgSendVoidId(peer, ObjC.sel("setAllowedTypes:"), (MemorySegment) (types == null ? MemorySegment.NULL : types));
     }
 
-    /** [control clickedPathItem] — NSPathControlItem peer or nil. */
+    /// [control clickedPathItem] — NSPathControlItem peer or nil.
     public MemorySegment clickedPathItem() {
         return ObjC.msgSendId(peer, ObjC.sel("clickedPathItem"));
     }

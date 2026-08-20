@@ -8,9 +8,7 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSPrintInfo — minimal wrapper over native {@code NSPrintInfo}.
- */
+/// NSPrintInfo — minimal wrapper over native `NSPrintInfo`.
 public final class NSPrintInfo extends NSObject {
 
     private static volatile boolean initialized;
@@ -26,14 +24,14 @@ public final class NSPrintInfo extends NSObject {
         return (peer == null || peer.address() == 0) ? null : new NSPrintInfo(peer);
     }
 
-    /** [NSPrintInfo sharedPrintInfo] */
+    /// [NSPrintInfo sharedPrintInfo]
     public static NSPrintInfo sharedPrintInfo() {
         ensureInit();
         MemorySegment s = ObjC.msgSendId(ObjC.cls("NSPrintInfo"), ObjC.sel("sharedPrintInfo"));
         return wrap(s);
     }
 
-    /** [NSPrintInfo defaultPrintInfo] fallback */
+    /// [NSPrintInfo defaultPrintInfo] fallback
     public static NSPrintInfo defaultPrintInfo() {
         ensureInit();
         try {
@@ -43,7 +41,7 @@ public final class NSPrintInfo extends NSObject {
         return sharedPrintInfo();
     }
 
-    /** [[NSPrintInfo alloc] init] */
+    /// [[NSPrintInfo alloc] init]
     public static NSPrintInfo create() {
         ensureInit();
         MemorySegment alloc = ObjC.msgSendId(ObjC.cls("NSPrintInfo"), ObjC.sel("alloc"));
@@ -58,7 +56,7 @@ public final class NSPrintInfo extends NSObject {
         initialized = true;
     }
 
-    /** paperSize */
+    /// paperSize
     public NSSize paperSize() {
         ensureInit();
         try {
@@ -67,7 +65,7 @@ public final class NSPrintInfo extends NSObject {
         } catch (Throwable t) { throw new RuntimeException("paperSize failed", t); }
     }
 
-    /** setPaperSize: */
+    /// setPaperSize:
     public void setPaperSize(NSSize size) {
         ensureInit();
         if (size == null) return;
@@ -75,7 +73,7 @@ public final class NSPrintInfo extends NSObject {
         catch (Throwable t) { throw new RuntimeException("setPaperSize: failed", t); }
     }
 
-    /** orientation — 0 portrait, 1 landscape. */
+    /// orientation — 0 portrait, 1 landscape.
     public long orientation() {
         ensureInit();
         try {
@@ -84,7 +82,7 @@ public final class NSPrintInfo extends NSObject {
         } catch (Throwable t) { throw new RuntimeException("orientation failed", t); }
     }
 
-    /** setOrientation: */
+    /// setOrientation:
     public void setOrientation(long orientation) {
         ensureInit();
         try {
@@ -93,7 +91,7 @@ public final class NSPrintInfo extends NSObject {
         } catch (Throwable t) { throw new RuntimeException("setOrientation: failed", t); }
     }
 
-    /** dictionary — underlying printing dictionary. */
+    /// dictionary — underlying printing dictionary.
     public NSDictionary dictionary() {
         ensureInit();
         try {
@@ -103,7 +101,7 @@ public final class NSPrintInfo extends NSObject {
         } catch (Throwable t) { throw new RuntimeException("dictionary failed", t); }
     }
 
-    /** jobDisposition — NSString. */
+    /// jobDisposition — NSString.
     public String jobDisposition() {
         ensureInit();
         try {

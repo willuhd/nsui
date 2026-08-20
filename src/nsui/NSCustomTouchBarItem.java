@@ -8,19 +8,17 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSCustomTouchBarItem — a view-backed item for an NSTouchBar.
- * Thin 1:1, stateless wrapper over AppKit {@code NSCustomTouchBarItem}.
- * Each method maps to one {@code objc_msgSend}.
- * Follows the project template: volatile initialized, synchronized ensureInit,
- * ObjC.handle(Sig.of...), invokeExact, static create/wrap.
- *
- * <p>Supports full Touch Bar demo: color swatches (NSColorWell or NSButton
- * with backgroundColor/bezelColor), icon buttons (NSBoldTemplate,
- * NSItalicTemplate via NSImage.imageNamed), and arbitrary custom NSView
- * (layer-backed) — all installed via {@code setView:} and returned from
- * {@code touchBar:makeItemForIdentifier:} delegate.
- */
+/// NSCustomTouchBarItem — a view-backed item for an NSTouchBar.
+/// Thin 1:1, stateless wrapper over AppKit `NSCustomTouchBarItem`.
+/// Each method maps to one `objc_msgSend`.
+/// Follows the project template: volatile initialized, synchronized ensureInit,
+/// ObjC.handle(Sig.of...), invokeExact, static create/wrap.
+///
+/// Supports full Touch Bar demo: color swatches (NSColorWell or NSButton
+/// with backgroundColor/bezelColor), icon buttons (NSBoldTemplate,
+/// NSItalicTemplate via NSImage.imageNamed), and arbitrary custom NSView
+/// (layer-backed) — all installed via `setView:` and returned from
+/// `touchBar:makeItemForIdentifier:` delegate.
 public class NSCustomTouchBarItem extends NSTouchBarItem {
 
     private static volatile boolean initialized;
@@ -45,7 +43,7 @@ public class NSCustomTouchBarItem extends NSTouchBarItem {
         initialized = true;
     }
 
-    /** alloc + initWithIdentifier: — create custom item with identifier. */
+    /// alloc + initWithIdentifier: — create custom item with identifier.
     public static NSCustomTouchBarItem create(String identifier) {
         ensureInit();
         MemorySegment p = ObjC.msgSendId(ObjC.cls("NSCustomTouchBarItem"), ObjC.sel("alloc"));
@@ -58,7 +56,7 @@ public class NSCustomTouchBarItem extends NSTouchBarItem {
         return new NSCustomTouchBarItem(p);
     }
 
-    /** Raw peer variant: initWithIdentifier: with id. */
+    /// Raw peer variant: initWithIdentifier: with id.
     public static NSCustomTouchBarItem create(MemorySegment identifier) {
         ensureInit();
         MemorySegment p = ObjC.msgSendId(ObjC.cls("NSCustomTouchBarItem"), ObjC.sel("alloc"));
@@ -72,7 +70,7 @@ public class NSCustomTouchBarItem extends NSTouchBarItem {
         return new NSCustomTouchBarItem(p);
     }
 
-    /** view — NSView peer or null (guarded via respondsToSelector:). */
+    /// view — NSView peer or null (guarded via respondsToSelector:).
     @Override
     public NSView view() {
         ensureInit();
@@ -97,7 +95,7 @@ public class NSCustomTouchBarItem extends NSTouchBarItem {
         } catch (Throwable t) { /* no-op if absent */ }
     }
 
-    /** customizationLabel — NSString or null. */
+    /// customizationLabel — NSString or null.
     public String customizationLabel() {
         ensureInit();
         try {
@@ -108,7 +106,7 @@ public class NSCustomTouchBarItem extends NSTouchBarItem {
         }
     }
 
-    /** setCustomizationLabel: — NSString. */
+    /// setCustomizationLabel: — NSString.
     public void setCustomizationLabel(String label) {
         ensureInit();
         try {
@@ -119,7 +117,7 @@ public class NSCustomTouchBarItem extends NSTouchBarItem {
         }
     }
 
-    /** setCustomizationLabel: raw id variant. */
+    /// setCustomizationLabel: raw id variant.
     public void setCustomizationLabel(MemorySegment label) {
         ensureInit();
         try {

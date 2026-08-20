@@ -8,10 +8,8 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSString — typed wrapper over a native {@code NSString} (id).
- * Thin, stateless: every method maps to one {@code objc_msgSend}.
- */
+/// NSString — typed wrapper over a native `NSString` (id).
+/// Thin, stateless: every method maps to one `objc_msgSend`.
 public final class NSString extends NSObject {
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
@@ -26,18 +24,18 @@ public final class NSString extends NSObject {
         ensureInit();
     }
 
-    /** Wrap a native NSString id (null for nil). */
+    /// Wrap a native NSString id (null for nil).
     public static NSString wrap(MemorySegment peer) {
         return (peer == null || peer.address() == 0) ? null : new NSString(peer);
     }
 
-    /** Create an NSString from a Java string via {@code +stringWithUTF8String:}. */
+    /// Create an NSString from a Java string via `+stringWithUTF8String:`.
     public static NSString of(String javaString) {
         if (javaString == null) return null;
         return wrap(ObjC.nsstring(javaString));
     }
 
-    /** Alias for {@link #of(String)} — explicit nsstring name. */
+    /// Alias for `of` — explicit nsstring name.
     public static NSString stringWithUTF8String(String s) {
         return of(s);
     }
@@ -52,12 +50,12 @@ public final class NSString extends NSObject {
         initialized = true;
     }
 
-    /** Java String contents via {@code UTF8String} (uses ObjC.toString). */
+    /// Java String contents via `UTF8String` (uses ObjC.toString).
     public String string() {
         return ObjC.toString(peer);
     }
 
-    /** length — number of UTF-16 code units (NSUInteger). */
+    /// length — number of UTF-16 code units (NSUInteger).
     public long length() {
         ensureInit();
         try {
@@ -67,7 +65,7 @@ public final class NSString extends NSObject {
         }
     }
 
-    /** isEqualToString: — equality with another NSString. */
+    /// isEqualToString: — equality with another NSString.
     public boolean isEqual(NSString other) {
         ensureInit();
         if (other == null) return false;
@@ -78,14 +76,14 @@ public final class NSString extends NSObject {
         }
     }
 
-    /** isEqualToString: — convenience overload with Java String (creates temporary NSString). */
+    /// isEqualToString: — convenience overload with Java String (creates temporary NSString).
     public boolean isEqualToString(String javaString) {
         if (javaString == null) return false;
         NSString other = of(javaString);
         return isEqual(other);
     }
 
-    /** isEqual: — generic ObjC equality (id). */
+    /// isEqual: — generic ObjC equality (id).
     public boolean isEqualTo(NSObject other) {
         ensureInit();
         if (other == null) return false;
@@ -97,7 +95,7 @@ public final class NSString extends NSObject {
         }
     }
 
-    /** substringWithRange: — returns a new NSString for the given range (requires RANGE vocab). */
+    /// substringWithRange: — returns a new NSString for the given range (requires RANGE vocab).
     public NSString substringWithRange(NSRange range) {
         ensureInit();
         try {
@@ -109,7 +107,7 @@ public final class NSString extends NSObject {
         }
     }
 
-    /** rangeOfString: — location of substring or NOT_FOUND. */
+    /// rangeOfString: — location of substring or NOT_FOUND.
     public NSRange rangeOfString(String substring) {
         ensureInit();
         if (substring == null) return new NSRange(NSRange.NOT_FOUND, 0);

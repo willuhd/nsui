@@ -7,10 +7,8 @@ import nsui.objc.ObjC;
 import nsui.objc.Sig;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSCursor — minimal wrapper over AppKit NSCursor.
- * Provides standard cursors and push/pop/set.
- */
+/// NSCursor — minimal wrapper over AppKit NSCursor.
+/// Provides standard cursors and push/pop/set.
 public final class NSCursor extends NSObject {
 
     private static volatile boolean initialized;
@@ -55,12 +53,12 @@ public final class NSCursor extends NSObject {
     public static NSCursor resizeUpDownCursor() { return cursorWithSel("resizeUpDownCursor"); }
     public static NSCursor disappearingItemCursor() { return cursorWithSel("disappearingItemCursor"); }
 
-    /** +[NSCursor currentCursor] */
+    /// +[NSCursor currentCursor]
     public static NSCursor currentCursor() {
         return cursorWithSel("currentCursor");
     }
 
-    /** -set — make this the current cursor */
+    /// -set — make this the current cursor
     public void set() {
         ensureInit();
         try {
@@ -70,7 +68,7 @@ public final class NSCursor extends NSObject {
         }
     }
 
-    /** -push */
+    /// -push
     public void push() {
         ensureInit();
         try {
@@ -80,7 +78,7 @@ public final class NSCursor extends NSObject {
         }
     }
 
-    /** -pop — class method actually, but also instance pop */
+    /// -pop — class method actually, but also instance pop
     public void pop() {
         ensureInit();
         try {
@@ -96,7 +94,7 @@ public final class NSCursor extends NSObject {
         }
     }
 
-    /** +[NSCursor pop] class helper */
+    /// +[NSCursor pop] class helper
     public static void popCursor() {
         ensureInit();
         try {
@@ -107,7 +105,7 @@ public final class NSCursor extends NSObject {
         }
     }
 
-    /** -setOnMouseEntered: (bool) */
+    /// -setOnMouseEntered: (bool)
     public boolean isSetOnMouseEntered() {
         ensureInit();
         try {
@@ -122,7 +120,7 @@ public final class NSCursor extends NSObject {
         ObjC.msgSendVoidBool(peer, ObjC.sel("setOnMouseEntered:"), flag);
     }
 
-    /** -image -> NSImage */
+    /// -image -> NSImage
     public NSImage image() {
         ensureInit();
         try {
@@ -133,7 +131,7 @@ public final class NSCursor extends NSObject {
         }
     }
 
-    /** -hotSpot -> NSPoint */
+    /// -hotSpot -> NSPoint
     public NSPoint hotSpot() {
         ensureInit();
         try {

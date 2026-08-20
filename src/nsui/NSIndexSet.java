@@ -8,9 +8,7 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSIndexSet — minimal wrapper over native {@code NSIndexSet} / {@code NSMutableIndexSet}.
- */
+/// NSIndexSet — minimal wrapper over native `NSIndexSet` / `NSMutableIndexSet`.
 public class NSIndexSet extends NSObject {
 
     private static volatile boolean initialized;
@@ -28,14 +26,14 @@ public class NSIndexSet extends NSObject {
         return (peer == null || peer.address() == 0) ? null : new NSIndexSet(peer);
     }
 
-    /** [NSIndexSet indexSet] — empty. */
+    /// [NSIndexSet indexSet] — empty.
     public static NSIndexSet indexSet() {
         ensureInit();
         MemorySegment s = ObjC.msgSendId(ObjC.cls("NSIndexSet"), ObjC.sel("indexSet"));
         return wrap(s);
     }
 
-    /** [NSIndexSet indexSetWithIndex:] */
+    /// [NSIndexSet indexSetWithIndex:]
     public static NSIndexSet indexSetWithIndex(long index) {
         ensureInit();
         try {
@@ -45,7 +43,7 @@ public class NSIndexSet extends NSObject {
         } catch (Throwable t) { throw new RuntimeException("indexSetWithIndex: failed", t); }
     }
 
-    /** [NSIndexSet indexSetWithIndexesInRange:] */
+    /// [NSIndexSet indexSetWithIndexesInRange:]
     public static NSIndexSet indexSetWithIndexesInRange(NSRange range) {
         ensureInit();
         try {
@@ -64,7 +62,7 @@ public class NSIndexSet extends NSObject {
         initialized = true;
     }
 
-    /** count */
+    /// count
     public long count() {
         ensureInit();
         try { return (long) hCount.invokeExact(peer, ObjC.sel("count")); }
@@ -73,14 +71,14 @@ public class NSIndexSet extends NSObject {
 
     public boolean isEmpty() { return count() == 0; }
 
-    /** containsIndex: */
+    /// containsIndex:
     public boolean containsIndex(long index) {
         ensureInit();
         try { return (boolean) hContains.invokeExact(peer, ObjC.sel("containsIndex:"), index); }
         catch (Throwable t) { throw new RuntimeException("containsIndex: failed", t); }
     }
 
-    /** containsIndexesInRange: */
+    /// containsIndexesInRange:
     public boolean containsIndexesInRange(NSRange range) {
         ensureInit();
         try {
@@ -89,21 +87,21 @@ public class NSIndexSet extends NSObject {
         } catch (Throwable t) { throw new RuntimeException("containsIndexesInRange: failed", t); }
     }
 
-    /** firstIndex — NSNotFound if empty. */
+    /// firstIndex — NSNotFound if empty.
     public long firstIndex() {
         ensureInit();
         try { return (long) hFirstIndex.invokeExact(peer, ObjC.sel("firstIndex")); }
         catch (Throwable t) { throw new RuntimeException("firstIndex failed", t); }
     }
 
-    /** lastIndex — NSNotFound if empty. */
+    /// lastIndex — NSNotFound if empty.
     public long lastIndex() {
         ensureInit();
         try { return (long) hLastIndex.invokeExact(peer, ObjC.sel("lastIndex")); }
         catch (Throwable t) { throw new RuntimeException("lastIndex failed", t); }
     }
 
-    /** isEqualToIndexSet: */
+    /// isEqualToIndexSet:
     public boolean isEqualToIndexSet(NSIndexSet other) {
         ensureInit();
         if (other == null) return false;
@@ -113,7 +111,7 @@ public class NSIndexSet extends NSObject {
         } catch (Throwable t) { throw new RuntimeException("isEqualToIndexSet: failed", t); }
     }
 
-    /** enumerateIndexes — convenience callback for testing. */
+    /// enumerateIndexes — convenience callback for testing.
     public void enumerateIndexes(java.util.function.LongConsumer block) {
         ensureInit();
         long n = count();

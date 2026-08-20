@@ -10,13 +10,11 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSImage — an AppKit image. Thin, 1:1, stateless wrapper over a native
- * {@code NSImage}: every method maps to one {@code objc_msgSend} selector and no
- * Java state is cached beyond the peer. An NSImage lives independently of any
- * view; it is drawn either directly (via {@link #drawInRect} from a
- * {@link NSView.Drawable} callback) or through an {@link NSImageView} control.
- */
+/// NSImage — an AppKit image. Thin, 1:1, stateless wrapper over a native
+/// `NSImage`: every method maps to one `objc_msgSend` selector and no
+/// Java state is cached beyond the peer. An NSImage lives independently of any
+/// view; it is drawn either directly (via `drawInRect` from a
+/// `Drawable` callback) or through an `NSImageView` control.
 public final class NSImage extends NSObject {
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
@@ -66,14 +64,12 @@ public final class NSImage extends NSObject {
         initialized = true;
     }
 
-    /**
-     * Load an image from a file on disk. Modern AppKit (macOS SDK) has no
-     * {@code +imageWithContentsOfFile:} class method — the file-loading entry
-     * points are {@code -initWithContentsOfFile:} and {@code -initWithContentsOfURL:}
-     * — so this factory uses {@code [[NSImage alloc] initWithContentsOfFile:path]}.
-     * Returns {@code null} if init returns nil (e.g. the file does not exist or is
-     * not a supported image format).
-     */
+    /// Load an image from a file on disk. Modern AppKit (macOS SDK) has no
+    /// `+imageWithContentsOfFile:` class method — the file-loading entry
+    /// points are `-initWithContentsOfFile:` and `-initWithContentsOfURL:`
+    /// — so this factory uses `[[NSImage alloc] initWithContentsOfFile:path]`.
+    /// Returns `null` if init returns nil (e.g. the file does not exist or is
+    /// not a supported image format).
     public static NSImage imageWithContentsOfFile(String path) {
         ensureInit();
         MemorySegment img = ObjC.msgSendId(ObjC.cls("NSImage"), ObjC.sel("alloc"));
@@ -85,7 +81,7 @@ public final class NSImage extends NSObject {
         return (img == null || img.address() == 0) ? null : new NSImage(img);
     }
 
-    /** {@code [[NSImage alloc] initWithContentsOfURL:url]} — load from a file URL or remote URL. */
+    /// `[[NSImage alloc] initWithContentsOfURL:url]` — load from a file URL or remote URL.
     public static NSImage imageWithContentsOfURL(String urlString) {
         ensureInit();
         // Build NSURL via +[NSURL fileURLWithPath:] if it's a filesystem path, otherwise URLWithString.
@@ -106,7 +102,7 @@ public final class NSImage extends NSObject {
         return (img == null || img.address() == 0) ? null : new NSImage(img);
     }
 
-    /** {@code [[NSImage alloc] initWithContentsOfURL:nsURL]} — load from an NSURL peer directly. */
+    /// `[[NSImage alloc] initWithContentsOfURL:nsURL]` — load from an NSURL peer directly.
     public static NSImage imageWithContentsOfURL(MemorySegment nsURL) {
         ensureInit();
         if (nsURL == null || nsURL.address() == 0) return null;
@@ -119,7 +115,7 @@ public final class NSImage extends NSObject {
         return (img == null || img.address() == 0) ? null : new NSImage(img);
     }
 
-    /** {@code [NSImage imageNamed:name]} — system or asset-catalog named image (nil if not found). */
+    /// `[NSImage imageNamed:name]` — system or asset-catalog named image (nil if not found).
     public static NSImage imageNamed(String name) {
         ensureInit();
         if (name == null || name.isEmpty()) return null;
@@ -127,10 +123,10 @@ public final class NSImage extends NSObject {
         return (p == null || p.address() == 0) ? null : new NSImage(p);
     }
 
-    /** Convenience alias for {@link #imageNamed}. */
+    /// Convenience alias for `imageNamed`.
     public static NSImage named(String name) { return imageNamed(name); }
 
-    /** {@code [NSImage imageWithSystemSymbolName:accessibilityDescription:]} — SF Symbol (macOS 11+, nil if not found). */
+    /// `[NSImage imageWithSystemSymbolName:accessibilityDescription:]` — SF Symbol (macOS 11+, nil if not found).
     public static NSImage imageWithSystemSymbolName(String symbolName, String accessibilityDescription) {
         ensureInit();
         if (symbolName == null || symbolName.isEmpty()) return null;
@@ -147,14 +143,14 @@ public final class NSImage extends NSObject {
         }
     }
 
-    /** {@code [NSImage imageWithSystemSymbolName:]} convenience with nil description. */
+    /// `[NSImage imageWithSystemSymbolName:]` convenience with nil description.
     public static NSImage imageWithSystemSymbolName(String symbolName) {
         return imageWithSystemSymbolName(symbolName, null);
     }
 
     // ---------------------------------------------------------------- instance API
 
-    /** [image size] — the image's size in points (struct return). */
+    /// [image size] — the image's size in points (struct return).
     public NSSize size() {
         try {
             // FFM gives group-layout returns an implicit leading SegmentAllocator param.
@@ -165,16 +161,14 @@ public final class NSImage extends NSObject {
         }
     }
 
-    /** [image isValid] — whether the image contains drawable data (load succeeded). */
+    /// [image isValid] — whether the image contains drawable data (load succeeded).
     public boolean isValid() {
         return ObjC.msgSendBool(peer, ObjC.sel("isValid"));
     }
 
-    /**
-     * [image drawInRect:rect] — composite the image into the CURRENT graphics
-     * context (the view's drawing context when called from a {@link NSView.Drawable}),
-     * scaled to {@code rect} in the recipient's (typically the view's) coordinates.
-     */
+    /// [image drawInRect:rect] — composite the image into the CURRENT graphics
+    /// context (the view's drawing context when called from a `Drawable`),
+    /// scaled to `rect` in the recipient's (typically the view's) coordinates.
     public void drawInRect(NSRect rect) {
         try {
             hDrawRect.invokeExact(peer, ObjC.sel("drawInRect:"), rect.toSegment());
@@ -185,7 +179,7 @@ public final class NSImage extends NSObject {
 
     // ---- additions for completeness ----
 
-    /** [image TIFFRepresentation] — TIFF data for the image (NSData peer), or null if none. */
+    /// [image TIFFRepresentation] — TIFF data for the image (NSData peer), or null if none.
     public MemorySegment TIFFRepresentation() {
         try {
             MemorySegment d = (MemorySegment) hTIFF.invokeExact(peer, ObjC.sel("TIFFRepresentation"));
@@ -195,7 +189,7 @@ public final class NSImage extends NSObject {
         }
     }
 
-    /** [image name] — the image's name (registered via setName:), or null. */
+    /// [image name] — the image's name (registered via setName:), or null.
     public String name() {
         try {
             MemorySegment s = (MemorySegment) hName.invokeExact(peer, ObjC.sel("name"));
@@ -205,7 +199,7 @@ public final class NSImage extends NSObject {
         }
     }
 
-    /** [image setName:] — register the image under a name; returns whether succeeded. */
+    /// [image setName:] — register the image under a name; returns whether succeeded.
     public boolean setName(String name) {
         try {
             MemorySegment ns = name == null ? MemorySegment.NULL : ObjC.nsstring(name);
@@ -215,7 +209,7 @@ public final class NSImage extends NSObject {
         }
     }
 
-    /** [image capInsets] — edge insets for 9-part scaling (NSEdgeInsets ~ 4 doubles, returned as NSRect). */
+    /// [image capInsets] — edge insets for 9-part scaling (NSEdgeInsets ~ 4 doubles, returned as NSRect).
     public NSRect capInsets() {
         try {
             MemorySegment s = (MemorySegment) hCapInsets.invokeExact((SegmentAllocator) Arena.global(), peer, ObjC.sel("capInsets"));
@@ -226,7 +220,7 @@ public final class NSImage extends NSObject {
         }
     }
 
-    /** [image setCapInsets:] — edge insets for 9-part scaling. */
+    /// [image setCapInsets:] — edge insets for 9-part scaling.
     public void setCapInsets(NSRect insets) {
         try {
             hSetCapInsets.invokeExact(peer, ObjC.sel("setCapInsets:"), insets.toSegment());
@@ -235,7 +229,7 @@ public final class NSImage extends NSObject {
         }
     }
 
-    /** [image isTemplate] — whether the image is a template (monochrome, tinted by system). */
+    /// [image isTemplate] — whether the image is a template (monochrome, tinted by system).
     public boolean isTemplate() {
         try {
             return (boolean) hTemplate.invokeExact(peer, ObjC.sel("isTemplate"));
@@ -244,7 +238,7 @@ public final class NSImage extends NSObject {
         }
     }
 
-    /** [image setTemplate:] — mark as template image. */
+    /// [image setTemplate:] — mark as template image.
     public void setTemplate(boolean flag) {
         try {
             hSetTemplate.invokeExact(peer, ObjC.sel("setTemplate:"), flag);
@@ -253,7 +247,7 @@ public final class NSImage extends NSObject {
         }
     }
 
-    /** [image resizingMode] — NSImageResizingMode (0=tile, 1=stretch). */
+    /// [image resizingMode] — NSImageResizingMode (0=tile, 1=stretch).
     public long resizingMode() {
         try {
             return (long) hResizingMode.invokeExact(peer, ObjC.sel("resizingMode"));
@@ -262,7 +256,7 @@ public final class NSImage extends NSObject {
         }
     }
 
-    /** [image setResizingMode:] — NSImageResizingMode. */
+    /// [image setResizingMode:] — NSImageResizingMode.
     public void setResizingMode(long mode) {
         try {
             hSetResizingMode.invokeExact(peer, ObjC.sel("setResizingMode:"), mode);
@@ -271,7 +265,7 @@ public final class NSImage extends NSObject {
         }
     }
 
-    /** [image accessibilityDescription] — description for accessibility clients. */
+    /// [image accessibilityDescription] — description for accessibility clients.
     public String accessibilityDescription() {
         try {
             MemorySegment s = (MemorySegment) hAccDesc.invokeExact(peer, ObjC.sel("accessibilityDescription"));
@@ -281,7 +275,7 @@ public final class NSImage extends NSObject {
         }
     }
 
-    /** [image setAccessibilityDescription:] — accessibility description. */
+    /// [image setAccessibilityDescription:] — accessibility description.
     public void setAccessibilityDescription(String desc) {
         try {
             MemorySegment ns = desc == null ? MemorySegment.NULL : ObjC.nsstring(desc);

@@ -9,10 +9,8 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSFontDescriptor — describes a font (family, traits, size).
- * Thin 1:1 wrapper over native {@code NSFontDescriptor}.
- */
+/// NSFontDescriptor — describes a font (family, traits, size).
+/// Thin 1:1 wrapper over native `NSFontDescriptor`.
 public final class NSFontDescriptor extends NSObject {
 
     private static volatile boolean initialized;
@@ -45,7 +43,7 @@ public final class NSFontDescriptor extends NSObject {
 
     // ---- factory ----
 
-    /** {@code +[NSFontDescriptor fontDescriptorWithName:size:]} */
+    /// `+[NSFontDescriptor fontDescriptorWithName:size:]`
     public static NSFontDescriptor fontDescriptorWithNameSize(String name, double size) {
         ensureInit();
         try {
@@ -57,7 +55,7 @@ public final class NSFontDescriptor extends NSObject {
         }
     }
 
-    /** {@code +[NSFontDescriptor fontDescriptorWithFontAttributes:]} — attrs is NSDictionary* */
+    /// `+[NSFontDescriptor fontDescriptorWithFontAttributes:]` — attrs is NSDictionary*
     public static NSFontDescriptor fontDescriptorWithFontAttributes(MemorySegment attributes) {
         ensureInit();
         try {
@@ -70,7 +68,7 @@ public final class NSFontDescriptor extends NSObject {
         }
     }
 
-    /** {@code +[NSFontDescriptor preferredFontDescriptorWithTextStyle:options:]} */
+    /// `+[NSFontDescriptor preferredFontDescriptorWithTextStyle:options:]`
     public static NSFontDescriptor preferredFontDescriptorWithTextStyle(String style) {
         ensureInit();
         try {
@@ -84,7 +82,7 @@ public final class NSFontDescriptor extends NSObject {
 
     // ---- attributes ----
 
-    /** [descriptor fontAttributes] -> NSDictionary* */
+    /// [descriptor fontAttributes] -> NSDictionary*
     public MemorySegment fontAttributes() {
         ensureInit();
         try {
@@ -94,7 +92,7 @@ public final class NSFontDescriptor extends NSObject {
         }
     }
 
-    /** [descriptor objectForKey:] -> id */
+    /// [descriptor objectForKey:] -> id
     public MemorySegment objectForKey(String key) {
         ensureInit();
         try {
@@ -104,7 +102,7 @@ public final class NSFontDescriptor extends NSObject {
         }
     }
 
-    /** [descriptor symbolicTraits] -> NSFontDescriptorSymbolicTraits bitmask */
+    /// [descriptor symbolicTraits] -> NSFontDescriptorSymbolicTraits bitmask
     public long symbolicTraits() {
         ensureInit();
         try {
@@ -114,7 +112,7 @@ public final class NSFontDescriptor extends NSObject {
         }
     }
 
-    /** [descriptor fontDescriptorWithSymbolicTraits:] -> NSFontDescriptor */
+    /// [descriptor fontDescriptorWithSymbolicTraits:] -> NSFontDescriptor
     public NSFontDescriptor fontDescriptorWithSymbolicTraits(long traits) {
         ensureInit();
         try {
@@ -126,7 +124,7 @@ public final class NSFontDescriptor extends NSObject {
         }
     }
 
-    /** [descriptor fontDescriptorByAddingAttributes:] — attrs is NSDictionary* */
+    /// [descriptor fontDescriptorByAddingAttributes:] — attrs is NSDictionary*
     public NSFontDescriptor fontDescriptorByAddingAttributes(MemorySegment attrs) {
         ensureInit();
         try {
@@ -138,7 +136,7 @@ public final class NSFontDescriptor extends NSObject {
         }
     }
 
-    /** [descriptor fontDescriptorWithSize:] -> NSFontDescriptor */
+    /// [descriptor fontDescriptorWithSize:] -> NSFontDescriptor
     public NSFontDescriptor fontDescriptorWithSize(double size) {
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.DOUBLE));
@@ -149,7 +147,7 @@ public final class NSFontDescriptor extends NSObject {
         }
     }
 
-    /** [descriptor fontDescriptorWithFace:] -> NSFontDescriptor */
+    /// [descriptor fontDescriptorWithFace:] -> NSFontDescriptor
     public NSFontDescriptor fontDescriptorWithFace(String face) {
         try {
             MemorySegment d = (MemorySegment) hIdId.invokeExact(peer, ObjC.sel("fontDescriptorWithFace:"), ObjC.nsstring(face));
@@ -159,7 +157,7 @@ public final class NSFontDescriptor extends NSObject {
         }
     }
 
-    /** [descriptor fontDescriptorWithFamily:] -> NSFontDescriptor */
+    /// [descriptor fontDescriptorWithFamily:] -> NSFontDescriptor
     public NSFontDescriptor fontDescriptorWithFamily(String family) {
         try {
             MemorySegment d = (MemorySegment) hIdId.invokeExact(peer, ObjC.sel("fontDescriptorWithFamily:"), ObjC.nsstring(family));
@@ -169,12 +167,12 @@ public final class NSFontDescriptor extends NSObject {
         }
     }
 
-    /** [descriptor postscriptName] -> NSString -> String */
+    /// [descriptor postscriptName] -> NSString -> String
     public String postscriptName() {
         return ObjC.toString(ObjC.msgSendId(peer, ObjC.sel("postscriptName")));
     }
 
-    /** [descriptor pointSize] -> double */
+    /// [descriptor pointSize] -> double
     public double pointSize() {
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.DOUBLE));
@@ -184,7 +182,7 @@ public final class NSFontDescriptor extends NSObject {
         }
     }
 
-    /** [descriptor matchingFontDescriptorsWithMandatoryKeys:] -> NSArray */
+    /// [descriptor matchingFontDescriptorsWithMandatoryKeys:] -> NSArray
     public MemorySegment matchingFontDescriptors(MemorySegment mandatoryKeys) {
         try {
             MemorySegment arg = (mandatoryKeys == null ? MemorySegment.NULL : mandatoryKeys);
@@ -194,7 +192,7 @@ public final class NSFontDescriptor extends NSObject {
         }
     }
 
-    /** [descriptor matchingFontDescriptorWithMandatoryKeys:] -> NSFontDescriptor */
+    /// [descriptor matchingFontDescriptorWithMandatoryKeys:] -> NSFontDescriptor
     public NSFontDescriptor matchingFontDescriptor(MemorySegment mandatoryKeys) {
         try {
             MemorySegment arg = (mandatoryKeys == null ? MemorySegment.NULL : mandatoryKeys);

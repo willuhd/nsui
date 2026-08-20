@@ -8,10 +8,8 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSTouchBarItem — minimal wrap over AppKit NSTouchBarItem.
- * Thin 1:1, stateless.
- */
+/// NSTouchBarItem — minimal wrap over AppKit NSTouchBarItem.
+/// Thin 1:1, stateless.
 public class NSTouchBarItem extends NSObject {
 
     private static volatile boolean initialized;
@@ -40,7 +38,7 @@ public class NSTouchBarItem extends NSObject {
         initialized = true;
     }
 
-    /** alloc + initWithIdentifier: — create item with identifier. */
+    /// alloc + initWithIdentifier: — create item with identifier.
     public static NSTouchBarItem create(String identifier) {
         ensureInit();
         MemorySegment p = ObjC.msgSendId(ObjC.cls("NSTouchBarItem"), ObjC.sel("alloc"));
@@ -53,7 +51,7 @@ public class NSTouchBarItem extends NSObject {
         return new NSTouchBarItem(p);
     }
 
-    /** identifier — NSString. */
+    /// identifier — NSString.
     public String identifier() {
         ensureInit();
         try {
@@ -64,7 +62,7 @@ public class NSTouchBarItem extends NSObject {
         }
     }
 
-    /** visibilityPriority — long. */
+    /// visibilityPriority — long.
     public long visibilityPriority() {
         return ObjC.msgSendLong(peer, ObjC.sel("visibilityPriority"));
     }
@@ -73,7 +71,7 @@ public class NSTouchBarItem extends NSObject {
         ObjC.msgSendVoidLong(peer, ObjC.sel("setVisibilityPriority:"), p);
     }
 
-    /** isVisible — guarded; returns false if selector absent (not all items expose it). */
+    /// isVisible — guarded; returns false if selector absent (not all items expose it).
     public boolean isVisible() {
         ensureInit();
         // Guard: not all NSTouchBarItem subclasses respond to isVisible
@@ -98,7 +96,7 @@ public class NSTouchBarItem extends NSObject {
         } catch (Throwable t) { /* no-op if absent */ }
     }
 
-    /** view — NSView peer or null (guarded; not all items expose view). */
+    /// view — NSView peer or null (guarded; not all items expose view).
     public NSView view() {
         ensureInit();
         try {

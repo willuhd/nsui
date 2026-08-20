@@ -8,16 +8,14 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSCollectionView — a view that presents an ordered collection of items.
- * Thin, 1:1, stateless wrapper over the native {@code NSCollectionView}: each
- * method maps to one {@code objc_msgSend} selector. Follows the project template:
- * volatile initialized, synchronized ensureInit, ObjC.handle(Sig.of...),
- * invokeExact, static create/wrap.
- *
- * <p>Created via {@code [[NSCollectionView alloc] initWithFrame:]} and typically
- * wired via {@code setDataSource:} / {@code reloadData} and an item prototype.
- */
+/// NSCollectionView — a view that presents an ordered collection of items.
+/// Thin, 1:1, stateless wrapper over the native `NSCollectionView`: each
+/// method maps to one `objc_msgSend` selector. Follows the project template:
+/// volatile initialized, synchronized ensureInit, ObjC.handle(Sig.of...),
+/// invokeExact, static create/wrap.
+///
+/// Created via `[[NSCollectionView alloc] initWithFrame:]` and typically
+/// wired via `setDataSource:` / `reloadData` and an item prototype.
 public final class NSCollectionView extends NSView {
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
@@ -36,7 +34,7 @@ public final class NSCollectionView extends NSView {
         ensureInit();
     }
 
-    /** Wrap an existing NSCollectionView peer. */
+    /// Wrap an existing NSCollectionView peer.
     public static NSCollectionView wrap(MemorySegment peer) {
         return (peer == null || peer.address() == 0) ? null : new NSCollectionView(peer);
     }
@@ -54,7 +52,7 @@ public final class NSCollectionView extends NSView {
         initialized = true;
     }
 
-    /** {@code [[NSCollectionView alloc] initWithFrame:frame]} — a new collection view. */
+    /// `[[NSCollectionView alloc] initWithFrame:frame]` — a new collection view.
     public static NSCollectionView create(NSRect frame) {
         ensureInit();
         MemorySegment p = ObjC.msgSendId(ObjC.cls("NSCollectionView"), ObjC.sel("alloc"));
@@ -69,7 +67,7 @@ public final class NSCollectionView extends NSView {
 
     // ---------------------------------------------------------------- instance API
 
-    /** [view setDataSource:] — object answering item counts / views. */
+    /// [view setDataSource:] — object answering item counts / views.
     public void setDataSource(MemorySegment dataSource) {
         try {
             MemorySegment arg = (dataSource == null || dataSource.address() == 0) ? MemorySegment.NULL : dataSource;
@@ -79,7 +77,7 @@ public final class NSCollectionView extends NSView {
         }
     }
 
-    /** [view dataSource] — id or nil. */
+    /// [view dataSource] — id or nil.
     public MemorySegment dataSource() {
         try {
             return (MemorySegment) hGetId.invokeExact(peer, ObjC.sel("dataSource"));
@@ -88,7 +86,7 @@ public final class NSCollectionView extends NSView {
         }
     }
 
-    /** [view setDelegate:] */
+    /// [view setDelegate:]
     public void setDelegate(MemorySegment delegate) {
         try {
             MemorySegment arg = (delegate == null || delegate.address() == 0) ? MemorySegment.NULL : delegate;
@@ -98,7 +96,7 @@ public final class NSCollectionView extends NSView {
         }
     }
 
-    /** [view delegate] */
+    /// [view delegate]
     public MemorySegment delegate() {
         try {
             return (MemorySegment) hGetId.invokeExact(peer, ObjC.sel("delegate"));
@@ -107,7 +105,7 @@ public final class NSCollectionView extends NSView {
         }
     }
 
-    /** [view reloadData] — re-query dataSource. */
+    /// [view reloadData] — re-query dataSource.
     public void reloadData() {
         try {
             hReloadData.invokeExact(peer, ObjC.sel("reloadData"));
@@ -116,7 +114,7 @@ public final class NSCollectionView extends NSView {
         }
     }
 
-    /** [view itemPrototype] — NSCollectionViewItem peer or nil. */
+    /// [view itemPrototype] — NSCollectionViewItem peer or nil.
     public MemorySegment itemPrototype() {
         try {
             return (MemorySegment) hGetId.invokeExact(peer, ObjC.sel("itemPrototype"));
@@ -125,7 +123,7 @@ public final class NSCollectionView extends NSView {
         }
     }
 
-    /** [view setItemPrototype:] */
+    /// [view setItemPrototype:]
     public void setItemPrototype(MemorySegment prototype) {
         try {
             MemorySegment arg = (prototype == null || prototype.address() == 0) ? MemorySegment.NULL : prototype;
@@ -135,18 +133,18 @@ public final class NSCollectionView extends NSView {
         }
     }
 
-    /** [view setItemPrototype:] typed variant. */
+    /// [view setItemPrototype:] typed variant.
     public void setItemPrototype(NSCollectionViewItem prototype) {
         MemorySegment arg = (prototype == null || prototype.peer() == null || prototype.peer().address() == 0) ? MemorySegment.NULL : prototype.peer();
         setItemPrototype((MemorySegment) arg);
     }
 
-    /** [view isSelectable]. */
+    /// [view isSelectable].
     public boolean isSelectable() {
         return ObjC.msgSendBool(peer, ObjC.sel("isSelectable"));
     }
 
-    /** [view setSelectable:] */
+    /// [view setSelectable:]
     public void setSelectable(boolean flag) {
         try {
             hSetSelectable.invokeExact(peer, ObjC.sel("setSelectable:"), flag);
@@ -155,12 +153,12 @@ public final class NSCollectionView extends NSView {
         }
     }
 
-    /** [view allowsMultipleSelection] */
+    /// [view allowsMultipleSelection]
     public boolean allowsMultipleSelection() {
         return ObjC.msgSendBool(peer, ObjC.sel("allowsMultipleSelection"));
     }
 
-    /** [view setAllowsMultipleSelection:] */
+    /// [view setAllowsMultipleSelection:]
     public void setAllowsMultipleSelection(boolean flag) {
         try {
             hSetAllowsMultiple.invokeExact(peer, ObjC.sel("setAllowsMultipleSelection:"), flag);
@@ -169,7 +167,7 @@ public final class NSCollectionView extends NSView {
         }
     }
 
-    /** [view selectionIndexes] — NSIndexSet peer. */
+    /// [view selectionIndexes] — NSIndexSet peer.
     public MemorySegment selectionIndexes() {
         try {
             return (MemorySegment) hGetId.invokeExact(peer, ObjC.sel("selectionIndexes"));
@@ -178,7 +176,7 @@ public final class NSCollectionView extends NSView {
         }
     }
 
-    /** [view setSelectionIndexes:] */
+    /// [view setSelectionIndexes:]
     public void setSelectionIndexes(MemorySegment indexes) {
         try {
             MemorySegment arg = (indexes == null || indexes.address() == 0) ? MemorySegment.NULL : indexes;
@@ -188,7 +186,7 @@ public final class NSCollectionView extends NSView {
         }
     }
 
-    /** [view content] — NSArray of represented objects. */
+    /// [view content] — NSArray of represented objects.
     public MemorySegment content() {
         try {
             return (MemorySegment) hGetId.invokeExact(peer, ObjC.sel("content"));
@@ -197,7 +195,7 @@ public final class NSCollectionView extends NSView {
         }
     }
 
-    /** [view setContent:] */
+    /// [view setContent:]
     public void setContent(MemorySegment content) {
         try {
             MemorySegment arg = (content == null || content.address() == 0) ? MemorySegment.NULL : content;

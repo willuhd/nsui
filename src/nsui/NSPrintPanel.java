@@ -8,9 +8,7 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSPrintPanel — minimal wrapper over native {@code NSPrintPanel}.
- */
+/// NSPrintPanel — minimal wrapper over native `NSPrintPanel`.
 public final class NSPrintPanel extends NSObject {
 
     private static volatile boolean initialized;
@@ -25,7 +23,7 @@ public final class NSPrintPanel extends NSObject {
         return (peer == null || peer.address() == 0) ? null : new NSPrintPanel(peer);
     }
 
-    /** [NSPrintPanel printPanel] */
+    /// [NSPrintPanel printPanel]
     public static NSPrintPanel printPanel() {
         ensureInit();
         MemorySegment s = ObjC.msgSendId(ObjC.cls("NSPrintPanel"), ObjC.sel("printPanel"));
@@ -38,14 +36,14 @@ public final class NSPrintPanel extends NSObject {
         initialized = true;
     }
 
-    /** runModal — returns NSApplication.ModalResponse. */
+    /// runModal — returns NSApplication.ModalResponse.
     public long runModal() {
         ensureInit();
         try { return (long) hRunModal.invokeExact(peer, ObjC.sel("runModal")); }
         catch (Throwable t) { throw new RuntimeException("runModal failed", t); }
     }
 
-    /** runModalWithPrintInfo: */
+    /// runModalWithPrintInfo:
     public long runModalWithPrintInfo(NSPrintInfo printInfo) {
         ensureInit();
         if (printInfo == null) return runModal();
@@ -55,7 +53,7 @@ public final class NSPrintPanel extends NSObject {
         } catch (Throwable t) { throw new RuntimeException("runModalWithPrintInfo: failed", t); }
     }
 
-    /** beginSheetWithPrintInfo:modalForWindow:delegate:didEndSelector:contextInfo: — minimal sheet variant. */
+    /// beginSheetWithPrintInfo:modalForWindow:delegate:didEndSelector:contextInfo: — minimal sheet variant.
     public void beginSheetWithPrintInfo(NSPrintInfo printInfo, NSWindow window, NSObject delegate, String didEndSelector, MemorySegment contextInfo) {
         ensureInit();
         try {
@@ -73,7 +71,7 @@ public final class NSPrintPanel extends NSObject {
         } catch (Throwable t) { throw new RuntimeException("beginSheetWithPrintInfo: failed", t); }
     }
 
-    /** options — NSPrintPanelOptions bitfield. */
+    /// options — NSPrintPanelOptions bitfield.
     public long options() {
         ensureInit();
         try {

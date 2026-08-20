@@ -8,9 +8,7 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSStatusBar — the system menu bar. Thin 1:1 wrapper.
- */
+/// NSStatusBar — the system menu bar. Thin 1:1 wrapper.
 public final class NSStatusBar extends NSObject {
 
     private static volatile boolean initialized;
@@ -37,7 +35,7 @@ public final class NSStatusBar extends NSObject {
         return (peer == null || peer.address() == 0) ? null : new NSStatusBar(peer);
     }
 
-    /** +[NSStatusBar systemStatusBar] */
+    /// +[NSStatusBar systemStatusBar]
     public static NSStatusBar systemStatusBar() {
         ensureInit();
         try {
@@ -46,7 +44,7 @@ public final class NSStatusBar extends NSObject {
         } catch (Throwable t) { throw new RuntimeException("systemStatusBar failed", t); }
     }
 
-    /** -[NSStatusBar statusItemWithLength:] -> NSStatusItem */
+    /// -[NSStatusBar statusItemWithLength:] -> NSStatusItem
     public NSStatusItem statusItemWithLength(double length) {
         ensureInit();
         try {
@@ -55,12 +53,12 @@ public final class NSStatusBar extends NSObject {
         } catch (Throwable t) { throw new RuntimeException("statusItemWithLength: failed", t); }
     }
 
-    /** Convenience using variable length (-1). */
+    /// Convenience using variable length (-1).
     public NSStatusItem statusItem() {
         return statusItemWithLength(-1.0);
     }
 
-    /** Convenience: statusItem with SF Symbol image (uses NSImage.imageWithSystemSymbolName). */
+    /// Convenience: statusItem with SF Symbol image (uses NSImage.imageWithSystemSymbolName).
     public NSStatusItem statusItemWithSFSymbol(String symbolName) {
         NSStatusItem item = statusItemWithLength(VARIABLE_LENGTH);
         if (symbolName != null) {
@@ -74,7 +72,7 @@ public final class NSStatusBar extends NSObject {
         return item;
     }
 
-    /** Convenience: statusItem with SF Symbol and length. */
+    /// Convenience: statusItem with SF Symbol and length.
     public NSStatusItem statusItemWithSFSymbol(String symbolName, double length) {
         NSStatusItem item = statusItemWithLength(length);
         if (symbolName != null) {

@@ -8,10 +8,8 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSAlert — a native alert panel.
- * Thin 1:1 wrapper over AppKit NSAlert.
- */
+/// NSAlert — a native alert panel.
+/// Thin 1:1 wrapper over AppKit NSAlert.
 public final class NSAlert extends NSObject {
 
     private static volatile boolean initialized;
@@ -44,7 +42,7 @@ public final class NSAlert extends NSObject {
         return (peer == null || peer.address() == 0) ? null : new NSAlert(peer);
     }
 
-    /** alloc + init. */
+    /// alloc + init.
     public static NSAlert create() {
         ensureInit();
         MemorySegment m = ObjC.msgSendId(ObjC.cls("NSAlert"), ObjC.sel("alloc"));

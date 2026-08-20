@@ -8,10 +8,8 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSPopover — thin wrapper over native NSPopover.
- * Thin 1:1 wrapper; every method maps to one objc_msgSend selector.
- */
+/// NSPopover — thin wrapper over native NSPopover.
+/// Thin 1:1 wrapper; every method maps to one objc_msgSend selector.
 public final class NSPopover extends NSObject {
 
     private static volatile boolean initialized;
@@ -53,7 +51,7 @@ public final class NSPopover extends NSObject {
         return (peer == null || peer.address() == 0) ? null : new NSPopover(peer);
     }
 
-    /** alloc + init */
+    /// alloc + init
     public static NSPopover create() {
         ensureInit();
         MemorySegment p = ObjC.msgSendId(ObjC.cls("NSPopover"), ObjC.sel("alloc"));
@@ -64,7 +62,7 @@ public final class NSPopover extends NSObject {
 
     // ---- contentViewController ----
 
-    /** setContentViewController: */
+    /// setContentViewController:
     public void setContentViewController(NSViewController vc) {
         ensureInit();
         try {
@@ -75,7 +73,7 @@ public final class NSPopover extends NSObject {
         }
     }
 
-    /** contentViewController */
+    /// contentViewController
     public NSViewController contentViewController() {
         ensureInit();
         try {
@@ -86,7 +84,7 @@ public final class NSPopover extends NSObject {
         }
     }
 
-    /** Convenience: setContentView: by wrapping the view in a view controller. */
+    /// Convenience: setContentView: by wrapping the view in a view controller.
     public void setContentView(NSView view) {
         NSViewController vc = NSViewController.create();
         vc.setView(view);
@@ -95,7 +93,7 @@ public final class NSPopover extends NSObject {
 
     // ---- contentSize ----
 
-    /** setContentSize: */
+    /// setContentSize:
     public void setContentSize(NSSize size) {
         ensureInit();
         try {
@@ -105,7 +103,7 @@ public final class NSPopover extends NSObject {
         }
     }
 
-    /** contentSize */
+    /// contentSize
     public NSSize contentSize() {
         ensureInit();
         try {
@@ -118,10 +116,8 @@ public final class NSPopover extends NSObject {
 
     // ---- showRelativeToRect:ofView:preferredEdge: ----
 
-    /**
-     * showRelativeToRect:ofView:preferredEdge:
-     * edge: 0=minX 1=minY 2=maxX 3=maxY (NSRectEdge)
-     */
+    /// showRelativeToRect:ofView:preferredEdge:
+    /// edge: 0=minX 1=minY 2=maxX 3=maxY (NSRectEdge)
     public void showRelativeToRect(NSRect rect, NSView view, long edge) {
         ensureInit();
         try {
@@ -134,25 +130,25 @@ public final class NSPopover extends NSObject {
 
     // ---- status-item convenience (directly from statusItem button click) ----
 
-    /** Show popover anchored to the given view's bounds (preferredEdge = MinY = 1, below the status bar). */
+    /// Show popover anchored to the given view's bounds (preferredEdge = MinY = 1, below the status bar).
     public void showForView(NSView view) {
         if (view == null) return;
         showRelativeToRect(view.bounds(), view, 1L);
     }
 
-    /** Show popover anchored to the status button (NSStatusBarButton is an NSButton). */
+    /// Show popover anchored to the status button (NSStatusBarButton is an NSButton).
     public void showForButton(NSButton button) {
         if (button == null) return;
         showRelativeToRect(button.bounds(), button, 1L);
     }
 
-    /** Toggle popover anchored to the given view. */
+    /// Toggle popover anchored to the given view.
     public void toggleForView(NSView view) {
         if (isShown()) close();
         else showForView(view);
     }
 
-    /** Toggle popover anchored to the status button. */
+    /// Toggle popover anchored to the status button.
     public void toggleForButton(NSButton button) {
         if (isShown()) close();
         else showForButton(button);
@@ -160,7 +156,7 @@ public final class NSPopover extends NSObject {
 
     // ---- close / performClose: ----
 
-    /** close */
+    /// close
     public void close() {
         ensureInit();
         try {
@@ -171,7 +167,7 @@ public final class NSPopover extends NSObject {
         }
     }
 
-    /** performClose: */
+    /// performClose:
     public void performClose(Object sender) {
         ensureInit();
         MemorySegment s = MemorySegment.NULL;
@@ -196,7 +192,7 @@ public final class NSPopover extends NSObject {
 
     // ---- isShown ----
 
-    /** isShown */
+    /// isShown
     public boolean isShown() {
         ensureInit();
         try {
@@ -208,7 +204,7 @@ public final class NSPopover extends NSObject {
 
     // ---- animates ----
 
-    /** animates */
+    /// animates
     public boolean animates() {
         ensureInit();
         try {
@@ -218,7 +214,7 @@ public final class NSPopover extends NSObject {
         }
     }
 
-    /** setAnimates: */
+    /// setAnimates:
     public void setAnimates(boolean flag) {
         ensureInit();
         try {
@@ -230,7 +226,7 @@ public final class NSPopover extends NSObject {
 
     // ---- behavior ----
 
-    /** behavior — 0 applicationDefined 1 transient 2 semitransient */
+    /// behavior — 0 applicationDefined 1 transient 2 semitransient
     public long behavior() {
         ensureInit();
         try {
@@ -240,7 +236,7 @@ public final class NSPopover extends NSObject {
         }
     }
 
-    /** setBehavior: */
+    /// setBehavior:
     public void setBehavior(long behavior) {
         ensureInit();
         try {
@@ -252,7 +248,7 @@ public final class NSPopover extends NSObject {
 
     // ---- appearance ----
 
-    /** appearance */
+    /// appearance
     public MemorySegment appearancePeer() {
         ensureInit();
         try {
@@ -267,7 +263,7 @@ public final class NSPopover extends NSObject {
         return NSObject.wrap(p);
     }
 
-    /** setAppearance: (nil to clear) */
+    /// setAppearance: (nil to clear)
     public void setAppearance(MemorySegment appearance) {
         ensureInit();
         try {

@@ -8,9 +8,7 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSOrderedSet — minimal wrapper over native {@code NSOrderedSet} / {@code NSMutableOrderedSet}.
- */
+/// NSOrderedSet — minimal wrapper over native `NSOrderedSet` / `NSMutableOrderedSet`.
 public class NSOrderedSet extends NSObject {
 
     private static volatile boolean initialized;
@@ -31,14 +29,14 @@ public class NSOrderedSet extends NSObject {
         return (peer == null || peer.address() == 0) ? null : new NSOrderedSet(peer);
     }
 
-    /** [NSOrderedSet orderedSet] */
+    /// [NSOrderedSet orderedSet]
     public static NSOrderedSet orderedSet() {
         ensureInit();
         MemorySegment s = ObjC.msgSendId(ObjC.cls("NSOrderedSet"), ObjC.sel("orderedSet"));
         return wrap(s);
     }
 
-    /** [NSOrderedSet orderedSetWithObject:] */
+    /// [NSOrderedSet orderedSetWithObject:]
     public static NSOrderedSet orderedSetWithObject(NSObject object) {
         ensureInit();
         if (object == null) return orderedSet();
@@ -46,7 +44,7 @@ public class NSOrderedSet extends NSObject {
         return wrap(s);
     }
 
-    /** [NSOrderedSet orderedSetWithArray:] */
+    /// [NSOrderedSet orderedSetWithArray:]
     public static NSOrderedSet orderedSetWithArray(NSArray array) {
         ensureInit();
         if (array == null) return orderedSet();
@@ -66,7 +64,7 @@ public class NSOrderedSet extends NSObject {
         initialized = true;
     }
 
-    /** count */
+    /// count
     public long count() {
         ensureInit();
         try { return (long) hCount.invokeExact(peer, ObjC.sel("count")); }
@@ -75,7 +73,7 @@ public class NSOrderedSet extends NSObject {
 
     public boolean isEmpty() { return count() == 0; }
 
-    /** objectAtIndex: */
+    /// objectAtIndex:
     public MemorySegment objectAtIndex(long index) {
         ensureInit();
         try {
@@ -89,7 +87,7 @@ public class NSOrderedSet extends NSObject {
         return seg == null ? null : NSObject.wrap(seg);
     }
 
-    /** containsObject: */
+    /// containsObject:
     public boolean containsObject(NSObject object) {
         ensureInit();
         if (object == null) return false;
@@ -104,7 +102,7 @@ public class NSOrderedSet extends NSObject {
         catch (Throwable t) { throw new RuntimeException("containsObject: failed", t); }
     }
 
-    /** indexOfObject: — NSNotFound if absent. */
+    /// indexOfObject: — NSNotFound if absent.
     public long indexOfObject(NSObject object) {
         ensureInit();
         if (object == null) return NSRange.NOT_FOUND;
@@ -112,7 +110,7 @@ public class NSOrderedSet extends NSObject {
         catch (Throwable t) { throw new RuntimeException("indexOfObject: failed", t); }
     }
 
-    /** firstObject */
+    /// firstObject
     public MemorySegment firstObject() {
         ensureInit();
         try {
@@ -121,7 +119,7 @@ public class NSOrderedSet extends NSObject {
         } catch (Throwable t) { throw new RuntimeException("firstObject failed", t); }
     }
 
-    /** lastObject */
+    /// lastObject
     public MemorySegment lastObject() {
         ensureInit();
         try {
@@ -130,7 +128,7 @@ public class NSOrderedSet extends NSObject {
         } catch (Throwable t) { throw new RuntimeException("lastObject failed", t); }
     }
 
-    /** array — ordered contents as NSArray. */
+    /// array — ordered contents as NSArray.
     public NSArray array() {
         ensureInit();
         try {
@@ -139,6 +137,6 @@ public class NSOrderedSet extends NSObject {
         } catch (Throwable t) { throw new RuntimeException("array failed", t); }
     }
 
-    /** objectAtIndexedSubscript: alias for objectAtIndex:. */
+    /// objectAtIndexedSubscript: alias for objectAtIndex:.
     public MemorySegment objectAtIndexedSubscript(long index) { return objectAtIndex(index); }
 }

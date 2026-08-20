@@ -8,16 +8,13 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSTabViewItem — a single tab within an {@link NSTabView}. Thin, 1:1, stateless
- * wrapper over a native {@code NSTabViewItem}. Unlike the other small widgets it has no
- * frame-based init; the documented pattern is {@code [[NSTabViewItem alloc]
- * initWithIdentifier:]} followed by {@code setLabel:}.
- *
- * <p>Only the label and content-view surface is wrapped here — enough to build a
- * two-tab demo. {@link #create} builds the item with the label as its identifier, then
- * applies {@code setLabel:} so {@link #label} round-trips.
- */
+/// NSTabViewItem — a single tab within an `NSTabView`. Thin, 1:1, stateless
+/// wrapper over a native `NSTabViewItem`. Unlike the other small widgets it has no
+/// frame-based init; the documented pattern is `[[NSTabViewItem alloc] initWithIdentifier:]` followed by `setLabel:`.
+///
+/// Only the label and content-view surface is wrapped here — enough to build a
+/// two-tab demo. `create` builds the item with the label as its identifier, then
+/// applies `setLabel:` so `label` round-trips.
 public final class NSTabViewItem extends NSObject {
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
@@ -49,7 +46,7 @@ public final class NSTabViewItem extends NSObject {
         initialized = true;
     }
 
-    /** {@code [[NSTabViewItem alloc] initWithIdentifier:label]} + {@code setLabel:} — a new tab item. */
+    /// `[[NSTabViewItem alloc] initWithIdentifier:label]` + `setLabel:` — a new tab item.
     public static NSTabViewItem create(String label) {
         ensureInit();
         MemorySegment p = ObjC.msgSendIdId(ObjC.cls("NSTabViewItem"), ObjC.sel("alloc"), MemorySegment.NULL);
@@ -68,7 +65,7 @@ public final class NSTabViewItem extends NSObject {
 
     // ---------------------------------------------------------------- instance API
 
-    /** [item setLabel:] — the text shown on the tab. */
+    /// [item setLabel:] — the text shown on the tab.
     public void setLabel(String label) {
         try {
             hSetLabel.invokeExact(peer, ObjC.sel("setLabel:"), ObjC.nsstring(label));
@@ -77,7 +74,7 @@ public final class NSTabViewItem extends NSObject {
         }
     }
 
-    /** [item label] — the tab's current label text. */
+    /// [item label] — the tab's current label text.
     public String label() {
         try {
             return ObjC.toString((MemorySegment) hLabel.invokeExact(peer, ObjC.sel("label")));
@@ -86,7 +83,7 @@ public final class NSTabViewItem extends NSObject {
         }
     }
 
-    /** [item setView:] — the content view shown while this tab is selected. */
+    /// [item setView:] — the content view shown while this tab is selected.
     public void setView(NSView view) {
         try {
             hSetView.invokeExact(peer, ObjC.sel("setView:"), view.peer());
@@ -95,7 +92,7 @@ public final class NSTabViewItem extends NSObject {
         }
     }
 
-    /** [item view] — the content view (may be nil). */
+    /// [item view] — the content view (may be nil).
     public NSView view() {
         try {
             MemorySegment v = (MemorySegment) hGetId.invokeExact(peer, ObjC.sel("view"));
@@ -105,7 +102,7 @@ public final class NSTabViewItem extends NSObject {
         }
     }
 
-    /** [item identifier] — the identifier (NSString wrapping if it was a string). */
+    /// [item identifier] — the identifier (NSString wrapping if it was a string).
     public String identifier() {
         try {
             MemorySegment ident = (MemorySegment) hGetId.invokeExact(peer, ObjC.sel("identifier"));
@@ -123,7 +120,7 @@ public final class NSTabViewItem extends NSObject {
         }
     }
 
-    /** [item setIdentifier:] — set identifier to a string (NSString). */
+    /// [item setIdentifier:] — set identifier to a string (NSString).
     public void setIdentifier(String identifier) {
         try {
             hSetId.invokeExact(peer, ObjC.sel("setIdentifier:"), ObjC.nsstring(identifier));
@@ -132,7 +129,7 @@ public final class NSTabViewItem extends NSObject {
         }
     }
 
-    /** [item initialFirstResponder]. */
+    /// [item initialFirstResponder].
     public NSView initialFirstResponder() {
         try {
             MemorySegment v = (MemorySegment) hGetId.invokeExact(peer, ObjC.sel("initialFirstResponder"));
@@ -142,7 +139,7 @@ public final class NSTabViewItem extends NSObject {
         }
     }
 
-    /** [item setInitialFirstResponder:]. */
+    /// [item setInitialFirstResponder:].
     public void setInitialFirstResponder(NSView view) {
         try {
             hSetId.invokeExact(peer, ObjC.sel("setInitialFirstResponder:"), (MemorySegment) ((MemorySegment) (view == null ? MemorySegment.NULL : view.peer())));
@@ -151,7 +148,7 @@ public final class NSTabViewItem extends NSObject {
         }
     }
 
-    /** [item color] — NSColor (may be nil). */
+    /// [item color] — NSColor (may be nil).
     public NSColor color() {
         try {
             MemorySegment c = (MemorySegment) hGetId.invokeExact(peer, ObjC.sel("color"));
@@ -161,7 +158,7 @@ public final class NSTabViewItem extends NSObject {
         }
     }
 
-    /** [item setColor:]. */
+    /// [item setColor:].
     public void setColor(NSColor color) {
         try {
             hSetId.invokeExact(peer, ObjC.sel("setColor:"), (MemorySegment) ((MemorySegment) (color == null ? MemorySegment.NULL : color.peer())));
@@ -170,7 +167,7 @@ public final class NSTabViewItem extends NSObject {
         }
     }
 
-    /** [item toolTip]. */
+    /// [item toolTip].
     public String toolTip() {
         try {
             MemorySegment s = (MemorySegment) hGetId.invokeExact(peer, ObjC.sel("toolTip"));
@@ -180,7 +177,7 @@ public final class NSTabViewItem extends NSObject {
         }
     }
 
-    /** [item setToolTip:]. */
+    /// [item setToolTip:].
     public void setToolTip(String tip) {
         try {
             hSetId.invokeExact(peer, ObjC.sel("setToolTip:"), ObjC.nsstring(tip));
@@ -189,12 +186,12 @@ public final class NSTabViewItem extends NSObject {
         }
     }
 
-    /** [item tabState] — NSTabState. */
+    /// [item tabState] — NSTabState.
     public long tabState() {
         return ObjC.msgSendLong(peer, ObjC.sel("tabState"));
     }
 
-    /** [item tabView] — parent NSTabView (may be nil). */
+    /// [item tabView] — parent NSTabView (may be nil).
     public NSTabView tabView() {
         try {
             MemorySegment p = (MemorySegment) hGetId.invokeExact(peer, ObjC.sel("tabView"));

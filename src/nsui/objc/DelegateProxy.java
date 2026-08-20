@@ -14,77 +14,73 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 
-/**
- * DelegateProxy — the generic "Java implements an ObjC protocol/selector"
- * mechanism for NSUI3.
- *
- * <p>Cocoa objects talk to their delegates/actions through plain ObjC selectors.
- * Normally you subclass (in ObjC) to implement those selectors; DelegateProxy does
- * it from Java: it creates an ObjC class at runtime whose methods are FFM upcall
- * stubs back into Java, then dispatches each selector to a small Java callback
- * keyed by the <em>instance</em> and the <em>selector address</em>.
- *
- * <p>Dispatch model: ONE registry maps the native instance address to a {@link Holder}
- * whose inner maps are keyed by <b>selector address</b> (sel_registerName returns a
- * unique, stable pointer per selector name — no new descriptors are needed to recover
- * the name). Each ObjC class pair you create reuses the <em>same</em> shared upcall
- * stubs ({@link #dispatchBool}, {@link #dispatchVoid}, {@link #dispatchInt},
- * {@link #dispatchIdIdInt}, {@link #dispatchWindowWillResize}, {@link #dispatchDealloc} plus the two message-forwarding
- * targets {@link #dispatchSignature}/{@link #dispatchInvocation}) — stubs are
- * per-TARGET, not per-method; the selector routing happens in Java.
- *
- * <p>Five callback shapes:
- * <ul>
- *   <li>{@link BoolArg} — {@code -(BOOL)method:(id)} (e.g. <code>windowShouldClose:</code>)</li>
- *   <li>{@link VoidArg} — {@code -(void)method:(id)} (e.g. <code>windowWillClose:</code>)</li>
- *   <li>{@link IntArg} — {@code -(NSInteger)method:(id)} (e.g. <code>numberOfRowsInTableView:</code>, a
- *       data-source count)</li>
- *   <li>{@link IdIdIntArg} — {@code -(id)method:(id):(id):(NSInteger)} (e.g.
- *       <code>tableView:objectValueForTableColumn:row:</code>, a data-source cell)</li>
- *   <li>{@link WindowSizeArg} — {@code -(NSSize)windowWillResize:(id) toSize:(NSSize)} (e.g.
- *       <code>windowWillResize:toSize:</code>, a window delegate veto that can clamp the proposed frame size)</li>
- * </ul>
- * {@link #delegate(String, String, Map, Map, Map, Map)} carries the first four; the
- * {@link #delegate(String, String, Map, Map, Map, Map, Map)} overload additionally carries
- * {@link WindowSizeArg}; the classic
- * 4-arg {@link #delegate} is the bool/void subset; {@link #actionTarget} is the
- * single-selector {@code -(void)} piece.
- *
- * <p>AOT safety (GraalVM): every downcall/upcall handle is created in the lazy
- * synchronized {@link #ensureInit()}, never in a static initializer. {@link Holder}
- * and the registry are AOT-friendly plain Java. The package-visible static upcall
- * targets are registerable from {@link NsuiFeature} for native-image.
- */
+/// DelegateProxy — the generic "Java implements an ObjC protocol/selector"
+/// mechanism for NSUI3.
+///
+/// Cocoa objects talk to their delegates/actions through plain ObjC selectors.
+/// Normally you subclass (in ObjC) to implement those selectors; DelegateProxy does
+/// it from Java: it creates an ObjC class at runtime whose methods are FFM upcall
+/// stubs back into Java, then dispatches each selector to a small Java callback
+/// keyed by the *instance* and the *selector address*.
+///
+/// Dispatch model: ONE registry maps the native instance address to a `Holder`
+/// whose inner maps are keyed by **selector address** (sel_registerName returns a
+/// unique, stable pointer per selector name — no new descriptors are needed to recover
+/// the name). Each ObjC class pair you create reuses the *same* shared upcall
+/// stubs (`dispatchBool`, `dispatchVoid`, `dispatchInt`,
+/// `dispatchIdIdInt`, `dispatchWindowWillResize`, `dispatchDealloc` plus the two message-forwarding
+/// targets `dispatchSignature`/`dispatchInvocation`) — stubs are
+/// per-TARGET, not per-method; the selector routing happens in Java.
+///
+/// Five callback shapes:
+/// - `BoolArg` — `-(BOOL)method:(id)` (e.g. `windowShouldClose:`)
+/// - `VoidArg` — `-(void)method:(id)` (e.g. `windowWillClose:`)
+/// - `IntArg` — `-(NSInteger)method:(id)` (e.g. `numberOfRowsInTableView:`, a
+///   data-source count)
+/// - `IdIdIntArg` — `-(id)method:(id):(id):(NSInteger)` (e.g.
+///   `tableView:objectValueForTableColumn:row:`, a data-source cell)
+/// - `WindowSizeArg` — `-(NSSize)windowWillResize:(id) toSize:(NSSize)` (e.g.
+///   `windowWillResize:toSize:`, a window delegate veto that can clamp the proposed frame size)
+/// `delegate` carries the first four; the
+/// `delegate` overload additionally carries
+/// `WindowSizeArg`; the classic
+/// 4-arg `delegate` is the bool/void subset; `actionTarget` is the
+/// single-selector `-(void)` piece.
+///
+/// AOT safety (GraalVM): every downcall/upcall handle is created in the lazy
+/// synchronized `ensureInit`, never in a static initializer. `Holder`
+/// and the registry are AOT-friendly plain Java. The package-visible static upcall
+/// targets are registerable from `NsuiFeature` for native-image.
 public final class DelegateProxy {
 
     private DelegateProxy() {}
 
-    /** Java-side {@code -(BOOL)method:(id)sender} — return the "should" verdict. */
+    /// Java-side `-(BOOL)method:(id)sender` — return the "should" verdict.
     public interface BoolArg { boolean call(MemorySegment sender); }
 
-    /** Java-side {@code -(void)method:(id)sender} — a side-effecting notification. */
+    /// Java-side `-(void)method:(id)sender` — a side-effecting notification.
     public interface VoidArg { void call(MemorySegment sender); }
 
-    /** Java-side {@code -(NSInteger)method:(id)} — a count/data-source query, e.g. numberOfRowsInTableView:. */
+    /// Java-side `-(NSInteger)method:(id)` — a count/data-source query, e.g. numberOfRowsInTableView:.
     public interface IntArg { long call(MemorySegment sender); }
 
-    /** Java-side {@code -(id)method:(id):(id):(NSInteger)} — an object keyed by arg + integer, e.g. tableView:objectValueForTableColumn:row:. */
+    /// Java-side `-(id)method:(id):(id):(NSInteger)` — an object keyed by arg + integer, e.g. tableView:objectValueForTableColumn:row:.
     public interface IdIdIntArg { MemorySegment call(MemorySegment tableView, MemorySegment tableColumn, long row); }
 
-    /** Java-side {@code -(NSSize)windowWillResize:(id) toSize:(NSSize)} — window delegate veto, clamp/adjust proposed size. */
+    /// Java-side `-(NSSize)windowWillResize:(id) toSize:(NSSize)` — window delegate veto, clamp/adjust proposed size.
     public interface WindowSizeArg { MemorySegment call(MemorySegment sender, MemorySegment proposedSize); }
 
-    /** Java-side {@code -(id)touchBar:(id) makeItemForIdentifier:(id)} — Touch Bar delegate, returns NSTouchBarItem. */
+    /// Java-side `-(id)touchBar:(id) makeItemForIdentifier:(id)` — Touch Bar delegate, returns NSTouchBarItem.
     public interface IdIdArg { MemorySegment call(MemorySegment touchBar, MemorySegment identifier); }
 
-    /** Per-instance dispatch state, keyed by the native instance address. */
+    /// Per-instance dispatch state, keyed by the native instance address.
     private record Holder(Map<Long, BoolArg> bools, Map<Long, VoidArg> voids,
                           Map<Long, IntArg> ints, Map<Long, IdIdIntArg> idIdInts,
                           Map<Long, WindowSizeArg> windowSizes,
                           Map<Long, IdIdArg> idIds,
                           MemorySegment superClass) {}
 
-    /** ObjC class pair (native class + the selector names already installed on it). */
+    /// ObjC class pair (native class + the selector names already installed on it).
     private record RuntimeClass(MemorySegment cls, Set<String> boolMethods, Set<String> voidMethods,
                                  Set<String> intMethods, Set<String> idIdIntMethods,
                                  Set<String> windowSizeMethods, Set<String> idIdMethods) {}
@@ -101,7 +97,7 @@ public final class DelegateProxy {
 
     private static boolean initialized;
 
-    /** Shared upcall stubs — same ones everywhere, reused by every class pair. */
+    /// Shared upcall stubs — same ones everywhere, reused by every class pair.
     private static MemorySegment boolStub;
     private static MemorySegment voidStub;
     private static MemorySegment intStub;
@@ -112,16 +108,14 @@ public final class DelegateProxy {
     private static MemorySegment sigStub;    // methodSignatureForSelector: (returns an NSMethodSignature)
     private static MemorySegment invStub;    // forwardInvocation: (swallows unknown selectors)
 
-    /**
-     * Upcall descriptor for {@code methodSignatureForSelector:} — {@code id methodSignatureForSelector:(SEL)}
-     * = (id return, id self, SEL _cmd, SEL arg). Lives in NsuiForeign as the single source of truth.
-     */
+    /// Upcall descriptor for `methodSignatureForSelector:` — `id methodSignatureForSelector:(SEL)`
+    /// = (id return, id self, SEL _cmd, SEL arg). Lives in NsuiForeign as the single source of truth.
     private static final FunctionDescriptor METHOD_SIGNATURE_UPCALL = NsuiForeign.methodSignatureUpcall();
 
     // --------------------------------------------------------------- upcall targets
     // Package-visible static so NsuiFeature can register them for AOT.
 
-    /** FFM upcall target: {@code -(BOOL)method:(id)} — routes to a {@link BoolArg} by selector; default YES. */
+    /// FFM upcall target: `-(BOOL)method:(id)` — routes to a `BoolArg` by selector; default YES.
     static boolean dispatchBool(MemorySegment self, MemorySegment sel, MemorySegment sender) {
         Holder h = REGISTRY.get(self.address());
         BoolArg b = (h == null) ? null : h.bools().get(sel.address());
@@ -134,7 +128,7 @@ public final class DelegateProxy {
         }
     }
 
-    /** FFM upcall target: {@code -(void)method:(id)} — routes to a {@link VoidArg} by selector; default no-op. */
+    /// FFM upcall target: `-(void)method:(id)` — routes to a `VoidArg` by selector; default no-op.
     static void dispatchVoid(MemorySegment self, MemorySegment sel, MemorySegment sender) {
         Holder h = REGISTRY.get(self.address());
         VoidArg v = (h == null) ? null : h.voids().get(sel.address());
@@ -147,10 +141,8 @@ public final class DelegateProxy {
         }
     }
 
-    /**
-     * FFM upcall target: {@code -(NSInteger)method:(id)} — routes to an {@link IntArg} by selector;
-     * default 0. NSInteger is long on 64-bit; the registered descriptor returns LONG.
-     */
+    /// FFM upcall target: `-(NSInteger)method:(id)` — routes to an `IntArg` by selector;
+    /// default 0. NSInteger is long on 64-bit; the registered descriptor returns LONG.
     static long dispatchInt(MemorySegment self, MemorySegment sel, MemorySegment sender) {
         Holder h = REGISTRY.get(self.address());
         IntArg f = (h == null) ? null : h.ints().get(sel.address());
@@ -163,7 +155,7 @@ public final class DelegateProxy {
         }
     }
 
-    /** FFM upcall target: {@code -(id)tableView:(id):(id):(NSInteger)} — routes to an {@link IdIdIntArg}; default NULL. */
+    /// FFM upcall target: `-(id)tableView:(id):(id):(NSInteger)` — routes to an `IdIdIntArg`; default NULL.
     static MemorySegment dispatchIdIdInt(MemorySegment self, MemorySegment sel, MemorySegment a, MemorySegment b, long c) {
         Holder h = REGISTRY.get(self.address());
         IdIdIntArg f = (h == null) ? null : h.idIdInts().get(sel.address());
@@ -176,10 +168,8 @@ public final class DelegateProxy {
         }
     }
 
-    /**
-     * FFM upcall target: {@code -(NSSize)windowWillResize:(id) toSize:(NSSize)} — routes to a {@link WindowSizeArg} by selector;
-     * default is to return the proposed size unchanged (pass-through veto).
-     */
+    /// FFM upcall target: `-(NSSize)windowWillResize:(id) toSize:(NSSize)` — routes to a `WindowSizeArg` by selector;
+    /// default is to return the proposed size unchanged (pass-through veto).
     static MemorySegment dispatchWindowWillResize(MemorySegment self, MemorySegment sel, MemorySegment sender, MemorySegment proposedSize) {
         Holder h = REGISTRY.get(self.address());
         WindowSizeArg f = (h == null) ? null : h.windowSizes().get(sel.address());
@@ -194,7 +184,7 @@ public final class DelegateProxy {
         }
     }
 
-    /** FFM upcall target: {@code -(id)touchBar:(id) makeItemForIdentifier:(id)} — routes to an {@link IdIdArg}; default NULL. */
+    /// FFM upcall target: `-(id)touchBar:(id) makeItemForIdentifier:(id)` — routes to an `IdIdArg`; default NULL.
     static MemorySegment dispatchIdId(MemorySegment self, MemorySegment sel, MemorySegment a, MemorySegment b) {
         Holder h = REGISTRY.get(self.address());
         IdIdArg f = (h == null) ? null : h.idIds().get(sel.address());
@@ -208,7 +198,7 @@ public final class DelegateProxy {
         }
     }
 
-    /** FFM upcall target: {@code -(void)dealloc} — unregister the instance, then chain {@code [super dealloc]}. */
+    /// FFM upcall target: `-(void)dealloc` — unregister the instance, then chain `[super dealloc]`.
     static void dispatchDealloc(MemorySegment self, MemorySegment sel) {
         Holder h = REGISTRY.remove(self.address());
         // The superclass is resolved once at pair creation and carried on the holder;
@@ -222,44 +212,40 @@ public final class DelegateProxy {
         ObjC.msgSendSuperVoid(superStruct, sel);
     }
 
-    /**
-     * FFM upcall target: {@code -(NSMethodSignature *)methodSignatureForSelector:(SEL)aSelector}.
-     * Returns a valid (void, one id arg) signature so the runtime can build an NSInvocation and
-     * deliver it to {@link #dispatchInvocation}, which swallows it — so an UNREGISTERED selector
-     * sent to the instance is a harmless no-op instead of NSObject raising {@code NSInvalidArgumentException}
-     * (which would abort the JVM as a native exception). Signature is built via
-     * {@code [NSMethodSignature signatureWithObjCTypes:"v@:@"]}.
-     *
-     * <p>KNOWN APPROXIMATION: every unknown selector receives the SAME fixed signature. This is
-     * correct for every selector NSUI3 actually registers (all single-id-arg, by protocol) and
-     * safe for genuinely unknown ones (forwardInvocation: swallows; the signature is never used
-     * to call anything) — but a caller that inspects the returned signature for an unknown
-     * selector gets a lie about its real shape. Documented, not fixed: the alternative requires
-     * per-selector signature tables.
-     */
+    /// FFM upcall target: `-(NSMethodSignature *)methodSignatureForSelector:(SEL)aSelector`.
+    /// Returns a valid (void, one id arg) signature so the runtime can build an NSInvocation and
+    /// deliver it to `dispatchInvocation`, which swallows it — so an UNREGISTERED selector
+    /// sent to the instance is a harmless no-op instead of NSObject raising `NSInvalidArgumentException`
+    /// (which would abort the JVM as a native exception). Signature is built via
+    /// `[NSMethodSignature signatureWithObjCTypes:"v@:@"]`.
+    ///
+    /// KNOWN APPROXIMATION: every unknown selector receives the SAME fixed signature. This is
+    /// correct for every selector NSUI3 actually registers (all single-id-arg, by protocol) and
+    /// safe for genuinely unknown ones (forwardInvocation: swallows; the signature is never used
+    /// to call anything) — but a caller that inspects the returned signature for an unknown
+    /// selector gets a lie about its real shape. Documented, not fixed: the alternative requires
+    /// per-selector signature tables.
     static MemorySegment dispatchSignature(MemorySegment self, MemorySegment selCmd, MemorySegment aSelector) {
         return ObjC.msgSendIdId(ObjC.cls("NSMethodSignature"), ObjC.sel("signatureWithObjCTypes:"),
                 ObjC.cstring("v@:@"));
     }
 
-    /** FFM upcall target: {@code -(void)forwardInvocation:(NSInvocation *)anInvocation} — swallow it. */
+    /// FFM upcall target: `-(void)forwardInvocation:(NSInvocation *)anInvocation` — swallow it.
     static void dispatchInvocation(MemorySegment self, MemorySegment selCmd, MemorySegment anInvocation) {
         // Intentional no-op: a selector we did not register is dropped here.
     }
 
     // ------------------------------------------------------------------ public API
 
-    /**
-     * Build (lazily) a target/action object implementing {@code selector} in Java.
-     * The returned ObjC instance differs per call, but they all share ONE lazily
-     * created class pair (subclass {@code NSObject}); each distinct selector is
-     * installed on that class on first use. Register the handler under this
-     * instance's peer keyed by the selector address.
-     *
-     * @param selector the ObjC selector to implement, e.g. {@code "ballPopped:"}
-     * @param handler  the Java callback fired when the selector routes to this instance
-     * @return the ObjC id a control's {@code setTarget:} should receive
-     */
+    /// Build (lazily) a target/action object implementing `selector` in Java.
+    /// The returned ObjC instance differs per call, but they all share ONE lazily
+    /// created class pair (subclass `NSObject`); each distinct selector is
+    /// installed on that class on first use. Register the handler under this
+    /// instance's peer keyed by the selector address.
+    ///
+    /// @param selector the ObjC selector to implement, e.g. `"ballPopped:"`
+    /// @param handler  the Java callback fired when the selector routes to this instance
+    /// @return the ObjC id a control's `setTarget:` should receive
     public static MemorySegment actionTarget(String selector, VoidArg handler) {
         MemorySegment pair = ensureClassPair("NSObject\0NSUIActionTarget");
         addVoidMethod(pair, selector);
@@ -276,24 +262,22 @@ public final class DelegateProxy {
         return instance;
     }
 
-    /**
-     * Build (lazily) a protocol-ish delegate object subclassing {@code superClassName}
-     * (e.g. {@code NSObject} or {@code NSWindow}) — one class pair per
-     * (superClassName, className). Each {@code -(BOOL)} selector is encoded {@code "c@:@"}
-     * and routed to {@link #dispatchBool}; each {@code -(void)} selector {@code "v@:@"} to
-     * {@link #dispatchVoid}; a {@code dealloc} override is always added. A single instance
-     * is allocated ({@code [[cls alloc] init]}) and registered.
-     *
-     * <p>Convenience overload = the bool/void-only data source that is the classic delegate
-     * shape; {@link #delegate(String, String, Map, Map, Map, Map)} additionally carries the
-     * data-source {@code -(NSInteger)} and {@code -(id)}-returning shapes.
-     *
-     * @param superClassName the ObjC superclass name
-     * @param className      the runtime class name (unique per distinct delegate shape)
-     * @param boolSelectors  selector-name → {@link BoolArg}; empty for none
-     * @param voidSelectors  selector-name → {@link VoidArg}; empty for none
-     * @return the allocated-and-initialized delegate instance
-     */
+    /// Build (lazily) a protocol-ish delegate object subclassing `superClassName`
+    /// (e.g. `NSObject` or `NSWindow`) — one class pair per
+    /// (superClassName, className). Each `-(BOOL)` selector is encoded `"c@:@"`
+    /// and routed to `dispatchBool`; each `-(void)` selector `"v@:@"` to
+    /// `dispatchVoid`; a `dealloc` override is always added. A single instance
+    /// is allocated (`[[cls alloc] init]`) and registered.
+    ///
+    /// Convenience overload = the bool/void-only data source that is the classic delegate
+    /// shape; `delegate` additionally carries the
+    /// data-source `-(NSInteger)` and `-(id)`-returning shapes.
+    ///
+    /// @param superClassName the ObjC superclass name
+    /// @param className      the runtime class name (unique per distinct delegate shape)
+    /// @param boolSelectors  selector-name → `BoolArg`; empty for none
+    /// @param voidSelectors  selector-name → `VoidArg`; empty for none
+    /// @return the allocated-and-initialized delegate instance
     public static MemorySegment delegate(String superClassName, String className,
             Map<String, BoolArg> boolSelectors, Map<String, VoidArg> voidSelectors) {
         Map<String, IntArg> ints = Map.of();
@@ -302,29 +286,25 @@ public final class DelegateProxy {
         return delegate(superClassName, className, boolSelectors, voidSelectors, ints, idIdInts, windowSizes);
     }
 
-    /**
-     * Build (lazily) a protocol-ish delegate / data-source object subclassing
-     * {@code superClassName} — one class pair per (superClassName, className).
-     *
-     * <p>Selector encodings and dispatch targets:
-     * <ul>
-     *   <li>{@code -(BOOL)method:(id)} → {@code "c@:@"} → {@link #dispatchBool}</li>
-     *   <li>{@code -(void)method:(id)} → {@code "v@:@"} → {@link #dispatchVoid}</li>
-     *   <li>{@code -(NSInteger)method:(id)} → {@code "q@:@"} → {@link #dispatchInt}</li>
-     *   <li>{@code -(id)tableView:(id):(id):(NSInteger)} → {@code "@@:@@q"} → {@link #dispatchIdIdInt}</li>
-     * </ul>
-     * plus the always-installed {@code dealloc}, {@code methodSignatureForSelector:} and
-     * {@code forwardInvocation:} overrides (unregistered selectors are safe no-ops).
-     * A single instance is allocated ({@code [[cls alloc] init]}) and registered.
-     *
-     * @param superClassName the ObjC superclass name
-     * @param className      the runtime class name (unique per distinct delegate shape)
-     * @param boolSelectors  selector-name → {@link BoolArg}; empty for none
-     * @param voidSelectors  selector-name → {@link VoidArg}; empty for none
-     * @param intSelectors   selector-name → {@link IntArg}; empty for none
-     * @param idIdIntSelectors selector-name → {@link IdIdIntArg}; empty for none
-     * @return the allocated-and-initialized delegate instance
-     */
+    /// Build (lazily) a protocol-ish delegate / data-source object subclassing
+    /// `superClassName` — one class pair per (superClassName, className).
+    ///
+    /// Selector encodings and dispatch targets:
+    /// - `-(BOOL)method:(id)` → `"c@:@"` → `dispatchBool`
+    /// - `-(void)method:(id)` → `"v@:@"` → `dispatchVoid`
+    /// - `-(NSInteger)method:(id)` → `"q@:@"` → `dispatchInt`
+    /// - `-(id)tableView:(id):(id):(NSInteger)` → `"@@:@@q"` → `dispatchIdIdInt`
+    /// plus the always-installed `dealloc`, `methodSignatureForSelector:` and
+    /// `forwardInvocation:` overrides (unregistered selectors are safe no-ops).
+    /// A single instance is allocated (`[[cls alloc] init]`) and registered.
+    ///
+    /// @param superClassName the ObjC superclass name
+    /// @param className      the runtime class name (unique per distinct delegate shape)
+    /// @param boolSelectors  selector-name → `BoolArg`; empty for none
+    /// @param voidSelectors  selector-name → `VoidArg`; empty for none
+    /// @param intSelectors   selector-name → `IntArg`; empty for none
+    /// @param idIdIntSelectors selector-name → `IdIdIntArg`; empty for none
+    /// @return the allocated-and-initialized delegate instance
     public static MemorySegment delegate(String superClassName, String className,
             Map<String, BoolArg> boolSelectors, Map<String, VoidArg> voidSelectors,
             Map<String, IntArg> intSelectors, Map<String, IdIdIntArg> idIdIntSelectors) {
@@ -332,31 +312,27 @@ public final class DelegateProxy {
         return delegate(superClassName, className, boolSelectors, voidSelectors, intSelectors, idIdIntSelectors, windowSizes);
     }
 
-    /**
-     * Build (lazily) a protocol-ish delegate / data-source / window-delegate object subclassing
-     * {@code superClassName} — one class pair per (superClassName, className).
-     *
-     * <p>Selector encodings and dispatch targets:
-     * <ul>
-     *   <li>{@code -(BOOL)method:(id)} → {@code "c@:@"} → {@link #dispatchBool}</li>
-     *   <li>{@code -(void)method:(id)} → {@code "v@:@"} → {@link #dispatchVoid}</li>
-     *   <li>{@code -(NSInteger)method:(id)} → {@code "q@:@"} → {@link #dispatchInt}</li>
-     *   <li>{@code -(id)tableView:(id):(id):(NSInteger)} → {@code "@@:@@q"} → {@link #dispatchIdIdInt}</li>
-     *   <li>{@code -(NSSize)windowWillResize:(id) toSize:(NSSize)} → {@code "{CGSize=dd}@:@{CGSize=dd}"} → {@link #dispatchWindowWillResize}</li>
-     * </ul>
-     * plus the always-installed {@code dealloc}, {@code methodSignatureForSelector:} and
-     * {@code forwardInvocation:} overrides (unregistered selectors are safe no-ops).
-     * A single instance is allocated ({@code [[cls alloc] init]}) and registered.
-     *
-     * @param superClassName the ObjC superclass name
-     * @param className      the runtime class name (unique per distinct delegate shape)
-     * @param boolSelectors  selector-name → {@link BoolArg}; empty for none
-     * @param voidSelectors  selector-name → {@link VoidArg}; empty for none
-     * @param intSelectors   selector-name → {@link IntArg}; empty for none
-     * @param idIdIntSelectors selector-name → {@link IdIdIntArg}; empty for none
-     * @param windowSizeSelectors selector-name → {@link WindowSizeArg}; empty for none (e.g. windowWillResize:toSize:)
-     * @return the allocated-and-initialized delegate instance
-     */
+    /// Build (lazily) a protocol-ish delegate / data-source / window-delegate object subclassing
+    /// `superClassName` — one class pair per (superClassName, className).
+    ///
+    /// Selector encodings and dispatch targets:
+    /// - `-(BOOL)method:(id)` → `"c@:@"` → `dispatchBool`
+    /// - `-(void)method:(id)` → `"v@:@"` → `dispatchVoid`
+    /// - `-(NSInteger)method:(id)` → `"q@:@"` → `dispatchInt`
+    /// - `-(id)tableView:(id):(id):(NSInteger)` → `"@@:@@q"` → `dispatchIdIdInt`
+    /// - `-(NSSize)windowWillResize:(id) toSize:(NSSize)` → `"{CGSize=dd`@:@{CGSize=dd}"} → `dispatchWindowWillResize`
+    /// plus the always-installed `dealloc`, `methodSignatureForSelector:` and
+    /// `forwardInvocation:` overrides (unregistered selectors are safe no-ops).
+    /// A single instance is allocated (`[[cls alloc] init]`) and registered.
+    ///
+    /// @param superClassName the ObjC superclass name
+    /// @param className      the runtime class name (unique per distinct delegate shape)
+    /// @param boolSelectors  selector-name → `BoolArg`; empty for none
+    /// @param voidSelectors  selector-name → `VoidArg`; empty for none
+    /// @param intSelectors   selector-name → `IntArg`; empty for none
+    /// @param idIdIntSelectors selector-name → `IdIdIntArg`; empty for none
+    /// @param windowSizeSelectors selector-name → `WindowSizeArg`; empty for none (e.g. windowWillResize:toSize:)
+    /// @return the allocated-and-initialized delegate instance
     public static MemorySegment delegate(String superClassName, String className,
             Map<String, BoolArg> boolSelectors, Map<String, VoidArg> voidSelectors,
             Map<String, IntArg> intSelectors, Map<String, IdIdIntArg> idIdIntSelectors,
@@ -364,11 +340,8 @@ public final class DelegateProxy {
         return delegate(superClassName, className, boolSelectors, voidSelectors, intSelectors, idIdIntSelectors, windowSizeSelectors, Map.of());
     }
 
-    /**
-     * Build delegate with Touch Bar {@code touchBar:makeItemForIdentifier:} support.
-     * Adds {@code -(id)touchBar:(id) makeItemForIdentifier:(id)} → {@code "@@:@@"
-     * } → {@link #dispatchIdId}. All other selector shapes remain as above.
-     */
+    /// Build delegate with Touch Bar `touchBar:makeItemForIdentifier:` support.
+    /// Adds `-(id)touchBar:(id) makeItemForIdentifier:(id)` → `"@@:@@"` → `dispatchIdId`. All other selector shapes remain as above.
     public static MemorySegment delegate(String superClassName, String className,
             Map<String, BoolArg> boolSelectors, Map<String, VoidArg> voidSelectors,
             Map<String, IntArg> intSelectors, Map<String, IdIdIntArg> idIdIntSelectors,
@@ -412,14 +385,14 @@ public final class DelegateProxy {
         return instance;
     }
 
-    /** Number of live delegate/action instances (diagnostics/tests). */
+    /// Number of live delegate/action instances (diagnostics/tests).
     public static int registrySize() {
         return REGISTRY.size();
     }
 
     // ------------------------------------------------------------------ internals
 
-    /** Build the shared upcall stubs ONCE, lazily (never in a static initializer). */
+    /// Build the shared upcall stubs ONCE, lazily (never in a static initializer).
     private static synchronized void ensureInit() {
         if (initialized) return;
         try {
@@ -468,18 +441,15 @@ public final class DelegateProxy {
         initialized = true;
     }
 
-    /**
-     * Lazily resolve/build the class pair for a key and ensure its {@code dealloc},
-     * {@code methodSignatureForSelector:} and {@code forwardInvocation:} overrides are
-     * installed. Class pairs and stubs stay strongly referenced for the life of the process
-     * (they must never be collected).
-     *
-     * <p>The two forwarding methods let an UNREGISTERED selector sent to the instance be a
-     * harmless no-op instead of NSObject raising {@code NSInvalidArgumentException} (which
-     * would abort the JVM as a native exception) — see {@link #dispatchSignature}/{@link
-     * #dispatchInvocation}. Registered selectors are found by the runtime before forwarding
-     * is ever reached, so this never interferes with real behavior.
-     */
+    /// Lazily resolve/build the class pair for a key and ensure its `dealloc`,
+    /// `methodSignatureForSelector:` and `forwardInvocation:` overrides are
+    /// installed. Class pairs and stubs stay strongly referenced for the life of the process
+    /// (they must never be collected).
+    ///
+    /// The two forwarding methods let an UNREGISTERED selector sent to the instance be a
+    /// harmless no-op instead of NSObject raising `NSInvalidArgumentException` (which
+    /// would abort the JVM as a native exception) — see `dispatchSignature`/`dispatchInvocation`. Registered selectors are found by the runtime before forwarding
+    /// is ever reached, so this never interferes with real behavior.
     private static synchronized MemorySegment ensureClassPair(String key) {
         ensureInit();
         RuntimeClass rc = CLASSES.get(key);
@@ -506,7 +476,7 @@ public final class DelegateProxy {
         return rc.cls();
     }
 
-    /** Add a {@code -(BOOL)method:(id)} (encoding "c@:@") to a class pair unless already present. */
+    /// Add a `-(BOOL)method:(id)` (encoding "c@:@") to a class pair unless already present.
     private static void addBoolMethod(MemorySegment pair, String selector) {
         RuntimeClass rc = classInfo(pair);
         if (rc.boolMethods().add(selector)) {
@@ -516,7 +486,7 @@ public final class DelegateProxy {
         }
     }
 
-    /** Add a {@code -(void)method:(id)} (encoding "v@:@") to a class pair unless already present. */
+    /// Add a `-(void)method:(id)` (encoding "v@:@") to a class pair unless already present.
     private static void addVoidMethod(MemorySegment pair, String selector) {
         RuntimeClass rc = classInfo(pair);
         if (rc.voidMethods().add(selector)) {
@@ -526,7 +496,7 @@ public final class DelegateProxy {
         }
     }
 
-    /** Add a {@code -(NSInteger)method:(id)} (encoding "q@:@") to a class pair unless already present. */
+    /// Add a `-(NSInteger)method:(id)` (encoding "q@:@") to a class pair unless already present.
     private static void addIntMethod(MemorySegment pair, String selector) {
         RuntimeClass rc = classInfo(pair);
         if (rc.intMethods().add(selector)) {
@@ -536,7 +506,7 @@ public final class DelegateProxy {
         }
     }
 
-    /** Add a {@code -(id)tableView:(id):(id):(NSInteger)} (encoding "@@:@@q") to a class pair unless already present. */
+    /// Add a `-(id)tableView:(id):(id):(NSInteger)` (encoding "@@:@@q") to a class pair unless already present.
     private static void addIdIdIntMethod(MemorySegment pair, String selector) {
         RuntimeClass rc = classInfo(pair);
         if (rc.idIdIntMethods().add(selector)) {
@@ -546,7 +516,7 @@ public final class DelegateProxy {
         }
     }
 
-    /** Add a {@code -(NSSize)windowWillResize:(id) toSize:(NSSize)} (encoding "{CGSize=dd}@:@{CGSize=dd}") to a class pair unless already present. */
+    /// Add a `-(NSSize)windowWillResize:(id) toSize:(NSSize)` (encoding "{CGSize=dd}@:@{CGSize=dd}") to a class pair unless already present.
     private static void addWindowSizeMethod(MemorySegment pair, String selector) {
         RuntimeClass rc = classInfo(pair);
         if (rc.windowSizeMethods().add(selector)) {
@@ -556,7 +526,7 @@ public final class DelegateProxy {
         }
     }
 
-    /** Add a {@code -(id)touchBar:(id) makeItemForIdentifier:(id)} (encoding "@@:@@") to a class pair unless already present. */
+    /// Add a `-(id)touchBar:(id) makeItemForIdentifier:(id)` (encoding "@@:@@") to a class pair unless already present.
     private static void addIdIdMethod(MemorySegment pair, String selector) {
         RuntimeClass rc = classInfo(pair);
         if (rc.idIdMethods().add(selector)) {
@@ -573,7 +543,7 @@ public final class DelegateProxy {
         throw new IllegalStateException("no RuntimeClass registered for " + pair);
     }
 
-    /** {@code [[cls alloc] init]} — the standard no-arg object creation path. */
+    /// `[[cls alloc] init]` — the standard no-arg object creation path.
     private static MemorySegment allocInit(MemorySegment cls) {
         MemorySegment instance = ObjC.msgSendId(cls, ObjC.sel("alloc"));
         instance = ObjC.msgSendId(instance, ObjC.sel("init"));

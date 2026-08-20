@@ -8,10 +8,8 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSShadow — minimal wrapper over AppKit NSShadow.
- * Provides offset, blur radius, color, and set.
- */
+/// NSShadow — minimal wrapper over AppKit NSShadow.
+/// Provides offset, blur radius, color, and set.
 public final class NSShadow extends NSObject {
 
     private static volatile boolean initialized;
@@ -46,7 +44,7 @@ public final class NSShadow extends NSObject {
         initialized = true;
     }
 
-    /** [[NSShadow alloc] init] */
+    /// [[NSShadow alloc] init]
     public static NSShadow create() {
         ensureInit();
         MemorySegment p = ObjC.msgSendId(ObjC.cls("NSShadow"), ObjC.sel("alloc"));
@@ -59,7 +57,7 @@ public final class NSShadow extends NSObject {
         return new NSShadow(p);
     }
 
-    /** -set */
+    /// -set
     public void set() {
         ensureInit();
         try {
@@ -69,7 +67,7 @@ public final class NSShadow extends NSObject {
         }
     }
 
-    /** [shadow shadowOffset] -> NSSize */
+    /// [shadow shadowOffset] -> NSSize
     public NSSize shadowOffset() {
         ensureInit();
         try {
@@ -80,7 +78,7 @@ public final class NSShadow extends NSObject {
         }
     }
 
-    /** [shadow setShadowOffset:] */
+    /// [shadow setShadowOffset:]
     public void setShadowOffset(NSSize offset) {
         ensureInit();
         try {
@@ -90,7 +88,7 @@ public final class NSShadow extends NSObject {
         }
     }
 
-    /** [shadow shadowBlurRadius] */
+    /// [shadow shadowBlurRadius]
     public double shadowBlurRadius() {
         ensureInit();
         try {
@@ -100,7 +98,7 @@ public final class NSShadow extends NSObject {
         }
     }
 
-    /** [shadow setShadowBlurRadius:] */
+    /// [shadow setShadowBlurRadius:]
     public void setShadowBlurRadius(double radius) {
         ensureInit();
         try {
@@ -110,7 +108,7 @@ public final class NSShadow extends NSObject {
         }
     }
 
-    /** [shadow shadowColor] -> NSColor */
+    /// [shadow shadowColor] -> NSColor
     public NSColor shadowColor() {
         ensureInit();
         try {
@@ -121,7 +119,7 @@ public final class NSShadow extends NSObject {
         }
     }
 
-    /** [shadow setShadowColor:] */
+    /// [shadow setShadowColor:]
     public void setShadowColor(NSColor color) {
         ensureInit();
         try {

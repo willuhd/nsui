@@ -8,53 +8,49 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSWindow — a native window: frame, title, visibility, key/main status, style,
- * delegate, close. Thin 1:1 wrapper; all behavior is AppKit's.
- *
- * <p><b>The compositional style model.</b> An AppKit window's "<i>type</i>" is never a
- * named constant — it is the composition of a {@code styleMask} bit-field, the
- * concrete subclass ({@code NSWindow} vs {@code NSPanel}), and a handful of
- * behavior properties. There is <b>no settable title-bar height and no settable
- * corner radius</b> on the native side: those derive from the style you choose,
- * not from numbers you pass. If you need a given look, pick the style bits + panel
- * subclass that AppKit maps to it, then adjust the behavior booleans.
- *
- * <p><b>{@code styleMask} bits</b> (from {@code NSWindowStyleMask}, macOS 15 SDK):
- * <ul>
- *   <li>{@code 1}     {@code NSWindowStyleMaskTitled}</li>
- *   <li>{@code 2}     {@code NSWindowStyleMaskClosable}</li>
- *   <li>{@code 4}     {@code NSWindowStyleMaskMiniaturizable}</li>
- *   <li>{@code 8}     {@code NSWindowStyleMaskResizable}</li>
- *   <li>{@code 16}    {@code NSWindowStyleMaskUtilityWindow} — see {@link #createPanel}</li>
- *   <li>{@code 128}   {@code NSWindowStyleMaskNonactivatingPanel} — never activates the app</li>
- *   <li>{@code 32768} {@code NSWindowStyleMaskFullSizeContentView} — content extends under the title bar</li>
- * </ul>
- * OR the bits together (e.g. {@code 1|2|4|8} = a standard titled, closable,
- * miniaturizable, resizable document window).
- *
- * <p><b>{@code NSPanel}.</b> {@link #createPanel} builds an {@code NSPanel}
- * subclass using the very same
- * {@code initWithContentRect:styleMask:backing:defer:} initializer as
- * {@link #create}. Combined with {@code NSWindowStyleMaskUtilityWindow} (16) you
- * get AppKit's smaller-title-bar, less-rounded "settings / utility" panel. Panels
- * differ from windows in a few respects exposed here: {@link #setHidesOnDeactivate}
- * (a real {@code NSPanel} behavior via {@code hidesOnDeactivate}) and
- * {@link #setBecomesKeyOnlyIfNeeded} (a panel stays key only while controls need
- * it), plus the AppKit default that panels are excluded from the Window menu.
- * {@link #isUtilityWindow} reports whether the receiver is a utility panel:
- * {@code true} for {@code NSPanel} instances or windows whose styleMask includes
- * {@code NSWindowStyleMaskUtilityWindow}.
- *
- * <p><b>Title bar transparency &amp; visibility.</b>
- * {@link #setTitlebarAppearsTransparent} and {@link #setTitleVisibility} are the
- * AppKit-native "modern title bar" switches — the translucent/floating-header look
- * modern apps use. There is no height/radius knob; the appearance comes from the
- * style + these flags + whatever the content view draws behind the bar.
- *
- * <p>NOTE: NSWindow has NO bare {@code setFrame:} — that is an NSView selector;
- * windows use {@code setFrame:display:} and {@code setFrameOrigin:}.
- */
+/// NSWindow — a native window: frame, title, visibility, key/main status, style,
+/// delegate, close. Thin 1:1 wrapper; all behavior is AppKit's.
+///
+/// **The compositional style model.** An AppKit window's "*type*" is never a
+/// named constant — it is the composition of a `styleMask` bit-field, the
+/// concrete subclass (`NSWindow` vs `NSPanel`), and a handful of
+/// behavior properties. There is **no settable title-bar height and no settable
+/// corner radius** on the native side: those derive from the style you choose,
+/// not from numbers you pass. If you need a given look, pick the style bits + panel
+/// subclass that AppKit maps to it, then adjust the behavior booleans.
+///
+/// **`styleMask` bits** (from `NSWindowStyleMask`, macOS 15 SDK):
+/// - `1`     `NSWindowStyleMaskTitled`
+/// - `2`     `NSWindowStyleMaskClosable`
+/// - `4`     `NSWindowStyleMaskMiniaturizable`
+/// - `8`     `NSWindowStyleMaskResizable`
+/// - `16`    `NSWindowStyleMaskUtilityWindow` — see `createPanel`
+/// - `128`   `NSWindowStyleMaskNonactivatingPanel` — never activates the app
+/// - `32768` `NSWindowStyleMaskFullSizeContentView` — content extends under the title bar
+/// OR the bits together (e.g. `1|2|4|8` = a standard titled, closable,
+/// miniaturizable, resizable document window).
+///
+/// **`NSPanel`.** `createPanel` builds an `NSPanel`
+/// subclass using the very same
+/// `initWithContentRect:styleMask:backing:defer:` initializer as
+/// `create`. Combined with `NSWindowStyleMaskUtilityWindow` (16) you
+/// get AppKit's smaller-title-bar, less-rounded "settings / utility" panel. Panels
+/// differ from windows in a few respects exposed here: `setHidesOnDeactivate`
+/// (a real `NSPanel` behavior via `hidesOnDeactivate`) and
+/// `setBecomesKeyOnlyIfNeeded` (a panel stays key only while controls need
+/// it), plus the AppKit default that panels are excluded from the Window menu.
+/// `isUtilityWindow` reports whether the receiver is a utility panel:
+/// `true` for `NSPanel` instances or windows whose styleMask includes
+/// `NSWindowStyleMaskUtilityWindow`.
+///
+/// **Title bar transparency & visibility.**
+/// `setTitlebarAppearsTransparent` and `setTitleVisibility` are the
+/// AppKit-native "modern title bar" switches — the translucent/floating-header look
+/// modern apps use. There is no height/radius knob; the appearance comes from the
+/// style + these flags + whatever the content view draws behind the bar.
+///
+/// NOTE: NSWindow has NO bare `setFrame:` — that is an NSView selector;
+/// windows use `setFrame:display:` and `setFrameOrigin:`.
 public final class NSWindow extends NSObject {
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
@@ -90,7 +86,7 @@ public final class NSWindow extends NSObject {
         initialized = true;
     }
 
-    /** alloc + initWithContentRect:styleMask:backing:defer:. */
+    /// alloc + initWithContentRect:styleMask:backing:defer:.
     public static NSWindow create(NSRect contentRect, long styleMask, long backingStoreType, boolean defer) {
         MemorySegment win = ObjC.msgSendId(ObjC.cls("NSWindow"), ObjC.sel("alloc"));
         win = ObjC.msgSendIdRectLongLongBool(win, ObjC.sel("initWithContentRect:styleMask:backing:defer:"),
@@ -98,15 +94,13 @@ public final class NSWindow extends NSObject {
         return new NSWindow(win);
     }
 
-    /**
-     * Create an {@code NSPanel} with the SAME
-     * {@code initWithContentRect:styleMask:backing:defer:} initializer as
-     * {@link #create}, but from the {@code NSPanel} subclass. Add
-     * {@code NSWindowStyleMaskUtilityWindow} (16) to {@code styleMask} (e.g.
-     * {@code 15L | 16L}) to get AppKit's smaller-title-bar, less-rounded
-     * "settings / utility" panel. Panels also support the behavior properties
-     * {@link #setHidesOnDeactivate} and {@link #setBecomesKeyOnlyIfNeeded}.
-     */
+    /// Create an `NSPanel` with the SAME
+    /// `initWithContentRect:styleMask:backing:defer:` initializer as
+    /// `create`, but from the `NSPanel` subclass. Add
+    /// `NSWindowStyleMaskUtilityWindow` (16) to `styleMask` (e.g.
+    /// `15L | 16L`) to get AppKit's smaller-title-bar, less-rounded
+    /// "settings / utility" panel. Panels also support the behavior properties
+    /// `setHidesOnDeactivate` and `setBecomesKeyOnlyIfNeeded`.
     public static NSWindow createPanel(NSRect contentRect, long styleMask, long backingStoreType, boolean defer) {
         MemorySegment panel = ObjC.msgSendId(ObjC.cls("NSPanel"), ObjC.sel("alloc"));
         panel = ObjC.msgSendIdRectLongLongBool(panel, ObjC.sel("initWithContentRect:styleMask:backing:defer:"),
@@ -126,7 +120,7 @@ public final class NSWindow extends NSObject {
         ObjC.msgSendVoidBool(peer, ObjC.sel("setReleasedWhenClosed:"), flag);
     }
 
-    /** setContentView: replaces the window's root content view. */
+    /// setContentView: replaces the window's root content view.
     public void setContentView(NSView view) {
         ObjC.msgSendVoidId(peer, ObjC.sel("setContentView:"), view.peer());
     }
@@ -135,25 +129,23 @@ public final class NSWindow extends NSObject {
         ObjC.msgSendVoidId(peer, ObjC.sel("setDelegate:"), delegate.peer());
     }
 
-    /** Struct-returning message: frame (objc_msgSend_stret on x86_64). */
+    /// Struct-returning message: frame (objc_msgSend_stret on x86_64).
     public NSRect frame() {
         return NSRect.fromSegment(ObjC.msgSendRect(peer, ObjC.sel("frame")));
     }
 
-    /**
-     * The vertical offset between WINDOW base coordinates and CONTENT coordinates:
-     * {@code event.locationInWindow().y} is measured from the window FRAME's
-     * bottom-left (title bar included), while a content view's local origin sits
-     * above the title bar — so the conversion is {@code viewY = windowY - offset}.
-     * Equals the title-bar height (+ borders); x maps 1:1.
-     */
+    /// The vertical offset between WINDOW base coordinates and CONTENT coordinates:
+    /// `event.locationInWindow().y` is measured from the window FRAME's
+    /// bottom-left (title bar included), while a content view's local origin sits
+    /// above the title bar — so the conversion is `viewY = windowY - offset`.
+    /// Equals the title-bar height (+ borders); x maps 1:1.
     public double contentOriginOffsetY() {
         MemorySegment cv = ObjC.msgSendId(peer, ObjC.sel("contentView"));
         MemorySegment cb = ObjC.msgSendRect(cv, ObjC.sel("bounds"));
         return frame().height() - ObjC.rectH(cb);
     }
 
-    /** setFrame:display: — resize/reposition (and optionally redraw immediately). */
+    /// setFrame:display: — resize/reposition (and optionally redraw immediately).
     public void setFrameDisplay(NSRect frame, boolean display) {
         try {
             hSetFrameDisplay.invokeExact(peer, ObjC.sel("setFrame:display:"), frame.toSegment(), display);
@@ -162,7 +154,7 @@ public final class NSWindow extends NSObject {
         }
     }
 
-    /** setFrameOrigin: — move the window (fires windowDidMove:). */
+    /// setFrameOrigin: — move the window (fires windowDidMove:).
     public void setFrameOrigin(NSPoint origin) {
         try {
             hSetFrameOrigin.invokeExact(peer, ObjC.sel("setFrameOrigin:"), origin.toSegment());
@@ -171,7 +163,7 @@ public final class NSWindow extends NSObject {
         }
     }
 
-    /** setContentSize: — the content area's size. */
+    /// setContentSize: — the content area's size.
     public void setContentSize(NSSize size) {
         try {
             hSetContentSize.invokeExact(peer, ObjC.sel("setContentSize:"), size.toSegment());
@@ -182,89 +174,85 @@ public final class NSWindow extends NSObject {
 
     // ---------------------------------------------------------------- window "style"
 
-    /** [window styleMask] — the compositional style bit-field (see class Javadoc for bits). */
+    /// [window styleMask] — the compositional style bit-field (see class Javadoc for bits).
     public long styleMask() {
         return ObjC.msgSendLong(peer, ObjC.sel("styleMask"));
     }
 
-    /** [window setStyleMask:] — replace the style bit-field (see class Javadoc for bits). */
+    /// [window setStyleMask:] — replace the style bit-field (see class Javadoc for bits).
     public void setStyleMask(long mask) {
         ObjC.msgSendVoidLong(peer, ObjC.sel("setStyleMask:"), mask);
     }
 
-    /** [window setTitlebarAppearsTransparent:] — modern translucent title bar. */
+    /// [window setTitlebarAppearsTransparent:] — modern translucent title bar.
     public void setTitlebarAppearsTransparent(boolean transparent) {
         ObjC.msgSendVoidBool(peer, ObjC.sel("setTitlebarAppearsTransparent:"), transparent);
     }
 
-    /** [window titlebarAppearsTransparent]. */
+    /// [window titlebarAppearsTransparent].
     public boolean isTitlebarAppearsTransparent() {
         return ObjC.msgSendBool(peer, ObjC.sel("titlebarAppearsTransparent"));
     }
 
-    /**
-     * [window setTitleVisibility:] — 0 = {@code NSWindowTitleVisible},
-     * 1 = {@code NSWindowTitleHidden}. Only meaningful on a titled window.
-     */
+    /// [window setTitleVisibility:] — 0 = `NSWindowTitleVisible`,
+    /// 1 = `NSWindowTitleHidden`. Only meaningful on a titled window.
     public void setTitleVisibility(long visibility) {
         ObjC.msgSendVoidLong(peer, ObjC.sel("setTitleVisibility:"), visibility);
     }
 
-    /** [window setLevel:] — e.g. {@code NSFloatingWindowLevel}=3, {@code NSModalPanelWindowLevel}=8. */
+    /// [window setLevel:] — e.g. `NSFloatingWindowLevel`=3, `NSModalPanelWindowLevel`=8.
     public void setLevel(long level) {
         ObjC.msgSendVoidLong(peer, ObjC.sel("setLevel:"), level);
     }
 
-    /** [window level]. */
+    /// [window level].
     public long level() {
         return ObjC.msgSendLong(peer, ObjC.sel("level"));
     }
 
-    /** [window setCollectionBehavior:] — e.g. {@code NSWindowCollectionBehaviorCanJoinAllSpaces}. */
+    /// [window setCollectionBehavior:] — e.g. `NSWindowCollectionBehaviorCanJoinAllSpaces`.
     public void setCollectionBehavior(long behavior) {
         ObjC.msgSendVoidLong(peer, ObjC.sel("setCollectionBehavior:"), behavior);
     }
 
-    /** [panel setHidesOnDeactivate:] — real {@code NSPanel} behavior; see class Javadoc. */
+    /// [panel setHidesOnDeactivate:] — real `NSPanel` behavior; see class Javadoc.
     public void setHidesOnDeactivate(boolean hide) {
         ObjC.msgSendVoidBool(peer, ObjC.sel("setHidesOnDeactivate:"), hide);
     }
 
-    /** [panel hidesOnDeactivate]. */
+    /// [panel hidesOnDeactivate].
     public boolean hidesOnDeactivate() {
         return ObjC.msgSendBool(peer, ObjC.sel("hidesOnDeactivate"));
     }
 
-    /** [panel setBecomesKeyOnlyIfNeeded:] — key only while controls need it (NSPanel). */
+    /// [panel setBecomesKeyOnlyIfNeeded:] — key only while controls need it (NSPanel).
     public void setBecomesKeyOnlyIfNeeded(boolean onlyIfNeeded) {
         ObjC.msgSendVoidBool(peer, ObjC.sel("setBecomesKeyOnlyIfNeeded:"), onlyIfNeeded);
     }
 
-    /** [panel becomesKeyOnlyIfNeeded]. */
+    /// [panel becomesKeyOnlyIfNeeded].
     public boolean becomesKeyOnlyIfNeeded() {
         return ObjC.msgSendBool(peer, ObjC.sel("becomesKeyOnlyIfNeeded"));
     }
 
-    /**
-     * [window standardWindowButton:] — one of the standard close/miniaturize/zoom
-     * buttons. {@code windowButton}: 0 = {@code NSWindowCloseButton}, 1 =
-     * {@code NSWindowMiniaturizeButton}, 2 = {@code NSWindowZoomButton}.
-     *
-     * <p>Returns the raw peer wrapped as {@link NSObject}. The native object IS an
-     * {@code NSButton} subclass (measured here: {@code _NSThemeCloseWidget}) but its
-     * Java wrapper has no public way to wrap a foreign peer (its constructor is
-     * private) — so callers receive it typed as {@code NSObject} and may use it via
-     * the ObjC escape hatch or treat it as an opaque id. Non-null for a titled
-     * window's close button.
-     *
-     * <p>AppKit honesty: the private two-argument SPI
-     * {@code standardWindowButton:forFlag:} (which the {@code (ID,INT,BOOL)} vocabulary
-     * entry targets) is NOT recognized by the runtime — {@code respondsToSelector:}
-     * returns {@code false} and sending it aborts the JVM with
-     * {@code NSInvalidArgumentException 'unrecognized selector'}. The public, recognized
-     * selector is the single-argument {@code standardWindowButton:}. This wrapper uses
-     * that, so the {@code (ID,INT,BOOL)} vocabulary line is currently unused by our code.
-     */
+    /// [window standardWindowButton:] — one of the standard close/miniaturize/zoom
+    /// buttons. `windowButton`: 0 = `NSWindowCloseButton`, 1 =
+    /// `NSWindowMiniaturizeButton`, 2 = `NSWindowZoomButton`.
+    ///
+    /// Returns the raw peer wrapped as `NSObject`. The native object IS an
+    /// `NSButton` subclass (measured here: `_NSThemeCloseWidget`) but its
+    /// Java wrapper has no public way to wrap a foreign peer (its constructor is
+    /// private) — so callers receive it typed as `NSObject` and may use it via
+    /// the ObjC escape hatch or treat it as an opaque id. Non-null for a titled
+    /// window's close button.
+    ///
+    /// AppKit honesty: the private two-argument SPI
+    /// `standardWindowButton:forFlag:` (which the `(ID,INT,BOOL)` vocabulary
+    /// entry targets) is NOT recognized by the runtime — `respondsToSelector:`
+    /// returns `false` and sending it aborts the JVM with
+    /// `NSInvalidArgumentException 'unrecognized selector'`. The public, recognized
+    /// selector is the single-argument `standardWindowButton:`. This wrapper uses
+    /// that, so the `(ID,INT,BOOL)` vocabulary line is currently unused by our code.
     public NSObject standardWindowButton(long windowButton) {
         try {
             MemorySegment btn = (MemorySegment) hStdWinButton.invokeExact(peer,
@@ -275,117 +263,115 @@ public final class NSWindow extends NSObject {
         }
     }
 
-    /**
-     * Utility/panel detection. AppKit honesty: the private selector
-     * {@code isUtilityWindow} is NOT recognized by the runtime ({@code respondsToSelector:}
-     * returns {@code false} on both {@code NSWindow} and {@code NSPanel}, and sending it
-     * aborts with {@code NSInvalidArgumentException 'unrecognized selector'}). The public,
-     * recognized predicate for "is this a utility / panel window" is
-     * {@code isFloatingPanel}, which returns {@code true} for {@code NSPanel} instances
-     * and for windows whose styleMask includes {@code NSWindowStyleMaskUtilityWindow}.
-     * This wrapper queries that selector, so {@code isUtilityWindow()} == {@code true}
-     * exactly when the window is a utility panel.
-     */
+    /// Utility/panel detection. AppKit honesty: the private selector
+    /// `isUtilityWindow` is NOT recognized by the runtime (`respondsToSelector:`
+    /// returns `false` on both `NSWindow` and `NSPanel`, and sending it
+    /// aborts with `NSInvalidArgumentException 'unrecognized selector'`). The public,
+    /// recognized predicate for "is this a utility / panel window" is
+    /// `isFloatingPanel`, which returns `true` for `NSPanel` instances
+    /// and for windows whose styleMask includes `NSWindowStyleMaskUtilityWindow`.
+    /// This wrapper queries that selector, so `isUtilityWindow()` == `true`
+    /// exactly when the window is a utility panel.
     public boolean isUtilityWindow() {
         return ObjC.msgSendBool(peer, ObjC.sel("isFloatingPanel"));
     }
 
     // ---------------------------------------------------------------- additional properties — completeness
 
-    /** [window title] — the window title string. */
+    /// [window title] — the window title string.
     public String title() {
         MemorySegment s = ObjC.msgSendId(peer, ObjC.sel("title"));
         return ObjC.toString(s);
     }
 
-    /** [window titleVisibility] — 0 = NSWindowTitleVisible, 1 = NSWindowTitleHidden. */
+    /// [window titleVisibility] — 0 = NSWindowTitleVisible, 1 = NSWindowTitleHidden.
     public long titleVisibility() {
         return ObjC.msgSendLong(peer, ObjC.sel("titleVisibility"));
     }
 
-    /** [window collectionBehavior] — NSWindowCollectionBehavior bit-field. */
+    /// [window collectionBehavior] — NSWindowCollectionBehavior bit-field.
     public long collectionBehavior() {
         return ObjC.msgSendLong(peer, ObjC.sel("collectionBehavior"));
     }
 
-    /** [window contentView] — the window's root content view. */
+    /// [window contentView] — the window's root content view.
     public NSView contentView() {
         MemorySegment v = ObjC.msgSendId(peer, ObjC.sel("contentView"));
         return NSView.wrap(v);
     }
 
-    /** [window isMovable]. */
+    /// [window isMovable].
     public boolean isMovable() {
         return ObjC.msgSendBool(peer, ObjC.sel("isMovable"));
     }
 
-    /** [window setMovable:]. */
+    /// [window setMovable:].
     public void setMovable(boolean flag) {
         ObjC.msgSendVoidBool(peer, ObjC.sel("setMovable:"), flag);
     }
 
-    /** [window isMovableByWindowBackground]. */
+    /// [window isMovableByWindowBackground].
     public boolean isMovableByWindowBackground() {
         return ObjC.msgSendBool(peer, ObjC.sel("isMovableByWindowBackground"));
     }
 
-    /** [window setMovableByWindowBackground:]. */
+    /// [window setMovableByWindowBackground:].
     public void setMovableByWindowBackground(boolean flag) {
         ObjC.msgSendVoidBool(peer, ObjC.sel("setMovableByWindowBackground:"), flag);
     }
 
-    /** [window isExcludedFromWindowsMenu]. */
+    /// [window isExcludedFromWindowsMenu].
     public boolean isExcludedFromWindowsMenu() {
         return ObjC.msgSendBool(peer, ObjC.sel("isExcludedFromWindowsMenu"));
     }
 
-    /** [window setExcludedFromWindowsMenu:]. */
+    /// [window setExcludedFromWindowsMenu:].
     public void setExcludedFromWindowsMenu(boolean flag) {
         ObjC.msgSendVoidBool(peer, ObjC.sel("setExcludedFromWindowsMenu:"), flag);
     }
 
-    /** [window tabbingMode] — NSWindowTabbingMode. */
+    /// [window tabbingMode] — NSWindowTabbingMode.
     public long tabbingMode() {
         return ObjC.msgSendLong(peer, ObjC.sel("tabbingMode"));
     }
 
-    /** [window setTabbingMode:]. */
+    /// [window setTabbingMode:].
     public void setTabbingMode(long mode) {
         ObjC.msgSendVoidLong(peer, ObjC.sel("setTabbingMode:"), mode);
     }
 
-    /** [window backgroundColor] — may be nil. */
+    /// [window backgroundColor] — may be nil.
     public NSColor backgroundColor() {
         MemorySegment c = ObjC.msgSendId(peer, ObjC.sel("backgroundColor"));
         return NSColor.wrap(c);
     }
 
-    /** [window setBackgroundColor:]. */
+    /// [window setBackgroundColor:].
     public void setBackgroundColor(NSColor color) {
         ObjC.msgSendVoidId(peer, ObjC.sel("setBackgroundColor:"), (MemorySegment) (color == null ? MemorySegment.NULL : color.peer()));
     }
 
-    /** [window isOpaque]. */
+    /// [window isOpaque].
     public boolean isOpaque() {
         return ObjC.msgSendBool(peer, ObjC.sel("isOpaque"));
     }
 
-    /** [window setOpaque:]. */
+    /// [window setOpaque:].
     public void setOpaque(boolean flag) {
         ObjC.msgSendVoidBool(peer, ObjC.sel("setOpaque:"), flag);
     }
 
-    /** [window hasShadow]. */
+    /// [window hasShadow].
     public boolean hasShadow() {
         return ObjC.msgSendBool(peer, ObjC.sel("hasShadow"));
     }
 
-    /** [window setHasShadow:]. */
+    /// [window setHasShadow:].
     public void setHasShadow(boolean flag) {
         ObjC.msgSendVoidBool(peer, ObjC.sel("setHasShadow:"), flag);
     }
 
-    /** [window alphaValue] — 0.0 to 1.0. */
+    /// [window alphaValue] — 0.0 to 1.0.
     public double alphaValue() {
         try {
             return (double) hGetDouble.invokeExact(peer, ObjC.sel("alphaValue"));
@@ -394,7 +380,7 @@ public final class NSWindow extends NSObject {
         }
     }
 
-    /** [window setAlphaValue:]. */
+    /// [window setAlphaValue:].
     public void setAlphaValue(double alpha) {
         try {
             hSetDouble.invokeExact(peer, ObjC.sel("setAlphaValue:"), alpha);
@@ -403,7 +389,7 @@ public final class NSWindow extends NSObject {
         }
     }
 
-    /** [window minSize] — NSSize. */
+    /// [window minSize] — NSSize.
     public NSSize minSize() {
         try {
             MemorySegment s = (MemorySegment) hGetSize.invokeExact((java.lang.foreign.SegmentAllocator) java.lang.foreign.Arena.global(), peer, ObjC.sel("minSize"));
@@ -413,7 +399,7 @@ public final class NSWindow extends NSObject {
         }
     }
 
-    /** [window setMinSize:]. */
+    /// [window setMinSize:].
     public void setMinSize(NSSize size) {
         try {
             hSetSize.invokeExact(peer, ObjC.sel("setMinSize:"), size.toSegment());
@@ -422,7 +408,7 @@ public final class NSWindow extends NSObject {
         }
     }
 
-    /** [window maxSize] — NSSize. */
+    /// [window maxSize] — NSSize.
     public NSSize maxSize() {
         try {
             MemorySegment s = (MemorySegment) hGetSize.invokeExact((java.lang.foreign.SegmentAllocator) java.lang.foreign.Arena.global(), peer, ObjC.sel("maxSize"));
@@ -432,7 +418,7 @@ public final class NSWindow extends NSObject {
         }
     }
 
-    /** [window setMaxSize:]. */
+    /// [window setMaxSize:].
     public void setMaxSize(NSSize size) {
         try {
             hSetSize.invokeExact(peer, ObjC.sel("setMaxSize:"), size.toSegment());
@@ -441,23 +427,23 @@ public final class NSWindow extends NSObject {
         }
     }
 
-    /** [window frameAutosaveName] — may be nil/empty. */
+    /// [window frameAutosaveName] — may be nil/empty.
     public String frameAutosaveName() {
         MemorySegment s = ObjC.msgSendId(peer, ObjC.sel("frameAutosaveName"));
         return ObjC.toString(s);
     }
 
-    /** [window setFrameAutosaveName:]. */
+    /// [window setFrameAutosaveName:].
     public void setFrameAutosaveName(String name) {
         ObjC.msgSendVoidId(peer, ObjC.sel("setFrameAutosaveName:"), ObjC.nsstring(name));
     }
 
-    /** [window isDocumentEdited]. */
+    /// [window isDocumentEdited].
     public boolean isDocumentEdited() {
         return ObjC.msgSendBool(peer, ObjC.sel("isDocumentEdited"));
     }
 
-    /** [window setDocumentEdited:]. */
+    /// [window setDocumentEdited:].
     public void setDocumentEdited(boolean flag) {
         ObjC.msgSendVoidBool(peer, ObjC.sel("setDocumentEdited:"), flag);
     }
@@ -488,7 +474,7 @@ public final class NSWindow extends NSObject {
 
     // ---------------------------------------------------------------- sheets (modal sheet inside window, blocks window)
 
-    /** beginSheet:completionHandler: — attach sheet to receiver; handler receives NSModalResponse. */
+    /// beginSheet:completionHandler: — attach sheet to receiver; handler receives NSModalResponse.
     public void beginSheet(NSWindow sheet, java.util.function.IntConsumer completionHandler) {
         if (sheet == null) return;
         try {
@@ -518,7 +504,7 @@ public final class NSWindow extends NSObject {
         }
     }
 
-    /** beginSheet:completionHandler: with raw block segment (for advanced use). */
+    /// beginSheet:completionHandler: with raw block segment (for advanced use).
     public void beginSheet(NSWindow sheet, MemorySegment completionHandlerBlock) {
         if (sheet == null) return;
         try {
@@ -534,13 +520,13 @@ public final class NSWindow extends NSObject {
         handler.accept((int) response);
     }
 
-    /** endSheet: — dismiss sheet. */
+    /// endSheet: — dismiss sheet.
     public void endSheet(NSWindow sheet) {
         if (sheet == null) return;
         ObjC.msgSendVoidId(peer, ObjC.sel("endSheet:"), sheet.peer());
     }
 
-    /** endSheet:returnCode: */
+    /// endSheet:returnCode:
     public void endSheet(NSWindow sheet, long returnCode) {
         if (sheet == null) return;
         try {
@@ -551,24 +537,24 @@ public final class NSWindow extends NSObject {
         }
     }
 
-    /** attachedSheet — current sheet or null. */
+    /// attachedSheet — current sheet or null.
     public NSWindow attachedSheet() {
         MemorySegment s = ObjC.msgSendId(peer, ObjC.sel("attachedSheet"));
         return (s == null || s.address() == 0) ? null : new NSWindow(s);
     }
 
-    /** isSheet */
+    /// isSheet
     public boolean isSheet() {
         return ObjC.msgSendBool(peer, ObjC.sel("isSheet"));
     }
 
-    /** sheetParent */
+    /// sheetParent
     public NSWindow sheetParent() {
         MemorySegment s = ObjC.msgSendId(peer, ObjC.sel("sheetParent"));
         return (s == null || s.address() == 0) ? null : new NSWindow(s);
     }
 
-    /** orderOut: */
+    /// orderOut:
     public void orderOut(NSObject sender) {
         ObjC.msgSendVoidId(peer, ObjC.sel("orderOut:"), sender == null ? MemorySegment.NULL : sender.peer());
     }

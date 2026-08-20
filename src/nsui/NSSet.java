@@ -8,10 +8,8 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSSet — minimal typed wrapper over native {@code NSSet} / {@code NSMutableSet}.
- * Thin, stateless: every method maps to one {@code objc_msgSend}.
- */
+/// NSSet — minimal typed wrapper over native `NSSet` / `NSMutableSet`.
+/// Thin, stateless: every method maps to one `objc_msgSend`.
 public class NSSet extends NSObject {
 
     private static volatile boolean initialized;
@@ -30,14 +28,14 @@ public class NSSet extends NSObject {
         return (peer == null || peer.address() == 0) ? null : new NSSet(peer);
     }
 
-    /** [NSSet set] — empty immutable set. */
+    /// [NSSet set] — empty immutable set.
     public static NSSet set() {
         ensureInit();
         MemorySegment s = ObjC.msgSendId(ObjC.cls("NSSet"), ObjC.sel("set"));
         return wrap(s);
     }
 
-    /** [NSSet setWithObject:] — single object. */
+    /// [NSSet setWithObject:] — single object.
     public static NSSet setWithObject(NSObject object) {
         ensureInit();
         if (object == null) return set();
@@ -45,7 +43,7 @@ public class NSSet extends NSObject {
         return wrap(s);
     }
 
-    /** [NSSet setWithArray:] */
+    /// [NSSet setWithArray:]
     public static NSSet setWithArray(NSArray array) {
         ensureInit();
         if (array == null) return set();
@@ -53,7 +51,7 @@ public class NSSet extends NSObject {
         return wrap(s);
     }
 
-    /** [NSSet setWithObjects:count:] helper via array. */
+    /// [NSSet setWithObjects:count:] helper via array.
     public static NSSet setWithObjects(NSObject... objects) {
         ensureInit();
         if (objects == null || objects.length == 0) return set();
@@ -74,7 +72,7 @@ public class NSSet extends NSObject {
         initialized = true;
     }
 
-    /** count */
+    /// count
     public long count() {
         ensureInit();
         try { return (long) hCount.invokeExact(peer, ObjC.sel("count")); }
@@ -83,7 +81,7 @@ public class NSSet extends NSObject {
 
     public boolean isEmpty() { return count() == 0; }
 
-    /** containsObject: */
+    /// containsObject:
     public boolean containsObject(NSObject object) {
         ensureInit();
         if (object == null) return false;
@@ -98,7 +96,7 @@ public class NSSet extends NSObject {
         catch (Throwable t) { throw new RuntimeException("containsObject: failed", t); }
     }
 
-    /** member: — returns matching object or nil. */
+    /// member: — returns matching object or nil.
     public MemorySegment member(MemorySegment object) {
         ensureInit();
         if (object == null || object.address() == 0) return null;
@@ -113,7 +111,7 @@ public class NSSet extends NSObject {
         return seg == null ? null : NSObject.wrap(seg);
     }
 
-    /** anyObject */
+    /// anyObject
     public MemorySegment anyObject() {
         ensureInit();
         try {
@@ -122,7 +120,7 @@ public class NSSet extends NSObject {
         } catch (Throwable t) { throw new RuntimeException("anyObject failed", t); }
     }
 
-    /** allObjects — NSArray of members. */
+    /// allObjects — NSArray of members.
     public NSArray allObjects() {
         ensureInit();
         try {
@@ -131,7 +129,7 @@ public class NSSet extends NSObject {
         } catch (Throwable t) { throw new RuntimeException("allObjects failed", t); }
     }
 
-    /** isEqualToSet: */
+    /// isEqualToSet:
     public boolean isEqualToSet(NSSet other) {
         ensureInit();
         if (other == null) return false;
@@ -141,7 +139,7 @@ public class NSSet extends NSObject {
         } catch (Throwable t) { throw new RuntimeException("isEqualToSet: failed", t); }
     }
 
-    /** intersectsSet: */
+    /// intersectsSet:
     public boolean intersectsSet(NSSet other) {
         ensureInit();
         if (other == null) return false;
@@ -151,7 +149,7 @@ public class NSSet extends NSObject {
         } catch (Throwable t) { throw new RuntimeException("intersectsSet: failed", t); }
     }
 
-    /** isSubsetOfSet: */
+    /// isSubsetOfSet:
     public boolean isSubsetOfSet(NSSet other) {
         ensureInit();
         if (other == null) return false;

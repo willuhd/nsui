@@ -8,18 +8,16 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSButton — an AppKit push-button control. Thin, 1:1, stateless wrapper over a
- * native {@code NSButton} (SWT-style): every method maps to one {@code objc_msgSend}
- * selector, no cached Java state beyond the peer. Mirrors the native hierarchy:
- * NSButton is an NSControl is an NSView, so buttons drop into any view hierarchy.
- *
- * <p>The most common path is {@link #create}: {@code [[NSButton alloc] initWithFrame:]}
- * then {@code setTitle:}, {@code setTarget:}/{@code setAction:}, bezel + button type,
- * {@code sizeToFit} and a {@code setFrame:} with the fitted size. The action target is
- * an ObjC instance built by {@code DelegateProxy.actionTarget} — passing raw selector
- * names into {@code setAction:} on the native side.
- */
+/// NSButton — an AppKit push-button control. Thin, 1:1, stateless wrapper over a
+/// native `NSButton` (SWT-style): every method maps to one `objc_msgSend`
+/// selector, no cached Java state beyond the peer. Mirrors the native hierarchy:
+/// NSButton is an NSControl is an NSView, so buttons drop into any view hierarchy.
+///
+/// The most common path is `create`: `[[NSButton alloc] initWithFrame:]`
+/// then `setTitle:`, `setTarget:`/`setAction:`, bezel + button type,
+/// `sizeToFit` and a `setFrame:` with the fitted size. The action target is
+/// an ObjC instance built by `DelegateProxy.actionTarget` — passing raw selector
+/// names into `setAction:` on the native side.
 public final class NSButton extends NSControl {
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
@@ -32,7 +30,7 @@ public final class NSButton extends NSControl {
         ensureInit();
     }
 
-    /** Wrap an existing native NSButton/NSStatusBarButton peer (no ownership change). */
+    /// Wrap an existing native NSButton/NSStatusBarButton peer (no ownership change).
     public static NSButton wrap(MemorySegment peer) {
         return (peer == null || peer.address() == 0) ? null : new NSButton(peer);
     }
@@ -44,17 +42,15 @@ public final class NSButton extends NSControl {
         initialized = true;
     }
 
-    /**
-     * {@code [[NSButton alloc] initWithFrame:frame]} then configure bezel/type and
-     * wire the target/action, then {@code sizeToFit} and re-apply {@code setFrame:}
-     * with the fitted size (keeps the requested origin, adopts the intrinsic size).
-     *
-     * @param frame          the requested frame (origin honored, size replaced by the fitted size)
-     * @param title          the button's title
-     * @param target         the ObjC action target (e.g. from {@code DelegateProxy.actionTarget})
-     * @param actionSelector the ObjC selector the control fires against {@code target},
-     *                        e.g. {@code "pressed:"}
-     */
+    /// `[[NSButton alloc] initWithFrame:frame]` then configure bezel/type and
+    /// wire the target/action, then `sizeToFit` and re-apply `setFrame:`
+    /// with the fitted size (keeps the requested origin, adopts the intrinsic size).
+    ///
+    /// @param frame          the requested frame (origin honored, size replaced by the fitted size)
+    /// @param title          the button's title
+    /// @param target         the ObjC action target (e.g. from `DelegateProxy.actionTarget`)
+    /// @param actionSelector the ObjC selector the control fires against `target`,
+    /// e.g. `"pressed:"`
     public static NSButton create(NSRect frame, String title, MemorySegment target, String actionSelector) {
         ensureInit();
         MemorySegment b = ObjC.msgSendId(ObjC.cls("NSButton"), ObjC.sel("alloc"));
@@ -83,17 +79,17 @@ public final class NSButton extends NSControl {
 
     // ---------------------------------------------------------------- instance API
 
-    /** [button setTitle:] — the string shown on the bezel. */
+    /// [button setTitle:] — the string shown on the bezel.
     public void setTitle(String title) {
         ObjC.msgSendVoidId(peer, ObjC.sel("setTitle:"), ObjC.nsstring(title));
     }
 
-    /** [button title] — the current title (NSString -> String). */
+    /// [button title] — the current title (NSString -> String).
     public String title() {
         return ObjC.toString(ObjC.msgSendId(peer, ObjC.sel("title")));
     }
 
-    /** [button alternateTitle] — the alternate title (for stateful buttons). */
+    /// [button alternateTitle] — the alternate title (for stateful buttons).
     public String alternateTitle() {
         return ObjC.toString(ObjC.msgSendId(peer, ObjC.sel("alternateTitle")));
     }
@@ -101,7 +97,7 @@ public final class NSButton extends NSControl {
         ObjC.msgSendVoidId(peer, ObjC.sel("setAlternateTitle:"), ObjC.nsstring(t));
     }
 
-    /** [button attributedTitle] — NSAttributedString id. */
+    /// [button attributedTitle] — NSAttributedString id.
     public MemorySegment attributedTitle() {
         return ObjC.msgSendId(peer, ObjC.sel("attributedTitle"));
     }
@@ -115,21 +111,21 @@ public final class NSButton extends NSControl {
         ObjC.msgSendVoidId(peer, ObjC.sel("setAttributedAlternateTitle:"), attr);
     }
 
-    /** [button sizeToFit] — size the button to its intrinsic content. */
+    /// [button sizeToFit] — size the button to its intrinsic content.
     public void sizeToFit() {
         ObjC.msgSendVoid(peer, ObjC.sel("sizeToFit"));
     }
 
-    /** [button bezelStyle] — NSBezelStyle. */
+    /// [button bezelStyle] — NSBezelStyle.
     public long bezelStyle() {
         return ObjC.msgSendLong(peer, ObjC.sel("bezelStyle"));
     }
-    /** [button setBezelStyle:] — NSBezelStyle (1 = Rounded). */
+    /// [button setBezelStyle:] — NSBezelStyle (1 = Rounded).
     public void setBezelStyle(long style) {
         ObjC.msgSendVoidLong(peer, ObjC.sel("setBezelStyle:"), style);
     }
 
-    /** [button setButtonType:] — NSButtonType (0 = MomentaryPushIn). */
+    /// [button setButtonType:] — NSButtonType (0 = MomentaryPushIn).
     public void setButtonType(long type) {
         ObjC.msgSendVoidLong(peer, ObjC.sel("setButtonType:"), type);
     }

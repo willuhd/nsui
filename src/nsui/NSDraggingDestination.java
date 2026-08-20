@@ -2,33 +2,31 @@ package nsui;
 
 import java.lang.foreign.MemorySegment;
 
-/**
- * NSDraggingDestination — minimal protocol marker for drop targets.
- */
+/// NSDraggingDestination — minimal protocol marker for drop targets.
 public interface NSDraggingDestination {
 
-    /** draggingEntered: — return NSDragOperation. */
+    /// draggingEntered: — return NSDragOperation.
     default long draggingEntered(NSDraggingSession session) { return 0; }
 
-    /** draggingUpdated: */
+    /// draggingUpdated:
     default long draggingUpdated(NSDraggingSession session) { return 0; }
 
-    /** draggingExited: */
+    /// draggingExited:
     default void draggingExited(NSDraggingSession session) {}
 
-    /** prepareForDragOperation: */
+    /// prepareForDragOperation:
     default boolean prepareForDragOperation(NSDraggingSession session) { return true; }
 
-    /** performDragOperation: */
+    /// performDragOperation:
     default boolean performDragOperation(NSDraggingSession session) { return false; }
 
-    /** concludeDragOperation: */
+    /// concludeDragOperation:
     default void concludeDragOperation(NSDraggingSession session) {}
 
-    /** draggingEnded: */
+    /// draggingEnded:
     default void draggingEnded(NSDraggingSession session) {}
 
-    /** wantsPeriodicDraggingUpdates */
+    /// wantsPeriodicDraggingUpdates
     default boolean wantsPeriodicDraggingUpdates() { return true; }
 
     default MemorySegment peer() { return MemorySegment.NULL; }

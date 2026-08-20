@@ -17,39 +17,33 @@ import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 import static nsui.objc.Sig.S;
 
-/**
- * Objective-C runtime + AppKit bindings built purely on the Java FFM API
- * (java.lang.foreign, JEP 454). No JNI, no JNA, no AWT/Swing/SWT, no third-party
- * libraries — every native call goes through {@code objc_msgSend} &amp; friends,
- * resolved at runtime with {@link SymbolLookup#libraryLookup(String, Arena)}.
- *
- * <p>Dispatch model — signature-keyed, resolve-once:
- * <ul>
- *   <li>{@link Sig} is the single source of truth: one {@code FunctionDescriptor}
- *       per <em>signature</em> (return class + argument classes), shared by every
- *       selector with that shape.</li>
- *   <li>{@link #init()} builds one downcall handle per vocabulary entry and binds
- *       them to the typed {@code msgSend*} helpers below. Hot paths use the typed
- *       helpers: a static {@code MethodHandle} + {@code invokeExact} — no map
- *       lookup, no boxing, no per-call adaptation.</li>
- *   <li>New selectors with a known signature cost zero new code; an unknown
- *       signature fails loudly with the exact vocabulary line to add — in both
- *       JVM and AOT modes, so the closed world can never drift.</li>
- * </ul>
- *
- * <p>Native-image notes (GraalVM 25):
- * <ul>
- *   <li>Downcall/upcall handles MUST be created at run time — never in static
- *       initializers — so everything is built by {@link #init()}, called from main().</li>
- *   <li>Nothing is linked at build time: libobjc, AppKit &amp; friends are dlopen'ed
- *       at runtime via their absolute paths (works through the dyld shared cache).</li>
- *   <li>By-value INPUT marshalling ({@link #rect}, {@link #cstring}) is routed through the
- *       per-turn {@link Scratch} arena so it does not leak immortal segments at 60fps.
- *       Struct RETURNS ({@link #msgSendRect}) and the escape hatch still land in
- *       {@code Arena.global()}. Selector/class names are cached in the global arena
- *       ({@link #sel(String)}, {@link #cls(String)}).</li>
- * </ul>
- */
+/// Objective-C runtime + AppKit bindings built purely on the Java FFM API
+/// (java.lang.foreign, JEP 454). No JNI, no JNA, no AWT/Swing/SWT, no third-party
+/// libraries — every native call goes through `objc_msgSend` & friends,
+/// resolved at runtime with `libraryLookup`.
+///
+/// Dispatch model — signature-keyed, resolve-once:
+/// - `Sig` is the single source of truth: one `FunctionDescriptor`
+///   per *signature* (return class + argument classes), shared by every
+/// selector with that shape.
+/// - `init` builds one downcall handle per vocabulary entry and binds
+///   them to the typed `msgSend*` helpers below. Hot paths use the typed
+/// helpers: a static `MethodHandle` + `invokeExact` — no map
+/// lookup, no boxing, no per-call adaptation.
+/// - New selectors with a known signature cost zero new code; an unknown
+///   signature fails loudly with the exact vocabulary line to add — in both
+/// JVM and AOT modes, so the closed world can never drift.
+///
+/// Native-image notes (GraalVM 25):
+/// - Downcall/upcall handles MUST be created at run time — never in static
+///   initializers — so everything is built by `init`, called from main().
+/// - Nothing is linked at build time: libobjc, AppKit & friends are dlopen'ed
+///   at runtime via their absolute paths (works through the dyld shared cache).
+/// - By-value INPUT marshalling (`rect`, `cstring`) is routed through the
+///   per-turn `Scratch` arena so it does not leak immortal segments at 60fps.
+/// Struct RETURNS (`msgSendRect`) and the escape hatch still land in
+/// `Arena.global()`. Selector/class names are cached in the global arena
+/// (`sel`, `cls`).
 public final class ObjC {
 
     // ---- canonical layouts (resolved at runtime to stay platform-correct) ----
@@ -59,7 +53,7 @@ public final class ObjC {
     public static ValueLayout BOOL;   // C _Bool -> Java boolean
     public static ValueLayout SIZE_T; // size_t
     public static ValueLayout INT;    // int
-    /** NSRect == struct { CGFloat x, y, width, height } (4 doubles, passed by value). */
+    /// NSRect == struct { CGFloat x, y, width, height } (4 doubles, passed by value).
     public static MemoryLayout NS_RECT;
 
     private static Linker LINKER;
@@ -96,7 +90,7 @@ public final class ObjC {
 
     private ObjC() {}
 
-    /** Must run at RUNTIME, from main() — not from a static initializer (native-image rule). */
+    /// Must run at RUNTIME, from main() — not from a static initializer (native-image rule).
     public static void init() {
         LINKER = Linker.nativeLinker();
         PTR = (ValueLayout) LINKER.canonicalLayouts().get("void*");
@@ -148,11 +142,9 @@ public final class ObjC {
         hEscapeVoid = handle(Sig.of(Ret.VOID, Arg.ID, Arg.ID, Arg.ID, Arg.ID, Arg.ID, Arg.ID));
     }
 
-    /**
-     * The downcall handle for a vocabulary signature. Fails loudly when the signature
-     * is missing — in BOTH JVM and AOT modes, so the vocabulary (the single source of
-     * truth for registration) can never drift from what the code actually sends.
-     */
+    /// The downcall handle for a vocabulary signature. Fails loudly when the signature
+    /// is missing — in BOTH JVM and AOT modes, so the vocabulary (the single source of
+    /// truth for registration) can never drift from what the code actually sends.
     public static MethodHandle handle(S s) {
         MethodHandle h = HANDLES.get(s);
         if (h == null) {
@@ -164,7 +156,7 @@ public final class ObjC {
 
     // ------------------------------------------------------------------ runtime
 
-    /** dlopen() a system framework so its classes become visible to the ObjC runtime. */
+    /// dlopen() a system framework so its classes become visible to the ObjC runtime.
     public static void ensureFramework(String name) {
         String path = "/System/Library/Frameworks/" + name + ".framework/" + name;
         MemorySegment h = (MemorySegment) invokeX(hDlopen, cstring(path), 0x2 /* RTLD_NOW */ | 0x8 /* RTLD_GLOBAL */);
@@ -173,23 +165,19 @@ public final class ObjC {
         }
     }
 
-    /**
-     * ONE global-arena cstring per distinct selector / class name, forever. Strings are
-     * cached in the IMMORTAL arena (never scratch) because a cached pointer must stay
-     * valid across turns; the per-call cost collapses to a {@link ConcurrentHashMap}
-     * lookup — no scratch, no churn. Bounded by the number of distinct selector/class
-     * names the program touches.
-     */
+    /// ONE global-arena cstring per distinct selector / class name, forever. Strings are
+    /// cached in the IMMORTAL arena (never scratch) because a cached pointer must stay
+    /// valid across turns; the per-call cost collapses to a `ConcurrentHashMap`
+    /// lookup — no scratch, no churn. Bounded by the number of distinct selector/class
+    /// names the program touches.
     private static final ConcurrentHashMap<String, MemorySegment> SEL_CACHE = new ConcurrentHashMap<>();
     private static final ConcurrentHashMap<String, MemorySegment> CLASS_CACHE = new ConcurrentHashMap<>();
 
-    /**
-     * NUL-terminated C string. During a turn the bytes are written into the per-turn
-     * scratch buffer ({@link Scratch}), so the memory is only valid until the turn ends —
-     * the callee MUST copy it before returning. With no turn active it falls back to the
-     * global arena (as before). Prefer one of the cached paths ({@link #sel}, {@link #cls})
-     * for selector/class names that repeat.
-     */
+    /// NUL-terminated C string. During a turn the bytes are written into the per-turn
+    /// scratch buffer (`Scratch`), so the memory is only valid until the turn ends —
+    /// the callee MUST copy it before returning. With no turn active it falls back to the
+    /// global arena (as before). Prefer one of the cached paths (`sel`, `cls`)
+    /// for selector/class names that repeat.
     public static MemorySegment cstring(String s) {
         if (s.indexOf(0) >= 0) {
             throw new IllegalArgumentException("cstring must not contain a NUL byte");
@@ -204,32 +192,30 @@ public final class ObjC {
         return ARENA.allocateFrom(s);
     }
 
-    /** Global-arena cstring used by the SEL/CLASS caches (safe to hold forever). */
+    /// Global-arena cstring used by the SEL/CLASS caches (safe to hold forever).
     private static MemorySegment globalCstring(String s) {
         return ARENA.allocateFrom(s);
     }
 
-    /** objc_getClass(name) — cstring is cached in the global arena per distinct name. */
+    /// objc_getClass(name) — cstring is cached in the global arena per distinct name.
     public static MemorySegment cls(String name) {
         return (MemorySegment) invokeX(hGetClass,
                 CLASS_CACHE.computeIfAbsent(name, ObjC::globalCstring));
     }
 
-    /**
-     * sel_registerName(name). {@code sel_registerName} is already unique-per-name natively,
-     * so we cache the cstring input per distinct name instead of allocating one every call.
-     */
+    /// sel_registerName(name). `sel_registerName` is already unique-per-name natively,
+    /// so we cache the cstring input per distinct name instead of allocating one every call.
     public static MemorySegment sel(String name) {
         return (MemorySegment) invokeX(hSelRegister,
                 SEL_CACHE.computeIfAbsent(name, ObjC::globalCstring));
     }
 
-    /** NSString from a Java string ([NSString stringWithUTF8String:]). */
+    /// NSString from a Java string ([NSString stringWithUTF8String:]).
     public static MemorySegment nsstring(String s) {
         return (MemorySegment) invokeX(hIdId, cls("NSString"), sel("stringWithUTF8String:"), cstring(s));
     }
 
-    /** NSString -> Java String (via [NSString UTF8String]) — safe for arbitrary length (strlen loop, no 4096 truncation). */
+    /// NSString -> Java String (via [NSString UTF8String]) — safe for arbitrary length (strlen loop, no 4096 truncation).
     public static String toString(MemorySegment nsString) {
         if (nsString == null || nsString.address() == 0) return null;
         MemorySegment c = msgSendId(nsString, sel("UTF8String"));
@@ -251,13 +237,11 @@ public final class ObjC {
         return c.reinterpret(len + 1).getString(0);
     }
 
-    /**
-     * Allocate an NSRect. When a turn is active the 32-byte struct comes from the per-turn
-     * scratch buffer ({@link Scratch}) — safe because a rect is always a by-value INPUT
-     * argument (the callee reads it during the call); when no turn is active it falls back
-     * to the global arena, exactly as before. Struct RETURNS ({@link #msgSendRect}) are never
-     * scratch — they stay in the global arena.
-     */
+    /// Allocate an NSRect. When a turn is active the 32-byte struct comes from the per-turn
+    /// scratch buffer (`Scratch`) — safe because a rect is always a by-value INPUT
+    /// argument (the callee reads it during the call); when no turn is active it falls back
+    /// to the global arena, exactly as before. Struct RETURNS (`msgSendRect`) are never
+    /// scratch — they stay in the global arena.
     public static MemorySegment rect(double x, double y, double w, double h) {
         MemorySegment r = Scratch.active()
                 ? Scratch.alloc(NS_RECT.byteSize())
@@ -328,20 +312,16 @@ public final class ObjC {
         try { return (boolean) hBool.invokeExact(recv, s); } catch (Throwable t) { throw fail(t); }
     }
 
-    /**
-     * Struct-returning message (NSRect); uses objc_msgSend_stret on x86_64.
-     * FFM gives downcalls with group-layout returns an implicit leading
-     * SegmentAllocator parameter, which is where the returned struct is written.
-     */
+    /// Struct-returning message (NSRect); uses objc_msgSend_stret on x86_64.
+    /// FFM gives downcalls with group-layout returns an implicit leading
+    /// SegmentAllocator parameter, which is where the returned struct is written.
     public static MemorySegment msgSendRect(MemorySegment recv, MemorySegment s) {
         try { return (MemorySegment) hRect.invokeExact((SegmentAllocator) ARENA, recv, s); } catch (Throwable t) { throw fail(t); }
     }
 
-    /**
-     * Generic object-argument message: any selector whose arguments are all objects
-     * (id/SEL/pointers), NULL-padded to the fixed 6-arg descriptor. The AOT-safe
-     * escape hatch for selectors whose exact signature is not in the vocabulary.
-     */
+    /// Generic object-argument message: any selector whose arguments are all objects
+    /// (id/SEL/pointers), NULL-padded to the fixed 6-arg descriptor. The AOT-safe
+    /// escape hatch for selectors whose exact signature is not in the vocabulary.
     public static MemorySegment invoke(MemorySegment recv, MemorySegment sel, MemorySegment... args) {
         if (args.length > 6) {
             throw new IllegalArgumentException("escape hatch supports up to 6 object args, got " + args.length);
@@ -359,7 +339,7 @@ public final class ObjC {
         }
     }
 
-    /** Void-returning variant of {@link #invoke}. */
+    /// Void-returning variant of `invoke`.
     public static void invokeVoid(MemorySegment recv, MemorySegment sel, MemorySegment... args) {
         if (args.length > 6) {
             throw new IllegalArgumentException("escape hatch supports up to 6 object args, got " + args.length);
@@ -379,7 +359,7 @@ public final class ObjC {
 
     // ------------------------------------------------------- class pair + upcalls
 
-    /** objc_allocateClassPair + objc_registerClassPair. */
+    /// objc_allocateClassPair + objc_registerClassPair.
     public static MemorySegment makeClass(String superClassName, String className) {
         MemorySegment c = (MemorySegment) invokeX(hAllocClassPair, cls(superClassName), cstring(className), 0L);
         if (c.address() == 0) throw new IllegalStateException("objc_allocateClassPair failed");
@@ -387,25 +367,23 @@ public final class ObjC {
         return c;
     }
 
-    /** class_addMethod — installs a Java method (via an FFM upcall stub) as an ObjC method. */
+    /// class_addMethod — installs a Java method (via an FFM upcall stub) as an ObjC method.
     public static boolean addMethod(MemorySegment cls, String selector, MemorySegment imp, String types) {
         return (boolean) invokeX(hAddMethod, cls, sel(selector), imp, cstring(types));
     }
 
-    /** FFM upcall stub: a real C function pointer that calls back into Java. */
+    /// FFM upcall stub: a real C function pointer that calls back into Java.
     public static MemorySegment upcall(MethodHandle target, FunctionDescriptor descriptor) {
         return LINKER.upcallStub(target, descriptor, ARENA);
     }
 
-    /** class_getSuperclass(cls). */
+    /// class_getSuperclass(cls).
     public static MemorySegment classGetSuperclass(MemorySegment cls) {
         try { return (MemorySegment) hGetSuperclass.invokeExact(cls); } catch (Throwable t) { throw fail(t); }
     }
 
-    /**
-     * Allocate a {@code struct objc_super { id receiver; Class super_class; }} in the
-     * global arena — the argument {@code objc_msgSendSuper} needs for {@code [super ...]}.
-     */
+    /// Allocate a `struct objc_super { id receiver; Class super_class;`} in the
+    /// global arena — the argument `objc_msgSendSuper` needs for `[super ...]`.
     public static MemorySegment superStruct(MemorySegment receiver, MemorySegment superClass) {
         MemorySegment s = ARENA.allocate(16);
         s.set(ValueLayout.ADDRESS, 0, receiver);
@@ -413,7 +391,7 @@ public final class ObjC {
         return s;
     }
 
-    /** objc_msgSendSuper(superStruct, SEL) — dispatch to the receiver's superclass. */
+    /// objc_msgSendSuper(superStruct, SEL) — dispatch to the receiver's superclass.
     public static void msgSendSuperVoid(MemorySegment superStruct, MemorySegment sel) {
         try { hMsgSuper.invokeExact(superStruct, sel); } catch (Throwable t) { throw fail(t); }
     }

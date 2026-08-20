@@ -9,12 +9,10 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSStatusItem — a menu bar item. Thin 1:1 wrapper over AppKit NSStatusItem.
- * Covers the menu-bar right-side single-icon slot: title/image via the
- * status-bar button (NSStatusBarButton), expandable behavior, toolTip,
- * visibility, length, and target/action via DelegateProxy.
- */
+/// NSStatusItem — a menu bar item. Thin 1:1 wrapper over AppKit NSStatusItem.
+/// Covers the menu-bar right-side single-icon slot: title/image via the
+/// status-bar button (NSStatusBarButton), expandable behavior, toolTip,
+/// visibility, length, and target/action via DelegateProxy.
 public final class NSStatusItem extends NSObject {
 
     private static volatile boolean initialized;
@@ -53,7 +51,7 @@ public final class NSStatusItem extends NSObject {
     }
 
     // ---- button ----
-    /** [statusItem button] -> NSStatusBarButton (subclass of NSButton). Uses wrap, no reflection. */
+    /// [statusItem button] -> NSStatusBarButton (subclass of NSButton). Uses wrap, no reflection.
     public NSButton button() {
         ensureInit();
         try {
@@ -63,7 +61,7 @@ public final class NSStatusItem extends NSObject {
     }
 
     // ---- button convenience: title / image / toolTip ----
-    /** Convenience: title via button (right-side single-icon may have title alongside image). */
+    /// Convenience: title via button (right-side single-icon may have title alongside image).
     public String title() {
         NSButton b = button();
         return b == null ? null : b.title();
@@ -82,10 +80,8 @@ public final class NSStatusItem extends NSObject {
     }
 
     // ---- SF Symbol convenience (macOS 11+): imageWithSystemSymbolName: ----
-    /**
-     * Set the status button image via SF Symbol {@code [NSImage imageWithSystemSymbolName:accessibilityDescription:]}.
-     * Falls back to {@code imageNamed:} for asset catalog names. Example: {@code "magnifyingglass"} or {@code "star.fill"}.
-     */
+    /// Set the status button image via SF Symbol `[NSImage imageWithSystemSymbolName:accessibilityDescription:]`.
+    /// Falls back to `imageNamed:` for asset catalog names. Example: `"magnifyingglass"` or `"star.fill"`.
     public void setSFSymbol(String symbolName) {
         NSImage img = NSImage.imageWithSystemSymbolName(symbolName);
         if (img == null) img = NSImage.imageNamed(symbolName);
@@ -95,14 +91,12 @@ public final class NSStatusItem extends NSObject {
         setImage(img);
     }
 
-    /** Alias for {@link #setSFSymbol(String)} — also via imageWithSystemSymbolName fallback. */
+    /// Alias for `setSFSymbol` — also via imageWithSystemSymbolName fallback.
     public void setImageNamed(String symbolOrAssetName) {
         setSFSymbol(symbolOrAssetName);
     }
 
-    /**
-     * Helper: set SF Symbol and return the loaded NSImage (null if not found).
-     */
+    /// Helper: set SF Symbol and return the loaded NSImage (null if not found).
     public NSImage setSFSymbolAndGet(String symbolName) {
         NSImage img = NSImage.imageWithSystemSymbolName(symbolName);
         if (img == null) img = NSImage.imageNamed(symbolName);
@@ -115,10 +109,8 @@ public final class NSStatusItem extends NSObject {
 
     // ---- popover convenience — show directly from status-item click ----
 
-    /**
-     * Show the popover anchored to this status item's button.
-     * Uses {@code popover.showRelativeToRect(button.bounds(), button, preferredEdge=1/MinY)}.
-     */
+    /// Show the popover anchored to this status item's button.
+    /// Uses `popover.showRelativeToRect(button.bounds(), button, preferredEdge=1/MinY)`.
     public void showPopover(NSPopover popover) {
         if (popover == null) return;
         NSButton b = button();
@@ -126,35 +118,31 @@ public final class NSStatusItem extends NSObject {
         popover.showRelativeToRect(b.bounds(), b, 1L);
     }
 
-    /** Hide the popover if shown. */
+    /// Hide the popover if shown.
     public void hidePopover(NSPopover popover) {
         if (popover == null) return;
         if (popover.isShown()) popover.close();
     }
 
-    /** Toggle the popover anchored to this status item's button. */
+    /// Toggle the popover anchored to this status item's button.
     public void togglePopover(NSPopover popover) {
         if (popover == null) return;
         if (popover.isShown()) popover.close();
         else showPopover(popover);
     }
 
-    /**
-     * Wire the status button's target/action to toggle the given popover.
-     * The popover is shown directly from the status item click.
-     * @param popover the popover to toggle
-     * @return the ObjC target id (retain to keep alive; DelegateProxy registry holds it)
-     */
+    /// Wire the status button's target/action to toggle the given popover.
+    /// The popover is shown directly from the status item click.
+    /// @param popover the popover to toggle
+    /// @return the ObjC target id (retain to keep alive; DelegateProxy registry holds it)
     public MemorySegment attachPopover(NSPopover popover) {
         return attachPopover(popover, "togglePopover:");
     }
 
-    /**
-     * Wire the status button's target/action to toggle the given popover with a custom selector.
-     * @param popover the popover to toggle
-     * @param selector e.g. "togglePopover:"
-     * @return the ObjC target id
-     */
+    /// Wire the status button's target/action to toggle the given popover with a custom selector.
+    /// @param popover the popover to toggle
+    /// @param selector e.g. "togglePopover:"
+    /// @return the ObjC target id
     public MemorySegment attachPopover(NSPopover popover, String selector) {
         if (popover == null) throw new IllegalArgumentException("popover is null");
         String sel = (selector == null || selector.isEmpty()) ? "togglePopover:" : selector;
@@ -162,7 +150,7 @@ public final class NSStatusItem extends NSObject {
         try { popover.setBehavior(1L); } catch (Throwable ignored) {}
         return setActionHandler(sel, (MemorySegment sender) -> togglePopover(popover));
     }
-    /** ToolTip via button's tooltip (NSView toolTip). Guarded — no-op if selector absent. */
+    /// ToolTip via button's tooltip (NSView toolTip). Guarded — no-op if selector absent.
     public String toolTip() {
         NSButton b = button();
         if (b == null) return null;
@@ -189,22 +177,20 @@ public final class NSStatusItem extends NSObject {
     }
 
     // ---- target / action via button + DelegateProxy ----
-    /** Set target on the status button. */
+    /// Set target on the status button.
     public void setTarget(MemorySegment target) {
         NSButton b = button();
         if (b != null) b.setTarget(target);
     }
-    /** Set action selector on the status button (e.g., "statusClicked:"). */
+    /// Set action selector on the status button (e.g., "statusClicked:").
     public void setAction(String sel) {
         NSButton b = button();
         if (b != null) b.setAction(sel);
     }
-    /**
-     * Convenience: create a DelegateProxy action target and wire it to the button.
-     * @param selector e.g. "statusClicked:"
-     * @param handler Java callback
-     * @return the ObjC target id (retain to keep alive; registry holds it)
-     */
+    /// Convenience: create a DelegateProxy action target and wire it to the button.
+    /// @param selector e.g. "statusClicked:"
+    /// @param handler Java callback
+    /// @return the ObjC target id (retain to keep alive; registry holds it)
     public MemorySegment setActionHandler(String selector, DelegateProxy.VoidArg handler) {
         MemorySegment target = DelegateProxy.actionTarget(selector, handler);
         setTarget(target);

@@ -9,48 +9,42 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.util.concurrent.Callable;
 
-/**
- * NSException interception hook — libobjc's {@code objc_setExceptionPreprocessor}.
- *
- * <p><b>Honest capability report (verified on this machine):</b> the preprocessor
- * hook alone can <em>observe and transform</em> an ObjC exception before it is thrown,
- * but it <b>cannot catch or suppress an uncaught throw</b>. The classic catch trampoline
- * ({@code objc_exception_try_enter}/try_exit/extract/match) is absent from
- * {@code /usr/lib/libobjc.A.dylib}; {@code objc_begin_catch}/{@code objc_end_catch} and
- * {@code objc_addExceptionHandler} ARE exported, but they are unusable from pure FFM:
- * the throw path is {@code __cxa_throw}, which needs a native C++ EH landing pad that a
- * Java thread has none of, and {@code objc_begin_catch} requires the compiler-generated
- * private {@code exc_buf} layout. Concretely, with a raise that has no native catch
- * frame (a pure-FFM Java process has none), whatever this preprocessor returns, libobjc
- * still performs the {@code __cxa_throw} and the JVM terminates:
- * <ul>
- *   <li>return {@link MemorySegment#NULL} → libobjc aborts {@code "uncaught exception of class 'nil'"};</li>
- *   <li>return a non-null replacement → the replacement is thrown and, uncaught, aborts;</li>
- *   <li>pass the exception through → the original is thrown and, uncaught, aborts.</li>
- * </ul>
- * All three were confirmed by running the guarded raise under each return value.
- *
- * <p>So the genuine, working contract of this class is:
- * <ul>
- *   <li>{@link #ensureInit()} installs the preprocessor once, remembering and chaining
- *       the <em>previous</em> handler (libobjc installs a default one; we call it on the
- *       pass-through path so we never disturb the runtime's own handling).</li>
- *   <li>Threading is per-thread ({@link ThreadLocal}): only a thread that armed itself via
- *       {@link #call}/{@link #run} is watched; every other thread passes exceptions through
- *       to the previous handler / unchanged — normal operation is untouched. (Verified:
- *       after installing the hook, unarmed msgSend work proceeds exactly as before.)</li>
- *   <li>When armed and an ObjC exception is raised, {@link #preprocessor} records its
- *       {@code name}/{@code reason} for diagnostics and passes it through — suppression is
- *       impossible, so the guarded body's raise will still terminate the process if nothing
- *       else catches it.</li>
- * </ul>
- *
- * <p>This is an honest interception scaffold: it proves the hook is reachable, is
- * thread-aware, and chains correctly — but the task's fuller goal ("catch and recover
- * from an uncaught {@code [NSException raise]} inside Java") is <b>not achievable</b> on
- * this platform's libobjc via this exported API. Tests asserting that recovery must fail
- * (see test class for the noted crash evidence).
- */
+/// NSException interception hook — libobjc's `objc_setExceptionPreprocessor`.
+///
+/// **Honest capability report (verified on this machine):** the preprocessor
+/// hook alone can *observe and transform* an ObjC exception before it is thrown,
+/// but it **cannot catch or suppress an uncaught throw**. The classic catch trampoline
+/// (`objc_exception_try_enter`/try_exit/extract/match) is absent from
+/// `/usr/lib/libobjc.A.dylib`; `objc_begin_catch`/`objc_end_catch` and
+/// `objc_addExceptionHandler` ARE exported, but they are unusable from pure FFM:
+/// the throw path is `__cxa_throw`, which needs a native C++ EH landing pad that a
+/// Java thread has none of, and `objc_begin_catch` requires the compiler-generated
+/// private `exc_buf` layout. Concretely, with a raise that has no native catch
+/// frame (a pure-FFM Java process has none), whatever this preprocessor returns, libobjc
+/// still performs the `__cxa_throw` and the JVM terminates:
+/// - return `NULL` → libobjc aborts `"uncaught exception of class 'nil'"`;
+/// - return a non-null replacement → the replacement is thrown and, uncaught, aborts;
+/// - pass the exception through → the original is thrown and, uncaught, aborts.
+/// All three were confirmed by running the guarded raise under each return value.
+///
+/// So the genuine, working contract of this class is:
+/// - `ensureInit` installs the preprocessor once, remembering and chaining
+///   the *previous* handler (libobjc installs a default one; we call it on the
+/// pass-through path so we never disturb the runtime's own handling).
+/// - Threading is per-thread (`ThreadLocal`): only a thread that armed itself via
+///   `call`/`run` is watched; every other thread passes exceptions through
+/// to the previous handler / unchanged — normal operation is untouched. (Verified:
+/// after installing the hook, unarmed msgSend work proceeds exactly as before.)
+/// - When armed and an ObjC exception is raised, `preprocessor` records its
+///   `name`/`reason` for diagnostics and passes it through — suppression is
+/// impossible, so the guarded body's raise will still terminate the process if nothing
+/// else catches it.
+///
+/// This is an honest interception scaffold: it proves the hook is reachable, is
+/// thread-aware, and chains correctly — but the task's fuller goal ("catch and recover
+/// from an uncaught `[NSException raise]` inside Java") is **not achievable** on
+/// this platform's libobjc via this exported API. Tests asserting that recovery must fail
+/// (see test class for the noted crash evidence).
 public final class Exceptions {
 
     private static final ThreadLocal<Boolean> ARMED = new ThreadLocal<>();
@@ -67,7 +61,7 @@ public final class Exceptions {
 
     private Exceptions() {}
 
-    /** Install the preprocessor stub once; build supporting handles. Must run at runtime. */
+    /// Install the preprocessor stub once; build supporting handles. Must run at runtime.
     public static synchronized void ensureInit() {
         if (INIT) return;
         LINKER = Linker.nativeLinker();
@@ -106,17 +100,14 @@ public final class Exceptions {
         INIT = true;
     }
 
-    /**
-     * The preprocessor callback, invoked by libobjc on the throwing thread immediately
-     * before the ObjC throw machinery runs.
-     * <ul>
-     *   <li>Not armed: pass through to the previous handler (or unchanged).</li>
-     *   <li>Armed on this thread: record name/reason for diagnostics, then pass through —
-     *       suppression is impossible (returning NULL or a replacement both terminate).</li>
-     * </ul>
-     * <p>Package-visible so the native-image Feature (nsui.objc.NsuiFeature) can register
-     * this upcall target at build time.
-     */
+    /// The preprocessor callback, invoked by libobjc on the throwing thread immediately
+    /// before the ObjC throw machinery runs.
+    /// - Not armed: pass through to the previous handler (or unchanged).
+    /// - Armed on this thread: record name/reason for diagnostics, then pass through —
+    ///   suppression is impossible (returning NULL or a replacement both terminate).
+    ///
+    /// Package-visible so the native-image Feature (nsui.objc.NsuiFeature) can register
+    /// this upcall target at build time.
     static MemorySegment preprocessor(MemorySegment exception) {
         if (Boolean.TRUE.equals(ARMED.get())) {
             LAST.set(exception);
@@ -131,15 +122,14 @@ public final class Exceptions {
         return exception;
     }
 
-    /**
-     * Run {@code body} with the current thread marked as watched by the preprocessor.
-     * <p>For a body that does <b>not</b> raise, this returns its result normally and the
-     * thread is unarmed in a {@code finally}. For a body that <b>raises an uncaught
-     * ObjC exception</b>, the process terminates regardless (see class javadoc) — this
-     * class cannot prevent that. {@link #lastDescription()} is not reachable in that case
-     * (the process is gone), but the preprocessor does record it for diagnostics before
-     * the throw proceeds.
-     */
+    /// Run `body` with the current thread marked as watched by the preprocessor.
+    ///
+    /// For a body that does **not** raise, this returns its result normally and the
+    /// thread is unarmed in a `finally`. For a body that **raises an uncaught
+    /// ObjC exception**, the process terminates regardless (see class javadoc) — this
+    /// class cannot prevent that. `lastDescription` is not reachable in that case
+    /// (the process is gone), but the preprocessor does record it for diagnostics before
+    /// the throw proceeds.
     public static <T> T call(Callable<T> body) throws Exception {
         ensureInit();
         ARMED.set(Boolean.TRUE);
@@ -151,7 +141,7 @@ public final class Exceptions {
         }
     }
 
-    /** {@link #call} whose body returns void (non-raising body expected; see call's javadoc). */
+    /// `call` whose body returns void (non-raising body expected; see call's javadoc).
     public static void run(Runnable body) {
         try {
             call(() -> { body.run(); return null; });
@@ -162,7 +152,7 @@ public final class Exceptions {
         }
     }
 
-    /** Name of the exception most recently observed by the preprocessor on this thread, or null. */
+    /// Name of the exception most recently observed by the preprocessor on this thread, or null.
     public static String lastDescription() {
         MemorySegment exc = LAST.get();
         if (exc == null || exc.address() == 0) return null;
@@ -171,7 +161,7 @@ public final class Exceptions {
         return "NSException{name=" + name + ", reason=" + reason + "}";
     }
 
-    /** {@code [NSException exceptionWithName:reason:userInfo:] -> NSException} (autoreleased). */
+    /// `[NSException exceptionWithName:reason:userInfo:] -> NSException` (autoreleased).
     public static MemorySegment exceptionWithName(String name, String reason) {
         ensureInit();
         try {
@@ -186,7 +176,7 @@ public final class Exceptions {
         }
     }
 
-    /** {@code [exc raise]} — see class javadoc: uncaught, this terminates the process. */
+    /// `[exc raise]` — see class javadoc: uncaught, this terminates the process.
     public static void raise(MemorySegment exc) {
         ObjC.msgSendVoid(exc, ObjC.sel("raise"));
     }

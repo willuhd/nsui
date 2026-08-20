@@ -8,12 +8,9 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSTableColumn — a single column of an {@link NSTableView}. Thin, 1:1,
- * stateless wrapper over a native {@code NSTableColumn}: each method maps to one
- * {@code objc_msgSend} selector. Created via {@code [[NSTableColumn alloc]
- * initWithIdentifier:]} and added to a table with {@link NSTableView#addTableColumn}.
- */
+/// NSTableColumn — a single column of an `NSTableView`. Thin, 1:1,
+/// stateless wrapper over a native `NSTableColumn`: each method maps to one
+/// `objc_msgSend` selector. Created via `[[NSTableColumn alloc] initWithIdentifier:]` and added to a table with `addTableColumn`.
 public final class NSTableColumn extends NSObject {
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
@@ -33,7 +30,7 @@ public final class NSTableColumn extends NSObject {
         ensureInit();
     }
 
-    /** Wrap a native NSTableColumn id as NSTableColumn. */
+    /// Wrap a native NSTableColumn id as NSTableColumn.
     public static NSTableColumn wrap(MemorySegment peer) {
         return (peer == null || peer.address() == 0) ? null : new NSTableColumn(peer);
     }
@@ -52,7 +49,7 @@ public final class NSTableColumn extends NSObject {
         initialized = true;
     }
 
-    /** {@code [[NSTableColumn alloc] initWithIdentifier:identifier]} — a new column. */
+    /// `[[NSTableColumn alloc] initWithIdentifier:identifier]` — a new column.
     public static NSTableColumn create(String identifier) {
         ensureInit();
         MemorySegment c = ObjC.msgSendId(ObjC.cls("NSTableColumn"), ObjC.sel("alloc"));
@@ -70,7 +67,7 @@ public final class NSTableColumn extends NSObject {
 
     // ---------------------------------------------------------------- instance API
 
-    /** [column setTitle:] — the column's header title. */
+    /// [column setTitle:] — the column's header title.
     public void setTitle(String title) {
         try {
             hVoidId.invokeExact(peer, ObjC.sel("setTitle:"), (MemorySegment) ObjC.nsstring(title));
@@ -79,7 +76,7 @@ public final class NSTableColumn extends NSObject {
         }
     }
 
-    /** [column title] — the column's header title. */
+    /// [column title] — the column's header title.
     public String title() {
         try {
             return ObjC.toString((MemorySegment) hId.invokeExact(peer, ObjC.sel("title")));
@@ -88,7 +85,7 @@ public final class NSTableColumn extends NSObject {
         }
     }
 
-    /** [column setWidth:] — the column's width in points. */
+    /// [column setWidth:] — the column's width in points.
     public void setWidth(double width) {
         try {
             hVoidDouble.invokeExact(peer, ObjC.sel("setWidth:"), width);
@@ -97,7 +94,7 @@ public final class NSTableColumn extends NSObject {
         }
     }
 
-    /** [column width] — the column's width in points. */
+    /// [column width] — the column's width in points.
     public double width() {
         try {
             return (double) hDouble.invokeExact(peer, ObjC.sel("width"));
@@ -106,7 +103,7 @@ public final class NSTableColumn extends NSObject {
         }
     }
 
-    /** [column identifier] — NSString identifier. */
+    /// [column identifier] — NSString identifier.
     public String identifier() {
         try {
             MemorySegment s = (MemorySegment) hId.invokeExact(peer, ObjC.sel("identifier"));
@@ -114,62 +111,62 @@ public final class NSTableColumn extends NSObject {
         } catch (Throwable t) { throw new RuntimeException("identifier failed", t); }
     }
 
-    /** [column setIdentifier:] */
+    /// [column setIdentifier:]
     public void setIdentifier(String ident) {
         try { hVoidId.invokeExact(peer, ObjC.sel("setIdentifier:"), ObjC.nsstring(ident)); } catch (Throwable t) { throw new RuntimeException("setIdentifier: failed", t); }
     }
 
-    /** [column minWidth] */
+    /// [column minWidth]
     public double minWidth() {
         try { return (double) hDouble.invokeExact(peer, ObjC.sel("minWidth")); } catch (Throwable t) { throw new RuntimeException("minWidth failed", t); }
     }
 
-    /** [column setMinWidth:] */
+    /// [column setMinWidth:]
     public void setMinWidth(double w) {
         try { hVoidDouble.invokeExact(peer, ObjC.sel("setMinWidth:"), w); } catch (Throwable t) { throw new RuntimeException("setMinWidth: failed", t); }
     }
 
-    /** [column maxWidth] */
+    /// [column maxWidth]
     public double maxWidth() {
         try { return (double) hDouble.invokeExact(peer, ObjC.sel("maxWidth")); } catch (Throwable t) { throw new RuntimeException("maxWidth failed", t); }
     }
 
-    /** [column setMaxWidth:] */
+    /// [column setMaxWidth:]
     public void setMaxWidth(double w) {
         try { hVoidDouble.invokeExact(peer, ObjC.sel("setMaxWidth:"), w); } catch (Throwable t) { throw new RuntimeException("setMaxWidth: failed", t); }
     }
 
-    /** [column isHidden] */
+    /// [column isHidden]
     public boolean isHidden() {
         try { return (boolean) hBool.invokeExact(peer, ObjC.sel("isHidden")); } catch (Throwable t) { throw new RuntimeException("isHidden failed", t); }
     }
 
-    /** [column setHidden:] */
+    /// [column setHidden:]
     public void setHidden(boolean flag) {
         try { hVoidBool.invokeExact(peer, ObjC.sel("setHidden:"), flag); } catch (Throwable t) { throw new RuntimeException("setHidden: failed", t); }
     }
 
-    /** [column headerCell] — NSTableHeaderCell peer (id). */
+    /// [column headerCell] — NSTableHeaderCell peer (id).
     public MemorySegment headerCell() {
         try { return (MemorySegment) hId.invokeExact(peer, ObjC.sel("headerCell")); } catch (Throwable t) { throw new RuntimeException("headerCell failed", t); }
     }
 
-    /** [column setHeaderCell:] */
+    /// [column setHeaderCell:]
     public void setHeaderCell(MemorySegment cell) {
         try { hVoidId.invokeExact(peer, ObjC.sel("setHeaderCell:"), (MemorySegment) ((MemorySegment) (cell == null ? MemorySegment.NULL : cell))); } catch (Throwable t) { throw new RuntimeException("setHeaderCell: failed", t); }
     }
 
-    /** [column dataCell] — NSCell peer (id). Deprecated but still queried by delegate tests. */
+    /// [column dataCell] — NSCell peer (id). Deprecated but still queried by delegate tests.
     public MemorySegment dataCell() {
         try { return (MemorySegment) hId.invokeExact(peer, ObjC.sel("dataCell")); } catch (Throwable t) { throw new RuntimeException("dataCell failed", t); }
     }
 
-    /** [column setDataCell:] */
+    /// [column setDataCell:]
     public void setDataCell(MemorySegment cell) {
         try { hVoidId.invokeExact(peer, ObjC.sel("setDataCell:"), (MemorySegment) ((MemorySegment) (cell == null ? MemorySegment.NULL : cell))); } catch (Throwable t) { throw new RuntimeException("setDataCell: failed", t); }
     }
 
-    /** [column dataCellForRow:] — per-row data cell (if row-specific). */
+    /// [column dataCellForRow:] — per-row data cell (if row-specific).
     public MemorySegment dataCellForRow(long row) {
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.INT));
@@ -177,47 +174,47 @@ public final class NSTableColumn extends NSObject {
         } catch (Throwable t) { throw new RuntimeException("dataCellForRow: failed", t); }
     }
 
-    /** [column resizingMask] — NSTableColumnResizingOptions bitmask. */
+    /// [column resizingMask] — NSTableColumnResizingOptions bitmask.
     public long resizingMask() {
         try { return (long) hInt.invokeExact(peer, ObjC.sel("resizingMask")); } catch (Throwable t) { throw new RuntimeException("resizingMask failed", t); }
     }
 
-    /** [column setResizingMask:] */
+    /// [column setResizingMask:]
     public void setResizingMask(long mask) {
         try { hVoidInt.invokeExact(peer, ObjC.sel("setResizingMask:"), mask); } catch (Throwable t) { throw new RuntimeException("setResizingMask: failed", t); }
     }
 
-    /** [column isEditable] */
+    /// [column isEditable]
     public boolean isEditable() {
         try { return (boolean) hBool.invokeExact(peer, ObjC.sel("isEditable")); } catch (Throwable t) { throw new RuntimeException("isEditable failed", t); }
     }
 
-    /** [column setEditable:] */
+    /// [column setEditable:]
     public void setEditable(boolean flag) {
         try { hVoidBool.invokeExact(peer, ObjC.sel("setEditable:"), flag); } catch (Throwable t) { throw new RuntimeException("setEditable: failed", t); }
     }
 
-    /** [column sortDescriptorPrototype] — NSSortDescriptor peer or null. */
+    /// [column sortDescriptorPrototype] — NSSortDescriptor peer or null.
     public MemorySegment sortDescriptorPrototype() {
         try { return (MemorySegment) hId.invokeExact(peer, ObjC.sel("sortDescriptorPrototype")); } catch (Throwable t) { throw new RuntimeException("sortDescriptorPrototype failed", t); }
     }
 
-    /** [column setSortDescriptorPrototype:] */
+    /// [column setSortDescriptorPrototype:]
     public void setSortDescriptorPrototype(MemorySegment desc) {
         try { hVoidId.invokeExact(peer, ObjC.sel("setSortDescriptorPrototype:"), (MemorySegment) ((MemorySegment) (desc == null ? MemorySegment.NULL : desc))); } catch (Throwable t) { throw new RuntimeException("setSortDescriptorPrototype: failed", t); }
     }
 
-    /** [column headerToolTip] */
+    /// [column headerToolTip]
     public String headerToolTip() {
         try { MemorySegment s = (MemorySegment) hId.invokeExact(peer, ObjC.sel("headerToolTip")); return ObjC.toString(s); } catch (Throwable t) { throw new RuntimeException("headerToolTip failed", t); }
     }
 
-    /** [column setHeaderToolTip:] */
+    /// [column setHeaderToolTip:]
     public void setHeaderToolTip(String tip) {
         try { hVoidId.invokeExact(peer, ObjC.sel("setHeaderToolTip:"), (MemorySegment) (tip == null ? MemorySegment.NULL : ObjC.nsstring(tip))); } catch (Throwable t) { throw new RuntimeException("setHeaderToolTip: failed", t); }
     }
 
-    /** [column sizeToFit] */
+    /// [column sizeToFit]
     public void sizeToFit() {
         try { ObjC.handle(Sig.of(Ret.VOID)).invokeExact(peer, ObjC.sel("sizeToFit")); } catch (Throwable t) { throw new RuntimeException("sizeToFit failed", t); }
     }

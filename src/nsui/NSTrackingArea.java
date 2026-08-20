@@ -8,10 +8,8 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSTrackingArea — minimal wrapper over AppKit NSTrackingArea.
- * Monitors mouse enter/exit/moved events over a rect.
- */
+/// NSTrackingArea — minimal wrapper over AppKit NSTrackingArea.
+/// Monitors mouse enter/exit/moved events over a rect.
 public final class NSTrackingArea extends NSObject {
 
     private static volatile boolean initialized;
@@ -38,13 +36,11 @@ public final class NSTrackingArea extends NSObject {
         initialized = true;
     }
 
-    /**
-     * [[NSTrackingArea alloc] initWithRect:options:owner:userInfo:]
-     * @param rect the tracking rect in the owner's coordinate system
-     * @param options NSTrackingAreaOptions bitfield (e.g. 1=MouseEnteredAndExited, etc.)
-     * @param owner the view/object that receives tracking events (NSView)
-     * @param userInfo optional user info dict (may be null)
-     */
+    /// [[NSTrackingArea alloc] initWithRect:options:owner:userInfo:]
+    /// @param rect the tracking rect in the owner's coordinate system
+    /// @param options NSTrackingAreaOptions bitfield (e.g. 1=MouseEnteredAndExited, etc.)
+    /// @param owner the view/object that receives tracking events (NSView)
+    /// @param userInfo optional user info dict (may be null)
     public static NSTrackingArea create(NSRect rect, long options, NSView owner, MemorySegment userInfo) {
         ensureInit();
         MemorySegment alloc = ObjC.msgSendId(ObjC.cls("NSTrackingArea"), ObjC.sel("alloc"));
@@ -64,7 +60,7 @@ public final class NSTrackingArea extends NSObject {
         return create(rect, options, owner, null);
     }
 
-    /** [area rect] -> NSRect */
+    /// [area rect] -> NSRect
     public NSRect rect() {
         ensureInit();
         try {
@@ -75,7 +71,7 @@ public final class NSTrackingArea extends NSObject {
         }
     }
 
-    /** [area options] -> long */
+    /// [area options] -> long
     public long options() {
         ensureInit();
         try {
@@ -85,7 +81,7 @@ public final class NSTrackingArea extends NSObject {
         }
     }
 
-    /** [area owner] -> id */
+    /// [area owner] -> id
     public MemorySegment owner() {
         ensureInit();
         try {
@@ -95,7 +91,7 @@ public final class NSTrackingArea extends NSObject {
         }
     }
 
-    /** [area userInfo] -> NSDictionary id */
+    /// [area userInfo] -> NSDictionary id
     public MemorySegment userInfo() {
         ensureInit();
         try {

@@ -8,22 +8,18 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSVisualEffectView — a translucent, vibrancy-capable view. Thin, 1:1, stateless
- * wrapper over a native {@code NSVisualEffectView}: every method maps to one
- * {@code objc_msgSend} selector and no Java state is cached beyond the peer.
- * It is an {@link NSView}, so it can host subviews and be placed in any view hierarchy.
- *
- * <p>AppKit notes:
- * <ul>
- *   <li>{@code material} — {@code NSVisualEffectMaterial} (NSInteger), e.g. 0 = appearanceBased,
- *       3 = titlebar, 7 = sidebar, 13 = HUDWindow.</li>
- *   <li>{@code blendingMode} — {@code NSVisualEffectBlendingMode} (NSInteger): 0 = behindWindow, 1 = withinWindow.</li>
- *   <li>{@code state} — {@code NSVisualEffectState} (NSInteger): 0 = inactive, 1 = followsWindowActiveState, 2 = active.</li>
- *   <li>{@code isEmphasized} — BOOL, whether the material is emphasized (selection/active).</li>
- *   <li>{@code maskingImage} — optional {@code NSImage} that masks the effect.</li>
- * </ul>
- */
+/// NSVisualEffectView — a translucent, vibrancy-capable view. Thin, 1:1, stateless
+/// wrapper over a native `NSVisualEffectView`: every method maps to one
+/// `objc_msgSend` selector and no Java state is cached beyond the peer.
+/// It is an `NSView`, so it can host subviews and be placed in any view hierarchy.
+///
+/// AppKit notes:
+/// - `material` — `NSVisualEffectMaterial` (NSInteger), e.g. 0 = appearanceBased,
+///   3 = titlebar, 7 = sidebar, 13 = HUDWindow.
+/// - `blendingMode` — `NSVisualEffectBlendingMode` (NSInteger): 0 = behindWindow, 1 = withinWindow.
+/// - `state` — `NSVisualEffectState` (NSInteger): 0 = inactive, 1 = followsWindowActiveState, 2 = active.
+/// - `isEmphasized` — BOOL, whether the material is emphasized (selection/active).
+/// - `maskingImage` — optional `NSImage` that masks the effect.
 public final class NSVisualEffectView extends NSView {
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
@@ -39,7 +35,7 @@ public final class NSVisualEffectView extends NSView {
         ensureInit();
     }
 
-    /** Wrap a native NSVisualEffectView id (e.g. from a nib) as an NSVisualEffectView. */
+    /// Wrap a native NSVisualEffectView id (e.g. from a nib) as an NSVisualEffectView.
     public static NSVisualEffectView wrap(MemorySegment peer) {
         return (peer == null || peer.address() == 0) ? null : new NSVisualEffectView(peer);
     }
@@ -54,7 +50,7 @@ public final class NSVisualEffectView extends NSView {
         initialized = true;
     }
 
-    /** {@code [[NSVisualEffectView alloc] initWithFrame:frame]} — a new visual effect view. */
+    /// `[[NSVisualEffectView alloc] initWithFrame:frame]` — a new visual effect view.
     public static NSVisualEffectView create(NSRect frame) {
         ensureInit();
         MemorySegment v = ObjC.msgSendId(ObjC.cls("NSVisualEffectView"), ObjC.sel("alloc"));
@@ -71,12 +67,12 @@ public final class NSVisualEffectView extends NSView {
 
     // ---------------------------------------------------------------- instance API
 
-    /** [view material] — {@code NSVisualEffectMaterial} (NSInteger). */
+    /// [view material] — `NSVisualEffectMaterial` (NSInteger).
     public long material() {
         return ObjC.msgSendLong(peer, ObjC.sel("material"));
     }
 
-    /** [view setMaterial:] — {@code NSVisualEffectMaterial}. */
+    /// [view setMaterial:] — `NSVisualEffectMaterial`.
     public void setMaterial(long material) {
         try {
             hSetInt.invokeExact(peer, ObjC.sel("setMaterial:"), material);
@@ -85,12 +81,12 @@ public final class NSVisualEffectView extends NSView {
         }
     }
 
-    /** [view blendingMode] — {@code NSVisualEffectBlendingMode} (NSInteger). */
+    /// [view blendingMode] — `NSVisualEffectBlendingMode` (NSInteger).
     public long blendingMode() {
         return ObjC.msgSendLong(peer, ObjC.sel("blendingMode"));
     }
 
-    /** [view setBlendingMode:] — {@code NSVisualEffectBlendingMode}. */
+    /// [view setBlendingMode:] — `NSVisualEffectBlendingMode`.
     public void setBlendingMode(long mode) {
         try {
             hSetInt.invokeExact(peer, ObjC.sel("setBlendingMode:"), mode);
@@ -99,12 +95,12 @@ public final class NSVisualEffectView extends NSView {
         }
     }
 
-    /** [view state] — {@code NSVisualEffectState} (NSInteger). */
+    /// [view state] — `NSVisualEffectState` (NSInteger).
     public long state() {
         return ObjC.msgSendLong(peer, ObjC.sel("state"));
     }
 
-    /** [view setState:] — {@code NSVisualEffectState}. */
+    /// [view setState:] — `NSVisualEffectState`.
     public void setState(long state) {
         try {
             hSetInt.invokeExact(peer, ObjC.sel("setState:"), state);
@@ -113,12 +109,12 @@ public final class NSVisualEffectView extends NSView {
         }
     }
 
-    /** [view isEmphasized] — whether the material is emphasized. */
+    /// [view isEmphasized] — whether the material is emphasized.
     public boolean isEmphasized() {
         return ObjC.msgSendBool(peer, ObjC.sel("isEmphasized"));
     }
 
-    /** [view setEmphasized:] — emphasized flag. */
+    /// [view setEmphasized:] — emphasized flag.
     public void setEmphasized(boolean emphasized) {
         try {
             hSetBool.invokeExact(peer, ObjC.sel("setEmphasized:"), emphasized);
@@ -147,23 +143,23 @@ public final class NSVisualEffectView extends NSView {
         }
     }
 
-    /** [view maskingImage] / [view maskImage] — optional masking image (may be nil). */
+    /// [view maskingImage] / [view maskImage] — optional masking image (may be nil).
     public NSImage maskingImage() {
         MemorySegment img = ObjC.msgSendId(peer, maskingImageSel());
         return NSImage.wrap(img);
     }
 
-    /** Raw peer for [view maskingImage] — id return without wrapping (null peer for nil). */
+    /// Raw peer for [view maskingImage] — id return without wrapping (null peer for nil).
     public MemorySegment maskingImagePeer() {
         return ObjC.msgSendId(peer, maskingImageSel());
     }
 
-    /** Alias for {@link #maskingImage()} — the AppKit-native name. */
+    /// Alias for `maskingImage` — the AppKit-native name.
     public NSImage maskImage() {
         return maskingImage();
     }
 
-    /** [view setMaskingImage:] / [view setMaskImage:] — masking image (null to clear). */
+    /// [view setMaskingImage:] / [view setMaskImage:] — masking image (null to clear).
     public void setMaskingImage(NSImage image) {
         try {
             MemorySegment p = (MemorySegment) (image == null ? MemorySegment.NULL : image.peer());
@@ -173,7 +169,7 @@ public final class NSVisualEffectView extends NSView {
         }
     }
 
-    /** [view setMaskingImage:] — raw peer variant (MemorySegment.NULL to clear). */
+    /// [view setMaskingImage:] — raw peer variant (MemorySegment.NULL to clear).
     public void setMaskingImagePeer(MemorySegment imagePeer) {
         try {
             MemorySegment p = (imagePeer == null || imagePeer.address() == 0) ? MemorySegment.NULL : imagePeer;
@@ -183,18 +179,16 @@ public final class NSVisualEffectView extends NSView {
         }
     }
 
-    /** Alias for {@link #setMaskingImage(NSImage)} — the AppKit-native name. */
+    /// Alias for `setMaskingImage` — the AppKit-native name.
     public void setMaskImage(NSImage image) {
         setMaskingImage(image);
     }
 
     // ---------------------------------------------------------------- helpers
 
-    /**
-     * {@code [view isKindOfClass:[NSVisualEffectView class]]} — runtime type check.
-     * Convenience wrapper around the ObjC {@code isKindOfClass:} selector so tests
-     * can verify the peer's class without reaching into {@link ObjC} directly.
-     */
+    /// `[view isKindOfClass:[NSVisualEffectView class]]` — runtime type check.
+    /// Convenience wrapper around the ObjC `isKindOfClass:` selector so tests
+    /// can verify the peer's class without reaching into `ObjC` directly.
     public boolean isKindOfClass(MemorySegment clazz) {
         try {
             return (boolean) hIsKind.invokeExact(peer, ObjC.sel("isKindOfClass:"), clazz);
@@ -203,7 +197,7 @@ public final class NSVisualEffectView extends NSView {
         }
     }
 
-    /** {@code isKindOfClass:} by class name (cached via {@link ObjC#cls}). */
+    /// `isKindOfClass:` by class name (cached via `cls`).
     public boolean isKindOfClass(String className) {
         return isKindOfClass(ObjC.cls(className));
     }

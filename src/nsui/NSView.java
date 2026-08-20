@@ -13,40 +13,36 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSView — a drawable view. Extends NSObject; the drawing is handed off to a
- * Java {@link Drawable} via a runtime-created ObjC subclass of NSView whose
- * {@code drawRect:} is an FFM upcall stub into Java.
- *
- * <p>Dispatch is keyed by the native peer address: {@link #create} registers the
- * {@link Drawable}, and the upcall target looks it up when AppKit asks the view
- * to draw on the main thread. The subclass also overrides {@code dealloc} to
- * unregister the drawable, so the registry can never grow stale or leak.
- *
- * <p>Upcall targets ({@link #drawRectImpl}, {@link #deallocImpl}) are static and
- * capture-free — they are registered for native-image in NsuiFeature.
- */
+/// NSView — a drawable view. Extends NSObject; the drawing is handed off to a
+/// Java `Drawable` via a runtime-created ObjC subclass of NSView whose
+/// `drawRect:` is an FFM upcall stub into Java.
+///
+/// Dispatch is keyed by the native peer address: `create` registers the
+/// `Drawable`, and the upcall target looks it up when AppKit asks the view
+/// to draw on the main thread. The subclass also overrides `dealloc` to
+/// unregister the drawable, so the registry can never grow stale or leak.
+///
+/// Upcall targets (`drawRectImpl`, `deallocImpl`) are static and
+/// capture-free — they are registered for native-image in NsuiFeature.
 public class NSView extends NSObject {
 
-    /**
-     * Java-side drawing callback, invoked from AppKit's drawRect: on the main thread.
-     *
-     * <p><strong>Dirty-rect contract:</strong> the {@code dirtyRect} passed to {@link #draw}
-     * is the region AppKit currently requires the view to redraw, expressed in the view's
-     * own coordinate system (see {@link #isFlipped()} for the y-axis orientation). When the
-     * view is invalidated via {@link #setNeedsDisplayInRect(NSRect)}, AppKit unions the
-     * invalidated rects and passes that union through {@code drawRect:}. Drawing may be
-     * clipped to {@code dirtyRect} (and on a layer-backed view, clipped to the view's
-     * backing region), so a draw method must not assume it is being asked to repaint the
-     * whole bounds. To guarantee coverage of everything that is currently marked dirty,
-     * draw at least the area bounded by {@code dirtyRect}; painting inside that rect is
-     * sufficient in practice.
-     */
+    /// Java-side drawing callback, invoked from AppKit's drawRect: on the main thread.
+    ///
+    /// **Dirty-rect contract:** the `dirtyRect` passed to `draw`
+    /// is the region AppKit currently requires the view to redraw, expressed in the view's
+    /// own coordinate system (see `isFlipped` for the y-axis orientation). When the
+    /// view is invalidated via `setNeedsDisplayInRect`, AppKit unions the
+    /// invalidated rects and passes that union through `drawRect:`. Drawing may be
+    /// clipped to `dirtyRect` (and on a layer-backed view, clipped to the view's
+    /// backing region), so a draw method must not assume it is being asked to repaint the
+    /// whole bounds. To guarantee coverage of everything that is currently marked dirty,
+    /// draw at least the area bounded by `dirtyRect`; painting inside that rect is
+    /// sufficient in practice.
     public interface Drawable {
         void draw(MemorySegment ctx, NSRect dirtyRect);
     }
 
-    /** Drawable registry, keyed by peer address (the view's id). */
+    /// Drawable registry, keyed by peer address (the view's id).
     private static final ConcurrentHashMap<Long, Drawable> DRAWABLES = new ConcurrentHashMap<>();
 
     // ---- runtime ObjC class + upcall stubs, created ONCE lazily (NEVER in a static initializer) ----
@@ -67,7 +63,7 @@ public class NSView extends NSObject {
     private static MethodHandle hGetSize;     // (id, SEL) -> NSSize
     private static MethodHandle hSetSize;     // (id, SEL, NSSize) -> void
 
-    /** Wrap a native NSView id (e.g. a box's contentView) as an NSView. */
+    /// Wrap a native NSView id (e.g. a box's contentView) as an NSView.
     public static NSView wrap(MemorySegment peer) {
         return (peer == null || peer.address() == 0) ? null : new NSView(peer);
     }
@@ -76,7 +72,7 @@ public class NSView extends NSObject {
         super(peer);
     }
 
-    /** alloc + initWithFrame: and register the Java drawable for this view. */
+    /// alloc + initWithFrame: and register the Java drawable for this view.
     public static NSView create(NSRect frame, Drawable drawable) {
         ensureInit();
         MemorySegment v = ObjC.msgSendId(drawableClass, ObjC.sel("alloc"));
@@ -122,7 +118,7 @@ public class NSView extends NSObject {
         initialized = true;
     }
 
-    /** FFM upcall target: {@code -(void)drawRect:(NSRect)dirtyRect} — called by AppKit on the main thread. */
+    /// FFM upcall target: `-(void)drawRect:(NSRect)dirtyRect` — called by AppKit on the main thread.
     public static void drawRectImpl(MemorySegment self, MemorySegment sel, MemorySegment rect) {
         Drawable d = DRAWABLES.get(self.address());
         if (d == null) return;
@@ -138,30 +134,28 @@ public class NSView extends NSObject {
         }
     }
 
-    /**
-     * FFM upcall target: {@code -(void)dealloc} — unregister the drawable, then chain
-     * to {@code [super dealloc]} via objc_msgSendSuper so the native object is released.
-     * Public because NsuiFeature (nsui.objc) resolves it at build time.
-     */
+    /// FFM upcall target: `-(void)dealloc` — unregister the drawable, then chain
+    /// to `[super dealloc]` via objc_msgSendSuper so the native object is released.
+    /// Public because NsuiFeature (nsui.objc) resolves it at build time.
     public static void deallocImpl(MemorySegment self, MemorySegment sel) {
         DRAWABLES.remove(self.address());
         MemorySegment superStruct = ObjC.superStruct(self, ObjC.classGetSuperclass(drawableClass));
         ObjC.msgSendSuperVoid(superStruct, sel);
     }
 
-    /** Number of live drawables (diagnostics/tests: must return to 0 after views are released). */
+    /// Number of live drawables (diagnostics/tests: must return to 0 after views are released).
     public static int drawableCount() {
         return DRAWABLES.size();
     }
 
     // ---------------------------------------------------------------- instance API
 
-    /** addSubview: — attach a child view. */
+    /// addSubview: — attach a child view.
     public void addSubview(NSView subview) {
         ObjC.msgSendVoidId(peer, ObjC.sel("addSubview:"), subview.peer());
     }
 
-    /** setFrame: — reposition/resize in the superview's coordinates. */
+    /// setFrame: — reposition/resize in the superview's coordinates.
     public void setFrame(NSRect frame) {
         ensureInit();
         try {
@@ -171,13 +165,11 @@ public class NSView extends NSObject {
         }
     }
 
-    /**
-     * setAutoresizingMask: — how the view resizes when its superview (the window's
-     * content view) resizes. NSViewAutoresizing bits: MinXMargin=1 WidthSizable=2
-     * MaxXMargin=4 MinYMargin=8 HeightSizable=16 MaxYMargin=32. The margin bits pin
-     * the corresponding edge; the Sizable bits let the dimension flex. Without a mask
-     * a subview keeps its absolute frame and does not track window resizes.
-     */
+    /// setAutoresizingMask: — how the view resizes when its superview (the window's
+    /// content view) resizes. NSViewAutoresizing bits: MinXMargin=1 WidthSizable=2
+    /// MaxXMargin=4 MinYMargin=8 HeightSizable=16 MaxYMargin=32. The margin bits pin
+    /// the corresponding edge; the Sizable bits let the dimension flex. Without a mask
+    /// a subview keeps its absolute frame and does not track window resizes.
     public void setAutoresizingMask(long mask) {
         ensureInit();
         try {
@@ -188,28 +180,26 @@ public class NSView extends NSObject {
     }
 
 
-    /** bounds — the view's own coordinate system (origin usually {0,0}). */
+    /// bounds — the view's own coordinate system (origin usually {0,0}).
     public NSRect bounds() {
         return NSRect.fromSegment(ObjC.msgSendRect(peer, ObjC.sel("bounds")));
     }
 
-    /** frame — the view's frame in its superview's coordinates (struct return). */
+    /// frame — the view's frame in its superview's coordinates (struct return).
     public NSRect frame() {
         return NSRect.fromSegment(ObjC.msgSendRect(peer, ObjC.sel("frame")));
     }
 
-    /** setNeedsDisplay: — request a redraw on the next run-loop pass. */
+    /// setNeedsDisplay: — request a redraw on the next run-loop pass.
     public void setNeedsDisplay(boolean flag) {
         ObjC.msgSendVoidBool(peer, ObjC.sel("setNeedsDisplay:"), flag);
     }
 
-    /**
-     * setNeedsDisplayInRect: — mark only the given region, in the view's own coordinate
-     * system, as needing redraw. AppKit unions repeated invalidations and passes the
-     * resulting (possibly expanded) rect to {@code drawRect:}; drawing may be clipped to it.
-     * This is the cost-saving entry point for dirty-rect rendering: a view that only repaints
-     * {@code rect} avoids a full-bounds redraw.
-     */
+    /// setNeedsDisplayInRect: — mark only the given region, in the view's own coordinate
+    /// system, as needing redraw. AppKit unions repeated invalidations and passes the
+    /// resulting (possibly expanded) rect to `drawRect:`; drawing may be clipped to it.
+    /// This is the cost-saving entry point for dirty-rect rendering: a view that only repaints
+    /// `rect` avoids a full-bounds redraw.
     public void setNeedsDisplayInRect(NSRect rect) {
         ensureInit();
         try {
@@ -219,12 +209,10 @@ public class NSView extends NSObject {
         }
     }
 
-    /**
-     * backingScaleFactor — the view's backing store scale (1.0 for a non-Retina screen,
-     * 2.0 for Retina). Combined with {@link #setWantsLayer(boolean)} this is the basis for
-     * correct Retina/backing-scale rendering: drawing coordinates are in points while the
-     * backing store is pixels, so device-space sizes equal point sizes times this factor.
-     */
+    /// backingScaleFactor — the view's backing store scale (1.0 for a non-Retina screen,
+    /// 2.0 for Retina). Combined with `setWantsLayer` this is the basis for
+    /// correct Retina/backing-scale rendering: drawing coordinates are in points while the
+    /// backing store is pixels, so device-space sizes equal point sizes times this factor.
     public double backingScaleFactor() {
         ensureInit();
         try {
@@ -234,7 +222,7 @@ public class NSView extends NSObject {
         }
     }
 
-    /** convertRectToBacking: — a point-space rect in the view's coordinates -> backing pixels. */
+    /// convertRectToBacking: — a point-space rect in the view's coordinates -> backing pixels.
     public NSRect convertRectToBacking(NSRect rect) {
         ensureInit();
         try {
@@ -246,126 +234,126 @@ public class NSView extends NSObject {
         }
     }
 
-    /** window — the NSWindow this view is installed in (null if none). */
+    /// window — the NSWindow this view is installed in (null if none).
     public NSObject window() {
         return NSObject.wrap(ObjC.msgSendId(peer, ObjC.sel("window")));
     }
 
-    /** setWantsLayer: — opt into layer-backed drawing. */
+    /// setWantsLayer: — opt into layer-backed drawing.
     public void setWantsLayer(boolean flag) {
         ObjC.msgSendVoidBool(peer, ObjC.sel("setWantsLayer:"), flag);
     }
 
-    /** wantsLayer — whether the view is layer-backed. */
+    /// wantsLayer — whether the view is layer-backed.
     public boolean wantsLayer() {
         return ObjC.msgSendBool(peer, ObjC.sel("wantsLayer"));
     }
 
-    /** isFlipped — whether the view's y-axis points up (NO for a plain NSView). */
+    /// isFlipped — whether the view's y-axis points up (NO for a plain NSView).
     public boolean isFlipped() {
         return ObjC.msgSendBool(peer, ObjC.sel("isFlipped"));
     }
 
-    /** layer — the view's backing CALayer (null if not layer-backed). Typed via CALayer. */
+    /// layer — the view's backing CALayer (null if not layer-backed). Typed via CALayer.
     public CALayer layer() {
         return CALayer.wrap(ObjC.msgSendId(peer, ObjC.sel("layer")));
     }
 
-    /** setLayer: — assign a CALayer */
+    /// setLayer: — assign a CALayer
     public void setLayer(CALayer layer) {
         ObjC.msgSendVoidId(peer, ObjC.sel("setLayer:"), (MemorySegment) (layer == null ? MemorySegment.NULL : layer.peer()));
     }
 
     // ---------------------------------------------------------------- additional getters — completeness
 
-    /** autoresizingMask — NSAutoresizingMaskOptions. */
+    /// autoresizingMask — NSAutoresizingMaskOptions.
     public long autoresizingMask() {
         return ObjC.msgSendLong(peer, ObjC.sel("autoresizingMask"));
     }
 
-    /** autoresizesSubviews. */
+    /// autoresizesSubviews.
     public boolean autoresizesSubviews() {
         return ObjC.msgSendBool(peer, ObjC.sel("autoresizesSubviews"));
     }
 
-    /** setAutoresizesSubviews:. */
+    /// setAutoresizesSubviews:.
     public void setAutoresizesSubviews(boolean flag) {
         ObjC.msgSendVoidBool(peer, ObjC.sel("setAutoresizesSubviews:"), flag);
     }
 
-    /** translatesAutoresizingMaskIntoConstraints. */
+    /// translatesAutoresizingMaskIntoConstraints.
     public boolean translatesAutoresizingMaskIntoConstraints() {
         return ObjC.msgSendBool(peer, ObjC.sel("translatesAutoresizingMaskIntoConstraints"));
     }
 
-    /** setTranslatesAutoresizingMaskIntoConstraints:. */
+    /// setTranslatesAutoresizingMaskIntoConstraints:.
     public void setTranslatesAutoresizingMaskIntoConstraints(boolean flag) {
         ObjC.msgSendVoidBool(peer, ObjC.sel("setTranslatesAutoresizingMaskIntoConstraints:"), flag);
     }
 
     // ---------------------------------------------------------------- Auto Layout — anchors & constraints
 
-    /** leadingAnchor — NSLayoutXAxisAnchor. */
+    /// leadingAnchor — NSLayoutXAxisAnchor.
     public NSLayoutAnchor leadingAnchor() {
         return NSLayoutAnchor.wrap(ObjC.msgSendId(peer, ObjC.sel("leadingAnchor")));
     }
 
-    /** trailingAnchor — NSLayoutXAxisAnchor. */
+    /// trailingAnchor — NSLayoutXAxisAnchor.
     public NSLayoutAnchor trailingAnchor() {
         return NSLayoutAnchor.wrap(ObjC.msgSendId(peer, ObjC.sel("trailingAnchor")));
     }
 
-    /** topAnchor — NSLayoutYAxisAnchor. */
+    /// topAnchor — NSLayoutYAxisAnchor.
     public NSLayoutAnchor topAnchor() {
         return NSLayoutAnchor.wrap(ObjC.msgSendId(peer, ObjC.sel("topAnchor")));
     }
 
-    /** bottomAnchor — NSLayoutYAxisAnchor. */
+    /// bottomAnchor — NSLayoutYAxisAnchor.
     public NSLayoutAnchor bottomAnchor() {
         return NSLayoutAnchor.wrap(ObjC.msgSendId(peer, ObjC.sel("bottomAnchor")));
     }
 
-    /** widthAnchor — NSLayoutDimension. */
+    /// widthAnchor — NSLayoutDimension.
     public NSLayoutAnchor widthAnchor() {
         return NSLayoutAnchor.wrap(ObjC.msgSendId(peer, ObjC.sel("widthAnchor")));
     }
 
-    /** heightAnchor — NSLayoutDimension. */
+    /// heightAnchor — NSLayoutDimension.
     public NSLayoutAnchor heightAnchor() {
         return NSLayoutAnchor.wrap(ObjC.msgSendId(peer, ObjC.sel("heightAnchor")));
     }
 
-    /** centerXAnchor — NSLayoutXAxisAnchor. */
+    /// centerXAnchor — NSLayoutXAxisAnchor.
     public NSLayoutAnchor centerXAnchor() {
         return NSLayoutAnchor.wrap(ObjC.msgSendId(peer, ObjC.sel("centerXAnchor")));
     }
 
-    /** centerYAnchor — NSLayoutYAxisAnchor. */
+    /// centerYAnchor — NSLayoutYAxisAnchor.
     public NSLayoutAnchor centerYAnchor() {
         return NSLayoutAnchor.wrap(ObjC.msgSendId(peer, ObjC.sel("centerYAnchor")));
     }
 
-    /** addConstraint: — install a single layout constraint on this view. */
+    /// addConstraint: — install a single layout constraint on this view.
     public void addConstraint(NSLayoutConstraint constraint) {
         ObjC.msgSendVoidId(peer, ObjC.sel("addConstraint:"), constraint.peer());
     }
 
-    /** addConstraints: — install multiple constraints (loops over addConstraint: for simplicity). */
+    /// addConstraints: — install multiple constraints (loops over addConstraint: for simplicity).
     public void addConstraints(java.util.List<NSLayoutConstraint> constraints) {
         for (NSLayoutConstraint c : constraints) addConstraint(c);
     }
 
-    /** removeConstraint: — remove a previously-added constraint. */
+    /// removeConstraint: — remove a previously-added constraint.
     public void removeConstraint(NSLayoutConstraint constraint) {
         ObjC.msgSendVoidId(peer, ObjC.sel("removeConstraint:"), constraint.peer());
     }
 
-    /** removeConstraints: — bulk remove. */
+    /// removeConstraints: — bulk remove.
     public void removeConstraints(java.util.List<NSLayoutConstraint> constraints) {
         for (NSLayoutConstraint c : constraints) removeConstraint(c);
     }
 
-    /** constraints — the view's installed constraints. */
+    /// constraints — the view's installed constraints.
     public java.util.List<NSLayoutConstraint> constraints() {
         MemorySegment arr = ObjC.msgSendId(peer, ObjC.sel("constraints"));
         if (arr == null || arr.address() == 0) return java.util.List.of();
@@ -384,12 +372,12 @@ public class NSView extends NSObject {
         return java.util.Collections.unmodifiableList(list);
     }
 
-    /** displayIfNeeded — display the view if needed. */
+    /// displayIfNeeded — display the view if needed.
     public void displayIfNeeded() {
         ObjC.msgSendVoid(peer, ObjC.sel("displayIfNeeded"));
     }
 
-    /** displayIfNeededInRect: — display if needed in rect. */
+    /// displayIfNeededInRect: — display if needed in rect.
     public void displayIfNeededInRect(NSRect rect) {
         ensureInit();
         try {
@@ -399,12 +387,12 @@ public class NSView extends NSObject {
         }
     }
 
-    /** layoutSubtreeIfNeeded — layout the subtree if needed. */
+    /// layoutSubtreeIfNeeded — layout the subtree if needed.
     public void layoutSubtreeIfNeeded() {
         ObjC.msgSendVoid(peer, ObjC.sel("layoutSubtreeIfNeeded"));
     }
 
-    /** intrinsicContentSize — the view's intrinsic content size. */
+    /// intrinsicContentSize — the view's intrinsic content size.
     public NSSize intrinsicContentSize() {
         ensureInit();
         try {
@@ -415,7 +403,7 @@ public class NSView extends NSObject {
         }
     }
 
-    /** alphaValue — view alpha 0..1. */
+    /// alphaValue — view alpha 0..1.
     public double alphaValue() {
         ensureInit();
         try {
@@ -425,7 +413,7 @@ public class NSView extends NSObject {
         }
     }
 
-    /** setAlphaValue:. */
+    /// setAlphaValue:.
     public void setAlphaValue(double alpha) {
         ensureInit();
         try {
@@ -435,33 +423,33 @@ public class NSView extends NSObject {
         }
     }
 
-    /** isHidden. */
+    /// isHidden.
     public boolean isHidden() {
         return ObjC.msgSendBool(peer, ObjC.sel("isHidden"));
     }
 
-    /** setHidden:. */
+    /// setHidden:.
     public void setHidden(boolean flag) {
         ObjC.msgSendVoidBool(peer, ObjC.sel("setHidden:"), flag);
     }
 
-    /** isHiddenOrHasHiddenAncestor. */
+    /// isHiddenOrHasHiddenAncestor.
     public boolean isHiddenOrHasHiddenAncestor() {
         return ObjC.msgSendBool(peer, ObjC.sel("isHiddenOrHasHiddenAncestor"));
     }
 
-    /** superview — parent view. */
+    /// superview — parent view.
     public NSView superview() {
         MemorySegment v = ObjC.msgSendId(peer, ObjC.sel("superview"));
         return NSView.wrap(v);
     }
 
-    /** isOpaque — whether the view is opaque. */
+    /// isOpaque — whether the view is opaque.
     public boolean isOpaque() {
         return ObjC.msgSendBool(peer, ObjC.sel("isOpaque"));
     }
 
-    /** invalidateIntrinsicContentSize. */
+    /// invalidateIntrinsicContentSize.
     public void invalidateIntrinsicContentSize() {
         ObjC.msgSendVoid(peer, ObjC.sel("invalidateIntrinsicContentSize"));
     }

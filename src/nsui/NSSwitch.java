@@ -10,17 +10,15 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSSwitch — an AppKit on/off toggle switch control (macOS 10.15+, NSSwitch : NSControl).
- * Thin, 1:1, stateless wrapper over a native {@code NSSwitch}: every method maps to one
- * {@code objc_msgSend} selector, no cached Java state beyond the peer. Mirrors the native
- * hierarchy: NSSwitch is an NSControl is an NSView, so switches drop into any view hierarchy.
- *
- * <p>The most common path is {@link #create}: {@code [[NSSwitch alloc] initWithFrame:]}
- * then {@code setState:}, {@code setTarget:}/{@code setAction:} via the inherited
- * {@link NSControl} API. State is an {@code NSControlStateValue}: 0 = off, 1 = on,
- * -1 = mixed (when {@link #allowsMixedState} is YES).
- */
+/// NSSwitch — an AppKit on/off toggle switch control (macOS 10.15+, NSSwitch : NSControl).
+/// Thin, 1:1, stateless wrapper over a native `NSSwitch`: every method maps to one
+/// `objc_msgSend` selector, no cached Java state beyond the peer. Mirrors the native
+/// hierarchy: NSSwitch is an NSControl is an NSView, so switches drop into any view hierarchy.
+///
+/// The most common path is `create`: `[[NSSwitch alloc] initWithFrame:]`
+/// then `setState:`, `setTarget:`/`setAction:` via the inherited
+/// `NSControl` API. State is an `NSControlStateValue`: 0 = off, 1 = on,
+/// -1 = mixed (when `allowsMixedState` is YES).
 public final class NSSwitch extends NSControl {
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
@@ -47,7 +45,7 @@ public final class NSSwitch extends NSControl {
         initialized = true;
     }
 
-    /** {@code [[NSSwitch alloc] initWithFrame:frame]} — a new switch at the given rect. */
+    /// `[[NSSwitch alloc] initWithFrame:frame]` — a new switch at the given rect.
     public static NSSwitch create(NSRect frame) {
         ensureInit();
         MemorySegment s = ObjC.msgSendId(ObjC.cls("NSSwitch"), ObjC.sel("alloc"));
@@ -64,7 +62,7 @@ public final class NSSwitch extends NSControl {
 
     // ---------------------------------------------------------------- instance API
 
-    /** [switch state] — NSControlStateValue (0=off, 1=on, -1=mixed). */
+    /// [switch state] — NSControlStateValue (0=off, 1=on, -1=mixed).
     public long state() {
         long nativeState = ObjC.msgSendLong(peer, ObjC.sel("state"));
         // If we are in fallback mixed mode and the last set was -1, native clamps
@@ -91,7 +89,7 @@ public final class NSSwitch extends NSControl {
         return nativeState;
     }
 
-    /** [switch setState:] — set the switch state (NSControlStateValue). */
+    /// [switch setState:] — set the switch state (NSControlStateValue).
     public void setState(long state) {
         ObjC.msgSendVoidLong(peer, ObjC.sel("setState:"), state);
         // Keep fallback in sync so mixed round-trips when native clamps
@@ -104,7 +102,7 @@ public final class NSSwitch extends NSControl {
         }
     }
 
-    /** [switch allowsMixedState] — whether the mixed state (-1) is allowed. */
+    /// [switch allowsMixedState] — whether the mixed state (-1) is allowed.
     public boolean allowsMixedState() {
         ensureInit();
         try {
@@ -118,7 +116,7 @@ public final class NSSwitch extends NSControl {
         return mixedFallback.getOrDefault(peer.address(), false);
     }
 
-    /** [switch setAllowsMixedState:] — set whether mixed state is allowed. */
+    /// [switch setAllowsMixedState:] — set whether mixed state is allowed.
     public void setAllowsMixedState(boolean flag) {
         ensureInit();
         try {

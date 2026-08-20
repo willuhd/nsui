@@ -8,10 +8,8 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSBezierPath — minimal wrapper over AppKit NSBezierPath.
- * Provides construction, point manipulation, stroking/filling.
- */
+/// NSBezierPath — minimal wrapper over AppKit NSBezierPath.
+/// Provides construction, point manipulation, stroking/filling.
 public final class NSBezierPath extends NSObject {
 
     private static volatile boolean initialized;
@@ -50,7 +48,7 @@ public final class NSBezierPath extends NSObject {
         initialized = true;
     }
 
-    /** +[NSBezierPath bezierPath] */
+    /// +[NSBezierPath bezierPath]
     public static NSBezierPath bezierPath() {
         ensureInit();
         try {
@@ -61,7 +59,7 @@ public final class NSBezierPath extends NSObject {
         }
     }
 
-    /** +[NSBezierPath bezierPathWithRect:] */
+    /// +[NSBezierPath bezierPathWithRect:]
     public static NSBezierPath bezierPathWithRect(NSRect rect) {
         ensureInit();
         try {
@@ -72,7 +70,7 @@ public final class NSBezierPath extends NSObject {
         }
     }
 
-    /** +[NSBezierPath bezierPathWithOvalInRect:] */
+    /// +[NSBezierPath bezierPathWithOvalInRect:]
     public static NSBezierPath bezierPathWithOvalInRect(NSRect rect) {
         ensureInit();
         try {
@@ -83,7 +81,7 @@ public final class NSBezierPath extends NSObject {
         }
     }
 
-    /** -moveToPoint: */
+    /// -moveToPoint:
     public void moveToPoint(NSPoint p) {
         ensureInit();
         try {
@@ -93,7 +91,7 @@ public final class NSBezierPath extends NSObject {
         }
     }
 
-    /** -lineToPoint: */
+    /// -lineToPoint:
     public void lineToPoint(NSPoint p) {
         ensureInit();
         try {
@@ -103,7 +101,7 @@ public final class NSBezierPath extends NSObject {
         }
     }
 
-    /** -curveToPoint:controlPoint1:controlPoint2: */
+    /// -curveToPoint:controlPoint1:controlPoint2:
     public void curveToPoint(NSPoint end, NSPoint cp1, NSPoint cp2) {
         ensureInit();
         try {
@@ -113,7 +111,7 @@ public final class NSBezierPath extends NSObject {
         }
     }
 
-    /** -closePath */
+    /// -closePath
     public void closePath() {
         ensureInit();
         try {
@@ -123,7 +121,7 @@ public final class NSBezierPath extends NSObject {
         }
     }
 
-    /** -stroke */
+    /// -stroke
     public void stroke() {
         ensureInit();
         try {
@@ -133,7 +131,7 @@ public final class NSBezierPath extends NSObject {
         }
     }
 
-    /** -fill */
+    /// -fill
     public void fill() {
         ensureInit();
         try {
@@ -143,7 +141,7 @@ public final class NSBezierPath extends NSObject {
         }
     }
 
-    /** -lineWidth */
+    /// -lineWidth
     public double lineWidth() {
         ensureInit();
         try {
@@ -153,7 +151,7 @@ public final class NSBezierPath extends NSObject {
         }
     }
 
-    /** -setLineWidth: */
+    /// -setLineWidth:
     public void setLineWidth(double w) {
         ensureInit();
         try {
@@ -163,7 +161,7 @@ public final class NSBezierPath extends NSObject {
         }
     }
 
-    /** -isEmpty */
+    /// -isEmpty
     public boolean isEmpty() {
         ensureInit();
         try {
@@ -173,7 +171,7 @@ public final class NSBezierPath extends NSObject {
         }
     }
 
-    /** -appendBezierPath: */
+    /// -appendBezierPath:
     public void appendBezierPath(NSBezierPath other) {
         ensureInit();
         try {
@@ -183,7 +181,7 @@ public final class NSBezierPath extends NSObject {
         }
     }
 
-    /** -setClip */
+    /// -setClip
     public void setClip() {
         ensureInit();
         try {
@@ -193,7 +191,7 @@ public final class NSBezierPath extends NSObject {
         }
     }
 
-    /** -lineCapStyle / setLineCapStyle: */
+    /// -lineCapStyle / setLineCapStyle:
     public long lineCapStyle() {
         return ObjC.msgSendLong(peer, ObjC.sel("lineCapStyle"));
     }
@@ -202,7 +200,7 @@ public final class NSBezierPath extends NSObject {
         ObjC.msgSendVoidLong(peer, ObjC.sel("setLineCapStyle:"), style);
     }
 
-    /** -lineJoinStyle / setLineJoinStyle: */
+    /// -lineJoinStyle / setLineJoinStyle:
     public long lineJoinStyle() {
         return ObjC.msgSendLong(peer, ObjC.sel("lineJoinStyle"));
     }

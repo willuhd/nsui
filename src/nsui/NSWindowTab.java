@@ -8,10 +8,8 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSWindowTab — minimal wrapper over AppKit NSWindowTab (macOS 10.13+).
- * Thin 1:1, stateless. Tabs belong to an NSWindowTabGroup.
- */
+/// NSWindowTab — minimal wrapper over AppKit NSWindowTab (macOS 10.13+).
+/// Thin 1:1, stateless. Tabs belong to an NSWindowTabGroup.
 public final class NSWindowTab extends NSObject {
 
     private static volatile boolean initialized;
@@ -36,7 +34,7 @@ public final class NSWindowTab extends NSObject {
         initialized = true;
     }
 
-    /** [tab window] -> NSWindow */
+    /// [tab window] -> NSWindow
     public NSWindow window() {
         ensureInit();
         try {
@@ -47,7 +45,7 @@ public final class NSWindowTab extends NSObject {
         }
     }
 
-    /** [tab title] */
+    /// [tab title]
     public String title() {
         ensureInit();
         try {
@@ -58,7 +56,7 @@ public final class NSWindowTab extends NSObject {
         }
     }
 
-    /** [tab setTitle:] */
+    /// [tab setTitle:]
     public void setTitle(String title) {
         ensureInit();
         try {
@@ -68,7 +66,7 @@ public final class NSWindowTab extends NSObject {
         }
     }
 
-    /** [tab isVisible] */
+    /// [tab isVisible]
     public boolean isVisible() {
         ensureInit();
         try {
@@ -78,7 +76,7 @@ public final class NSWindowTab extends NSObject {
         }
     }
 
-    /** [tab tabGroup] -> NSWindowTabGroup */
+    /// [tab tabGroup] -> NSWindowTabGroup
     public NSWindowTabGroup tabGroup() {
         ensureInit();
         try {
@@ -89,7 +87,7 @@ public final class NSWindowTab extends NSObject {
         }
     }
 
-    /** [tab identifier] -> NSString */
+    /// [tab identifier] -> NSString
     public String identifier() {
         ensureInit();
         try {
@@ -100,7 +98,7 @@ public final class NSWindowTab extends NSObject {
         }
     }
 
-    /** [tab setIdentifier:] */
+    /// [tab setIdentifier:]
     public void setIdentifier(String ident) {
         ensureInit();
         try {

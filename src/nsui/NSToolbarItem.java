@@ -8,14 +8,12 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSToolbarItem — an item within an NSToolbar. Thin, 1:1, stateless wrapper over
- * the native {@code NSToolbarItem}: each method maps to one {@code objc_msgSend}
- * selector. Follows the project template: volatile initialized, synchronized
- * ensureInit, ObjC.handle(Sig.of...), invokeExact, static create/wrap.
- *
- * <p>Created via {@code [[NSToolbarItem alloc] initWithItemIdentifier:]}.
- */
+/// NSToolbarItem — an item within an NSToolbar. Thin, 1:1, stateless wrapper over
+/// the native `NSToolbarItem`: each method maps to one `objc_msgSend`
+/// selector. Follows the project template: volatile initialized, synchronized
+/// ensureInit, ObjC.handle(Sig.of...), invokeExact, static create/wrap.
+///
+/// Created via `[[NSToolbarItem alloc] initWithItemIdentifier:]`.
 public final class NSToolbarItem extends NSObject {
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
@@ -38,7 +36,7 @@ public final class NSToolbarItem extends NSObject {
         ensureInit();
     }
 
-    /** Wrap an existing NSToolbarItem peer. */
+    /// Wrap an existing NSToolbarItem peer.
     public static NSToolbarItem wrap(MemorySegment peer) {
         return (peer == null || peer.address() == 0) ? null : new NSToolbarItem(peer);
     }
@@ -60,7 +58,7 @@ public final class NSToolbarItem extends NSObject {
         initialized = true;
     }
 
-    /** {@code [[NSToolbarItem alloc] initWithItemIdentifier:identifier]} — a new item. */
+    /// `[[NSToolbarItem alloc] initWithItemIdentifier:identifier]` — a new item.
     public static NSToolbarItem create(String identifier) {
         ensureInit();
         MemorySegment p = ObjC.msgSendId(ObjC.cls("NSToolbarItem"), ObjC.sel("alloc"));
@@ -73,7 +71,7 @@ public final class NSToolbarItem extends NSObject {
         return new NSToolbarItem(p);
     }
 
-    /** Raw peer variant: initWithItemIdentifier: with id. */
+    /// Raw peer variant: initWithItemIdentifier: with id.
     public static NSToolbarItem create(MemorySegment identifier) {
         ensureInit();
         MemorySegment p = ObjC.msgSendId(ObjC.cls("NSToolbarItem"), ObjC.sel("alloc"));
@@ -88,17 +86,17 @@ public final class NSToolbarItem extends NSObject {
 
     // ---------------------------------------------------------------- instance API
 
-    /** [item itemIdentifier] — NSString id. */
+    /// [item itemIdentifier] — NSString id.
     public String itemIdentifier() {
         return ObjC.toString(ObjC.msgSendId(peer, ObjC.sel("itemIdentifier")));
     }
 
-    /** [item label] — NSString. */
+    /// [item label] — NSString.
     public String label() {
         return ObjC.toString(ObjC.msgSendId(peer, ObjC.sel("label")));
     }
 
-    /** [item setLabel:] */
+    /// [item setLabel:]
     public void setLabel(String label) {
         try {
             hSetLabel.invokeExact(peer, ObjC.sel("setLabel:"), (MemorySegment) (label == null ? MemorySegment.NULL : ObjC.nsstring(label)));
@@ -107,12 +105,12 @@ public final class NSToolbarItem extends NSObject {
         }
     }
 
-    /** [item paletteLabel] */
+    /// [item paletteLabel]
     public String paletteLabel() {
         return ObjC.toString(ObjC.msgSendId(peer, ObjC.sel("paletteLabel")));
     }
 
-    /** [item setPaletteLabel:] */
+    /// [item setPaletteLabel:]
     public void setPaletteLabel(String label) {
         try {
             hSetPaletteLabel.invokeExact(peer, ObjC.sel("setPaletteLabel:"), (MemorySegment) (label == null ? MemorySegment.NULL : ObjC.nsstring(label)));
@@ -121,12 +119,12 @@ public final class NSToolbarItem extends NSObject {
         }
     }
 
-    /** [item toolTip] */
+    /// [item toolTip]
     public String toolTip() {
         return ObjC.toString(ObjC.msgSendId(peer, ObjC.sel("toolTip")));
     }
 
-    /** [item setToolTip:] */
+    /// [item setToolTip:]
     public void setToolTip(String tip) {
         try {
             hSetToolTip.invokeExact(peer, ObjC.sel("setToolTip:"), (MemorySegment) (tip == null ? MemorySegment.NULL : ObjC.nsstring(tip)));
@@ -135,13 +133,13 @@ public final class NSToolbarItem extends NSObject {
         }
     }
 
-    /** [item image] — NSImage peer or nil. */
+    /// [item image] — NSImage peer or nil.
     public NSImage image() {
         MemorySegment p = ObjC.msgSendId(peer, ObjC.sel("image"));
         return NSImage.wrap(p);
     }
 
-    /** [item setImage:] */
+    /// [item setImage:]
     public void setImage(NSImage image) {
         try {
             hSetImage.invokeExact(peer, ObjC.sel("setImage:"), (MemorySegment) ((MemorySegment) (image == null ? MemorySegment.NULL : image.peer())));
@@ -150,13 +148,13 @@ public final class NSToolbarItem extends NSObject {
         }
     }
 
-    /** [item view] — NSView peer or nil. */
+    /// [item view] — NSView peer or nil.
     public NSView view() {
         MemorySegment v = ObjC.msgSendId(peer, ObjC.sel("view"));
         return NSView.wrap(v);
     }
 
-    /** [item setView:] */
+    /// [item setView:]
     public void setView(NSView view) {
         try {
             hSetView.invokeExact(peer, ObjC.sel("setView:"), (MemorySegment) ((MemorySegment) (view == null ? MemorySegment.NULL : view.peer())));
@@ -165,7 +163,7 @@ public final class NSToolbarItem extends NSObject {
         }
     }
 
-    /** [item setTarget:] — action target id. */
+    /// [item setTarget:] — action target id.
     public void setTarget(MemorySegment target) {
         try {
             hSetTarget.invokeExact(peer, ObjC.sel("setTarget:"), (MemorySegment) ((MemorySegment) (target == null ? MemorySegment.NULL : target)));
@@ -174,7 +172,7 @@ public final class NSToolbarItem extends NSObject {
         }
     }
 
-    /** [item setAction:] — selector (SEL). */
+    /// [item setAction:] — selector (SEL).
     public void setAction(String actionSelector) {
         try {
             hSetAction.invokeExact(peer, ObjC.sel("setAction:"), (MemorySegment) (actionSelector == null ? MemorySegment.NULL : ObjC.sel(actionSelector)));
@@ -183,12 +181,12 @@ public final class NSToolbarItem extends NSObject {
         }
     }
 
-    /** [item isEnabled]. */
+    /// [item isEnabled].
     public boolean isEnabled() {
         return ObjC.msgSendBool(peer, ObjC.sel("isEnabled"));
     }
 
-    /** [item setEnabled:] */
+    /// [item setEnabled:]
     public void setEnabled(boolean flag) {
         try {
             hSetEnabled.invokeExact(peer, ObjC.sel("setEnabled:"), flag);
@@ -197,12 +195,12 @@ public final class NSToolbarItem extends NSObject {
         }
     }
 
-    /** [item tag]. */
+    /// [item tag].
     public long tag() {
         return ObjC.msgSendLong(peer, ObjC.sel("tag"));
     }
 
-    /** [item setTag:] */
+    /// [item setTag:]
     public void setTag(long tag) {
         try {
             hSetTag.invokeExact(peer, ObjC.sel("setTag:"), tag);
@@ -211,7 +209,7 @@ public final class NSToolbarItem extends NSObject {
         }
     }
 
-    /** [item minSize] — NSSize. */
+    /// [item minSize] — NSSize.
     public NSSize minSize() {
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.SIZE));
@@ -222,7 +220,7 @@ public final class NSToolbarItem extends NSObject {
         }
     }
 
-    /** [item setMinSize:] */
+    /// [item setMinSize:]
     public void setMinSize(NSSize size) {
         try {
             hSetMinSize.invokeExact(peer, ObjC.sel("setMinSize:"), size.toSegment());
@@ -231,7 +229,7 @@ public final class NSToolbarItem extends NSObject {
         }
     }
 
-    /** [item maxSize] */
+    /// [item maxSize]
     public NSSize maxSize() {
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.SIZE));
@@ -242,7 +240,7 @@ public final class NSToolbarItem extends NSObject {
         }
     }
 
-    /** [item setMaxSize:] */
+    /// [item setMaxSize:]
     public void setMaxSize(NSSize size) {
         try {
             hSetMaxSize.invokeExact(peer, ObjC.sel("setMaxSize:"), size.toSegment());
@@ -251,7 +249,7 @@ public final class NSToolbarItem extends NSObject {
         }
     }
 
-    /** [item visibilityPriority] — NSToolbarItemVisibilityPriority (NSInteger). */
+    /// [item visibilityPriority] — NSToolbarItemVisibilityPriority (NSInteger).
     public long visibilityPriority() {
         return ObjC.msgSendLong(peer, ObjC.sel("visibilityPriority"));
     }

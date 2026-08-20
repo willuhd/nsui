@@ -8,10 +8,8 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSWindowController — minimal wrap over AppKit NSWindowController.
- * Thin 1:1, stateless.
- */
+/// NSWindowController — minimal wrap over AppKit NSWindowController.
+/// Thin 1:1, stateless.
 public final class NSWindowController extends NSObject {
 
     private static volatile boolean initialized;
@@ -36,7 +34,7 @@ public final class NSWindowController extends NSObject {
         initialized = true;
     }
 
-    /** alloc + init — empty controller. */
+    /// alloc + init — empty controller.
     public static NSWindowController create() {
         ensureInit();
         MemorySegment p = ObjC.msgSendId(ObjC.cls("NSWindowController"), ObjC.sel("alloc"));
@@ -45,7 +43,7 @@ public final class NSWindowController extends NSObject {
         return new NSWindowController(p);
     }
 
-    /** alloc + initWithWindow: */
+    /// alloc + initWithWindow:
     public static NSWindowController initWithWindow(NSWindow window) {
         ensureInit();
         MemorySegment p = ObjC.msgSendId(ObjC.cls("NSWindowController"), ObjC.sel("alloc"));
@@ -58,7 +56,7 @@ public final class NSWindowController extends NSObject {
         return new NSWindowController(p);
     }
 
-    /** window — NSWindow or null. */
+    /// window — NSWindow or null.
     public NSWindow window() {
         ensureInit();
         try {
@@ -69,7 +67,7 @@ public final class NSWindowController extends NSObject {
         }
     }
 
-    /** setWindow: */
+    /// setWindow:
     public void setWindow(NSWindow window) {
         ensureInit();
         try {
@@ -79,7 +77,7 @@ public final class NSWindowController extends NSObject {
         }
     }
 
-    /** showWindow: — sender may be null. */
+    /// showWindow: — sender may be null.
     public void showWindow(NSObject sender) {
         ensureInit();
         try {
@@ -89,12 +87,12 @@ public final class NSWindowController extends NSObject {
         }
     }
 
-    /** showWindow: convenience with null sender. */
+    /// showWindow: convenience with null sender.
     public void showWindow() {
         showWindow(null);
     }
 
-    /** setDocument: — NSDocument. */
+    /// setDocument: — NSDocument.
     public void setDocument(NSDocument document) {
         ensureInit();
         try {
@@ -104,7 +102,7 @@ public final class NSWindowController extends NSObject {
         }
     }
 
-    /** document — raw id. */
+    /// document — raw id.
     public MemorySegment documentPeer() {
         ensureInit();
         try {
@@ -119,7 +117,7 @@ public final class NSWindowController extends NSObject {
         return NSDocument.wrap(d);
     }
 
-    /** isWindowLoaded */
+    /// isWindowLoaded
     public boolean isWindowLoaded() {
         return ObjC.msgSendBool(peer, ObjC.sel("isWindowLoaded"));
     }

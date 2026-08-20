@@ -8,12 +8,10 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSTextStorage — mutable attributed string with layout-manager support.
- * Thin 1:1 wrapper over native {@code NSTextStorage} (a subclass of
- * {@code NSMutableAttributedString}). Every method maps to one
- * {@code objc_msgSend} selector, no cached Java state beyond the peer.
- */
+/// NSTextStorage — mutable attributed string with layout-manager support.
+/// Thin 1:1 wrapper over native `NSTextStorage` (a subclass of
+/// `NSMutableAttributedString`). Every method maps to one
+/// `objc_msgSend` selector, no cached Java state beyond the peer.
 public class NSTextStorage extends NSMutableAttributedString {
 
     private static volatile boolean initialized;
@@ -44,7 +42,7 @@ public class NSTextStorage extends NSMutableAttributedString {
         initialized = true;
     }
 
-    /** {@code [[NSTextStorage alloc] init]} — empty storage. */
+    /// `[[NSTextStorage alloc] init]` — empty storage.
     public static NSTextStorage create() {
         ensureInit();
         MemorySegment alloc = ObjC.msgSendId(ObjC.cls("NSTextStorage"), ObjC.sel("alloc"));
@@ -57,7 +55,7 @@ public class NSTextStorage extends NSMutableAttributedString {
         }
     }
 
-    /** {@code [[NSTextStorage alloc] initWithString:string]} */
+    /// `[[NSTextStorage alloc] initWithString:string]`
     public static NSTextStorage create(String s) {
         ensureInit();
         MemorySegment alloc = ObjC.msgSendId(ObjC.cls("NSTextStorage"), ObjC.sel("alloc"));
@@ -71,7 +69,7 @@ public class NSTextStorage extends NSMutableAttributedString {
         }
     }
 
-    /** {@code [[NSTextStorage alloc] initWithAttributedString:attrStr]} */
+    /// `[[NSTextStorage alloc] initWithAttributedString:attrStr]`
     public static NSTextStorage create(NSAttributedString attr) {
         ensureInit();
         MemorySegment alloc = ObjC.msgSendId(ObjC.cls("NSTextStorage"), ObjC.sel("alloc"));
@@ -88,7 +86,7 @@ public class NSTextStorage extends NSMutableAttributedString {
 
     // ---- delegate ----
 
-    /** [storage delegate] — raw id (may be nil). */
+    /// [storage delegate] — raw id (may be nil).
     public MemorySegment delegateSegment() {
         ensureInit();
         try {
@@ -98,7 +96,7 @@ public class NSTextStorage extends NSMutableAttributedString {
         }
     }
 
-    /** [storage setDelegate:] — raw id. */
+    /// [storage setDelegate:] — raw id.
     public void setDelegate(MemorySegment delegate) {
         ensureInit();
         try {
@@ -108,7 +106,7 @@ public class NSTextStorage extends NSMutableAttributedString {
         }
     }
 
-    /** Typed convenience: set delegate via NSTextStorageDelegate marker (stores raw id if delegate supplies a peer). */
+    /// Typed convenience: set delegate via NSTextStorageDelegate marker (stores raw id if delegate supplies a peer).
     public void setDelegate(NSTextStorageDelegate delegate) {
         // NSTextStorageDelegate is a pure Java interface — no peer. Store as null.
         // Callers that bridge via DelegateProxy should use setDelegate(MemorySegment).
@@ -117,7 +115,7 @@ public class NSTextStorage extends NSMutableAttributedString {
 
     // ---- layout managers ----
 
-    /** [storage addLayoutManager:] */
+    /// [storage addLayoutManager:]
     public void addLayoutManager(NSLayoutManager lm) {
         ensureInit();
         try {
@@ -127,12 +125,12 @@ public class NSTextStorage extends NSMutableAttributedString {
         }
     }
 
-    /** [storage removeLayoutManager:] */
+    /// [storage removeLayoutManager:]
     public void removeLayoutManager(NSLayoutManager lm) {
         ObjC.msgSendVoidId(peer, ObjC.sel("removeLayoutManager:"), (MemorySegment) (lm == null ? MemorySegment.NULL : lm.peer()));
     }
 
-    /** [storage layoutManagers] — NSArray of NSLayoutManager */
+    /// [storage layoutManagers] — NSArray of NSLayoutManager
     public java.util.List<NSLayoutManager> layoutManagers() {
         MemorySegment arr = ObjC.msgSendId(peer, ObjC.sel("layoutManagers"));
         if (arr == null || arr.address() == 0) return java.util.List.of();
@@ -152,7 +150,7 @@ public class NSTextStorage extends NSMutableAttributedString {
 
     // ---- editing hooks (passthrough) ----
 
-    /** [storage edited:range:changeInLength:] — notify of edit. */
+    /// [storage edited:range:changeInLength:] — notify of edit.
     public void edited(long editedMask, NSRange range, long delta) {
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.INT, Arg.RANGE, Arg.INT));
@@ -163,12 +161,12 @@ public class NSTextStorage extends NSMutableAttributedString {
         }
     }
 
-    /** [storage processEditing] */
+    /// [storage processEditing]
     public void processEditing() {
         ObjC.msgSendVoid(peer, ObjC.sel("processEditing"));
     }
 
-    /** [storage ensureAttributesAreFixedInRange:] */
+    /// [storage ensureAttributesAreFixedInRange:]
     public void ensureAttributesAreFixed(NSRange range) {
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.RANGE));

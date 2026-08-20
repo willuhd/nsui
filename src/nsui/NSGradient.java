@@ -8,10 +8,8 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSGradient — minimal wrapper over AppKit NSGradient.
- * Provides creation and drawing.
- */
+/// NSGradient — minimal wrapper over AppKit NSGradient.
+/// Provides creation and drawing.
 public final class NSGradient extends NSObject {
 
     private static volatile boolean initialized;
@@ -38,7 +36,7 @@ public final class NSGradient extends NSObject {
         initialized = true;
     }
 
-    /** [[NSGradient alloc] initWithStartingColor:endingColor:] */
+    /// [[NSGradient alloc] initWithStartingColor:endingColor:]
     public static NSGradient initWithStartingColorEndingColor(NSColor starting, NSColor ending) {
         ensureInit();
         MemorySegment alloc = ObjC.msgSendId(ObjC.cls("NSGradient"), ObjC.sel("alloc"));
@@ -53,7 +51,7 @@ public final class NSGradient extends NSObject {
         }
     }
 
-    /** [[NSGradient alloc] initWithColors:] with NSArray of NSColor */
+    /// [[NSGradient alloc] initWithColors:] with NSArray of NSColor
     public static NSGradient initWithColors(NSArray colors) {
         ensureInit();
         MemorySegment alloc = ObjC.msgSendId(ObjC.cls("NSGradient"), ObjC.sel("alloc"));
@@ -66,7 +64,7 @@ public final class NSGradient extends NSObject {
         }
     }
 
-    /** -drawInRect:angle: */
+    /// -drawInRect:angle:
     public void drawInRectAngle(NSRect rect, double angle) {
         ensureInit();
         try {
@@ -76,7 +74,7 @@ public final class NSGradient extends NSObject {
         }
     }
 
-    /** -drawInBezierPath:angle: */
+    /// -drawInBezierPath:angle:
     public void drawInBezierPathAngle(NSBezierPath path, double angle) {
         ensureInit();
         try {
@@ -87,7 +85,7 @@ public final class NSGradient extends NSObject {
         }
     }
 
-    /** -drawFromPoint:toPoint:options: helper via generic invoke if needed; simplified to no-op variant */
+    /// -drawFromPoint:toPoint:options: helper via generic invoke if needed; simplified to no-op variant
     public void drawFromPointToPoint(NSPoint start, NSPoint end) {
         // Uses NSGradient's drawFromPoint:toPoint:options: — fallback via ObjC.invoke
         // For minimal wrapper we expose the rect variant primarily.

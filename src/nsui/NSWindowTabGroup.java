@@ -8,10 +8,8 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSWindowTabGroup — minimal wrapper over AppKit NSWindowTabGroup.
- * Thin 1:1, stateless.
- */
+/// NSWindowTabGroup — minimal wrapper over AppKit NSWindowTabGroup.
+/// Thin 1:1, stateless.
 public final class NSWindowTabGroup extends NSObject {
 
     private static volatile boolean initialized;
@@ -38,7 +36,7 @@ public final class NSWindowTabGroup extends NSObject {
         initialized = true;
     }
 
-    /** [group windows] -> NSArray of NSWindow */
+    /// [group windows] -> NSArray of NSWindow
     public NSArray windows() {
         ensureInit();
         try {
@@ -49,7 +47,7 @@ public final class NSWindowTabGroup extends NSObject {
         }
     }
 
-    /** [group selectedWindow] -> NSWindow */
+    /// [group selectedWindow] -> NSWindow
     public NSWindow selectedWindow() {
         ensureInit();
         try {
@@ -60,7 +58,7 @@ public final class NSWindowTabGroup extends NSObject {
         }
     }
 
-    /** [group setSelectedWindow:] */
+    /// [group setSelectedWindow:]
     public void setSelectedWindow(NSWindow window) {
         ensureInit();
         try {
@@ -71,7 +69,7 @@ public final class NSWindowTabGroup extends NSObject {
         }
     }
 
-    /** [group addWindow:] */
+    /// [group addWindow:]
     public void addWindow(NSWindow window) {
         ensureInit();
         try {
@@ -82,7 +80,7 @@ public final class NSWindowTabGroup extends NSObject {
         }
     }
 
-    /** [group removeWindow:] */
+    /// [group removeWindow:]
     public void removeWindow(NSWindow window) {
         ensureInit();
         try {
@@ -93,7 +91,7 @@ public final class NSWindowTabGroup extends NSObject {
         }
     }
 
-    /** [group isOverviewVisible] */
+    /// [group isOverviewVisible]
     public boolean isOverviewVisible() {
         ensureInit();
         try {
@@ -103,13 +101,13 @@ public final class NSWindowTabGroup extends NSObject {
         }
     }
 
-    /** [group setOverviewVisible:] */
+    /// [group setOverviewVisible:]
     public void setOverviewVisible(boolean flag) {
         ensureInit();
         ObjC.msgSendVoidBool(peer, ObjC.sel("setOverviewVisible:"), flag);
     }
 
-    /** [group count] helper via windows count */
+    /// [group count] helper via windows count
     public long count() {
         ensureInit();
         try {

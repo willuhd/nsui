@@ -8,12 +8,10 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSImageView — an AppKit view that displays an {@link NSImage}. Thin, 1:1,
- * stateless wrapper over a native {@code NSImageView}. It is an {@link NSControl}
- * (an {@link NSView}), so it drops into any view hierarchy and can be positioned
- * with {@link #setFrame(NSRect)}.
- */
+/// NSImageView — an AppKit view that displays an `NSImage`. Thin, 1:1,
+/// stateless wrapper over a native `NSImageView`. It is an `NSControl`
+/// (an `NSView`), so it drops into any view hierarchy and can be positioned
+/// with `setFrame`.
 public final class NSImageView extends NSControl {
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
@@ -59,7 +57,7 @@ public final class NSImageView extends NSControl {
         initialized = true;
     }
 
-    /** {@code [[NSImageView alloc] initWithFrame:frame]} — a new image view at the given rect. */
+    /// `[[NSImageView alloc] initWithFrame:frame]` — a new image view at the given rect.
     public static NSImageView create(NSRect frame) {
         ensureInit();
         MemorySegment v = ObjC.msgSendId(ObjC.cls("NSImageView"), ObjC.sel("alloc"));
@@ -76,7 +74,7 @@ public final class NSImageView extends NSControl {
 
     // ---------------------------------------------------------------- instance API
 
-    /** [imageView image] — the displayed image peer, or null. */
+    /// [imageView image] — the displayed image peer, or null.
     public NSImage image() {
         try {
             MemorySegment p = (MemorySegment) hImage.invokeExact(peer, ObjC.sel("image"));
@@ -86,7 +84,7 @@ public final class NSImageView extends NSControl {
         }
     }
 
-    /** Raw peer for [imageView image] — id return without wrapping. */
+    /// Raw peer for [imageView image] — id return without wrapping.
     public MemorySegment imagePeer() {
         try {
             MemorySegment p = (MemorySegment) hImage.invokeExact(peer, ObjC.sel("image"));
@@ -96,7 +94,7 @@ public final class NSImageView extends NSControl {
         }
     }
 
-    /** [imageView setImage:] — the image displayed. */
+    /// [imageView setImage:] — the image displayed.
     public void setImage(NSImage image) {
         try {
             MemorySegment p = (MemorySegment) (image == null ? MemorySegment.NULL : image.peer());
@@ -106,7 +104,7 @@ public final class NSImageView extends NSControl {
         }
     }
 
-    /** [imageView animates] — whether animated images animate automatically. */
+    /// [imageView animates] — whether animated images animate automatically.
     public boolean animates() {
         try {
             return (boolean) hAnimates.invokeExact(peer, ObjC.sel("animates"));
@@ -115,7 +113,7 @@ public final class NSImageView extends NSControl {
         }
     }
 
-    /** [imageView setAnimates:] — animate automatically. */
+    /// [imageView setAnimates:] — animate automatically.
     public void setAnimates(boolean flag) {
         try {
             hSetAnimates.invokeExact(peer, ObjC.sel("setAnimates:"), flag);
@@ -124,7 +122,7 @@ public final class NSImageView extends NSControl {
         }
     }
 
-    /** [imageView allowsCutCopyPaste] — whether cut/copy/paste is allowed. */
+    /// [imageView allowsCutCopyPaste] — whether cut/copy/paste is allowed.
     public boolean allowsCutCopyPaste() {
         try {
             return (boolean) hAllowsCut.invokeExact(peer, ObjC.sel("allowsCutCopyPaste"));
@@ -133,7 +131,7 @@ public final class NSImageView extends NSControl {
         }
     }
 
-    /** [imageView setAllowsCutCopyPaste:] — allow cut/copy/paste. */
+    /// [imageView setAllowsCutCopyPaste:] — allow cut/copy/paste.
     public void setAllowsCutCopyPaste(boolean flag) {
         try {
             hSetAllowsCut.invokeExact(peer, ObjC.sel("setAllowsCutCopyPaste:"), flag);
@@ -142,7 +140,7 @@ public final class NSImageView extends NSControl {
         }
     }
 
-    /** [imageView isEditable] — whether the image can be edited/dragged. */
+    /// [imageView isEditable] — whether the image can be edited/dragged.
     public boolean isEditable() {
         try {
             return (boolean) hEditable.invokeExact(peer, ObjC.sel("isEditable"));
@@ -151,7 +149,7 @@ public final class NSImageView extends NSControl {
         }
     }
 
-    /** [imageView setEditable:] — allow editing/dragging. */
+    /// [imageView setEditable:] — allow editing/dragging.
     public void setEditable(boolean flag) {
         try {
             hSetEditable.invokeExact(peer, ObjC.sel("setEditable:"), flag);
@@ -160,7 +158,7 @@ public final class NSImageView extends NSControl {
         }
     }
 
-    /** [imageView imageAlignment] — NSImageAlignment (0=center,1=top, etc). */
+    /// [imageView imageAlignment] — NSImageAlignment (0=center,1=top, etc).
     public long imageAlignment() {
         try {
             return (long) hAlign.invokeExact(peer, ObjC.sel("imageAlignment"));
@@ -169,7 +167,7 @@ public final class NSImageView extends NSControl {
         }
     }
 
-    /** [imageView setImageAlignment:] — NSImageAlignment. */
+    /// [imageView setImageAlignment:] — NSImageAlignment.
     public void setImageAlignment(long alignment) {
         try {
             hSetAlign.invokeExact(peer, ObjC.sel("setImageAlignment:"), alignment);
@@ -178,10 +176,8 @@ public final class NSImageView extends NSControl {
         }
     }
 
-    /**
-     * [imageView setImageScaling:] — NSImageScaling.
-     * {@code NSImageScaleProportionallyUpOrDown = 3} is the standard choice.
-     */
+    /// [imageView setImageScaling:] — NSImageScaling.
+    /// `NSImageScaleProportionallyUpOrDown = 3` is the standard choice.
     public void setImageScaling(long scaling) {
         try {
             hSetScaling.invokeExact(peer, ObjC.sel("setImageScaling:"), scaling);
@@ -190,7 +186,7 @@ public final class NSImageView extends NSControl {
         }
     }
 
-    /** [imageView imageScaling] — NSImageScaling. */
+    /// [imageView imageScaling] — NSImageScaling.
     public long imageScaling() {
         try {
             return (long) hScaling.invokeExact(peer, ObjC.sel("imageScaling"));
@@ -199,7 +195,7 @@ public final class NSImageView extends NSControl {
         }
     }
 
-    /** [imageView setImageFrameStyle:] — NSImageFrameStyle (0 = none). */
+    /// [imageView setImageFrameStyle:] — NSImageFrameStyle (0 = none).
     public void setImageFrameStyle(long style) {
         try {
             hSetFrameStyle.invokeExact(peer, ObjC.sel("setImageFrameStyle:"), style);
@@ -208,7 +204,7 @@ public final class NSImageView extends NSControl {
         }
     }
 
-    /** [imageView imageFrameStyle] — NSImageFrameStyle. */
+    /// [imageView imageFrameStyle] — NSImageFrameStyle.
     public long imageFrameStyle() {
         try {
             return (long) hFrameStyle.invokeExact(peer, ObjC.sel("imageFrameStyle"));

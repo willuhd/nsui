@@ -8,10 +8,8 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSSavePanel — native save dialog. Thin 1:1 wrapper over AppKit NSSavePanel.
- * NSOpenPanel is a subclass; both share the same base selectors.
- */
+/// NSSavePanel — native save dialog. Thin 1:1 wrapper over AppKit NSSavePanel.
+/// NSOpenPanel is a subclass; both share the same base selectors.
 public class NSSavePanel extends NSObject {
 
     private static volatile boolean initialized;
@@ -42,7 +40,7 @@ public class NSSavePanel extends NSObject {
         return (peer == null || peer.address() == 0) ? null : new NSSavePanel(peer);
     }
 
-    /** +[NSSavePanel savePanel] */
+    /// +[NSSavePanel savePanel]
     public static NSSavePanel savePanel() {
         ensureInit();
         MemorySegment p = ObjC.msgSendId(ObjC.cls("NSSavePanel"), ObjC.sel("savePanel"));

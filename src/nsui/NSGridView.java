@@ -8,10 +8,8 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSGridView — minimal wrapper over AppKit NSGridView (macOS 10.13+).
- * Thin 1:1 grid layout view; rows/columns managed via view hierarchy.
- */
+/// NSGridView — minimal wrapper over AppKit NSGridView (macOS 10.13+).
+/// Thin 1:1 grid layout view; rows/columns managed via view hierarchy.
 public final class NSGridView extends NSView {
 
     private static volatile boolean initialized;
@@ -46,7 +44,7 @@ public final class NSGridView extends NSView {
         initialized = true;
     }
 
-    /** [[NSGridView alloc] initWithFrame:] */
+    /// [[NSGridView alloc] initWithFrame:]
     public static NSGridView create(NSRect frame) {
         ensureInit();
         MemorySegment p = ObjC.msgSendId(ObjC.cls("NSGridView"), ObjC.sel("alloc"));
@@ -59,7 +57,7 @@ public final class NSGridView extends NSView {
         return new NSGridView(p);
     }
 
-    /** +[NSGridView gridViewWithNumberOfColumns:rows:] — convenience factory */
+    /// +[NSGridView gridViewWithNumberOfColumns:rows:] — convenience factory
     public static NSGridView gridViewWithNumberOfColumnsRows(long cols, long rows) {
         ensureInit();
         try {
@@ -71,7 +69,7 @@ public final class NSGridView extends NSView {
         }
     }
 
-    /** [grid numberOfColumns] */
+    /// [grid numberOfColumns]
     public long numberOfColumns() {
         ensureInit();
         try {
@@ -81,7 +79,7 @@ public final class NSGridView extends NSView {
         }
     }
 
-    /** [grid numberOfRows] */
+    /// [grid numberOfRows]
     public long numberOfRows() {
         ensureInit();
         try {
@@ -91,7 +89,7 @@ public final class NSGridView extends NSView {
         }
     }
 
-    /** [grid columnAtIndex:] -> NSGridColumn (as NSObject) */
+    /// [grid columnAtIndex:] -> NSGridColumn (as NSObject)
     public NSObject columnAtIndex(long index) {
         ensureInit();
         try {
@@ -103,7 +101,7 @@ public final class NSGridView extends NSView {
         }
     }
 
-    /** [grid rowAtIndex:] -> NSGridRow (as NSObject) */
+    /// [grid rowAtIndex:] -> NSGridRow (as NSObject)
     public NSObject rowAtIndex(long index) {
         ensureInit();
         try {
@@ -115,7 +113,7 @@ public final class NSGridView extends NSView {
         }
     }
 
-    /** [grid addRowWithViews:] */
+    /// [grid addRowWithViews:]
     public NSObject addRowWithViews(NSArray views) {
         ensureInit();
         try {
@@ -127,7 +125,7 @@ public final class NSGridView extends NSView {
         }
     }
 
-    /** [grid addColumnWithViews:] */
+    /// [grid addColumnWithViews:]
     public NSObject addColumnWithViews(NSArray views) {
         ensureInit();
         try {
@@ -139,7 +137,7 @@ public final class NSGridView extends NSView {
         }
     }
 
-    /** [grid rowSpacing] */
+    /// [grid rowSpacing]
     public double rowSpacing() {
         ensureInit();
         try {
@@ -149,7 +147,7 @@ public final class NSGridView extends NSView {
         }
     }
 
-    /** [grid setRowSpacing:] */
+    /// [grid setRowSpacing:]
     public void setRowSpacing(double v) {
         ensureInit();
         try {
@@ -159,7 +157,7 @@ public final class NSGridView extends NSView {
         }
     }
 
-    /** [grid columnSpacing] */
+    /// [grid columnSpacing]
     public double columnSpacing() {
         ensureInit();
         try {
@@ -169,7 +167,7 @@ public final class NSGridView extends NSView {
         }
     }
 
-    /** [grid setColumnSpacing:] */
+    /// [grid setColumnSpacing:]
     public void setColumnSpacing(double v) {
         ensureInit();
         try {

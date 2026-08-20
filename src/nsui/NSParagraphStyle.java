@@ -8,12 +8,10 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSParagraphStyle — immutable paragraph style.
- * Thin 1:1 wrapper over native {@code NSParagraphStyle}: every method maps to one
- * {@code objc_msgSend} selector, no cached Java state beyond the peer.
- * Follows FFM pattern: no reflection, cached handles, ensureInit.
- */
+/// NSParagraphStyle — immutable paragraph style.
+/// Thin 1:1 wrapper over native `NSParagraphStyle`: every method maps to one
+/// `objc_msgSend` selector, no cached Java state beyond the peer.
+/// Follows FFM pattern: no reflection, cached handles, ensureInit.
 public class NSParagraphStyle extends NSObject {
 
     private static volatile boolean initialized;
@@ -34,14 +32,14 @@ public class NSParagraphStyle extends NSObject {
         initialized = true;
     }
 
-    /** [NSParagraphStyle defaultParagraphStyle] */
+    /// [NSParagraphStyle defaultParagraphStyle]
     public static NSParagraphStyle defaultParagraphStyle() {
         ensureInit();
         MemorySegment p = ObjC.msgSendId(ObjC.cls("NSParagraphStyle"), ObjC.sel("defaultParagraphStyle"));
         return wrap(p);
     }
 
-    /** [style alignment] -> NSTextAlignment (long) */
+    /// [style alignment] -> NSTextAlignment (long)
     public long alignment() {
         ensureInit();
         try {
@@ -51,7 +49,7 @@ public class NSParagraphStyle extends NSObject {
         }
     }
 
-    /** [style lineBreakMode] -> NSLineBreakMode (long) */
+    /// [style lineBreakMode] -> NSLineBreakMode (long)
     public long lineBreakMode() {
         ensureInit();
         try {
@@ -61,7 +59,7 @@ public class NSParagraphStyle extends NSObject {
         }
     }
 
-    /** [style mutableCopy] -> NSMutableParagraphStyle */
+    /// [style mutableCopy] -> NSMutableParagraphStyle
     public NSMutableParagraphStyle mutableCopy() {
         ensureInit();
         try {

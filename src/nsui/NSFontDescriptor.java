@@ -1,0 +1,207 @@
+package nsui;
+
+import java.lang.foreign.Arena;
+import java.lang.foreign.MemorySegment;
+import java.lang.invoke.MethodHandle;
+
+import nsui.objc.ObjC;
+import nsui.objc.Sig;
+import static nsui.objc.Sig.Arg;
+import static nsui.objc.Sig.Ret;
+
+/**
+ * NSFontDescriptor — describes a font (family, traits, size).
+ * Thin 1:1 wrapper over native {@code NSFontDescriptor}.
+ */
+public final class NSFontDescriptor extends NSObject {
+
+    private static volatile boolean initialized;
+    private static MethodHandle hWithNameSize; // (id, SEL, id, double) -> id  fontDescriptorWithName:size:
+    private static MethodHandle hWithAttrs;    // (id, SEL, id) -> id  fontDescriptorWithFontAttributes:
+    private static MethodHandle hGetId;        // (id, SEL) -> id
+    private static MethodHandle hGetInt;       // (id, SEL) -> long
+    private static MethodHandle hIdId;         // (id, SEL, id) -> id
+    private static MethodHandle hVoidId;       // (id, SEL, id) -> void
+
+    private NSFontDescriptor(MemorySegment peer) {
+        super(peer);
+        ensureInit();
+    }
+
+    public static NSFontDescriptor wrap(MemorySegment peer) {
+        return (peer == null || peer.address() == 0) ? null : new NSFontDescriptor(peer);
+    }
+
+    private static synchronized void ensureInit() {
+        if (initialized) return;
+        hWithNameSize = ObjC.handle(Sig.of(Ret.ID, Arg.ID, Arg.DOUBLE));
+        hWithAttrs = ObjC.handle(Sig.of(Ret.ID, Arg.ID));
+        hGetId = ObjC.handle(Sig.of(Ret.ID));
+        hGetInt = ObjC.handle(Sig.of(Ret.INT));
+        hIdId = ObjC.handle(Sig.of(Ret.ID, Arg.ID));
+        hVoidId = ObjC.handle(Sig.of(Ret.VOID, Arg.ID));
+        initialized = true;
+    }
+
+    // ---- factory ----
+
+    /** {@code +[NSFontDescriptor fontDescriptorWithName:size:]} */
+    public static NSFontDescriptor fontDescriptorWithNameSize(String name, double size) {
+        ensureInit();
+        try {
+            MemorySegment d = (MemorySegment) hWithNameSize.invokeExact(ObjC.cls("NSFontDescriptor"), ObjC.sel("fontDescriptorWithName:size:"), ObjC.nsstring(name), size);
+            if (d == null || d.address() == 0) return null;
+            return new NSFontDescriptor(d);
+        } catch (Throwable t) {
+            throw new RuntimeException("fontDescriptorWithName:size: failed", t);
+        }
+    }
+
+    /** {@code +[NSFontDescriptor fontDescriptorWithFontAttributes:]} — attrs is NSDictionary* */
+    public static NSFontDescriptor fontDescriptorWithFontAttributes(MemorySegment attributes) {
+        ensureInit();
+        try {
+            MemorySegment arg = (attributes == null ? MemorySegment.NULL : attributes);
+            MemorySegment d = (MemorySegment) hWithAttrs.invokeExact(ObjC.cls("NSFontDescriptor"), ObjC.sel("fontDescriptorWithFontAttributes:"), arg);
+            if (d == null || d.address() == 0) return null;
+            return new NSFontDescriptor(d);
+        } catch (Throwable t) {
+            throw new RuntimeException("fontDescriptorWithFontAttributes: failed", t);
+        }
+    }
+
+    /** {@code +[NSFontDescriptor preferredFontDescriptorWithTextStyle:options:]} */
+    public static NSFontDescriptor preferredFontDescriptorWithTextStyle(String style) {
+        ensureInit();
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.ID, Arg.ID));
+            MemorySegment d = (MemorySegment) h.invokeExact(ObjC.cls("NSFontDescriptor"), ObjC.sel("preferredFontDescriptorWithTextStyle:options:"), ObjC.nsstring(style), MemorySegment.NULL);
+            return wrap(d);
+        } catch (Throwable t) {
+            throw new RuntimeException("preferredFontDescriptorWithTextStyle:options: failed", t);
+        }
+    }
+
+    // ---- attributes ----
+
+    /** [descriptor fontAttributes] -> NSDictionary* */
+    public MemorySegment fontAttributes() {
+        ensureInit();
+        try {
+            return (MemorySegment) hGetId.invokeExact(peer, ObjC.sel("fontAttributes"));
+        } catch (Throwable t) {
+            throw new RuntimeException("fontAttributes failed", t);
+        }
+    }
+
+    /** [descriptor objectForKey:] -> id */
+    public MemorySegment objectForKey(String key) {
+        ensureInit();
+        try {
+            return (MemorySegment) hIdId.invokeExact(peer, ObjC.sel("objectForKey:"), ObjC.nsstring(key));
+        } catch (Throwable t) {
+            throw new RuntimeException("objectForKey: failed", t);
+        }
+    }
+
+    /** [descriptor symbolicTraits] -> NSFontDescriptorSymbolicTraits bitmask */
+    public long symbolicTraits() {
+        ensureInit();
+        try {
+            return (long) hGetInt.invokeExact(peer, ObjC.sel("symbolicTraits"));
+        } catch (Throwable t) {
+            throw new RuntimeException("symbolicTraits failed", t);
+        }
+    }
+
+    /** [descriptor fontDescriptorWithSymbolicTraits:] -> NSFontDescriptor */
+    public NSFontDescriptor fontDescriptorWithSymbolicTraits(long traits) {
+        ensureInit();
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.INT));
+            MemorySegment d = (MemorySegment) h.invokeExact(peer, ObjC.sel("fontDescriptorWithSymbolicTraits:"), traits);
+            return wrap(d);
+        } catch (Throwable t) {
+            throw new RuntimeException("fontDescriptorWithSymbolicTraits: failed", t);
+        }
+    }
+
+    /** [descriptor fontDescriptorByAddingAttributes:] — attrs is NSDictionary* */
+    public NSFontDescriptor fontDescriptorByAddingAttributes(MemorySegment attrs) {
+        ensureInit();
+        try {
+            MemorySegment arg = (attrs == null ? MemorySegment.NULL : attrs);
+            MemorySegment d = (MemorySegment) hIdId.invokeExact(peer, ObjC.sel("fontDescriptorByAddingAttributes:"), arg);
+            return wrap(d);
+        } catch (Throwable t) {
+            throw new RuntimeException("fontDescriptorByAddingAttributes: failed", t);
+        }
+    }
+
+    /** [descriptor fontDescriptorWithSize:] -> NSFontDescriptor */
+    public NSFontDescriptor fontDescriptorWithSize(double size) {
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.DOUBLE));
+            MemorySegment d = (MemorySegment) h.invokeExact(peer, ObjC.sel("fontDescriptorWithSize:"), size);
+            return wrap(d);
+        } catch (Throwable t) {
+            throw new RuntimeException("fontDescriptorWithSize: failed", t);
+        }
+    }
+
+    /** [descriptor fontDescriptorWithFace:] -> NSFontDescriptor */
+    public NSFontDescriptor fontDescriptorWithFace(String face) {
+        try {
+            MemorySegment d = (MemorySegment) hIdId.invokeExact(peer, ObjC.sel("fontDescriptorWithFace:"), ObjC.nsstring(face));
+            return wrap(d);
+        } catch (Throwable t) {
+            throw new RuntimeException("fontDescriptorWithFace: failed", t);
+        }
+    }
+
+    /** [descriptor fontDescriptorWithFamily:] -> NSFontDescriptor */
+    public NSFontDescriptor fontDescriptorWithFamily(String family) {
+        try {
+            MemorySegment d = (MemorySegment) hIdId.invokeExact(peer, ObjC.sel("fontDescriptorWithFamily:"), ObjC.nsstring(family));
+            return wrap(d);
+        } catch (Throwable t) {
+            throw new RuntimeException("fontDescriptorWithFamily: failed", t);
+        }
+    }
+
+    /** [descriptor postscriptName] -> NSString -> String */
+    public String postscriptName() {
+        return ObjC.toString(ObjC.msgSendId(peer, ObjC.sel("postscriptName")));
+    }
+
+    /** [descriptor pointSize] -> double */
+    public double pointSize() {
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.DOUBLE));
+            return (double) h.invokeExact(peer, ObjC.sel("pointSize"));
+        } catch (Throwable t) {
+            throw new RuntimeException("pointSize failed", t);
+        }
+    }
+
+    /** [descriptor matchingFontDescriptorsWithMandatoryKeys:] -> NSArray */
+    public MemorySegment matchingFontDescriptors(MemorySegment mandatoryKeys) {
+        try {
+            MemorySegment arg = (mandatoryKeys == null ? MemorySegment.NULL : mandatoryKeys);
+            return (MemorySegment) hIdId.invokeExact(peer, ObjC.sel("matchingFontDescriptorsWithMandatoryKeys:"), arg);
+        } catch (Throwable t) {
+            throw new RuntimeException("matchingFontDescriptorsWithMandatoryKeys: failed", t);
+        }
+    }
+
+    /** [descriptor matchingFontDescriptorWithMandatoryKeys:] -> NSFontDescriptor */
+    public NSFontDescriptor matchingFontDescriptor(MemorySegment mandatoryKeys) {
+        try {
+            MemorySegment arg = (mandatoryKeys == null ? MemorySegment.NULL : mandatoryKeys);
+            MemorySegment d = (MemorySegment) hIdId.invokeExact(peer, ObjC.sel("matchingFontDescriptorWithMandatoryKeys:"), arg);
+            return wrap(d);
+        } catch (Throwable t) {
+            throw new RuntimeException("matchingFontDescriptorWithMandatoryKeys: failed", t);
+        }
+    }
+}

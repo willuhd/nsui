@@ -74,16 +74,20 @@ public final class DelegateProxy {
     /** Java-side {@code -(NSSize)windowWillResize:(id) toSize:(NSSize)} — window delegate veto, clamp/adjust proposed size. */
     public interface WindowSizeArg { MemorySegment call(MemorySegment sender, MemorySegment proposedSize); }
 
+    /** Java-side {@code -(id)touchBar:(id) makeItemForIdentifier:(id)} — Touch Bar delegate, returns NSTouchBarItem. */
+    public interface IdIdArg { MemorySegment call(MemorySegment touchBar, MemorySegment identifier); }
+
     /** Per-instance dispatch state, keyed by the native instance address. */
     private record Holder(Map<Long, BoolArg> bools, Map<Long, VoidArg> voids,
                           Map<Long, IntArg> ints, Map<Long, IdIdIntArg> idIdInts,
                           Map<Long, WindowSizeArg> windowSizes,
+                          Map<Long, IdIdArg> idIds,
                           MemorySegment superClass) {}
 
     /** ObjC class pair (native class + the selector names already installed on it). */
     private record RuntimeClass(MemorySegment cls, Set<String> boolMethods, Set<String> voidMethods,
                                  Set<String> intMethods, Set<String> idIdIntMethods,
-                                 Set<String> windowSizeMethods) {}
+                                 Set<String> windowSizeMethods, Set<String> idIdMethods) {}
 
     // A registry keyed by the native instance address -> its dispatch holder.
     private static final ConcurrentMap<Long, Holder> REGISTRY = new ConcurrentHashMap<>();
@@ -103,6 +107,7 @@ public final class DelegateProxy {
     private static MemorySegment intStub;
     private static MemorySegment idIdIntStub;
     private static MemorySegment windowSizeStub;
+    private static MemorySegment idIdStub;
     private static MemorySegment deallocStub;
     private static MemorySegment sigStub;    // methodSignatureForSelector: (returns an NSMethodSignature)
     private static MemorySegment invStub;    // forwardInvocation: (swallows unknown selectors)
@@ -189,6 +194,20 @@ public final class DelegateProxy {
         }
     }
 
+    /** FFM upcall target: {@code -(id)touchBar:(id) makeItemForIdentifier:(id)} — routes to an {@link IdIdArg}; default NULL. */
+    static MemorySegment dispatchIdId(MemorySegment self, MemorySegment sel, MemorySegment a, MemorySegment b) {
+        Holder h = REGISTRY.get(self.address());
+        IdIdArg f = (h == null) ? null : h.idIds().get(sel.address());
+        if (f == null) return MemorySegment.NULL;
+        Scratch.beginTurn();
+        try {
+            MemorySegment r = f.call(a, b);
+            return (r == null) ? MemorySegment.NULL : r;
+        } finally {
+            Scratch.endTurn();
+        }
+    }
+
     /** FFM upcall target: {@code -(void)dealloc} — unregister the instance, then chain {@code [super dealloc]}. */
     static void dispatchDealloc(MemorySegment self, MemorySegment sel) {
         Holder h = REGISTRY.remove(self.address());
@@ -252,7 +271,8 @@ public final class DelegateProxy {
         Map<Long, IntArg> ints = new ConcurrentHashMap<>();
         Map<Long, IdIdIntArg> idIdInts = new ConcurrentHashMap<>();
         Map<Long, WindowSizeArg> windowSizes = new ConcurrentHashMap<>();
-        REGISTRY.put(instance.address(), new Holder(bools, voids, ints, idIdInts, windowSizes, ObjC.classGetSuperclass(pair)));
+        Map<Long, IdIdArg> idIds = new ConcurrentHashMap<>();
+        REGISTRY.put(instance.address(), new Holder(bools, voids, ints, idIdInts, windowSizes, idIds, ObjC.classGetSuperclass(pair)));
         return instance;
     }
 
@@ -341,12 +361,26 @@ public final class DelegateProxy {
             Map<String, BoolArg> boolSelectors, Map<String, VoidArg> voidSelectors,
             Map<String, IntArg> intSelectors, Map<String, IdIdIntArg> idIdIntSelectors,
             Map<String, WindowSizeArg> windowSizeSelectors) {
+        return delegate(superClassName, className, boolSelectors, voidSelectors, intSelectors, idIdIntSelectors, windowSizeSelectors, Map.of());
+    }
+
+    /**
+     * Build delegate with Touch Bar {@code touchBar:makeItemForIdentifier:} support.
+     * Adds {@code -(id)touchBar:(id) makeItemForIdentifier:(id)} → {@code "@@:@@"
+     * } → {@link #dispatchIdId}. All other selector shapes remain as above.
+     */
+    public static MemorySegment delegate(String superClassName, String className,
+            Map<String, BoolArg> boolSelectors, Map<String, VoidArg> voidSelectors,
+            Map<String, IntArg> intSelectors, Map<String, IdIdIntArg> idIdIntSelectors,
+            Map<String, WindowSizeArg> windowSizeSelectors,
+            Map<String, IdIdArg> idIdSelectors) {
         MemorySegment pair = ensureClassPair(superClassName + "\0" + className);
         Map<Long, BoolArg> bools = new ConcurrentHashMap<>();
         Map<Long, VoidArg> voids = new ConcurrentHashMap<>();
         Map<Long, IntArg> ints = new ConcurrentHashMap<>();
         Map<Long, IdIdIntArg> idIdInts = new ConcurrentHashMap<>();
         Map<Long, WindowSizeArg> windowSizes = new ConcurrentHashMap<>();
+        Map<Long, IdIdArg> idIds = new ConcurrentHashMap<>();
 
         for (Map.Entry<String, BoolArg> e : boolSelectors.entrySet()) {
             addBoolMethod(pair, e.getKey());
@@ -368,9 +402,13 @@ public final class DelegateProxy {
             addWindowSizeMethod(pair, e.getKey());
             windowSizes.put(ObjC.sel(e.getKey()).address(), e.getValue());
         }
+        for (Map.Entry<String, IdIdArg> e : idIdSelectors.entrySet()) {
+            addIdIdMethod(pair, e.getKey());
+            idIds.put(ObjC.sel(e.getKey()).address(), e.getValue());
+        }
 
         MemorySegment instance = allocInit(pair);
-        REGISTRY.put(instance.address(), new Holder(bools, voids, ints, idIdInts, windowSizes, ObjC.classGetSuperclass(pair)));
+        REGISTRY.put(instance.address(), new Holder(bools, voids, ints, idIdInts, windowSizes, idIds, ObjC.classGetSuperclass(pair)));
         return instance;
     }
 
@@ -406,6 +444,10 @@ public final class DelegateProxy {
                     MethodType.methodType(MemorySegment.class, MemorySegment.class, MemorySegment.class,
                             MemorySegment.class, MemorySegment.class));
             windowSizeStub = ObjC.upcall(windowSizeTarget, NsuiForeign.delegateWindowWillResize()); // (NS_SIZE, PTR, PTR, PTR, NS_SIZE)
+
+            MethodHandle idIdTarget = MethodHandles.lookup().findStatic(DelegateProxy.class, "dispatchIdId",
+                    MethodType.methodType(MemorySegment.class, MemorySegment.class, MemorySegment.class, MemorySegment.class, MemorySegment.class));
+            idIdStub = ObjC.upcall(idIdTarget, NsuiForeign.delegateIdIdUpcall()); // (PTR, PTR, PTR, PTR, PTR) touchBar:makeItemForIdentifier:
 
             MethodHandle deallocTarget = MethodHandles.lookup().findStatic(DelegateProxy.class, "dispatchDealloc",
                     MethodType.methodType(void.class, MemorySegment.class, MemorySegment.class));
@@ -458,7 +500,7 @@ public final class DelegateProxy {
             rc = new RuntimeClass(pair,
                     new CopyOnWriteArraySet<>(), new CopyOnWriteArraySet<>(),
                     new CopyOnWriteArraySet<>(), new CopyOnWriteArraySet<>(),
-                    new CopyOnWriteArraySet<>());
+                    new CopyOnWriteArraySet<>(), new CopyOnWriteArraySet<>());
             CLASSES.put(key, rc);
         }
         return rc.cls();
@@ -510,6 +552,16 @@ public final class DelegateProxy {
         if (rc.windowSizeMethods().add(selector)) {
             if (!ObjC.addMethod(pair, selector, windowSizeStub, "{CGSize=dd}@:@{CGSize=dd}")) {
                 throw new RuntimeException("class_addMethod windowSize " + selector + " failed");
+            }
+        }
+    }
+
+    /** Add a {@code -(id)touchBar:(id) makeItemForIdentifier:(id)} (encoding "@@:@@") to a class pair unless already present. */
+    private static void addIdIdMethod(MemorySegment pair, String selector) {
+        RuntimeClass rc = classInfo(pair);
+        if (rc.idIdMethods().add(selector)) {
+            if (!ObjC.addMethod(pair, selector, idIdStub, "@@:@@")) {
+                throw new RuntimeException("class_addMethod idId " + selector + " failed");
             }
         }
     }

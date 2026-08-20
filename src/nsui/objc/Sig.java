@@ -40,14 +40,14 @@ import java.util.List;
 public final class Sig {
 
     /** Argument classes. {@link #ID} covers id/SEL/Class/pointers — one ABI class. */
-    public enum Arg { ID, INT, BOOL, DOUBLE, RECT, POINT, SIZE, FLOAT }
+    public enum Arg { ID, INT, BOOL, DOUBLE, RECT, POINT, SIZE, FLOAT, RANGE }
 
-    /** Return classes. {@link #RECT} is a 32-byte struct (stret on x86_64); POINT/SIZE are 16-byte structs. */
-    public enum Ret { VOID, ID, INT, BOOL, DOUBLE, RECT, POINT, SIZE, FLOAT }
+    /** Return classes. {@link #RECT} is a 32-byte struct (stret on x86_64); POINT/SIZE/RANGE are 16-byte structs. */
+    public enum Ret { VOID, ID, INT, BOOL, DOUBLE, RECT, POINT, SIZE, FLOAT, RANGE }
 
     /**
      * A message signature: return class plus argument classes, packed into a
-     * 3-bits-per-arg long key so the record's value-based {@code equals}/{@code hashCode}
+     * 4-bits-per-arg long key so the record's value-based {@code equals}/{@code hashCode}
      * are exact and cheap.
      */
     public record S(Ret ret, long key, int argc) {
@@ -62,7 +62,7 @@ public final class Sig {
             b.append('(');
             for (int i = 0; i < argc; i++) {
                 if (i > 0) b.append(',');
-                b.append(Arg.values()[(int) (key >>> (i * 3)) & 0x7].name().toLowerCase());
+                b.append(Arg.values()[(int) (key >>> (i * 4)) & 0xF].name().toLowerCase());
             }
             return b.append(')').toString();
         }
@@ -76,7 +76,7 @@ public final class Sig {
     /** Build a signature from its return class and argument classes. */
     public static S of(Ret ret, Arg... args) {
         long key = 0;
-        for (int i = 0; i < args.length; i++) key |= ((long) args[i].ordinal()) << (i * 3);
+        for (int i = 0; i < args.length; i++) key |= ((long) args[i].ordinal()) << (i * 4);
         return new S(ret, key, args.length);
     }
 
@@ -90,6 +90,7 @@ public final class Sig {
     private static final MemoryLayout NS_RECT  = MemoryLayout.structLayout(DOUBLE, DOUBLE, DOUBLE, DOUBLE);
     private static final MemoryLayout NS_POINT = MemoryLayout.structLayout(DOUBLE, DOUBLE);
     private static final MemoryLayout NS_SIZE  = MemoryLayout.structLayout(DOUBLE, DOUBLE);
+    private static final MemoryLayout NS_RANGE = MemoryLayout.structLayout(LONG, LONG);
 
     private static FunctionDescriptor descriptor(S s) {
         // objc_msgSend's real C signature is (id, SEL, ...) — the receiver and
@@ -98,7 +99,7 @@ public final class Sig {
         args[0] = PTR; // id (receiver)
         args[1] = PTR; // SEL (_cmd)
         for (int i = 0; i < s.argc(); i++) {
-            args[i + 2] = switch (Arg.values()[(int) (s.key() >>> (i * 3)) & 0x7]) {
+            args[i + 2] = switch (Arg.values()[(int) (s.key() >>> (i * 4)) & 0xF]) {
                 case ID -> PTR;
                 case INT -> LONG;
                 case BOOL -> BOOL;
@@ -107,6 +108,7 @@ public final class Sig {
                 case POINT -> NS_POINT;
                 case SIZE -> NS_SIZE;
                 case FLOAT -> FLOAT;
+                case RANGE -> NS_RANGE;
             };
         }
         return switch (s.ret()) {
@@ -119,6 +121,7 @@ public final class Sig {
             case POINT -> FunctionDescriptor.of(NS_POINT, args);
             case SIZE -> FunctionDescriptor.of(NS_SIZE, args);
             case FLOAT -> FunctionDescriptor.of(FLOAT, args);
+            case RANGE -> FunctionDescriptor.of(NS_RANGE, args);
         };
     }
 
@@ -163,6 +166,7 @@ public final class Sig {
         of(Ret.VOID, Arg.RECT),                             // setFrame: / setNeedsDisplayInRect:
         of(Ret.VOID, Arg.RECT, Arg.BOOL),                   // setFrame:display:
         of(Ret.VOID, Arg.RECT, Arg.ID),                     // cacheDisplayInRect:toBitmapImageRep:
+        of(Ret.VOID, Arg.RECT, Arg.ID, Arg.INT),            // showRelativeToRect:ofView:preferredEdge:
         of(Ret.VOID, Arg.SIZE),                             // setContentSize:
         // widget-completeness additions
         of(Ret.ID, Arg.DOUBLE, Arg.DOUBLE),                 // systemFontOfSize:weight:
@@ -171,8 +175,7 @@ public final class Sig {
         // generic escape hatch: any selector whose args are all objects (NULL-padded)
         of(Ret.ID, Arg.ID, Arg.ID, Arg.ID, Arg.ID, Arg.ID, Arg.ID),
         of(Ret.VOID, Arg.ID, Arg.ID, Arg.ID, Arg.ID, Arg.ID, Arg.ID),
-        // split view / divider handling
-        of(Ret.VOID, Arg.DOUBLE, Arg.INT),              // setPosition:ofDividerAtIndex: (double, long) -> void
+        // split view / divider handling — deduplicated: VOID,DOUBLE,INT already covers setPosition:ofDividerAtIndex: (same as setWidth:forSegment:)
         // widget completeness additions
         of(Ret.INT, Arg.INT),                           // sendActionOn: (int -> int)
         of(Ret.SIZE, Arg.SIZE),                          // sizeThatFits: (size -> size)
@@ -183,8 +186,43 @@ public final class Sig {
         of(Ret.SIZE, Arg.ID, Arg.SIZE),                  // windowWillResize:toSize: (id, size) -> size
         // Auto Layout
         of(Ret.ID, Arg.ID, Arg.INT, Arg.INT, Arg.ID, Arg.INT, Arg.DOUBLE, Arg.DOUBLE), // constraintWithItem:attribute:relatedBy:toItem:attribute:multiplier:constant:
-        of(Ret.ID, Arg.ID, Arg.DOUBLE, Arg.DOUBLE),      // constraintEqualToAnchor:multiplier:constant: / constraintEqualToAnchor:multiplier:
-        of(Ret.ID, Arg.DOUBLE, Arg.DOUBLE),              // dimension anchor: constraintWithMultiplier:constant: alternative
-        of(Ret.VOID, Arg.ID, Arg.DOUBLE)                 // anchor constraint with double constant helper
+        of(Ret.ID, Arg.ID, Arg.DOUBLE, Arg.DOUBLE),      // constraintEqualToAnchor:multiplier:constant: / constraintEqualToAnchor:multiplier: + dimension anchor alternative (deduplicated)
+        of(Ret.VOID, Arg.ID, Arg.DOUBLE),                 // anchor constraint with double constant helper
+        // NSMenu insertItemWithTitle:action:keyEquivalent:atIndex: + NSAlert / panel additions (deduplicated: ID,ID,ID,INT already present as dictionary helper)
+        of(Ret.ID, Arg.ID, Arg.ID, Arg.ID, Arg.INT),
+        // AppKit long-tail: toolbar / collection / outline / path / gestures
+        of(Ret.POINT, Arg.ID),                              // locationInView: / translationInView: (id) -> point
+        of(Ret.VOID, Arg.POINT, Arg.ID),                    // setTranslation:inView: (point, id) -> void
+        of(Ret.VOID, Arg.ID, Arg.INT, Arg.BOOL),           // toolbar/item fallback / expandItem:expandChildren: alt
+        of(Ret.BOOL, Arg.ID, Arg.INT),                      // outline isGroupItem / collection helper (id, int) -> bool
+        of(Ret.ID, Arg.INT, Arg.ID),                        // outline child:ofItem: (long, id) -> id
+        // NSRange by value (16-byte struct of 2 longs)
+        of(Ret.RANGE),                                      // rangeValue (range getter)
+        of(Ret.RANGE, Arg.RANGE),                           // range manipulation returning range
+        of(Ret.VOID, Arg.RANGE),                            // setRange: / setSelectedRange: (range)
+        of(Ret.ID, Arg.RANGE),                              // substringWithRange: / attributedSubstringFromRange:
+        of(Ret.ID, Arg.ID, Arg.RANGE),                      // e.g., string:range type helpers (id, range) -> id
+        of(Ret.VOID, Arg.ID, Arg.RANGE),                    // e.g., setTextWithRange: / scrollRangeToVisible:
+        of(Ret.BOOL, Arg.RANGE),                            // contains / isEqual with range
+        of(Ret.INT, Arg.RANGE),                             // length/count helpers with range
+        of(Ret.RANGE, Arg.ID),                              // rangeOfString: (id) -> range
+        of(Ret.RANGE, Arg.ID, Arg.INT),                     // rangeOfString:options: (id,int)->range
+        of(Ret.ID, Arg.RANGE, Arg.ID),                      // replaceCharactersInRange:withString: (range,id)->void/id variant
+        of(Ret.VOID, Arg.RANGE, Arg.ID),                     // replaceCharactersInRange:withString: void variant
+        // attributed string specifics
+        of(Ret.ID, Arg.ID, Arg.INT, Arg.ID),                // attribute:atIndex:effectiveRange: (id, long, id*) -> id
+        of(Ret.VOID, Arg.ID, Arg.ID, Arg.RANGE),             // addAttribute:value:range: (id, id, NSRange) -> void
+        // CALayer opacity (float)
+        of(Ret.FLOAT), of(Ret.VOID, Arg.FLOAT),
+        // --- nsui3 Window/App/Graphics extensions (append-only) ---
+        of(Ret.VOID, Arg.RECT, Arg.DOUBLE),                 // NSGradient drawInRect:angle:
+        of(Ret.ID, Arg.ID, Arg.BOOL),                       // NSGraphicsContext graphicsContextWithCGContext:flipped:
+        of(Ret.ID, Arg.RECT, Arg.INT, Arg.ID, Arg.ID),      // NSTrackingArea initWithRect:options:owner:userInfo:
+        of(Ret.VOID, Arg.POINT, Arg.POINT, Arg.POINT),      // NSBezierPath curveToPoint:controlPoint1:controlPoint2:
+        of(Ret.ID, Arg.POINT),                              // NSBezierPath bezierPath helpers / NSCursor
+        of(Ret.VOID, Arg.ID, Arg.RECT),                     // NSWorkspace iconForFileType etc alt
+        of(Ret.BOOL, Arg.ID, Arg.BOOL),                     // NSWorkspace openURL with flag variant
+        of(Ret.ID, Arg.RECT, Arg.INT),                      // NSGridView helper (rect,int)->id
+        of(Ret.VOID, Arg.SIZE, Arg.BOOL)                    // NSAnimationContext / shadow helper
     );
 }

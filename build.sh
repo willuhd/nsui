@@ -17,7 +17,10 @@ SVM_JAR="$GRAALVM/lib/svm/builder/svm.jar"     # hosted API (Feature) for javac
 mkdir -p "$OUT/classes"
 
 echo "==> compiling toolkit (library, package nsui)"
-"$JAVAC" -cp "$SVM_JAR" -d "$OUT/classes" $(find "$ROOT/src" -name '*.java')
+SRC_LIST=$(mktemp)
+find "$ROOT/src" -name '*.java' > "$SRC_LIST"
+"$JAVAC" -cp "$SVM_JAR" -d "$OUT/classes" @"$SRC_LIST"
+rm -f "$SRC_LIST"
 echo "==> compiled to $OUT/classes"
 
 if [ "${1:-}" = "run-jvm" ]; then

@@ -10,7 +10,31 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/** NSMenu — a native menu (the menu bar itself is an NSMenu with NSMenuItem children). */
+/**
+ * NSMenu — a native menu (the menu bar itself is an NSMenu with NSMenuItem children).
+ *
+ * <p>Left menubar items (App, File, Edit, View) are standard top-level NSMenus attached to
+ * {@link NSApplication#setMainMenu} via NSMenuItem+submenu — e.g.:
+ * <pre>{@code
+ * NSMenu main = NSMenu.create();
+ * NSMenu appMenu = NSMenu.createWithTitle("NSUI3");
+ * appMenu.addItemWithTitle("About NSUI3", "", "");
+ * NSMenuItem appItem = NSMenuItem.withTitle("NSUI3", "", "");
+ * appItem.setSubmenu(appMenu);
+ * main.addItem(appItem);
+ * // repeat for File, Edit, View — all via NSMenu, not menubar icons
+ * app.setMainMenu(main);
+ * }</pre>
+ * Menubar icons (NSStatusItem) are separate (NSStatusBar) — do not add status-bar icons here.
+ *
+ * <p>Menu-list icons: use {@link NSMenuItem#setImage(NSImage)} on dropdown items (File → New, etc.).
+ * Top-level bar items should remain text-only; menu-list items may carry icons via this helper
+ * {@link #attachMenuItemIcon(NSMenuItem, String)} or directly via NSMenuItem.setImage.
+ *
+ * <p>Help search note: AppKit auto-inserts fn+F fullscreen at the bottom of View/Help and a
+ * Help searchbar. For demos, use a custom centered search field in a non-Help menu (Edit/View)
+ * via {@link NSMenuItem#setView(MemorySegment)} with {@link #insertGallerySearchFieldItem}.
+ */
 public final class NSMenu extends NSObject {
 
     private static volatile boolean initialized;
@@ -19,6 +43,8 @@ public final class NSMenu extends NSObject {
     private static MethodHandle hIntId;     // (id, SEL, id) -> long [indexOfItem:]
     private static MethodHandle hSize;      // (SegmentAllocator,id,SEL)-> NSSize [size]
     private static MethodHandle hPopUp; // (id, SEL, id, point, id) -> bool [popUpMenuPositioningItem:atLocation:inView:]
+    private static MethodHandle hInsertTitleActionKEIndex; // (id, SEL, id, id, id, long) -> id [insertItemWithTitle:action:keyEquivalent:atIndex:]
+    private static MethodHandle hSetSubmenuForItem; // (id, SEL, id, id) -> void [setSubmenu:forItem:]
 
     private NSMenu(MemorySegment peer) {
         super(peer);
@@ -32,6 +58,8 @@ public final class NSMenu extends NSObject {
         hIntId = ObjC.handle(Sig.of(Ret.INT, Arg.ID));
         hSize = ObjC.handle(Sig.of(Ret.SIZE));
         hPopUp = ObjC.handle(Sig.of(Ret.BOOL, Arg.ID, Arg.POINT, Arg.ID));
+        hInsertTitleActionKEIndex = ObjC.handle(Sig.of(Ret.ID, Arg.ID, Arg.ID, Arg.ID, Arg.INT));
+        hSetSubmenuForItem = ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.ID));
         initialized = true;
     }
 
@@ -74,30 +102,25 @@ public final class NSMenu extends NSObject {
     }
     public NSMenuItem insertItemWithTitle(String title, String action, String keyEquivalent, long index) {
         ensureInit();
-        // NSMenu has insertItemWithTitle:action:keyEquivalent:atIndex: -> returns NSMenuItem
-        // Signature is id(id,SEL, id,SEL,id,long) -> id : not in vocab via simple handle.
-        // Use generic escape hatch or handle with (id, id, id) + int? Instead use ObjC.invoke var.
-        // Build via handle for (Ret.ID, Arg.ID, Arg.ID, Arg.ID, Arg.INT) not present.
-        // Fallback: use typed 3-id handle for first three then handle last? Easier: use ObjC.handle for 6-id escape? Not exact.
-        // Simpler: call via ObjC.msgSendIdIdSelId plus index via separate method — but native requires index.
-        // Use direct handle for that signature: of(Ret.ID, Arg.ID, Arg.ID, Arg.ID, Arg.INT) not in vocab.
-        // Use invoke escape hatch with 6 ids: encode SEL as id, long via allocating? Instead use reflection to build descriptor directly.
-        // For now use ObjC.invokeVoid style not: we need return id.
-        // Workaround: add vocabulary entry and use handle.
-        // We will construct descriptor manually and link via Linker? Simpler: use ObjC.handle for that shape if vocab extended.
-        // Extend vocab lazily at runtime: if not present, throw.
-        // To avoid complexity, provide implementation that calls addItemWithTitle and then moves if index != end.
-        NSMenuItem item = addItemWithTitle(title, action, keyEquivalent);
-        if (index < numberOfItems() - 1) {
-            removeItem(item);
-            insertItem(item, index);
+        try {
+            MemorySegment selAction = (action == null || action.isEmpty()) ? MemorySegment.NULL : ObjC.sel(action);
+            // null title is valid for search-field placeholder items (empty title + custom view)
+            String safeTitle = title == null ? "" : title;
+            String safeKE = keyEquivalent == null ? "" : keyEquivalent;
+            MemorySegment p = (MemorySegment) hInsertTitleActionKEIndex.invokeExact(peer,
+                    ObjC.sel("insertItemWithTitle:action:keyEquivalent:atIndex:"),
+                    ObjC.nsstring(safeTitle), selAction, ObjC.nsstring(safeKE), index);
+            return NSMenuItem.wrap(p);
+        } catch (Throwable t) {
+            throw new RuntimeException("insertItemWithTitle:action:keyEquivalent:atIndex: failed", t);
         }
-        return item;
     }
     public NSMenuItem addItemWithTitle(String title, String action, String keyEquivalent) {
+        String safeTitle = title == null ? "" : title;
+        String safeKE = keyEquivalent == null ? "" : keyEquivalent;
         MemorySegment item = ObjC.msgSendIdIdSelId(peer,
                 ObjC.sel("addItemWithTitle:action:keyEquivalent:"),
-                ObjC.nsstring(title), action == null || action.isEmpty() ? MemorySegment.NULL : ObjC.sel(action), ObjC.nsstring(keyEquivalent));
+                ObjC.nsstring(safeTitle), action == null || action.isEmpty() ? MemorySegment.NULL : ObjC.sel(action), ObjC.nsstring(safeKE));
         return (item == null || item.address() == 0) ? null : NSMenuItem.wrap(item);
     }
 
@@ -111,12 +134,24 @@ public final class NSMenu extends NSObject {
         ObjC.msgSendVoid(peer, ObjC.sel("removeAllItems"));
     }
 
-    /** Attach a submenu to a menu item (the item lives in this menu). */
+    /** Attach a submenu to a menu item (the item lives in this menu) — [item setSubmenu:submenu]. */
     public void setSubmenu(NSMenuItem item, NSMenu submenu) {
-        ObjC.msgSendVoidId(item.peer(), ObjC.sel("setSubmenu:"), submenu == null ? MemorySegment.NULL : submenu.peer());
+        ObjC.msgSendVoidId(item.peer(), ObjC.sel("setSubmenu:"), (MemorySegment) (submenu == null ? MemorySegment.NULL : submenu.peer()));
     }
+    /** [self setSubmenu:submenu forItem:item] — the NSMenu variant (both peers as ID). */
     public void setSubmenuForItem(NSMenu submenu, NSMenuItem item) {
-        ObjC.invokeVoid(peer, ObjC.sel("setSubmenu:forItem:"), submenu == null ? MemorySegment.NULL : submenu.peer(), item.peer());
+        ensureInit();
+        try {
+            hSetSubmenuForItem.invokeExact(peer, ObjC.sel("setSubmenu:forItem:"),
+                    (MemorySegment) (submenu == null ? MemorySegment.NULL : submenu.peer()),
+                    item.peer());
+        } catch (Throwable t) {
+            throw new RuntimeException("setSubmenu:forItem: failed", t);
+        }
+    }
+    /** Alias preserving the original ObjC selector order: setSubmenu:forItem: */
+    public void setSubmenuForItemCompat(NSMenu submenu, NSMenuItem item) {
+        setSubmenuForItem(submenu, item);
     }
 
     // ---- itemArray / numberOfItems / itemAtIndex ----
@@ -195,7 +230,7 @@ public final class NSMenu extends NSObject {
 
     // ---- delegate / appearance ----
     public MemorySegment delegate() { return ObjC.msgSendId(peer, ObjC.sel("delegate")); }
-    public void setDelegate(MemorySegment d) { ObjC.msgSendVoidId(peer, ObjC.sel("setDelegate:"), d == null ? MemorySegment.NULL : d); }
+    public void setDelegate(MemorySegment d) { ObjC.msgSendVoidId(peer, ObjC.sel("setDelegate:"), (MemorySegment) (d == null ? MemorySegment.NULL : d)); }
     public NSMenuItem highlightedItem() { return NSMenuItem.wrap(ObjC.msgSendId(peer, ObjC.sel("highlightedItem"))); }
     public double minimumWidth() {
         try { return (double) ObjC.handle(Sig.of(Ret.DOUBLE)).invokeExact(peer, ObjC.sel("minimumWidth")); } catch (Throwable t) { throw new RuntimeException("minimumWidth failed", t); }
@@ -208,11 +243,134 @@ public final class NSMenu extends NSObject {
         try { return NSSize.fromSegment((MemorySegment) hSize.invokeExact((SegmentAllocator) Arena.global(), peer, ObjC.sel("size"))); } catch (Throwable t) { throw new RuntimeException("size failed", t); }
     }
     public MemorySegment font() { return ObjC.msgSendId(peer, ObjC.sel("font")); }
-    public void setFont(NSFont f) { ObjC.msgSendVoidId(peer, ObjC.sel("setFont:"), f == null ? MemorySegment.NULL : f.peer()); }
+    public void setFont(NSFont f) { ObjC.msgSendVoidId(peer, ObjC.sel("setFont:"), (MemorySegment) (f == null ? MemorySegment.NULL : f.peer())); }
     public boolean showsStateColumn() { return ObjC.msgSendBool(peer, ObjC.sel("showsStateColumn")); }
     public void setShowsStateColumn(boolean flag) { ObjC.msgSendVoidBool(peer, ObjC.sel("setShowsStateColumn:"), flag); }
     public boolean allowsContextMenuPlugIns() { return ObjC.msgSendBool(peer, ObjC.sel("allowsContextMenuPlugIns")); }
     public void setAllowsContextMenuPlugIns(boolean flag) { ObjC.msgSendVoidBool(peer, ObjC.sel("setAllowsContextMenuPlugIns:"), flag); }
+
+    // ---- Help-search field (showsSearchField) ----
+    // AppKit may not expose this selector on all OS versions; guard via respondsToSelector:
+    private boolean respondsTo(String selName) {
+        try {
+            return (boolean) ObjC.handle(Sig.of(Ret.BOOL, Arg.ID)).invokeExact(peer, ObjC.sel("respondsToSelector:"), ObjC.sel(selName));
+        } catch (Throwable t) { return false; }
+    }
+    /** [menu showsSearchField] — Help-menu search field visibility (guarded; false if selector absent). */
+    public boolean showsSearchField() {
+        if (!respondsTo("showsSearchField")) return false;
+        try { return ObjC.msgSendBool(peer, ObjC.sel("showsSearchField")); } catch (Throwable t) { return false; }
+    }
+    /** [menu setShowsSearchField:] — Help-menu search field visibility (no-op if selector absent). */
+    public void setShowsSearchField(boolean flag) {
+        if (!respondsTo("setShowsSearchField:")) return;
+        try { ObjC.msgSendVoidBool(peer, ObjC.sel("setShowsSearchField:"), flag); } catch (Throwable ignored) {}
+    }
+    /** Alias for setShowsSearchField — legacy name used by some tests/docs. */
+    public void setShowsSearchFieldCompat(boolean flag) { setShowsSearchField(flag); }
+
+    // ---- left menubar top-level helpers (App/File/Edit/View via NSMenu, not status icons) ----
+    /**
+     * Add a top-level menubar menu (App/File/Edit/View) to a mainMenu.
+     * Creates an NSMenuItem with title and attaches the given submenu, then adds it to mainMenu.
+     * Left menubar items must use this NSMenu path — not NSStatusItem bar icons.
+     */
+    public static NSMenuItem addTopLevelMenu(NSMenu mainMenu, String title, NSMenu submenu) {
+        NSMenuItem item = NSMenuItem.withTitle(title == null ? "" : title, "", "");
+        if (submenu != null) item.setSubmenu(submenu);
+        mainMenu.addItem(item);
+        return item;
+    }
+
+    /** Convenience factory for an App/File/Edit/View menu with title. */
+    public static NSMenu createAppMenu(String title) { return createWithTitle(title == null ? "" : title); }
+    public static NSMenu createFileMenu() { NSMenu m = createWithTitle("File"); m.setTitle("File"); return m; }
+    public static NSMenu createEditMenu() { NSMenu m = createWithTitle("Edit"); m.setTitle("Edit"); return m; }
+    public static NSMenu createViewMenu() { NSMenu m = createWithTitle("View"); m.setTitle("View"); return m; }
+
+    // ---- menu-list icon helpers (NSMenuItem.setImage is for dropdown lists, not menubar bar) ----
+    /**
+     * Attach a system image to a menu-list item (File/Edit/View/App dropdown). Uses
+     * {@link NSMenuItem#setImage} which renders in the menu list column, not the menubar bar.
+     * Do NOT use for NSStatusItem bar — that is status-agent owned.
+     * @param item target menu item (dropdown list entry)
+     * @param imageName system image name (e.g. "NSFolder", "NSSearchTemplate"); no-op if not found
+     * @return true if image was found and attached
+     */
+    public static boolean attachMenuItemIcon(NSMenuItem item, String imageName) {
+        if (item == null || imageName == null || imageName.isEmpty()) return false;
+        try {
+            NSImage img = NSImage.imageNamed(imageName);
+            if (img != null) { item.setImage(img); return true; }
+        } catch (Throwable ignored) {}
+        return false;
+    }
+    /**
+     * Variant that clears the image if imageName == null.
+     */
+    public static void setMenuItemIconOrClear(NSMenuItem item, String imageName) {
+        if (item == null) return;
+        if (imageName == null || imageName.isEmpty()) { try { item.setImage(null); } catch (Throwable ignored) {} return; }
+        attachMenuItemIcon(item, imageName);
+    }
+
+    // ---- search-field embedding helper ----
+    /**
+     * Insert a placeholder item for a search field and embed the view.
+     * Equivalent to {@code insertItemWithTitle:"" + item.view = searchField}.
+     * The returned item's view is the supplied {@code field} (NSSearchField is an NSView).
+     * For menu-list aesthetics, prefer {@link #insertGallerySearchFieldItem} for centered alignment.
+     */
+    public NSMenuItem insertSearchFieldItem(NSSearchField field, long index) {
+        NSMenuItem item = insertItemWithTitle("", "", "", index);
+        if (field != null) item.setView(field.peer());
+        return item;
+    }
+    /** Convenience: add search field item at end. */
+    public NSMenuItem addSearchFieldItem(NSSearchField field) {
+        return insertSearchFieldItem(field, numberOfItems());
+    }
+
+    // ---- centered Gallery Search (non-Help menu) — avoids Help/View auto fn+F row ----
+    /**
+     * Insert a centered "Gallery Search" field into a non-Help menu (Edit or View) as a custom view.
+     * Uses {@code NSMenuItem.setView} with an NSSearchField and aligns it via view frame + indentation.
+     * Title is "Gallery Search" (not "Help") to avoid Apple Help search auto-insertion. The search field's
+     * frame is inset (x=8) and the item's indentationLevel=1 to visually center the field in the menu.
+     * Callers supply the NSSearchField (so they retain target/action); this method frames and centers it.
+     */
+    public NSMenuItem insertGallerySearchFieldItem(NSSearchField field, long index) {
+        NSMenuItem item = insertItemWithTitle("", "", "", index);
+        if (field != null) {
+            // Centered/aligned: inset field frame horizontally and use indentationLevel to center in menu
+            try { field.setFrame(new NSRect(8, 0, 184, 22)); } catch (Throwable ignored) {}
+            try { field.setCentersPlaceholder(true); } catch (Throwable ignored) {}
+            item.setView(field.peer());
+            try { item.setIndentationLevel(1); } catch (Throwable ignored) {}
+        }
+        return item;
+    }
+    /** Convenience: add centered Gallery Search field at end of this menu. */
+    public NSMenuItem addGallerySearchFieldItem(NSSearchField field) {
+        return insertGallerySearchFieldItem(field, numberOfItems());
+    }
+    /** Create and insert a centered Gallery Search field with placeholder "Gallery Search". */
+    public NSMenuItem insertGallerySearchField(String placeholder, long index) {
+        NSSearchField f = NSSearchField.create(new NSRect(8, 0, 184, 22));
+        try { f.setPlaceholderString(placeholder == null ? "Gallery Search" : placeholder); } catch (Throwable ignored) {}
+        try { f.setCentersPlaceholder(true); } catch (Throwable ignored) {}
+        return insertGallerySearchFieldItem(f, index);
+    }
+    /** Create and add a centered Gallery Search field at end. */
+    public NSMenuItem addGallerySearchField(String placeholder) {
+        return insertGallerySearchField(placeholder, numberOfItems());
+    }
+    /**
+     * Legacy alias: insertCenteredSearchFieldItem — same as insertGallerySearchFieldItem.
+     */
+    public NSMenuItem insertCenteredSearchFieldItem(NSSearchField field, long index) {
+        return insertGallerySearchFieldItem(field, index);
+    }
 
     // ---- popUp / visible ----
     public boolean popUpMenuPositioningItem(NSMenuItem item, NSPoint loc, NSView view) {

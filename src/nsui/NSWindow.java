@@ -73,6 +73,10 @@ public final class NSWindow extends NSObject {
         ensureInit();
     }
 
+    public static NSWindow wrap(MemorySegment peer) {
+        return (peer == null || peer.address() == 0) ? null : new NSWindow(peer);
+    }
+
     private static synchronized void ensureInit() {
         if (initialized) return;
         hSetFrameDisplay = ObjC.handle(Sig.of(Ret.VOID, Arg.RECT, Arg.BOOL));
@@ -353,19 +357,12 @@ public final class NSWindow extends NSObject {
     /** [window backgroundColor] — may be nil. */
     public NSColor backgroundColor() {
         MemorySegment c = ObjC.msgSendId(peer, ObjC.sel("backgroundColor"));
-        if (c == null || c.address() == 0) return null;
-        try {
-            var ctor = NSColor.class.getDeclaredConstructor(MemorySegment.class);
-            ctor.setAccessible(true);
-            return ctor.newInstance(c);
-        } catch (ReflectiveOperationException e) {
-            throw new RuntimeException("wrap NSColor failed", e);
-        }
+        return NSColor.wrap(c);
     }
 
     /** [window setBackgroundColor:]. */
     public void setBackgroundColor(NSColor color) {
-        ObjC.msgSendVoidId(peer, ObjC.sel("setBackgroundColor:"), color == null ? MemorySegment.NULL : color.peer());
+        ObjC.msgSendVoidId(peer, ObjC.sel("setBackgroundColor:"), (MemorySegment) (color == null ? MemorySegment.NULL : color.peer()));
     }
 
     /** [window isOpaque]. */
@@ -482,10 +479,95 @@ public final class NSWindow extends NSObject {
     }
 
     public void makeKeyAndOrderFront(NSObject sender) {
-        ObjC.msgSendVoidId(peer, ObjC.sel("makeKeyAndOrderFront:"), sender == null ? MemorySegment.NULL : sender.peer());
+        ObjC.msgSendVoidId(peer, ObjC.sel("makeKeyAndOrderFront:"), (MemorySegment) (sender == null ? MemorySegment.NULL : sender.peer()));
     }
 
     public void performClose(NSObject sender) {
-        ObjC.msgSendVoidId(peer, ObjC.sel("performClose:"), sender == null ? MemorySegment.NULL : sender.peer());
+        ObjC.msgSendVoidId(peer, ObjC.sel("performClose:"), (MemorySegment) (sender == null ? MemorySegment.NULL : sender.peer()));
+    }
+
+    // ---------------------------------------------------------------- sheets (modal sheet inside window, blocks window)
+
+    /** beginSheet:completionHandler: — attach sheet to receiver; handler receives NSModalResponse. */
+    public void beginSheet(NSWindow sheet, java.util.function.IntConsumer completionHandler) {
+        if (sheet == null) return;
+        try {
+            MemorySegment block;
+            if (completionHandler == null) {
+                block = MemorySegment.NULL;
+            } else {
+                java.lang.invoke.MethodHandle target = java.lang.invoke.MethodHandles.lookup().findStatic(
+                        NSWindow.class, "sheetCompletionBridge",
+                        java.lang.invoke.MethodType.methodType(void.class, MemorySegment.class, long.class, java.util.function.IntConsumer.class));
+                java.lang.invoke.MethodHandle bound = target.bindTo(completionHandler);
+                // block signature: void(^)(NSModalResponse) -> void with blockSelf leading
+                java.lang.foreign.FunctionDescriptor fd = java.lang.foreign.FunctionDescriptor.ofVoid(
+                        (java.lang.foreign.ValueLayout) java.lang.foreign.Linker.nativeLinker().canonicalLayouts().get("void*"),
+                        (java.lang.foreign.ValueLayout) java.lang.foreign.Linker.nativeLinker().canonicalLayouts().get("long"));
+                // Blocks.block expects leading PTR param + user args; wrap to (PTR, long) -> void
+                java.lang.invoke.MethodHandle adapted = bound.asType(java.lang.invoke.MethodType.methodType(void.class, MemorySegment.class, long.class));
+                block = nsui.objc.Blocks.block(adapted, java.lang.foreign.FunctionDescriptor.ofVoid(
+                        (java.lang.foreign.ValueLayout) java.lang.foreign.Linker.nativeLinker().canonicalLayouts().get("void*"),
+                        (java.lang.foreign.ValueLayout) java.lang.foreign.Linker.nativeLinker().canonicalLayouts().get("long")));
+            }
+            java.lang.invoke.MethodHandle h = ObjC.handle(nsui.objc.Sig.of(nsui.objc.Sig.Ret.VOID, nsui.objc.Sig.Arg.ID, nsui.objc.Sig.Arg.ID));
+            h.invokeExact(peer, ObjC.sel("beginSheet:completionHandler:"), sheet.peer(), block == null ? MemorySegment.NULL : block);
+        } catch (Throwable t) {
+            throw new RuntimeException("beginSheet:completionHandler: failed", t);
+        }
+    }
+
+    /** beginSheet:completionHandler: with raw block segment (for advanced use). */
+    public void beginSheet(NSWindow sheet, MemorySegment completionHandlerBlock) {
+        if (sheet == null) return;
+        try {
+            java.lang.invoke.MethodHandle h = ObjC.handle(nsui.objc.Sig.of(nsui.objc.Sig.Ret.VOID, nsui.objc.Sig.Arg.ID, nsui.objc.Sig.Arg.ID));
+            h.invokeExact(peer, ObjC.sel("beginSheet:completionHandler:"), sheet.peer(), completionHandlerBlock == null ? MemorySegment.NULL : completionHandlerBlock);
+        } catch (Throwable t) {
+            throw new RuntimeException("beginSheet:completionHandler: failed", t);
+        }
+    }
+
+    private static void sheetCompletionBridge(MemorySegment blockSelf, long response, java.util.function.IntConsumer handler) {
+        handler.accept((int) response);
+    }
+
+    /** endSheet: — dismiss sheet. */
+    public void endSheet(NSWindow sheet) {
+        if (sheet == null) return;
+        ObjC.msgSendVoidId(peer, ObjC.sel("endSheet:"), sheet.peer());
+    }
+
+    /** endSheet:returnCode: */
+    public void endSheet(NSWindow sheet, long returnCode) {
+        if (sheet == null) return;
+        try {
+            java.lang.invoke.MethodHandle h = ObjC.handle(nsui.objc.Sig.of(nsui.objc.Sig.Ret.VOID, nsui.objc.Sig.Arg.ID, nsui.objc.Sig.Arg.INT));
+            h.invokeExact(peer, ObjC.sel("endSheet:returnCode:"), sheet.peer(), returnCode);
+        } catch (Throwable t) {
+            throw new RuntimeException("endSheet:returnCode: failed", t);
+        }
+    }
+
+    /** attachedSheet — current sheet or null. */
+    public NSWindow attachedSheet() {
+        MemorySegment s = ObjC.msgSendId(peer, ObjC.sel("attachedSheet"));
+        return (s == null || s.address() == 0) ? null : new NSWindow(s);
+    }
+
+    /** isSheet */
+    public boolean isSheet() {
+        return ObjC.msgSendBool(peer, ObjC.sel("isSheet"));
+    }
+
+    /** sheetParent */
+    public NSWindow sheetParent() {
+        MemorySegment s = ObjC.msgSendId(peer, ObjC.sel("sheetParent"));
+        return (s == null || s.address() == 0) ? null : new NSWindow(s);
+    }
+
+    /** orderOut: */
+    public void orderOut(NSObject sender) {
+        ObjC.msgSendVoidId(peer, ObjC.sel("orderOut:"), sender == null ? MemorySegment.NULL : sender.peer());
     }
 }

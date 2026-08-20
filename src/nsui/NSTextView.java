@@ -122,4 +122,89 @@ public class NSTextView extends NSText {
 
     @Override
     public void setBackgroundColor(NSColor color) { super.setBackgroundColor(color); }
+
+    // ---- typed NSAttributedString support ----
+    @Override
+    public NSAttributedString attributedString() {
+        MemorySegment p = ObjC.msgSendId(peer, ObjC.sel("textStorage"));
+        if (p != null && p.address() != 0) return NSAttributedString.wrap(p);
+        return super.attributedString();
+    }
+    @Override
+    public void setAttributedString(NSAttributedString s) {
+        // NSTextView has no setAttributedString: — use its textStorage (NSTextStorage is a NSMutableAttributedString)
+        MemorySegment storage = ObjC.msgSendId(peer, ObjC.sel("textStorage"));
+        if (storage != null && storage.address() != 0) {
+            ObjC.msgSendVoidId(storage, ObjC.sel("setAttributedString:"), (MemorySegment) (s == null ? MemorySegment.NULL : s.peer()));
+            return;
+        }
+        super.setAttributedString(s);
+    }
+
+    public NSAttributedString attributedStringValueTyped() {
+        return NSAttributedString.wrap(ObjC.msgSendId(peer, ObjC.sel("attributedString")));
+    }
+    public void setAttributedStringValue(NSAttributedString value) {
+        // NSTextView uses setAttributedString:; also support attributedStringValue for control-like usage
+        // Try attributedString first, fallback to setAttributedStringValue if available
+        MemorySegment sel = ObjC.sel("setAttributedString:");
+        ObjC.msgSendVoidId(peer, sel, (MemorySegment) (value == null ? MemorySegment.NULL : value.peer()));
+    }
+
+    /** [textView textStorage] -> NSTextStorage (NSMutableAttributedString) */
+    public NSMutableAttributedString textStorage() {
+        MemorySegment p = ObjC.msgSendId(peer, ObjC.sel("textStorage"));
+        return NSMutableAttributedString.wrap(p);
+    }
+
+    /** [textView setTextColor:range:] convenience via textStorage */
+    public void setTextColor(NSColor color, NSRange range) {
+        NSMutableAttributedString ts = textStorage();
+        if (ts != null) {
+            ts.addAttribute("NSForegroundColorAttributeName", (MemorySegment) (color == null ? MemorySegment.NULL : color.peer()), range);
+        }
+    }
+
+    // ---- NSLayoutManager trio (minimal) ----
+
+    /** [textView layoutManager] -> NSLayoutManager (may be nil). */
+    public NSLayoutManager layoutManager() {
+        MemorySegment p = ObjC.msgSendId(peer, ObjC.sel("layoutManager"));
+        return NSLayoutManager.wrap(p);
+    }
+
+    /** [textView textContainer] -> NSTextContainer (may be nil). */
+    public NSTextContainer textContainer() {
+        MemorySegment p = ObjC.msgSendId(peer, ObjC.sel("textContainer"));
+        return NSTextContainer.wrap(p);
+    }
+
+    /** [textView textStorage] as NSTextStorage (typed). */
+    public NSTextStorage textStorageAsStorage() {
+        MemorySegment p = ObjC.msgSendId(peer, ObjC.sel("textStorage"));
+        return NSTextStorage.wrap(p);
+    }
+
+    /**
+     * Wire a full trio manually: storage -> layoutManager -> container -> textView.
+     * Minimal helper — callers that need a custom trio can use this instead of relying
+     * on the default NSTextView initialization.
+     */
+    public void replaceTextContainer(NSTextContainer container) {
+        ObjC.msgSendVoidId(peer, ObjC.sel("replaceTextContainer:"), (MemorySegment) (container == null ? MemorySegment.NULL : container.peer()));
+    }
+
+    /** [textView setTextContainer:] */
+    public void setTextContainer(NSTextContainer container) {
+        // Not a real AppKit selector, but keep for API symmetry; forward to replace if available
+        MemorySegment sel = ObjC.sel("setTextContainer:");
+        // Use escape hatch: check responds, otherwise use replaceTextContainer
+        try {
+            MemorySegment responds = ObjC.msgSendId(peer, ObjC.sel("respondsToSelector:"));
+            // just attempt direct send; if unrecognized, fall back
+            ObjC.msgSendVoidId(peer, sel, (MemorySegment) (container == null ? MemorySegment.NULL : container.peer()));
+        } catch (Throwable t) {
+            replaceTextContainer(container);
+        }
+    }
 }

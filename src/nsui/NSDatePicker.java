@@ -118,7 +118,7 @@ public final class NSDatePicker extends NSControl {
     /** [picker setTimeZone:] — set NSTimeZone (or nil for default). */
     public void setTimeZone(MemorySegment tz) {
         try {
-            hSetId.invokeExact(peer, ObjC.sel("setTimeZone:"), tz == null ? MemorySegment.NULL : tz);
+            hSetId.invokeExact(peer, ObjC.sel("setTimeZone:"), (MemorySegment) ((MemorySegment) (tz == null ? MemorySegment.NULL : tz)));
         } catch (Throwable t) {
             throw new RuntimeException("setTimeZone: failed", t);
         }
@@ -136,7 +136,7 @@ public final class NSDatePicker extends NSControl {
     /** [picker setLocale:] — set NSLocale (or nil). */
     public void setLocale(MemorySegment locale) {
         try {
-            hSetId.invokeExact(peer, ObjC.sel("setLocale:"), locale == null ? MemorySegment.NULL : locale);
+            hSetId.invokeExact(peer, ObjC.sel("setLocale:"), (MemorySegment) ((MemorySegment) (locale == null ? MemorySegment.NULL : locale)));
         } catch (Throwable t) {
             throw new RuntimeException("setLocale: failed", t);
         }
@@ -154,7 +154,7 @@ public final class NSDatePicker extends NSControl {
     /** [picker setCalendar:] — set NSCalendar (or nil). */
     public void setCalendar(MemorySegment calendar) {
         try {
-            hSetId.invokeExact(peer, ObjC.sel("setCalendar:"), calendar == null ? MemorySegment.NULL : calendar);
+            hSetId.invokeExact(peer, ObjC.sel("setCalendar:"), (MemorySegment) ((MemorySegment) (calendar == null ? MemorySegment.NULL : calendar)));
         } catch (Throwable t) {
             throw new RuntimeException("setCalendar: failed", t);
         }
@@ -172,7 +172,7 @@ public final class NSDatePicker extends NSControl {
     /** [picker setMinDate:] — set minimum date (nil clears). */
     public void setMinDate(MemorySegment date) {
         try {
-            hSetId.invokeExact(peer, ObjC.sel("setMinDate:"), date == null ? MemorySegment.NULL : date);
+            hSetId.invokeExact(peer, ObjC.sel("setMinDate:"), (MemorySegment) ((MemorySegment) (date == null ? MemorySegment.NULL : date)));
         } catch (Throwable t) {
             throw new RuntimeException("setMinDate: failed", t);
         }
@@ -190,7 +190,7 @@ public final class NSDatePicker extends NSControl {
     /** [picker setMaxDate:] — set maximum date (nil clears). */
     public void setMaxDate(MemorySegment date) {
         try {
-            hSetId.invokeExact(peer, ObjC.sel("setMaxDate:"), date == null ? MemorySegment.NULL : date);
+            hSetId.invokeExact(peer, ObjC.sel("setMaxDate:"), (MemorySegment) ((MemorySegment) (date == null ? MemorySegment.NULL : date)));
         } catch (Throwable t) {
             throw new RuntimeException("setMaxDate: failed", t);
         }

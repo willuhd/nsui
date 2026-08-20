@@ -123,19 +123,12 @@ public final class NSScrollView extends NSView {
     /** [scroll backgroundColor]. */
     public NSColor backgroundColor() {
         MemorySegment c = ObjC.msgSendId(peer, ObjC.sel("backgroundColor"));
-        if (c == null || c.address() == 0) return null;
-        try {
-            var ctor = NSColor.class.getDeclaredConstructor(MemorySegment.class);
-            ctor.setAccessible(true);
-            return ctor.newInstance(c);
-        } catch (ReflectiveOperationException e) {
-            throw new RuntimeException("wrap NSColor failed", e);
-        }
+        return NSColor.wrap(c);
     }
 
     /** [scroll setBackgroundColor:]. */
     public void setBackgroundColor(NSColor color) {
-        ObjC.msgSendVoidId(peer, ObjC.sel("setBackgroundColor:"), color == null ? MemorySegment.NULL : color.peer());
+        ObjC.msgSendVoidId(peer, ObjC.sel("setBackgroundColor:"), (MemorySegment) (color == null ? MemorySegment.NULL : color.peer()));
     }
 
     /** [scroll drawsBackground]. */

@@ -45,11 +45,11 @@ public final class NSApplication extends NSObject {
     }
 
     public void hide(MemorySegment sender) {
-        ObjC.msgSendVoidId(peer, ObjC.sel("hide:"), sender == null ? MemorySegment.NULL : sender);
+        ObjC.msgSendVoidId(peer, ObjC.sel("hide:"), (MemorySegment) (sender == null ? MemorySegment.NULL : sender));
     }
 
     public void unhide(MemorySegment sender) {
-        ObjC.msgSendVoidId(peer, ObjC.sel("unhide:"), sender == null ? MemorySegment.NULL : sender);
+        ObjC.msgSendVoidId(peer, ObjC.sel("unhide:"), (MemorySegment) (sender == null ? MemorySegment.NULL : sender));
     }
 
     public boolean isActive() { return ObjC.msgSendBool(peer, ObjC.sel("isActive")); }
@@ -99,7 +99,7 @@ public final class NSApplication extends NSObject {
     }
 
     public void setApplicationIconImage(NSImage image) {
-        ObjC.msgSendVoidId(peer, ObjC.sel("setApplicationIconImage:"), image == null ? MemorySegment.NULL : image.peer());
+        ObjC.msgSendVoidId(peer, ObjC.sel("setApplicationIconImage:"), (MemorySegment) (image == null ? MemorySegment.NULL : image.peer()));
     }
 
     public MemorySegment applicationIconImage() {
@@ -112,11 +112,11 @@ public final class NSApplication extends NSObject {
     }
 
     public void terminate(NSObject sender) {
-        ObjC.msgSendVoidId(peer, ObjC.sel("terminate:"), sender == null ? MemorySegment.NULL : sender.peer());
+        ObjC.msgSendVoidId(peer, ObjC.sel("terminate:"), (MemorySegment) (sender == null ? MemorySegment.NULL : sender.peer()));
     }
 
     public void stop(MemorySegment sender) {
-        ObjC.msgSendVoidId(peer, ObjC.sel("stop:"), sender == null ? MemorySegment.NULL : sender);
+        ObjC.msgSendVoidId(peer, ObjC.sel("stop:"), (MemorySegment) (sender == null ? MemorySegment.NULL : sender));
     }
 
     // ------------------------------------------------------- event dispatch
@@ -153,7 +153,7 @@ public final class NSApplication extends NSObject {
         // Not simply represented - use handle
         try {
             var h = ObjC.handle(nsui.objc.Sig.of(nsui.objc.Sig.Ret.VOID, nsui.objc.Sig.Arg.INT, nsui.objc.Sig.Arg.ID));
-            h.invokeExact(peer, ObjC.sel("discardEventsMatchingMask:beforeEvent:"), mask, beforeEvent == null ? MemorySegment.NULL : beforeEvent.peer());
+            h.invokeExact(peer, ObjC.sel("discardEventsMatchingMask:beforeEvent:"), mask, (MemorySegment) (beforeEvent == null ? MemorySegment.NULL : beforeEvent.peer()));
         } catch (Throwable t) { throw new RuntimeException("discardEventsMatchingMask:beforeEvent: failed", t); }
     }
 

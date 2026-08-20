@@ -76,12 +76,12 @@ public class NSTextField extends NSControl {
     /** [field setFont:] — the font used to render the text. */
     @Override
     public void setFont(NSFont font) {
-        ObjC.msgSendVoidId(peer, ObjC.sel("setFont:"), font == null ? MemorySegment.NULL : font.peer());
+        ObjC.msgSendVoidId(peer, ObjC.sel("setFont:"), (MemorySegment) (font == null ? MemorySegment.NULL : font.peer()));
     }
 
     /** [field setTextColor:] — the color of the text. */
     public void setTextColor(NSColor color) {
-        ObjC.msgSendVoidId(peer, ObjC.sel("setTextColor:"), color == null ? MemorySegment.NULL : color.peer());
+        ObjC.msgSendVoidId(peer, ObjC.sel("setTextColor:"), (MemorySegment) (color == null ? MemorySegment.NULL : color.peer()));
     }
     public NSColor textColor() {
         return NSColor.wrap(ObjC.msgSendId(peer, ObjC.sel("textColor")));
@@ -98,7 +98,22 @@ public class NSTextField extends NSControl {
         return ObjC.msgSendId(peer, ObjC.sel("placeholderAttributedString"));
     }
     public void setPlaceholderAttributedString(MemorySegment attr) {
-        ObjC.msgSendVoidId(peer, ObjC.sel("setPlaceholderAttributedString:"), attr == null ? MemorySegment.NULL : attr);
+        ObjC.msgSendVoidId(peer, ObjC.sel("setPlaceholderAttributedString:"), (MemorySegment) (attr == null ? MemorySegment.NULL : attr));
+    }
+    // typed variants
+    public NSAttributedString placeholderAttributedStringTyped() {
+        return NSAttributedString.wrap(ObjC.msgSendId(peer, ObjC.sel("placeholderAttributedString")));
+    }
+    public void setPlaceholderAttributedString(NSAttributedString attr) {
+        ObjC.msgSendVoidId(peer, ObjC.sel("setPlaceholderAttributedString:"), (MemorySegment) (attr == null ? MemorySegment.NULL : attr.peer()));
+    }
+
+    // ---- typed NSAttributedStringValue (delegates to NSControl) ----
+    public NSAttributedString attributedStringValueTyped() {
+        return NSAttributedString.wrap(ObjC.msgSendId(peer, ObjC.sel("attributedStringValue")));
+    }
+    public void setAttributedStringValue(NSAttributedString value) {
+        ObjC.msgSendVoidId(peer, ObjC.sel("setAttributedStringValue:"), (MemorySegment) (value == null ? MemorySegment.NULL : value.peer()));
     }
 
     // ---- backgroundColor ----
@@ -106,7 +121,7 @@ public class NSTextField extends NSControl {
         return NSColor.wrap(ObjC.msgSendId(peer, ObjC.sel("backgroundColor")));
     }
     public void setBackgroundColor(NSColor color) {
-        ObjC.msgSendVoidId(peer, ObjC.sel("setBackgroundColor:"), color == null ? MemorySegment.NULL : color.peer());
+        ObjC.msgSendVoidId(peer, ObjC.sel("setBackgroundColor:"), (MemorySegment) (color == null ? MemorySegment.NULL : color.peer()));
     }
 
     // ---- bezeled / bordered / drawsBackground / editable / selectable (getters + setters) ----
@@ -178,7 +193,7 @@ public class NSTextField extends NSControl {
         return ObjC.msgSendId(peer, ObjC.sel("delegate"));
     }
     public void setDelegate(MemorySegment d) {
-        ObjC.msgSendVoidId(peer, ObjC.sel("setDelegate:"), d == null ? MemorySegment.NULL : d);
+        ObjC.msgSendVoidId(peer, ObjC.sel("setDelegate:"), (MemorySegment) (d == null ? MemorySegment.NULL : d));
     }
 
     // ---- formatter exposed (from NSControl) ----
@@ -189,7 +204,7 @@ public class NSTextField extends NSControl {
 
     // ---- text manipulation ----
     public void selectText(MemorySegment sender) {
-        ObjC.msgSendVoidId(peer, ObjC.sel("selectText:"), sender == null ? MemorySegment.NULL : sender);
+        ObjC.msgSendVoidId(peer, ObjC.sel("selectText:"), (MemorySegment) (sender == null ? MemorySegment.NULL : sender));
     }
     public boolean allowsEditingTextAttributes() {
         return ObjC.msgSendBool(peer, ObjC.sel("allowsEditingTextAttributes"));

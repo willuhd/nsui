@@ -32,6 +32,11 @@ public final class NSButton extends NSControl {
         ensureInit();
     }
 
+    /** Wrap an existing native NSButton/NSStatusBarButton peer (no ownership change). */
+    public static NSButton wrap(MemorySegment peer) {
+        return (peer == null || peer.address() == 0) ? null : new NSButton(peer);
+    }
+
     private static synchronized void ensureInit() {
         if (initialized) return;
         hInitFrame = ObjC.handle(Sig.of(Ret.ID, Arg.RECT));
@@ -175,14 +180,14 @@ public final class NSButton extends NSControl {
         return (p == null || p.address() == 0) ? null : NSImage.wrap(p);
     }
     public void setImage(NSImage img) {
-        ObjC.msgSendVoidId(peer, ObjC.sel("setImage:"), img == null ? MemorySegment.NULL : img.peer());
+        ObjC.msgSendVoidId(peer, ObjC.sel("setImage:"), (MemorySegment) (img == null ? MemorySegment.NULL : img.peer()));
     }
     public NSImage alternateImage() {
         MemorySegment p = ObjC.msgSendId(peer, ObjC.sel("alternateImage"));
         return (p == null || p.address() == 0) ? null : NSImage.wrap(p);
     }
     public void setAlternateImage(NSImage img) {
-        ObjC.msgSendVoidId(peer, ObjC.sel("setAlternateImage:"), img == null ? MemorySegment.NULL : img.peer());
+        ObjC.msgSendVoidId(peer, ObjC.sel("setAlternateImage:"), (MemorySegment) (img == null ? MemorySegment.NULL : img.peer()));
     }
     public long imagePosition() {
         return ObjC.msgSendLong(peer, ObjC.sel("imagePosition"));
@@ -222,7 +227,7 @@ public final class NSButton extends NSControl {
         return ObjC.msgSendId(peer, ObjC.sel("sound"));
     }
     public void setSound(MemorySegment sound) {
-        ObjC.msgSendVoidId(peer, ObjC.sel("setSound:"), sound == null ? MemorySegment.NULL : sound);
+        ObjC.msgSendVoidId(peer, ObjC.sel("setSound:"), (MemorySegment) (sound == null ? MemorySegment.NULL : sound));
     }
 
     // ---- springLoaded / colors ----
@@ -236,13 +241,13 @@ public final class NSButton extends NSControl {
         return ObjC.msgSendId(peer, ObjC.sel("bezelColor"));
     }
     public void setBezelColor(NSColor c) {
-        ObjC.msgSendVoidId(peer, ObjC.sel("setBezelColor:"), c == null ? MemorySegment.NULL : c.peer());
+        ObjC.msgSendVoidId(peer, ObjC.sel("setBezelColor:"), (MemorySegment) (c == null ? MemorySegment.NULL : c.peer()));
     }
     public MemorySegment contentTintColor() {
         return ObjC.msgSendId(peer, ObjC.sel("contentTintColor"));
     }
     public void setContentTintColor(NSColor c) {
-        ObjC.msgSendVoidId(peer, ObjC.sel("setContentTintColor:"), c == null ? MemorySegment.NULL : c.peer());
+        ObjC.msgSendVoidId(peer, ObjC.sel("setContentTintColor:"), (MemorySegment) (c == null ? MemorySegment.NULL : c.peer()));
     }
 
     // ---- periodic delay ----

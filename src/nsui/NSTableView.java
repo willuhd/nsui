@@ -18,7 +18,7 @@ import static nsui.objc.Sig.Ret;
  * <p>Created via {@code [[NSTableView alloc] initWithFrame:]} and typically embedded
  * in an {@link NSScrollView} via {@link NSScrollView#setDocumentView}.
  */
-public final class NSTableView extends NSView {
+public class NSTableView extends NSView {
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
     private static volatile boolean initialized;
@@ -34,12 +34,12 @@ public final class NSTableView extends NSView {
     private static MethodHandle hVoidInt;     // (id, SEL, long) -> void   [setGridStyleMask:]
     private static MethodHandle hEdit;        // (id, SEL, long, long, id, bool) -> void [editColumn:row:withEvent:select:]
 
-    private NSTableView(MemorySegment peer) {
+    protected NSTableView(MemorySegment peer) {
         super(peer);
         ensureInit();
     }
 
-    private static synchronized void ensureInit() {
+    protected static synchronized void ensureInit() {
         if (initialized) return;
         hInitFrame = ObjC.handle(Sig.of(Ret.ID, Arg.RECT));
         hVoidId = ObjC.handle(Sig.of(Ret.VOID, Arg.ID));
@@ -195,12 +195,18 @@ public final class NSTableView extends NSView {
 
     /** [table selectRowIndexes:byExtendingSelection:] */
     public void selectRowIndexes(MemorySegment indexes, boolean extend) {
-        try { hVoidIdBool.invokeExact(peer, ObjC.sel("selectRowIndexes:byExtendingSelection:"), indexes == null ? MemorySegment.NULL : indexes, extend); } catch (Throwable t) { throw new RuntimeException("selectRowIndexes:byExtendingSelection: failed", t); }
+        try {
+            MemorySegment arg = (indexes == null || indexes.address() == 0) ? MemorySegment.NULL : indexes;
+            hVoidIdBool.invokeExact(peer, ObjC.sel("selectRowIndexes:byExtendingSelection:"), (MemorySegment) arg, extend);
+        } catch (Throwable t) { throw new RuntimeException("selectRowIndexes:byExtendingSelection: failed", t); }
     }
 
     /** [table selectColumnIndexes:byExtendingSelection:] */
     public void selectColumnIndexes(MemorySegment indexes, boolean extend) {
-        try { hVoidIdBool.invokeExact(peer, ObjC.sel("selectColumnIndexes:byExtendingSelection:"), indexes == null ? MemorySegment.NULL : indexes, extend); } catch (Throwable t) { throw new RuntimeException("selectColumnIndexes:byExtendingSelection: failed", t); }
+        try {
+            MemorySegment arg = (indexes == null || indexes.address() == 0) ? MemorySegment.NULL : indexes;
+            hVoidIdBool.invokeExact(peer, ObjC.sel("selectColumnIndexes:byExtendingSelection:"), (MemorySegment) arg, extend);
+        } catch (Throwable t) { throw new RuntimeException("selectColumnIndexes:byExtendingSelection: failed", t); }
     }
 
     /** [table deselectRow:] */
@@ -246,7 +252,7 @@ public final class NSTableView extends NSView {
 
     /** [table setHeaderView:] */
     public void setHeaderView(MemorySegment headerView) {
-        try { hVoidId.invokeExact(peer, ObjC.sel("setHeaderView:"), headerView == null ? MemorySegment.NULL : headerView); } catch (Throwable t) { throw new RuntimeException("setHeaderView: failed", t); }
+        try { hVoidId.invokeExact(peer, ObjC.sel("setHeaderView:"), (MemorySegment) ((MemorySegment) (headerView == null ? MemorySegment.NULL : headerView))); } catch (Throwable t) { throw new RuntimeException("setHeaderView: failed", t); }
     }
 
     /** [table gridStyleMask] — NSTableViewGridLineStyle (bitmask). */
@@ -296,7 +302,7 @@ public final class NSTableView extends NSView {
 
     /** [table setSortDescriptors:] */
     public void setSortDescriptors(MemorySegment descriptors) {
-        try { hVoidId.invokeExact(peer, ObjC.sel("setSortDescriptors:"), descriptors == null ? MemorySegment.NULL : descriptors); } catch (Throwable t) { throw new RuntimeException("setSortDescriptors: failed", t); }
+        try { hVoidId.invokeExact(peer, ObjC.sel("setSortDescriptors:"), (MemorySegment) ((MemorySegment) (descriptors == null ? MemorySegment.NULL : descriptors))); } catch (Throwable t) { throw new RuntimeException("setSortDescriptors: failed", t); }
     }
 
     /** [table editedRow] */
@@ -311,7 +317,7 @@ public final class NSTableView extends NSView {
 
     /** [table editColumn:row:withEvent:select:] — begin editing. */
     public void editColumn(long column, long row, MemorySegment event, boolean select) {
-        try { hEdit.invokeExact(peer, ObjC.sel("editColumn:row:withEvent:select:"), column, row, event == null ? MemorySegment.NULL : event, select); } catch (Throwable t) { throw new RuntimeException("editColumn:row:withEvent:select: failed", t); }
+        try { hEdit.invokeExact(peer, ObjC.sel("editColumn:row:withEvent:select:"), column, row, (MemorySegment) (event == null ? MemorySegment.NULL : event), select); } catch (Throwable t) { throw new RuntimeException("editColumn:row:withEvent:select: failed", t); }
     }
 
     /** [table scrollRowToVisible:] */
@@ -326,11 +332,11 @@ public final class NSTableView extends NSView {
 
     /** [table selectAll:] */
     public void selectAll(MemorySegment sender) {
-        try { hVoidId.invokeExact(peer, ObjC.sel("selectAll:"), sender == null ? MemorySegment.NULL : sender); } catch (Throwable t) { throw new RuntimeException("selectAll: failed", t); }
+        try { hVoidId.invokeExact(peer, ObjC.sel("selectAll:"), (MemorySegment) ((MemorySegment) (sender == null ? MemorySegment.NULL : sender))); } catch (Throwable t) { throw new RuntimeException("selectAll: failed", t); }
     }
 
     /** [table deselectAll:] */
     public void deselectAll(MemorySegment sender) {
-        try { hVoidId.invokeExact(peer, ObjC.sel("deselectAll:"), sender == null ? MemorySegment.NULL : sender); } catch (Throwable t) { throw new RuntimeException("deselectAll: failed", t); }
+        try { hVoidId.invokeExact(peer, ObjC.sel("deselectAll:"), (MemorySegment) ((MemorySegment) (sender == null ? MemorySegment.NULL : sender))); } catch (Throwable t) { throw new RuntimeException("deselectAll: failed", t); }
     }
 }

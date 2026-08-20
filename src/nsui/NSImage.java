@@ -119,6 +119,39 @@ public final class NSImage extends NSObject {
         return (img == null || img.address() == 0) ? null : new NSImage(img);
     }
 
+    /** {@code [NSImage imageNamed:name]} — system or asset-catalog named image (nil if not found). */
+    public static NSImage imageNamed(String name) {
+        ensureInit();
+        if (name == null || name.isEmpty()) return null;
+        MemorySegment p = ObjC.msgSendIdId(ObjC.cls("NSImage"), ObjC.sel("imageNamed:"), ObjC.nsstring(name));
+        return (p == null || p.address() == 0) ? null : new NSImage(p);
+    }
+
+    /** Convenience alias for {@link #imageNamed}. */
+    public static NSImage named(String name) { return imageNamed(name); }
+
+    /** {@code [NSImage imageWithSystemSymbolName:accessibilityDescription:]} — SF Symbol (macOS 11+, nil if not found). */
+    public static NSImage imageWithSystemSymbolName(String symbolName, String accessibilityDescription) {
+        ensureInit();
+        if (symbolName == null || symbolName.isEmpty()) return null;
+        try {
+            java.lang.invoke.MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.ID, Arg.ID));
+            MemorySegment desc = (accessibilityDescription == null ? MemorySegment.NULL : ObjC.nsstring(accessibilityDescription));
+            if (desc == null || desc.address() == 0) desc = MemorySegment.NULL;
+            MemorySegment sym = ObjC.nsstring(symbolName);
+            MemorySegment p = (MemorySegment) h.invokeExact(ObjC.cls("NSImage"), ObjC.sel("imageWithSystemSymbolName:accessibilityDescription:"),
+                    (MemorySegment) sym, (MemorySegment) desc);
+            return (p == null || p.address() == 0) ? null : new NSImage(p);
+        } catch (Throwable t) {
+            return null;
+        }
+    }
+
+    /** {@code [NSImage imageWithSystemSymbolName:]} convenience with nil description. */
+    public static NSImage imageWithSystemSymbolName(String symbolName) {
+        return imageWithSystemSymbolName(symbolName, null);
+    }
+
     // ---------------------------------------------------------------- instance API
 
     /** [image size] — the image's size in points (struct return). */

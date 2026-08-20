@@ -33,6 +33,11 @@ public final class NSTableColumn extends NSObject {
         ensureInit();
     }
 
+    /** Wrap a native NSTableColumn id as NSTableColumn. */
+    public static NSTableColumn wrap(MemorySegment peer) {
+        return (peer == null || peer.address() == 0) ? null : new NSTableColumn(peer);
+    }
+
     private static synchronized void ensureInit() {
         if (initialized) return;
         hInitId = ObjC.handle(Sig.of(Ret.ID, Arg.ID));
@@ -151,7 +156,7 @@ public final class NSTableColumn extends NSObject {
 
     /** [column setHeaderCell:] */
     public void setHeaderCell(MemorySegment cell) {
-        try { hVoidId.invokeExact(peer, ObjC.sel("setHeaderCell:"), cell == null ? MemorySegment.NULL : cell); } catch (Throwable t) { throw new RuntimeException("setHeaderCell: failed", t); }
+        try { hVoidId.invokeExact(peer, ObjC.sel("setHeaderCell:"), (MemorySegment) ((MemorySegment) (cell == null ? MemorySegment.NULL : cell))); } catch (Throwable t) { throw new RuntimeException("setHeaderCell: failed", t); }
     }
 
     /** [column dataCell] — NSCell peer (id). Deprecated but still queried by delegate tests. */
@@ -161,7 +166,7 @@ public final class NSTableColumn extends NSObject {
 
     /** [column setDataCell:] */
     public void setDataCell(MemorySegment cell) {
-        try { hVoidId.invokeExact(peer, ObjC.sel("setDataCell:"), cell == null ? MemorySegment.NULL : cell); } catch (Throwable t) { throw new RuntimeException("setDataCell: failed", t); }
+        try { hVoidId.invokeExact(peer, ObjC.sel("setDataCell:"), (MemorySegment) ((MemorySegment) (cell == null ? MemorySegment.NULL : cell))); } catch (Throwable t) { throw new RuntimeException("setDataCell: failed", t); }
     }
 
     /** [column dataCellForRow:] — per-row data cell (if row-specific). */
@@ -199,7 +204,7 @@ public final class NSTableColumn extends NSObject {
 
     /** [column setSortDescriptorPrototype:] */
     public void setSortDescriptorPrototype(MemorySegment desc) {
-        try { hVoidId.invokeExact(peer, ObjC.sel("setSortDescriptorPrototype:"), desc == null ? MemorySegment.NULL : desc); } catch (Throwable t) { throw new RuntimeException("setSortDescriptorPrototype: failed", t); }
+        try { hVoidId.invokeExact(peer, ObjC.sel("setSortDescriptorPrototype:"), (MemorySegment) ((MemorySegment) (desc == null ? MemorySegment.NULL : desc))); } catch (Throwable t) { throw new RuntimeException("setSortDescriptorPrototype: failed", t); }
     }
 
     /** [column headerToolTip] */
@@ -209,7 +214,7 @@ public final class NSTableColumn extends NSObject {
 
     /** [column setHeaderToolTip:] */
     public void setHeaderToolTip(String tip) {
-        try { hVoidId.invokeExact(peer, ObjC.sel("setHeaderToolTip:"), tip == null ? MemorySegment.NULL : ObjC.nsstring(tip)); } catch (Throwable t) { throw new RuntimeException("setHeaderToolTip: failed", t); }
+        try { hVoidId.invokeExact(peer, ObjC.sel("setHeaderToolTip:"), (MemorySegment) (tip == null ? MemorySegment.NULL : ObjC.nsstring(tip))); } catch (Throwable t) { throw new RuntimeException("setHeaderToolTip: failed", t); }
     }
 
     /** [column sizeToFit] */

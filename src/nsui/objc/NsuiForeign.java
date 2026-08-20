@@ -108,6 +108,8 @@ public final class NsuiForeign {
     public static FunctionDescriptor delegateIdIdIntUpcall() { return FunctionDescriptor.of(PTR, PTR, PTR, PTR, PTR, LONG); }
     /** -(NSSize)windowWillResize:(id) toSize:(NSSize) — window delegate veto shape (SIZE return, id + SIZE args) */
     public static FunctionDescriptor delegateWindowWillResize() { return FunctionDescriptor.of(NS_SIZE, PTR, PTR, PTR, NS_SIZE); }
+    /** -(id)touchBar:(id) makeItemForIdentifier:(id) — Touch Bar delegate shape (id return, id + id args) */
+    public static FunctionDescriptor delegateIdIdUpcall() { return FunctionDescriptor.of(PTR, PTR, PTR, PTR, PTR); }
 
     // --------------------------------------------- CoreText (text rendering shim)
 
@@ -184,5 +186,5 @@ public final class NsuiForeign {
             delegateShouldTerminate(), delegateWindowWillClose(),
             drawRectUpcall(), deallocUpcall(), blockVoidUpcall(), setExceptionPreprocessor(),
             methodSignatureUpcall(), delegateIntUpcall(), delegateIdIdIntUpcall(),
-            delegateWindowWillResize());
+            delegateWindowWillResize(), delegateIdIdUpcall());
 }

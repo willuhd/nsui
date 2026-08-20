@@ -89,14 +89,14 @@ public class NSSearchField extends NSTextField {
     /** [field setSearchMenuTemplate:] — install a menu template (pass NSMenu.peer() or NULL to clear). */
     public void setSearchMenuTemplate(MemorySegment menu) {
         ensureInit();
-        MemorySegment m = (menu == null ? MemorySegment.NULL : menu);
+        MemorySegment m = ((MemorySegment) (menu == null ? MemorySegment.NULL : menu));
         try { hVoidId.invokeExact(peer, ObjC.sel("setSearchMenuTemplate:"), m); }
         catch (Throwable t) { throw new RuntimeException("setSearchMenuTemplate: failed", t); }
     }
 
     /** Typed overload accepting NSMenu. */
     public void setSearchMenuTemplate(NSMenu menu) {
-        setSearchMenuTemplate(menu == null ? MemorySegment.NULL : menu.peer());
+        setSearchMenuTemplate((MemorySegment) (menu == null ? MemorySegment.NULL : menu.peer()));
     }
 
     /** Convenience getter returning NSMenu wrapper (null if nil). */
@@ -161,7 +161,7 @@ public class NSSearchField extends NSTextField {
     /** [field setRecentSearches:] */
     public void setRecentSearches(MemorySegment array) {
         ensureInit();
-        MemorySegment a = (array == null ? MemorySegment.NULL : array);
+        MemorySegment a = ((MemorySegment) (array == null ? MemorySegment.NULL : array));
         try { hVoidId.invokeExact(peer, ObjC.sel("setRecentSearches:"), a); }
         catch (Throwable t) { throw new RuntimeException("setRecentSearches: failed", t); }
     }

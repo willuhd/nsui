@@ -163,6 +163,7 @@ public class NSView extends NSObject {
 
     /** setFrame: — reposition/resize in the superview's coordinates. */
     public void setFrame(NSRect frame) {
+        ensureInit();
         try {
             hSetFrame.invokeExact(peer, ObjC.sel("setFrame:"), frame.toSegment());
         } catch (Throwable t) {
@@ -178,6 +179,7 @@ public class NSView extends NSObject {
      * a subview keeps its absolute frame and does not track window resizes.
      */
     public void setAutoresizingMask(long mask) {
+        ensureInit();
         try {
             hAutoMask.invokeExact(peer, ObjC.sel("setAutoresizingMask:"), mask);
         } catch (Throwable t) {
@@ -209,6 +211,7 @@ public class NSView extends NSObject {
      * {@code rect} avoids a full-bounds redraw.
      */
     public void setNeedsDisplayInRect(NSRect rect) {
+        ensureInit();
         try {
             hNeedsRect.invokeExact(peer, ObjC.sel("setNeedsDisplayInRect:"), rect.toSegment());
         } catch (Throwable t) {
@@ -223,6 +226,7 @@ public class NSView extends NSObject {
      * backing store is pixels, so device-space sizes equal point sizes times this factor.
      */
     public double backingScaleFactor() {
+        ensureInit();
         try {
             return (double) hBacking.invokeExact(peer, ObjC.sel("backingScaleFactor"));
         } catch (Throwable t) {
@@ -232,6 +236,7 @@ public class NSView extends NSObject {
 
     /** convertRectToBacking: — a point-space rect in the view's coordinates -> backing pixels. */
     public NSRect convertRectToBacking(NSRect rect) {
+        ensureInit();
         try {
             return NSRect.fromSegment((MemorySegment) hConvBacking.invokeExact(
                     (java.lang.foreign.SegmentAllocator) java.lang.foreign.Arena.global(), peer,
@@ -259,6 +264,16 @@ public class NSView extends NSObject {
     /** isFlipped — whether the view's y-axis points up (NO for a plain NSView). */
     public boolean isFlipped() {
         return ObjC.msgSendBool(peer, ObjC.sel("isFlipped"));
+    }
+
+    /** layer — the view's backing CALayer (null if not layer-backed). Typed via CALayer. */
+    public CALayer layer() {
+        return CALayer.wrap(ObjC.msgSendId(peer, ObjC.sel("layer")));
+    }
+
+    /** setLayer: — assign a CALayer */
+    public void setLayer(CALayer layer) {
+        ObjC.msgSendVoidId(peer, ObjC.sel("setLayer:"), (MemorySegment) (layer == null ? MemorySegment.NULL : layer.peer()));
     }
 
     // ---------------------------------------------------------------- additional getters — completeness
@@ -376,6 +391,7 @@ public class NSView extends NSObject {
 
     /** displayIfNeededInRect: — display if needed in rect. */
     public void displayIfNeededInRect(NSRect rect) {
+        ensureInit();
         try {
             hNeedsRect.invokeExact(peer, ObjC.sel("displayIfNeededInRect:"), rect.toSegment());
         } catch (Throwable t) {
@@ -390,6 +406,7 @@ public class NSView extends NSObject {
 
     /** intrinsicContentSize — the view's intrinsic content size. */
     public NSSize intrinsicContentSize() {
+        ensureInit();
         try {
             MemorySegment s = (MemorySegment) hGetSize.invokeExact((java.lang.foreign.SegmentAllocator) java.lang.foreign.Arena.global(), peer, ObjC.sel("intrinsicContentSize"));
             return NSSize.fromSegment(s);
@@ -400,6 +417,7 @@ public class NSView extends NSObject {
 
     /** alphaValue — view alpha 0..1. */
     public double alphaValue() {
+        ensureInit();
         try {
             return (double) hGetDouble.invokeExact(peer, ObjC.sel("alphaValue"));
         } catch (Throwable t) {
@@ -409,6 +427,7 @@ public class NSView extends NSObject {
 
     /** setAlphaValue:. */
     public void setAlphaValue(double alpha) {
+        ensureInit();
         try {
             hSetDouble.invokeExact(peer, ObjC.sel("setAlphaValue:"), alpha);
         } catch (Throwable t) {

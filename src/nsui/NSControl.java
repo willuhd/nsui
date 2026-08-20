@@ -133,6 +133,13 @@ public class NSControl extends NSView {
     public void setAttributedStringValue(MemorySegment value) {
         ObjC.msgSendVoidId(peer, ObjC.sel("setAttributedStringValue:"), value);
     }
+    // ---- typed NSAttributedString variants (preferred) ----
+    public NSAttributedString attributedStringValueTyped() {
+        return NSAttributedString.wrap(ObjC.msgSendId(peer, ObjC.sel("attributedStringValue")));
+    }
+    public void setAttributedStringValue(NSAttributedString value) {
+        ObjC.msgSendVoidId(peer, ObjC.sel("setAttributedStringValue:"), (MemorySegment) (value == null ? MemorySegment.NULL : value.peer()));
+    }
 
     // ---- numeric values ----
     public int intValue() {
@@ -204,7 +211,7 @@ public class NSControl extends NSView {
         return NSFont.wrap(p);
     }
     public void setFont(NSFont font) {
-        ObjC.msgSendVoidId(peer, ObjC.sel("setFont:"), font == null ? MemorySegment.NULL : font.peer());
+        ObjC.msgSendVoidId(peer, ObjC.sel("setFont:"), (MemorySegment) (font == null ? MemorySegment.NULL : font.peer()));
     }
     public long alignment() {
         return ObjC.msgSendLong(peer, ObjC.sel("alignment"));

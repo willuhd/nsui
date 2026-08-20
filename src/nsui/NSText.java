@@ -109,7 +109,7 @@ public class NSText extends NSView {
     }
 
     public void setFont(NSFont font) {
-        ObjC.msgSendVoidId(peer, ObjC.sel("setFont:"), font == null ? MemorySegment.NULL : font.peer());
+        ObjC.msgSendVoidId(peer, ObjC.sel("setFont:"), (MemorySegment) (font == null ? MemorySegment.NULL : font.peer()));
     }
 
     public NSColor textColor() {
@@ -117,7 +117,7 @@ public class NSText extends NSView {
     }
 
     public void setTextColor(NSColor color) {
-        ObjC.msgSendVoidId(peer, ObjC.sel("setTextColor:"), color == null ? MemorySegment.NULL : color.peer());
+        ObjC.msgSendVoidId(peer, ObjC.sel("setTextColor:"), (MemorySegment) (color == null ? MemorySegment.NULL : color.peer()));
     }
 
     public NSColor backgroundColor() {
@@ -125,7 +125,19 @@ public class NSText extends NSView {
     }
 
     public void setBackgroundColor(NSColor color) {
-        ObjC.msgSendVoidId(peer, ObjC.sel("setBackgroundColor:"), color == null ? MemorySegment.NULL : color.peer());
+        ObjC.msgSendVoidId(peer, ObjC.sel("setBackgroundColor:"), (MemorySegment) (color == null ? MemorySegment.NULL : color.peer()));
+    }
+
+    // ---- attributed string (typed) ----
+    public NSAttributedString attributedString() {
+        return NSAttributedString.wrap(ObjC.msgSendId(peer, ObjC.sel("attributedString")));
+    }
+    public void setAttributedString(NSAttributedString s) {
+        ObjC.msgSendVoidId(peer, ObjC.sel("setAttributedString:"), (MemorySegment) (s == null ? MemorySegment.NULL : s.peer()));
+    }
+    public NSMutableAttributedString textStorageTyped() {
+        MemorySegment p = ObjC.msgSendId(peer, ObjC.sel("textStorage"));
+        return NSMutableAttributedString.wrap(p);
     }
 
     // ---- additional completeness ----
@@ -144,5 +156,24 @@ public class NSText extends NSView {
 
     public void setAlignment(long alignment) {
         ObjC.msgSendVoidLong(peer, ObjC.sel("setAlignment:"), alignment);
+    }
+
+    // ---- layout trio hooks (minimal) ----
+
+    /** [text textStorage] as NSTextStorage (typed) — nil if no storage. */
+    public NSTextStorage textStorageAsStorage() {
+        MemorySegment p = ObjC.msgSendId(peer, ObjC.sel("textStorage"));
+        return NSTextStorage.wrap(p);
+    }
+
+    /** Replace the underlying text storage (via textStorage setAttributedString:). */
+    public void replaceTextStorage(NSTextStorage storage) {
+        if (storage == null) return;
+        MemorySegment ts = ObjC.msgSendId(peer, ObjC.sel("textStorage"));
+        if (ts != null && ts.address() != 0) {
+            ObjC.msgSendVoidId(ts, ObjC.sel("setAttributedString:"), storage.peer());
+        } else {
+            setAttributedString(storage);
+        }
     }
 }

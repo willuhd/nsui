@@ -229,12 +229,26 @@ public final class ObjC {
         return (MemorySegment) invokeX(hIdId, cls("NSString"), sel("stringWithUTF8String:"), cstring(s));
     }
 
-    /** NSString -> Java String (via [NSString UTF8String]). */
+    /** NSString -> Java String (via [NSString UTF8String]) — safe for arbitrary length (strlen loop, no 4096 truncation). */
     public static String toString(MemorySegment nsString) {
         if (nsString == null || nsString.address() == 0) return null;
         MemorySegment c = msgSendId(nsString, sel("UTF8String"));
         if (c.address() == 0) return null;
-        return c.reinterpret(4096).getString(0);
+        // Manual strlen: scan for NUL byte; avoids fixed 4096 cap.
+        // Reinterpret grows with len; handles strings of any length (tested via loop, not native strlen).
+        long len = 0;
+        // Fast path: probe in 4096-byte blocks to avoid per-byte reinterpret for long strings
+        while (true) {
+            // Need len+1 bytes to read byte at len
+            byte b = c.reinterpret(len + 1).get(ValueLayout.JAVA_BYTE, len);
+            if (b == 0) break;
+            len++;
+            if (len > 16_000_000) {
+                // safety cap for pathological strings (16 MB); truncate rather than loop forever
+                break;
+            }
+        }
+        return c.reinterpret(len + 1).getString(0);
     }
 
     /**

@@ -135,7 +135,7 @@ public final class NSBox extends NSView {
 
     /** [box setContentView:]. */
     public void setContentView(NSView view) {
-        ObjC.msgSendVoidId(peer, ObjC.sel("setContentView:"), view == null ? MemorySegment.NULL : view.peer());
+        ObjC.msgSendVoidId(peer, ObjC.sel("setContentView:"), (MemorySegment) (view == null ? MemorySegment.NULL : view.peer()));
     }
 
     /** [box contentViewMargins] — NSSize. */
@@ -170,55 +170,34 @@ public final class NSBox extends NSView {
     /** [box titleFont] — NSFont. */
     public NSFont titleFont() {
         MemorySegment f = ObjC.msgSendId(peer, ObjC.sel("titleFont"));
-        if (f == null || f.address() == 0) return null;
-        try {
-            var ctor = NSFont.class.getDeclaredConstructor(MemorySegment.class);
-            ctor.setAccessible(true);
-            return ctor.newInstance(f);
-        } catch (ReflectiveOperationException e) {
-            throw new RuntimeException("wrap NSFont failed", e);
-        }
+        return NSFont.wrap(f);
     }
 
     /** [box setTitleFont:]. */
     public void setTitleFont(NSFont font) {
-        ObjC.msgSendVoidId(peer, ObjC.sel("setTitleFont:"), font == null ? MemorySegment.NULL : font.peer());
+        ObjC.msgSendVoidId(peer, ObjC.sel("setTitleFont:"), (MemorySegment) (font == null ? MemorySegment.NULL : font.peer()));
     }
 
     /** [box borderColor] — NSColor. */
     public NSColor borderColor() {
         MemorySegment c = ObjC.msgSendId(peer, ObjC.sel("borderColor"));
-        if (c == null || c.address() == 0) return null;
-        try {
-            var ctor = NSColor.class.getDeclaredConstructor(MemorySegment.class);
-            ctor.setAccessible(true);
-            return ctor.newInstance(c);
-        } catch (ReflectiveOperationException e) {
-            throw new RuntimeException("wrap NSColor failed", e);
-        }
+        return NSColor.wrap(c);
     }
 
     /** [box setBorderColor:]. */
     public void setBorderColor(NSColor color) {
-        ObjC.msgSendVoidId(peer, ObjC.sel("setBorderColor:"), color == null ? MemorySegment.NULL : color.peer());
+        ObjC.msgSendVoidId(peer, ObjC.sel("setBorderColor:"), (MemorySegment) (color == null ? MemorySegment.NULL : color.peer()));
     }
 
     /** [box fillColor]. */
     public NSColor fillColor() {
         MemorySegment c = ObjC.msgSendId(peer, ObjC.sel("fillColor"));
-        if (c == null || c.address() == 0) return null;
-        try {
-            var ctor = NSColor.class.getDeclaredConstructor(MemorySegment.class);
-            ctor.setAccessible(true);
-            return ctor.newInstance(c);
-        } catch (ReflectiveOperationException e) {
-            throw new RuntimeException("wrap NSColor failed", e);
-        }
+        return NSColor.wrap(c);
     }
 
     /** [box setFillColor:]. */
     public void setFillColor(NSColor color) {
-        ObjC.msgSendVoidId(peer, ObjC.sel("setFillColor:"), color == null ? MemorySegment.NULL : color.peer());
+        ObjC.msgSendVoidId(peer, ObjC.sel("setFillColor:"), (MemorySegment) (color == null ? MemorySegment.NULL : color.peer()));
     }
 
     /** [box borderWidth] — CGFloat. */

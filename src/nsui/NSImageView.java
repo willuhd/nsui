@@ -99,7 +99,7 @@ public final class NSImageView extends NSControl {
     /** [imageView setImage:] — the image displayed. */
     public void setImage(NSImage image) {
         try {
-            MemorySegment p = image == null ? MemorySegment.NULL : image.peer();
+            MemorySegment p = (MemorySegment) (image == null ? MemorySegment.NULL : image.peer());
             hSetImage.invokeExact(peer, ObjC.sel("setImage:"), p);
         } catch (Throwable t) {
             throw new RuntimeException("setImage: failed", t);

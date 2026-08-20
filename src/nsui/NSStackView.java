@@ -47,8 +47,9 @@ public class NSStackView extends NSView {
     private static volatile boolean initialized;
     private static MethodHandle hInitFrame;   // (id, SEL, NSRect) -> id
     private static MethodHandle hSpacing;     // (id, SEL, double) -> void
-    private static MethodHandle hEdgeInsets;  // (id, SEL, NSRect-as-NSEdgeInsets) -> void
+    private static MethodHandle hEdgeInsets;  // (id, SEL, NSEdgeInsets) -> void (32-byte struct, layout-identical to NSRect)
     private static MethodHandle hGetDouble;   // (id, SEL) -> double
+    private static MethodHandle hGetInsets;   // (SegmentAllocator, id, SEL) -> NSEdgeInsets
 
     private NSStackView(MemorySegment peer) {
         super(peer);
@@ -61,6 +62,7 @@ public class NSStackView extends NSView {
         hSpacing = ObjC.handle(Sig.of(Ret.VOID, Arg.DOUBLE));
         hEdgeInsets = ObjC.handle(Sig.of(Ret.VOID, Arg.RECT));
         hGetDouble = ObjC.handle(Sig.of(Ret.DOUBLE));
+        hGetInsets = ObjC.handle(Sig.of(Ret.RECT));
         initialized = true;
     }
 
@@ -119,15 +121,34 @@ public class NSStackView extends NSView {
 
     /**
      * setEdgeInsets: — the padding between the stack's bounds and the arranged subviews.
-     * Parametrized as (top, left, bottom, right); AppKit's {@code NSEdgeInsets} is four
-     * doubles (layout-identical to NSRect), passed via {@code ObjC.rect(top, left, bottom, right)}.
+     * Takes a typed {@link NSEdgeInsets} (four doubles: top, left, bottom, right).
+     * The struct is passed by value (32 bytes, layout-identical to NSRect for ABI).
      */
-    public void setEdgeInsets(double top, double left, double bottom, double right) {
+    public void setEdgeInsets(NSEdgeInsets insets) {
         try {
-            hEdgeInsets.invokeExact(peer, ObjC.sel("setEdgeInsets:"),
-                    ObjC.rect(top, left, bottom, right));
+            hEdgeInsets.invokeExact(peer, ObjC.sel("setEdgeInsets:"), insets.toSegment());
         } catch (Throwable t) {
             throw new RuntimeException("setEdgeInsets: failed", t);
+        }
+    }
+
+    /**
+     * setEdgeInsets: — convenience overload parametrized as (top, left, bottom, right).
+     * Delegates to {@link #setEdgeInsets(NSEdgeInsets)}.
+     */
+    public void setEdgeInsets(double top, double left, double bottom, double right) {
+        setEdgeInsets(new NSEdgeInsets(top, left, bottom, right));
+    }
+
+    /** edgeInsets — the current padding (NSEdgeInsets, 32-byte struct return). */
+    public NSEdgeInsets edgeInsets() {
+        try {
+            MemorySegment s = (MemorySegment) hGetInsets.invokeExact(
+                    (java.lang.foreign.SegmentAllocator) java.lang.foreign.Arena.global(),
+                    peer, ObjC.sel("edgeInsets"));
+            return NSEdgeInsets.fromSegment(s);
+        } catch (Throwable t) {
+            throw new RuntimeException("edgeInsets failed", t);
         }
     }
 

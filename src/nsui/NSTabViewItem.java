@@ -34,6 +34,10 @@ public final class NSTabViewItem extends NSObject {
         ensureInit();
     }
 
+    public static NSTabViewItem wrap(MemorySegment peer) {
+        return (peer == null || peer.address() == 0) ? null : new NSTabViewItem(peer);
+    }
+
     private static synchronized void ensureInit() {
         if (initialized) return;
         hInitIdentifier = ObjC.handle(Sig.of(Ret.ID, Arg.ID));
@@ -141,7 +145,7 @@ public final class NSTabViewItem extends NSObject {
     /** [item setInitialFirstResponder:]. */
     public void setInitialFirstResponder(NSView view) {
         try {
-            hSetId.invokeExact(peer, ObjC.sel("setInitialFirstResponder:"), view == null ? MemorySegment.NULL : view.peer());
+            hSetId.invokeExact(peer, ObjC.sel("setInitialFirstResponder:"), (MemorySegment) ((MemorySegment) (view == null ? MemorySegment.NULL : view.peer())));
         } catch (Throwable t) {
             throw new RuntimeException("setInitialFirstResponder: failed", t);
         }
@@ -151,10 +155,7 @@ public final class NSTabViewItem extends NSObject {
     public NSColor color() {
         try {
             MemorySegment c = (MemorySegment) hGetId.invokeExact(peer, ObjC.sel("color"));
-            if (c == null || c.address() == 0) return null;
-            var ctor = NSColor.class.getDeclaredConstructor(MemorySegment.class);
-            ctor.setAccessible(true);
-            return ctor.newInstance(c);
+            return NSColor.wrap(c);
         } catch (Throwable t) {
             throw new RuntimeException("color failed", t);
         }
@@ -163,7 +164,7 @@ public final class NSTabViewItem extends NSObject {
     /** [item setColor:]. */
     public void setColor(NSColor color) {
         try {
-            hSetId.invokeExact(peer, ObjC.sel("setColor:"), color == null ? MemorySegment.NULL : color.peer());
+            hSetId.invokeExact(peer, ObjC.sel("setColor:"), (MemorySegment) ((MemorySegment) (color == null ? MemorySegment.NULL : color.peer())));
         } catch (Throwable t) {
             throw new RuntimeException("setColor: failed", t);
         }
@@ -197,10 +198,7 @@ public final class NSTabViewItem extends NSObject {
     public NSTabView tabView() {
         try {
             MemorySegment p = (MemorySegment) hGetId.invokeExact(peer, ObjC.sel("tabView"));
-            if (p == null || p.address() == 0) return null;
-            var ctor = NSTabView.class.getDeclaredConstructor(MemorySegment.class);
-            ctor.setAccessible(true);
-            return ctor.newInstance(p);
+            return NSTabView.wrap(p);
         } catch (Throwable t) {
             throw new RuntimeException("tabView failed", t);
         }

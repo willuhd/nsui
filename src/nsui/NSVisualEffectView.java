@@ -166,7 +166,7 @@ public final class NSVisualEffectView extends NSView {
     /** [view setMaskingImage:] / [view setMaskImage:] — masking image (null to clear). */
     public void setMaskingImage(NSImage image) {
         try {
-            MemorySegment p = image == null ? MemorySegment.NULL : image.peer();
+            MemorySegment p = (MemorySegment) (image == null ? MemorySegment.NULL : image.peer());
             hSetId.invokeExact(peer, setMaskingImageSel(), p);
         } catch (Throwable t) {
             throw new RuntimeException("setMaskingImage: failed", t);

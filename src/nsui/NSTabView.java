@@ -33,6 +33,10 @@ public final class NSTabView extends NSView {
         ensureInit();
     }
 
+    public static NSTabView wrap(MemorySegment peer) {
+        return (peer == null || peer.address() == 0) ? null : new NSTabView(peer);
+    }
+
     private static synchronized void ensureInit() {
         if (initialized) return;
         hInitFrame = ObjC.handle(Sig.of(Ret.ID, Arg.RECT));
@@ -85,7 +89,7 @@ public final class NSTabView extends NSView {
     /** [tabView selectTabViewItem:] — select the given item. */
     public void selectTabViewItem(NSTabViewItem item) {
         try {
-            hVoidId.invokeExact(peer, ObjC.sel("selectTabViewItem:"), item == null ? MemorySegment.NULL : item.peer());
+            hVoidId.invokeExact(peer, ObjC.sel("selectTabViewItem:"), (MemorySegment) ((MemorySegment) (item == null ? MemorySegment.NULL : item.peer())));
         } catch (Throwable t) {
             throw new RuntimeException("selectTabViewItem: failed", t);
         }
@@ -113,11 +117,7 @@ public final class NSTabView extends NSView {
     public NSTabViewItem selectedTabViewItem() {
         try {
             MemorySegment p = (MemorySegment) hId.invokeExact(peer, ObjC.sel("selectedTabViewItem"));
-            if (p == null || p.address() == 0) return null;
-            // wrap via reflective private ctor
-            var ctor = NSTabViewItem.class.getDeclaredConstructor(MemorySegment.class);
-            ctor.setAccessible(true);
-            return ctor.newInstance(p);
+            return NSTabViewItem.wrap(p);
         } catch (Throwable t) {
             throw new RuntimeException("selectedTabViewItem failed", t);
         }
@@ -157,10 +157,7 @@ public final class NSTabView extends NSView {
     public NSTabViewItem tabViewItemAtIndex(long index) {
         try {
             MemorySegment p = (MemorySegment) hIdInt.invokeExact(peer, ObjC.sel("tabViewItemAtIndex:"), index);
-            if (p == null || p.address() == 0) return null;
-            var ctor = NSTabViewItem.class.getDeclaredConstructor(MemorySegment.class);
-            ctor.setAccessible(true);
-            return ctor.newInstance(p);
+            return NSTabViewItem.wrap(p);
         } catch (Throwable t) {
             throw new RuntimeException("tabViewItemAtIndex: failed", t);
         }

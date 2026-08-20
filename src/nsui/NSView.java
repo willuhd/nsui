@@ -283,6 +283,92 @@ public class NSView extends NSObject {
         return ObjC.msgSendBool(peer, ObjC.sel("translatesAutoresizingMaskIntoConstraints"));
     }
 
+    /** setTranslatesAutoresizingMaskIntoConstraints:. */
+    public void setTranslatesAutoresizingMaskIntoConstraints(boolean flag) {
+        ObjC.msgSendVoidBool(peer, ObjC.sel("setTranslatesAutoresizingMaskIntoConstraints:"), flag);
+    }
+
+    // ---------------------------------------------------------------- Auto Layout — anchors & constraints
+
+    /** leadingAnchor — NSLayoutXAxisAnchor. */
+    public NSLayoutAnchor leadingAnchor() {
+        return NSLayoutAnchor.wrap(ObjC.msgSendId(peer, ObjC.sel("leadingAnchor")));
+    }
+
+    /** trailingAnchor — NSLayoutXAxisAnchor. */
+    public NSLayoutAnchor trailingAnchor() {
+        return NSLayoutAnchor.wrap(ObjC.msgSendId(peer, ObjC.sel("trailingAnchor")));
+    }
+
+    /** topAnchor — NSLayoutYAxisAnchor. */
+    public NSLayoutAnchor topAnchor() {
+        return NSLayoutAnchor.wrap(ObjC.msgSendId(peer, ObjC.sel("topAnchor")));
+    }
+
+    /** bottomAnchor — NSLayoutYAxisAnchor. */
+    public NSLayoutAnchor bottomAnchor() {
+        return NSLayoutAnchor.wrap(ObjC.msgSendId(peer, ObjC.sel("bottomAnchor")));
+    }
+
+    /** widthAnchor — NSLayoutDimension. */
+    public NSLayoutAnchor widthAnchor() {
+        return NSLayoutAnchor.wrap(ObjC.msgSendId(peer, ObjC.sel("widthAnchor")));
+    }
+
+    /** heightAnchor — NSLayoutDimension. */
+    public NSLayoutAnchor heightAnchor() {
+        return NSLayoutAnchor.wrap(ObjC.msgSendId(peer, ObjC.sel("heightAnchor")));
+    }
+
+    /** centerXAnchor — NSLayoutXAxisAnchor. */
+    public NSLayoutAnchor centerXAnchor() {
+        return NSLayoutAnchor.wrap(ObjC.msgSendId(peer, ObjC.sel("centerXAnchor")));
+    }
+
+    /** centerYAnchor — NSLayoutYAxisAnchor. */
+    public NSLayoutAnchor centerYAnchor() {
+        return NSLayoutAnchor.wrap(ObjC.msgSendId(peer, ObjC.sel("centerYAnchor")));
+    }
+
+    /** addConstraint: — install a single layout constraint on this view. */
+    public void addConstraint(NSLayoutConstraint constraint) {
+        ObjC.msgSendVoidId(peer, ObjC.sel("addConstraint:"), constraint.peer());
+    }
+
+    /** addConstraints: — install multiple constraints (loops over addConstraint: for simplicity). */
+    public void addConstraints(java.util.List<NSLayoutConstraint> constraints) {
+        for (NSLayoutConstraint c : constraints) addConstraint(c);
+    }
+
+    /** removeConstraint: — remove a previously-added constraint. */
+    public void removeConstraint(NSLayoutConstraint constraint) {
+        ObjC.msgSendVoidId(peer, ObjC.sel("removeConstraint:"), constraint.peer());
+    }
+
+    /** removeConstraints: — bulk remove. */
+    public void removeConstraints(java.util.List<NSLayoutConstraint> constraints) {
+        for (NSLayoutConstraint c : constraints) removeConstraint(c);
+    }
+
+    /** constraints — the view's installed constraints. */
+    public java.util.List<NSLayoutConstraint> constraints() {
+        MemorySegment arr = ObjC.msgSendId(peer, ObjC.sel("constraints"));
+        if (arr == null || arr.address() == 0) return java.util.List.of();
+        long count = ObjC.msgSendLong(arr, ObjC.sel("count"));
+        java.util.List<NSLayoutConstraint> list = new java.util.ArrayList<>((int) count);
+        MemorySegment selAt = ObjC.sel("objectAtIndex:");
+        MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.INT));
+        for (long i = 0; i < count; i++) {
+            try {
+                MemorySegment v = (MemorySegment) h.invokeExact(arr, selAt, i);
+                if (v != null && v.address() != 0) list.add(NSLayoutConstraint.wrap(v));
+            } catch (Throwable t) {
+                throw new RuntimeException("constraints objectAtIndex failed", t);
+            }
+        }
+        return java.util.Collections.unmodifiableList(list);
+    }
+
     /** displayIfNeeded — display the view if needed. */
     public void displayIfNeeded() {
         ObjC.msgSendVoid(peer, ObjC.sel("displayIfNeeded"));

@@ -129,6 +129,12 @@ public final class NsuiFeature implements Feature {
                                     MemorySegment.class, MemorySegment.class, long.class)),
                     NsuiForeign.delegateIdIdIntUpcall());
             upcalls++;
+            RuntimeForeignAccess.registerForDirectUpcall(
+                    MethodHandles.lookup().findStatic(DelegateProxy.class, "dispatchWindowWillResize",
+                            MethodType.methodType(MemorySegment.class, MemorySegment.class, MemorySegment.class,
+                                    MemorySegment.class, MemorySegment.class)),
+                    NsuiForeign.delegateWindowWillResize());
+            upcalls++;
             System.out.println("[NsuiFeature] direct upcalls registered (" + upcalls + ")");
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException("cannot register direct upcall target", e);

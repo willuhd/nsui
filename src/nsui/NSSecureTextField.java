@@ -19,6 +19,7 @@ public class NSSecureTextField extends NSTextField {
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
     private static volatile boolean initialized;
     private static MethodHandle hInitFrame;   // (id, SEL, NSRect) -> id
+    private static MethodHandle hResponds;    // (id, SEL, id) -> bool [respondsToSelector:]
 
     private NSSecureTextField(MemorySegment peer) {
         super(peer);
@@ -28,6 +29,7 @@ public class NSSecureTextField extends NSTextField {
     private static synchronized void ensureInit() {
         if (initialized) return;
         hInitFrame = ObjC.handle(Sig.of(Ret.ID, Arg.RECT));
+        hResponds = ObjC.handle(Sig.of(Ret.BOOL, Arg.ID));
         initialized = true;
     }
 
@@ -57,6 +59,14 @@ public class NSSecureTextField extends NSTextField {
     /** [field echosBullets] — whether the field echoes bullets instead of the actual text (via its cell). */
     public boolean echosBullets() {
         MemorySegment cell = ObjC.msgSendId(peer, ObjC.sel("cell"));
+        if (cell == null || cell.address() == 0) return false;
+        ensureInit();
+        try {
+            boolean responds = (boolean) hResponds.invokeExact(cell, ObjC.sel("respondsToSelector:"), ObjC.sel("echosBullets"));
+            if (!responds) return false;
+        } catch (Throwable t) {
+            return false;
+        }
         return ObjC.msgSendBool(cell, ObjC.sel("echosBullets"));
     }
 
@@ -68,6 +78,14 @@ public class NSSecureTextField extends NSTextField {
     /** [field setEchosBullets:] — set whether bullets are echoed (via its cell). */
     public void setEchosBullets(boolean flag) {
         MemorySegment cell = ObjC.msgSendId(peer, ObjC.sel("cell"));
+        if (cell == null || cell.address() == 0) return;
+        ensureInit();
+        try {
+            boolean responds = (boolean) hResponds.invokeExact(cell, ObjC.sel("respondsToSelector:"), ObjC.sel("setEchosBullets:"));
+            if (!responds) return;
+        } catch (Throwable t) {
+            return;
+        }
         ObjC.msgSendVoidBool(cell, ObjC.sel("setEchosBullets:"), flag);
     }
 }

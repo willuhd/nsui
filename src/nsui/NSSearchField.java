@@ -26,7 +26,6 @@ public class NSSearchField extends NSTextField {
     private static MethodHandle hVoidId;      // (id, SEL, id) -> void
     private static MethodHandle hLong;        // (id, SEL) -> long
     private static MethodHandle hVoidLong;    // (id, SEL, long) -> void
-    private static MethodHandle hBoolId;      // (id, SEL, id) -> bool  [isKindOfClass:]
     private static MethodHandle hDouble;      // (id, SEL) -> double
 
     protected NSSearchField(MemorySegment peer) {
@@ -43,7 +42,6 @@ public class NSSearchField extends NSTextField {
         hVoidId = ObjC.handle(Sig.of(Ret.VOID, Arg.ID));
         hLong = ObjC.handle(Sig.of(Ret.INT));
         hVoidLong = ObjC.handle(Sig.of(Ret.VOID, Arg.INT));
-        hBoolId = ObjC.handle(Sig.of(Ret.BOOL, Arg.ID));
         hDouble = ObjC.handle(Sig.of(Ret.DOUBLE));
         initialized = true;
     }
@@ -66,17 +64,6 @@ public class NSSearchField extends NSTextField {
     /** Wrap an existing native NSSearchField id. */
     public static NSSearchField wrap(MemorySegment peer) {
         return (peer == null || peer.address() == 0) ? null : new NSSearchField(peer);
-    }
-
-    // ---------------------------------------------------------------- isKindOfClass helper
-    /** Convenience for tests: [peer isKindOfClass:cls]. */
-    public boolean isKindOfClass(MemorySegment cls) {
-        ensureInit();
-        try {
-            return (boolean) hBoolId.invokeExact(peer, ObjC.sel("isKindOfClass:"), cls);
-        } catch (Throwable t) {
-            throw new RuntimeException("isKindOfClass: failed", t);
-        }
     }
 
     // ---------------------------------------------------------------- placeholder / stringValue

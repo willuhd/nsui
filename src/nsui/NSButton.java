@@ -25,6 +25,7 @@ public final class NSButton extends NSControl {
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
     private static volatile boolean initialized;
     private static MethodHandle hInitFrame;   // (id, SEL, NSRect) -> id
+    private static MethodHandle hSetPeriodicDelay; // (id, SEL, float, float) -> void
 
     private NSButton(MemorySegment peer) {
         super(peer);
@@ -34,6 +35,7 @@ public final class NSButton extends NSControl {
     private static synchronized void ensureInit() {
         if (initialized) return;
         hInitFrame = ObjC.handle(Sig.of(Ret.ID, Arg.RECT));
+        hSetPeriodicDelay = ObjC.handle(Sig.of(Ret.VOID, Arg.FLOAT, Arg.FLOAT));
         initialized = true;
     }
 
@@ -245,9 +247,9 @@ public final class NSButton extends NSControl {
 
     // ---- periodic delay ----
     public void setPeriodicDelay(float delay, float interval) {
+        ensureInit();
         try {
-            ObjC.handle(Sig.of(Ret.VOID, Arg.DOUBLE, Arg.DOUBLE))
-                    .invokeExact(peer, ObjC.sel("setPeriodicDelay:interval:"), (double) delay, (double) interval);
+            hSetPeriodicDelay.invokeExact(peer, ObjC.sel("setPeriodicDelay:interval:"), delay, interval);
         } catch (Throwable t) {
             throw new RuntimeException("setPeriodicDelay:interval: failed", t);
         }

@@ -38,6 +38,8 @@ public final class NsuiForeign {
     private static final MemoryLayout NS_RECT = MemoryLayout.structLayout(DOUBLE, DOUBLE, DOUBLE, DOUBLE);
     /** NSPoint/CGPoint == struct { CGFloat x, y } (2 doubles). */
     private static final MemoryLayout NS_POINT = MemoryLayout.structLayout(DOUBLE, DOUBLE);
+    /** NSSize/CGSize == struct { CGFloat width, height } (2 doubles). */
+    private static final MemoryLayout NS_SIZE = MemoryLayout.structLayout(DOUBLE, DOUBLE);
 
     // ------------------------------------------------------- Objective-C runtime
 
@@ -104,6 +106,8 @@ public final class NsuiForeign {
     public static FunctionDescriptor delegateIntUpcall() { return FunctionDescriptor.of(LONG, PTR, PTR, PTR); }
     /** -(id)tableView:(id):(id):(NSInteger) — data-source upcall shape (tableView:objectValueForTableColumn:row:) */
     public static FunctionDescriptor delegateIdIdIntUpcall() { return FunctionDescriptor.of(PTR, PTR, PTR, PTR, PTR, LONG); }
+    /** -(NSSize)windowWillResize:(id) toSize:(NSSize) — window delegate veto shape (SIZE return, id + SIZE args) */
+    public static FunctionDescriptor delegateWindowWillResize() { return FunctionDescriptor.of(NS_SIZE, PTR, PTR, PTR, NS_SIZE); }
 
     // --------------------------------------------- CoreText (text rendering shim)
 
@@ -179,5 +183,6 @@ public final class NsuiForeign {
     public static final List<FunctionDescriptor> UPCALLS = List.of(
             delegateShouldTerminate(), delegateWindowWillClose(),
             drawRectUpcall(), deallocUpcall(), blockVoidUpcall(), setExceptionPreprocessor(),
-            methodSignatureUpcall(), delegateIntUpcall(), delegateIdIdIntUpcall());
+            methodSignatureUpcall(), delegateIntUpcall(), delegateIdIdIntUpcall(),
+            delegateWindowWillResize());
 }

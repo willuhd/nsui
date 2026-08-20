@@ -1,5 +1,6 @@
 package nsui.objc;
 
+import java.lang.foreign.Arena;
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
@@ -28,20 +29,24 @@ import java.util.concurrent.CopyOnWriteArraySet;
  * unique, stable pointer per selector name — no new descriptors are needed to recover
  * the name). Each ObjC class pair you create reuses the <em>same</em> shared upcall
  * stubs ({@link #dispatchBool}, {@link #dispatchVoid}, {@link #dispatchInt},
- * {@link #dispatchIdIdInt}, {@link #dispatchDealloc} plus the two message-forwarding
+ * {@link #dispatchIdIdInt}, {@link #dispatchWindowWillResize}, {@link #dispatchDealloc} plus the two message-forwarding
  * targets {@link #dispatchSignature}/{@link #dispatchInvocation}) — stubs are
  * per-TARGET, not per-method; the selector routing happens in Java.
  *
- * <p>Four callback shapes:
+ * <p>Five callback shapes:
  * <ul>
  *   <li>{@link BoolArg} — {@code -(BOOL)method:(id)} (e.g. <code>windowShouldClose:</code>)</li>
  *   <li>{@link VoidArg} — {@code -(void)method:(id)} (e.g. <code>windowWillClose:</code>)</li>
  *   <li>{@link IntArg} — {@code -(NSInteger)method:(id)} (e.g. <code>numberOfRowsInTableView:</code>, a
  *       data-source count)</li>
- *   <li>{@link IdIdIntArg} — {@code -(id)method:(id):(NSInteger)} (e.g.
+ *   <li>{@link IdIdIntArg} — {@code -(id)method:(id):(id):(NSInteger)} (e.g.
  *       <code>tableView:objectValueForTableColumn:row:</code>, a data-source cell)</li>
+ *   <li>{@link WindowSizeArg} — {@code -(NSSize)windowWillResize:(id) toSize:(NSSize)} (e.g.
+ *       <code>windowWillResize:toSize:</code>, a window delegate veto that can clamp the proposed frame size)</li>
  * </ul>
- * {@link #delegate(String, String, Map, Map, Map, Map)} carries all four; the classic
+ * {@link #delegate(String, String, Map, Map, Map, Map)} carries the first four; the
+ * {@link #delegate(String, String, Map, Map, Map, Map, Map)} overload additionally carries
+ * {@link WindowSizeArg}; the classic
  * 4-arg {@link #delegate} is the bool/void subset; {@link #actionTarget} is the
  * single-selector {@code -(void)} piece.
  *
@@ -63,17 +68,22 @@ public final class DelegateProxy {
     /** Java-side {@code -(NSInteger)method:(id)} — a count/data-source query, e.g. numberOfRowsInTableView:. */
     public interface IntArg { long call(MemorySegment sender); }
 
-    /** Java-side {@code -(id)method:(id):(NSInteger)} — an object keyed by arg + integer, e.g. tableView:objectValueForTableColumn:row:. */
+    /** Java-side {@code -(id)method:(id):(id):(NSInteger)} — an object keyed by arg + integer, e.g. tableView:objectValueForTableColumn:row:. */
     public interface IdIdIntArg { MemorySegment call(MemorySegment tableView, MemorySegment tableColumn, long row); }
+
+    /** Java-side {@code -(NSSize)windowWillResize:(id) toSize:(NSSize)} — window delegate veto, clamp/adjust proposed size. */
+    public interface WindowSizeArg { MemorySegment call(MemorySegment sender, MemorySegment proposedSize); }
 
     /** Per-instance dispatch state, keyed by the native instance address. */
     private record Holder(Map<Long, BoolArg> bools, Map<Long, VoidArg> voids,
                           Map<Long, IntArg> ints, Map<Long, IdIdIntArg> idIdInts,
+                          Map<Long, WindowSizeArg> windowSizes,
                           MemorySegment superClass) {}
 
     /** ObjC class pair (native class + the selector names already installed on it). */
     private record RuntimeClass(MemorySegment cls, Set<String> boolMethods, Set<String> voidMethods,
-                                Set<String> intMethods, Set<String> idIdIntMethods) {}
+                                 Set<String> intMethods, Set<String> idIdIntMethods,
+                                 Set<String> windowSizeMethods) {}
 
     // A registry keyed by the native instance address -> its dispatch holder.
     private static final ConcurrentMap<Long, Holder> REGISTRY = new ConcurrentHashMap<>();
@@ -92,6 +102,7 @@ public final class DelegateProxy {
     private static MemorySegment voidStub;
     private static MemorySegment intStub;
     private static MemorySegment idIdIntStub;
+    private static MemorySegment windowSizeStub;
     private static MemorySegment deallocStub;
     private static MemorySegment sigStub;    // methodSignatureForSelector: (returns an NSMethodSignature)
     private static MemorySegment invStub;    // forwardInvocation: (swallows unknown selectors)
@@ -160,6 +171,24 @@ public final class DelegateProxy {
         }
     }
 
+    /**
+     * FFM upcall target: {@code -(NSSize)windowWillResize:(id) toSize:(NSSize)} — routes to a {@link WindowSizeArg} by selector;
+     * default is to return the proposed size unchanged (pass-through veto).
+     */
+    static MemorySegment dispatchWindowWillResize(MemorySegment self, MemorySegment sel, MemorySegment sender, MemorySegment proposedSize) {
+        Holder h = REGISTRY.get(self.address());
+        WindowSizeArg f = (h == null) ? null : h.windowSizes().get(sel.address());
+        if (f == null) return proposedSize;
+        Scratch.beginTurn();
+        try {
+            MemorySegment result = f.call(sender, proposedSize);
+            if (result == null || result.address() == 0) return proposedSize;
+            return result;
+        } finally {
+            Scratch.endTurn();
+        }
+    }
+
     /** FFM upcall target: {@code -(void)dealloc} — unregister the instance, then chain {@code [super dealloc]}. */
     static void dispatchDealloc(MemorySegment self, MemorySegment sel) {
         Holder h = REGISTRY.remove(self.address());
@@ -222,7 +251,8 @@ public final class DelegateProxy {
         Map<Long, BoolArg> bools = new ConcurrentHashMap<>();
         Map<Long, IntArg> ints = new ConcurrentHashMap<>();
         Map<Long, IdIdIntArg> idIdInts = new ConcurrentHashMap<>();
-        REGISTRY.put(instance.address(), new Holder(bools, voids, ints, idIdInts, ObjC.classGetSuperclass(pair)));
+        Map<Long, WindowSizeArg> windowSizes = new ConcurrentHashMap<>();
+        REGISTRY.put(instance.address(), new Holder(bools, voids, ints, idIdInts, windowSizes, ObjC.classGetSuperclass(pair)));
         return instance;
     }
 
@@ -248,7 +278,8 @@ public final class DelegateProxy {
             Map<String, BoolArg> boolSelectors, Map<String, VoidArg> voidSelectors) {
         Map<String, IntArg> ints = Map.of();
         Map<String, IdIdIntArg> idIdInts = Map.of();
-        return delegate(superClassName, className, boolSelectors, voidSelectors, ints, idIdInts);
+        Map<String, WindowSizeArg> windowSizes = Map.of();
+        return delegate(superClassName, className, boolSelectors, voidSelectors, ints, idIdInts, windowSizes);
     }
 
     /**
@@ -277,11 +308,45 @@ public final class DelegateProxy {
     public static MemorySegment delegate(String superClassName, String className,
             Map<String, BoolArg> boolSelectors, Map<String, VoidArg> voidSelectors,
             Map<String, IntArg> intSelectors, Map<String, IdIdIntArg> idIdIntSelectors) {
+        Map<String, WindowSizeArg> windowSizes = Map.of();
+        return delegate(superClassName, className, boolSelectors, voidSelectors, intSelectors, idIdIntSelectors, windowSizes);
+    }
+
+    /**
+     * Build (lazily) a protocol-ish delegate / data-source / window-delegate object subclassing
+     * {@code superClassName} — one class pair per (superClassName, className).
+     *
+     * <p>Selector encodings and dispatch targets:
+     * <ul>
+     *   <li>{@code -(BOOL)method:(id)} → {@code "c@:@"} → {@link #dispatchBool}</li>
+     *   <li>{@code -(void)method:(id)} → {@code "v@:@"} → {@link #dispatchVoid}</li>
+     *   <li>{@code -(NSInteger)method:(id)} → {@code "q@:@"} → {@link #dispatchInt}</li>
+     *   <li>{@code -(id)tableView:(id):(id):(NSInteger)} → {@code "@@:@@q"} → {@link #dispatchIdIdInt}</li>
+     *   <li>{@code -(NSSize)windowWillResize:(id) toSize:(NSSize)} → {@code "{CGSize=dd}@:@{CGSize=dd}"} → {@link #dispatchWindowWillResize}</li>
+     * </ul>
+     * plus the always-installed {@code dealloc}, {@code methodSignatureForSelector:} and
+     * {@code forwardInvocation:} overrides (unregistered selectors are safe no-ops).
+     * A single instance is allocated ({@code [[cls alloc] init]}) and registered.
+     *
+     * @param superClassName the ObjC superclass name
+     * @param className      the runtime class name (unique per distinct delegate shape)
+     * @param boolSelectors  selector-name → {@link BoolArg}; empty for none
+     * @param voidSelectors  selector-name → {@link VoidArg}; empty for none
+     * @param intSelectors   selector-name → {@link IntArg}; empty for none
+     * @param idIdIntSelectors selector-name → {@link IdIdIntArg}; empty for none
+     * @param windowSizeSelectors selector-name → {@link WindowSizeArg}; empty for none (e.g. windowWillResize:toSize:)
+     * @return the allocated-and-initialized delegate instance
+     */
+    public static MemorySegment delegate(String superClassName, String className,
+            Map<String, BoolArg> boolSelectors, Map<String, VoidArg> voidSelectors,
+            Map<String, IntArg> intSelectors, Map<String, IdIdIntArg> idIdIntSelectors,
+            Map<String, WindowSizeArg> windowSizeSelectors) {
         MemorySegment pair = ensureClassPair(superClassName + "\0" + className);
         Map<Long, BoolArg> bools = new ConcurrentHashMap<>();
         Map<Long, VoidArg> voids = new ConcurrentHashMap<>();
         Map<Long, IntArg> ints = new ConcurrentHashMap<>();
         Map<Long, IdIdIntArg> idIdInts = new ConcurrentHashMap<>();
+        Map<Long, WindowSizeArg> windowSizes = new ConcurrentHashMap<>();
 
         for (Map.Entry<String, BoolArg> e : boolSelectors.entrySet()) {
             addBoolMethod(pair, e.getKey());
@@ -299,9 +364,13 @@ public final class DelegateProxy {
             addIdIdIntMethod(pair, e.getKey());
             idIdInts.put(ObjC.sel(e.getKey()).address(), e.getValue());
         }
+        for (Map.Entry<String, WindowSizeArg> e : windowSizeSelectors.entrySet()) {
+            addWindowSizeMethod(pair, e.getKey());
+            windowSizes.put(ObjC.sel(e.getKey()).address(), e.getValue());
+        }
 
         MemorySegment instance = allocInit(pair);
-        REGISTRY.put(instance.address(), new Holder(bools, voids, ints, idIdInts, ObjC.classGetSuperclass(pair)));
+        REGISTRY.put(instance.address(), new Holder(bools, voids, ints, idIdInts, windowSizes, ObjC.classGetSuperclass(pair)));
         return instance;
     }
 
@@ -332,6 +401,11 @@ public final class DelegateProxy {
                     MethodType.methodType(MemorySegment.class, MemorySegment.class, MemorySegment.class,
                             MemorySegment.class, MemorySegment.class, long.class));
             idIdIntStub = ObjC.upcall(idIdIntTarget, NsuiForeign.delegateIdIdIntUpcall()); // (PTR, PTR, PTR, PTR, PTR, LONG)
+
+            MethodHandle windowSizeTarget = MethodHandles.lookup().findStatic(DelegateProxy.class, "dispatchWindowWillResize",
+                    MethodType.methodType(MemorySegment.class, MemorySegment.class, MemorySegment.class,
+                            MemorySegment.class, MemorySegment.class));
+            windowSizeStub = ObjC.upcall(windowSizeTarget, NsuiForeign.delegateWindowWillResize()); // (NS_SIZE, PTR, PTR, PTR, NS_SIZE)
 
             MethodHandle deallocTarget = MethodHandles.lookup().findStatic(DelegateProxy.class, "dispatchDealloc",
                     MethodType.methodType(void.class, MemorySegment.class, MemorySegment.class));
@@ -383,7 +457,8 @@ public final class DelegateProxy {
             }
             rc = new RuntimeClass(pair,
                     new CopyOnWriteArraySet<>(), new CopyOnWriteArraySet<>(),
-                    new CopyOnWriteArraySet<>(), new CopyOnWriteArraySet<>());
+                    new CopyOnWriteArraySet<>(), new CopyOnWriteArraySet<>(),
+                    new CopyOnWriteArraySet<>());
             CLASSES.put(key, rc);
         }
         return rc.cls();
@@ -425,6 +500,16 @@ public final class DelegateProxy {
         if (rc.idIdIntMethods().add(selector)) {
             if (!ObjC.addMethod(pair, selector, idIdIntStub, "@@:@@q")) {
                 throw new RuntimeException("class_addMethod id-id-int " + selector + " failed");
+            }
+        }
+    }
+
+    /** Add a {@code -(NSSize)windowWillResize:(id) toSize:(NSSize)} (encoding "{CGSize=dd}@:@{CGSize=dd}") to a class pair unless already present. */
+    private static void addWindowSizeMethod(MemorySegment pair, String selector) {
+        RuntimeClass rc = classInfo(pair);
+        if (rc.windowSizeMethods().add(selector)) {
+            if (!ObjC.addMethod(pair, selector, windowSizeStub, "{CGSize=dd}@:@{CGSize=dd}")) {
+                throw new RuntimeException("class_addMethod windowSize " + selector + " failed");
             }
         }
     }

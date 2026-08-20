@@ -40,10 +40,10 @@ import java.util.List;
 public final class Sig {
 
     /** Argument classes. {@link #ID} covers id/SEL/Class/pointers — one ABI class. */
-    public enum Arg { ID, INT, BOOL, DOUBLE, RECT, POINT, SIZE }
+    public enum Arg { ID, INT, BOOL, DOUBLE, RECT, POINT, SIZE, FLOAT }
 
     /** Return classes. {@link #RECT} is a 32-byte struct (stret on x86_64); POINT/SIZE are 16-byte structs. */
-    public enum Ret { VOID, ID, INT, BOOL, DOUBLE, RECT, POINT, SIZE }
+    public enum Ret { VOID, ID, INT, BOOL, DOUBLE, RECT, POINT, SIZE, FLOAT }
 
     /**
      * A message signature: return class plus argument classes, packed into a
@@ -86,6 +86,7 @@ public final class Sig {
     private static final ValueLayout LONG   = (ValueLayout) Linker.nativeLinker().canonicalLayouts().get("long");
     private static final ValueLayout DOUBLE = (ValueLayout) Linker.nativeLinker().canonicalLayouts().get("double");
     private static final ValueLayout BOOL   = (ValueLayout) Linker.nativeLinker().canonicalLayouts().get("bool");
+    private static final ValueLayout FLOAT  = ValueLayout.JAVA_FLOAT;
     private static final MemoryLayout NS_RECT  = MemoryLayout.structLayout(DOUBLE, DOUBLE, DOUBLE, DOUBLE);
     private static final MemoryLayout NS_POINT = MemoryLayout.structLayout(DOUBLE, DOUBLE);
     private static final MemoryLayout NS_SIZE  = MemoryLayout.structLayout(DOUBLE, DOUBLE);
@@ -105,6 +106,7 @@ public final class Sig {
                 case RECT -> NS_RECT;
                 case POINT -> NS_POINT;
                 case SIZE -> NS_SIZE;
+                case FLOAT -> FLOAT;
             };
         }
         return switch (s.ret()) {
@@ -116,6 +118,7 @@ public final class Sig {
             case RECT -> FunctionDescriptor.of(NS_RECT, args);
             case POINT -> FunctionDescriptor.of(NS_POINT, args);
             case SIZE -> FunctionDescriptor.of(NS_SIZE, args);
+            case FLOAT -> FunctionDescriptor.of(FLOAT, args);
         };
     }
 
@@ -168,10 +171,19 @@ public final class Sig {
         // generic escape hatch: any selector whose args are all objects (NULL-padded)
         of(Ret.ID, Arg.ID, Arg.ID, Arg.ID, Arg.ID, Arg.ID, Arg.ID),
         of(Ret.VOID, Arg.ID, Arg.ID, Arg.ID, Arg.ID, Arg.ID, Arg.ID),
+        // split view / divider handling
+        of(Ret.VOID, Arg.DOUBLE, Arg.INT),              // setPosition:ofDividerAtIndex: (double, long) -> void
         // widget completeness additions
         of(Ret.INT, Arg.INT),                           // sendActionOn: (int -> int)
         of(Ret.SIZE, Arg.SIZE),                          // sizeThatFits: (size -> size)
-        of(Ret.VOID, Arg.DOUBLE, Arg.DOUBLE),           // setPeriodicDelay:interval: (double, double) -> void
-        of(Ret.BOOL, Arg.ID, Arg.POINT, Arg.ID)         // popUpMenuPositioningItem:atLocation:inView: (id, point, id) -> bool
+        of(Ret.VOID, Arg.DOUBLE, Arg.DOUBLE),           // setDoubleValue: / generic double,double
+        of(Ret.VOID, Arg.FLOAT, Arg.FLOAT),             // setPeriodicDelay:interval: (float, float) -> void
+        of(Ret.BOOL, Arg.ID, Arg.POINT, Arg.ID),        // popUpMenuPositioningItem:atLocation:inView: (id, point, id) -> bool
+        of(Ret.SIZE, Arg.ID, Arg.SIZE),                  // windowWillResize:toSize: (id, size) -> size
+        // Auto Layout
+        of(Ret.ID, Arg.ID, Arg.INT, Arg.INT, Arg.ID, Arg.INT, Arg.DOUBLE, Arg.DOUBLE), // constraintWithItem:attribute:relatedBy:toItem:attribute:multiplier:constant:
+        of(Ret.ID, Arg.ID, Arg.DOUBLE, Arg.DOUBLE),      // constraintEqualToAnchor:multiplier:constant: / constraintEqualToAnchor:multiplier:
+        of(Ret.ID, Arg.DOUBLE, Arg.DOUBLE),              // dimension anchor: constraintWithMultiplier:constant: alternative
+        of(Ret.VOID, Arg.ID, Arg.DOUBLE)                 // anchor constraint with double constant helper
     );
 }

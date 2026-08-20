@@ -8,10 +8,8 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSMutableSet — mutable set wrapper.
- * Extends NSSet for convenience; peer is an NSMutableSet instance.
- */
+/// NSMutableSet — mutable set wrapper.
+/// Extends NSSet for convenience; peer is an NSMutableSet instance.
 public final class NSMutableSet extends NSSet {
 
     private static volatile boolean initMut;
@@ -27,14 +25,14 @@ public final class NSMutableSet extends NSSet {
         return (peer == null || peer.address() == 0) ? null : new NSMutableSet(peer);
     }
 
-    /** [NSMutableSet set] — empty mutable set. */
+    /// [NSMutableSet set] — empty mutable set.
     public static NSMutableSet set() {
         ensureMutInit();
         MemorySegment s = ObjC.msgSendId(ObjC.cls("NSMutableSet"), ObjC.sel("set"));
         return wrap(s);
     }
 
-    /** [NSMutableSet setWithCapacity:] */
+    /// [NSMutableSet setWithCapacity:]
     public static NSMutableSet setWithCapacity(long capacity) {
         ensureMutInit();
         try {
@@ -56,7 +54,7 @@ public final class NSMutableSet extends NSSet {
         initMut = true;
     }
 
-    /** addObject: */
+    /// addObject:
     public void addObject(NSObject object) {
         ensureMutInit();
         if (object == null) throw new IllegalArgumentException("addObject: null");
@@ -71,7 +69,7 @@ public final class NSMutableSet extends NSSet {
         catch (Throwable t) { throw new RuntimeException("addObject: failed", t); }
     }
 
-    /** removeObject: */
+    /// removeObject:
     public void removeObject(NSObject object) {
         ensureMutInit();
         if (object == null) return;
@@ -86,14 +84,14 @@ public final class NSMutableSet extends NSSet {
         catch (Throwable t) { throw new RuntimeException("removeObject: failed", t); }
     }
 
-    /** removeAllObjects */
+    /// removeAllObjects
     public void removeAllObjects() {
         ensureMutInit();
         try { hRemoveAll.invokeExact(peer, ObjC.sel("removeAllObjects")); }
         catch (Throwable t) { throw new RuntimeException("removeAllObjects failed", t); }
     }
 
-    /** unionSet: */
+    /// unionSet:
     public void unionSet(NSSet other) {
         ensureMutInit();
         if (other == null) return;
@@ -101,7 +99,7 @@ public final class NSMutableSet extends NSSet {
         catch (Throwable t) { throw new RuntimeException("unionSet: failed", t); }
     }
 
-    /** minusSet: */
+    /// minusSet:
     public void minusSet(NSSet other) {
         ensureMutInit();
         if (other == null) return;
@@ -109,7 +107,7 @@ public final class NSMutableSet extends NSSet {
         catch (Throwable t) { throw new RuntimeException("minusSet: failed", t); }
     }
 
-    /** intersectSet: */
+    /// intersectSet:
     public void intersectSet(NSSet other) {
         ensureMutInit();
         if (other == null) return;
@@ -119,7 +117,7 @@ public final class NSMutableSet extends NSSet {
         } catch (Throwable t) { throw new RuntimeException("intersectSet: failed", t); }
     }
 
-    /** setSet: */
+    /// setSet:
     public void setSet(NSSet other) {
         ensureMutInit();
         if (other == null) { removeAllObjects(); return; }

@@ -10,11 +10,9 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSControl — the base of interactive controls (NSButton, NSTextField, ...).
- * Mirrors the native hierarchy: NSControl is an NSView, so controls can be
- * added to view hierarchies and positioned like any view.
- */
+/// NSControl — the base of interactive controls (NSButton, NSTextField, ...).
+/// Mirrors the native hierarchy: NSControl is an NSView, so controls can be
+/// added to view hierarchies and positioned like any view.
 public class NSControl extends NSView {
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
@@ -41,22 +39,22 @@ public class NSControl extends NSView {
     }
 
     // ---- existing API (kept) ----
-    /** setEnabled: — interactive state. */
+    /// setEnabled: — interactive state.
     public void setEnabled(boolean flag) {
         ObjC.msgSendVoidBool(peer, ObjC.sel("setEnabled:"), flag);
     }
 
-    /** isEnabled — interactive state. */
+    /// isEnabled — interactive state.
     public boolean isEnabled() {
         return ObjC.msgSendBool(peer, ObjC.sel("isEnabled"));
     }
 
-    /** setTarget: — the object that receives the action message. */
+    /// setTarget: — the object that receives the action message.
     public void setTarget(MemorySegment target) {
         ObjC.msgSendVoidId(peer, ObjC.sel("setTarget:"), target);
     }
 
-    /** setAction: — the selector sent to the target on activation. */
+    /// setAction: — the selector sent to the target on activation.
     public void setAction(String actionSelector) {
         ObjC.msgSendVoidId(peer, ObjC.sel("setAction:"), ObjC.sel(actionSelector));
     }

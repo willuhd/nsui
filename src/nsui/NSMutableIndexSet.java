@@ -8,9 +8,7 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSMutableIndexSet — mutable index set.
- */
+/// NSMutableIndexSet — mutable index set.
 public final class NSMutableIndexSet extends NSIndexSet {
 
     private static volatile boolean initMut;
@@ -25,14 +23,14 @@ public final class NSMutableIndexSet extends NSIndexSet {
         return (peer == null || peer.address() == 0) ? null : new NSMutableIndexSet(peer);
     }
 
-    /** [NSMutableIndexSet indexSet] */
+    /// [NSMutableIndexSet indexSet]
     public static NSMutableIndexSet indexSet() {
         ensureMutInit();
         MemorySegment s = ObjC.msgSendId(ObjC.cls("NSMutableIndexSet"), ObjC.sel("indexSet"));
         return wrap(s);
     }
 
-    /** [NSMutableIndexSet indexSetWithIndex:] */
+    /// [NSMutableIndexSet indexSetWithIndex:]
     public static NSMutableIndexSet indexSetWithIndex(long index) {
         ensureMutInit();
         try {
@@ -52,28 +50,28 @@ public final class NSMutableIndexSet extends NSIndexSet {
         initMut = true;
     }
 
-    /** addIndex: */
+    /// addIndex:
     public void addIndex(long index) {
         ensureMutInit();
         try { hAddIndex.invokeExact(peer, ObjC.sel("addIndex:"), index); }
         catch (Throwable t) { throw new RuntimeException("addIndex: failed", t); }
     }
 
-    /** removeIndex: */
+    /// removeIndex:
     public void removeIndex(long index) {
         ensureMutInit();
         try { hRemoveIndex.invokeExact(peer, ObjC.sel("removeIndex:"), index); }
         catch (Throwable t) { throw new RuntimeException("removeIndex: failed", t); }
     }
 
-    /** addIndexesInRange: */
+    /// addIndexesInRange:
     public void addIndexesInRange(NSRange range) {
         ensureMutInit();
         try { hAddRange.invokeExact(peer, ObjC.sel("addIndexesInRange:"), range.toSegment()); }
         catch (Throwable t) { throw new RuntimeException("addIndexesInRange: failed", t); }
     }
 
-    /** removeIndexesInRange: */
+    /// removeIndexesInRange:
     public void removeIndexesInRange(NSRange range) {
         ensureMutInit();
         try {
@@ -82,14 +80,14 @@ public final class NSMutableIndexSet extends NSIndexSet {
         } catch (Throwable t) { throw new RuntimeException("removeIndexesInRange: failed", t); }
     }
 
-    /** removeAllIndexes */
+    /// removeAllIndexes
     public void removeAllIndexes() {
         ensureMutInit();
         try { hRemoveAll.invokeExact(peer, ObjC.sel("removeAllIndexes")); }
         catch (Throwable t) { throw new RuntimeException("removeAllIndexes failed", t); }
     }
 
-    /** addIndexes: */
+    /// addIndexes:
     public void addIndexes(NSIndexSet other) {
         ensureMutInit();
         if (other == null) return;
@@ -99,7 +97,7 @@ public final class NSMutableIndexSet extends NSIndexSet {
         } catch (Throwable t) { throw new RuntimeException("addIndexes: failed", t); }
     }
 
-    /** removeIndexes: */
+    /// removeIndexes:
     public void removeIndexes(NSIndexSet other) {
         ensureMutInit();
         if (other == null) return;

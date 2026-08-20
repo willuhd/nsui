@@ -10,31 +10,22 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSMenu — a native menu (the menu bar itself is an NSMenu with NSMenuItem children).
- *
- * <p>Left menubar items (App, File, Edit, View) are standard top-level NSMenus attached to
- * {@link NSApplication#setMainMenu} via NSMenuItem+submenu — e.g.:
- * <pre>{@code
- * NSMenu main = NSMenu.create();
- * NSMenu appMenu = NSMenu.createWithTitle("NSUI3");
- * appMenu.addItemWithTitle("About NSUI3", "", "");
- * NSMenuItem appItem = NSMenuItem.withTitle("NSUI3", "", "");
- * appItem.setSubmenu(appMenu);
- * main.addItem(appItem);
- * // repeat for File, Edit, View — all via NSMenu, not menubar icons
- * app.setMainMenu(main);
- * }</pre>
- * Menubar icons (NSStatusItem) are separate (NSStatusBar) — do not add status-bar icons here.
- *
- * <p>Menu-list icons: use {@link NSMenuItem#setImage(NSImage)} on dropdown items (File → New, etc.).
- * Top-level bar items should remain text-only; menu-list items may carry icons via this helper
- * {@link #attachMenuItemIcon(NSMenuItem, String)} or directly via NSMenuItem.setImage.
- *
- * <p>Help search note: AppKit auto-inserts fn+F fullscreen at the bottom of View/Help and a
- * Help searchbar. For demos, use a custom centered search field in a non-Help menu (Edit/View)
- * via {@link NSMenuItem#setView(MemorySegment)} with {@link #insertGallerySearchFieldItem}.
- */
+/// NSMenu — a native menu (the menu bar itself is an NSMenu with NSMenuItem children).
+///
+/// Left menubar items (App, File, Edit, View) are standard top-level NSMenus attached to
+/// `setMainMenu` via NSMenuItem+submenu — e.g.:
+/// ```
+/// `NSMenu main = NSMenu.create(); NSMenu appMenu = NSMenu.createWithTitle("NSUI3"); appMenu.addItemWithTitle("About NSUI3", "", ""); NSMenuItem appItem = NSMenuItem.withTitle("NSUI3", "", ""); appItem.setSubmenu(appMenu); main.addItem(appItem); // repeat for File, Edit, View — all via NSMenu, not menubar icons app.setMainMenu(main);`
+/// ```
+/// Menubar icons (NSStatusItem) are separate (NSStatusBar) — do not add status-bar icons here.
+///
+/// Menu-list icons: use `setImage` on dropdown items (File → New, etc.).
+/// Top-level bar items should remain text-only; menu-list items may carry icons via this helper
+/// `attachMenuItemIcon` or directly via NSMenuItem.setImage.
+///
+/// Help search note: AppKit auto-inserts fn+F fullscreen at the bottom of View/Help and a
+/// Help searchbar. For demos, use a custom centered search field in a non-Help menu (Edit/View)
+/// via `setView` with `insertGallerySearchFieldItem`.
 public final class NSMenu extends NSObject {
 
     private static volatile boolean initialized;
@@ -67,7 +58,7 @@ public final class NSMenu extends NSObject {
         return (peer == null || peer.address() == 0) ? null : new NSMenu(peer);
     }
 
-    /** alloc + init. */
+    /// alloc + init.
     public static NSMenu create() {
         MemorySegment m = ObjC.msgSendId(ObjC.cls("NSMenu"), ObjC.sel("alloc"));
         return new NSMenu(ObjC.msgSendId(m, ObjC.sel("init")));
@@ -134,11 +125,11 @@ public final class NSMenu extends NSObject {
         ObjC.msgSendVoid(peer, ObjC.sel("removeAllItems"));
     }
 
-    /** Attach a submenu to a menu item (the item lives in this menu) — [item setSubmenu:submenu]. */
+    /// Attach a submenu to a menu item (the item lives in this menu) — [item setSubmenu:submenu].
     public void setSubmenu(NSMenuItem item, NSMenu submenu) {
         ObjC.msgSendVoidId(item.peer(), ObjC.sel("setSubmenu:"), (MemorySegment) (submenu == null ? MemorySegment.NULL : submenu.peer()));
     }
-    /** [self setSubmenu:submenu forItem:item] — the NSMenu variant (both peers as ID). */
+    /// [self setSubmenu:submenu forItem:item] — the NSMenu variant (both peers as ID).
     public void setSubmenuForItem(NSMenu submenu, NSMenuItem item) {
         ensureInit();
         try {
@@ -149,7 +140,7 @@ public final class NSMenu extends NSObject {
             throw new RuntimeException("setSubmenu:forItem: failed", t);
         }
     }
-    /** Alias preserving the original ObjC selector order: setSubmenu:forItem: */
+    /// Alias preserving the original ObjC selector order: setSubmenu:forItem:
     public void setSubmenuForItemCompat(NSMenu submenu, NSMenuItem item) {
         setSubmenuForItem(submenu, item);
     }
@@ -256,25 +247,23 @@ public final class NSMenu extends NSObject {
             return (boolean) ObjC.handle(Sig.of(Ret.BOOL, Arg.ID)).invokeExact(peer, ObjC.sel("respondsToSelector:"), ObjC.sel(selName));
         } catch (Throwable t) { return false; }
     }
-    /** [menu showsSearchField] — Help-menu search field visibility (guarded; false if selector absent). */
+    /// [menu showsSearchField] — Help-menu search field visibility (guarded; false if selector absent).
     public boolean showsSearchField() {
         if (!respondsTo("showsSearchField")) return false;
         try { return ObjC.msgSendBool(peer, ObjC.sel("showsSearchField")); } catch (Throwable t) { return false; }
     }
-    /** [menu setShowsSearchField:] — Help-menu search field visibility (no-op if selector absent). */
+    /// [menu setShowsSearchField:] — Help-menu search field visibility (no-op if selector absent).
     public void setShowsSearchField(boolean flag) {
         if (!respondsTo("setShowsSearchField:")) return;
         try { ObjC.msgSendVoidBool(peer, ObjC.sel("setShowsSearchField:"), flag); } catch (Throwable ignored) {}
     }
-    /** Alias for setShowsSearchField — legacy name used by some tests/docs. */
+    /// Alias for setShowsSearchField — legacy name used by some tests/docs.
     public void setShowsSearchFieldCompat(boolean flag) { setShowsSearchField(flag); }
 
     // ---- left menubar top-level helpers (App/File/Edit/View via NSMenu, not status icons) ----
-    /**
-     * Add a top-level menubar menu (App/File/Edit/View) to a mainMenu.
-     * Creates an NSMenuItem with title and attaches the given submenu, then adds it to mainMenu.
-     * Left menubar items must use this NSMenu path — not NSStatusItem bar icons.
-     */
+    /// Add a top-level menubar menu (App/File/Edit/View) to a mainMenu.
+    /// Creates an NSMenuItem with title and attaches the given submenu, then adds it to mainMenu.
+    /// Left menubar items must use this NSMenu path — not NSStatusItem bar icons.
     public static NSMenuItem addTopLevelMenu(NSMenu mainMenu, String title, NSMenu submenu) {
         NSMenuItem item = NSMenuItem.withTitle(title == null ? "" : title, "", "");
         if (submenu != null) item.setSubmenu(submenu);
@@ -282,21 +271,19 @@ public final class NSMenu extends NSObject {
         return item;
     }
 
-    /** Convenience factory for an App/File/Edit/View menu with title. */
+    /// Convenience factory for an App/File/Edit/View menu with title.
     public static NSMenu createAppMenu(String title) { return createWithTitle(title == null ? "" : title); }
     public static NSMenu createFileMenu() { NSMenu m = createWithTitle("File"); m.setTitle("File"); return m; }
     public static NSMenu createEditMenu() { NSMenu m = createWithTitle("Edit"); m.setTitle("Edit"); return m; }
     public static NSMenu createViewMenu() { NSMenu m = createWithTitle("View"); m.setTitle("View"); return m; }
 
     // ---- menu-list icon helpers (NSMenuItem.setImage is for dropdown lists, not menubar bar) ----
-    /**
-     * Attach a system image to a menu-list item (File/Edit/View/App dropdown). Uses
-     * {@link NSMenuItem#setImage} which renders in the menu list column, not the menubar bar.
-     * Do NOT use for NSStatusItem bar — that is status-agent owned.
-     * @param item target menu item (dropdown list entry)
-     * @param imageName system image name (e.g. "NSFolder", "NSSearchTemplate"); no-op if not found
-     * @return true if image was found and attached
-     */
+    /// Attach a system image to a menu-list item (File/Edit/View/App dropdown). Uses
+    /// `setImage` which renders in the menu list column, not the menubar bar.
+    /// Do NOT use for NSStatusItem bar — that is status-agent owned.
+    /// @param item target menu item (dropdown list entry)
+    /// @param imageName system image name (e.g. "NSFolder", "NSSearchTemplate"); no-op if not found
+    /// @return true if image was found and attached
     public static boolean attachMenuItemIcon(NSMenuItem item, String imageName) {
         if (item == null || imageName == null || imageName.isEmpty()) return false;
         try {
@@ -305,9 +292,7 @@ public final class NSMenu extends NSObject {
         } catch (Throwable ignored) {}
         return false;
     }
-    /**
-     * Variant that clears the image if imageName == null.
-     */
+    /// Variant that clears the image if imageName == null.
     public static void setMenuItemIconOrClear(NSMenuItem item, String imageName) {
         if (item == null) return;
         if (imageName == null || imageName.isEmpty()) { try { item.setImage(null); } catch (Throwable ignored) {} return; }
@@ -315,30 +300,26 @@ public final class NSMenu extends NSObject {
     }
 
     // ---- search-field embedding helper ----
-    /**
-     * Insert a placeholder item for a search field and embed the view.
-     * Equivalent to {@code insertItemWithTitle:"" + item.view = searchField}.
-     * The returned item's view is the supplied {@code field} (NSSearchField is an NSView).
-     * For menu-list aesthetics, prefer {@link #insertGallerySearchFieldItem} for centered alignment.
-     */
+    /// Insert a placeholder item for a search field and embed the view.
+    /// Equivalent to `insertItemWithTitle:"" + item.view = searchField`.
+    /// The returned item's view is the supplied `field` (NSSearchField is an NSView).
+    /// For menu-list aesthetics, prefer `insertGallerySearchFieldItem` for centered alignment.
     public NSMenuItem insertSearchFieldItem(NSSearchField field, long index) {
         NSMenuItem item = insertItemWithTitle("", "", "", index);
         if (field != null) item.setView(field.peer());
         return item;
     }
-    /** Convenience: add search field item at end. */
+    /// Convenience: add search field item at end.
     public NSMenuItem addSearchFieldItem(NSSearchField field) {
         return insertSearchFieldItem(field, numberOfItems());
     }
 
     // ---- centered Gallery Search (non-Help menu) — avoids Help/View auto fn+F row ----
-    /**
-     * Insert a centered "Gallery Search" field into a non-Help menu (Edit or View) as a custom view.
-     * Uses {@code NSMenuItem.setView} with an NSSearchField and aligns it via view frame + indentation.
-     * Title is "Gallery Search" (not "Help") to avoid Apple Help search auto-insertion. The search field's
-     * frame is inset (x=8) and the item's indentationLevel=1 to visually center the field in the menu.
-     * Callers supply the NSSearchField (so they retain target/action); this method frames and centers it.
-     */
+    /// Insert a centered "Gallery Search" field into a non-Help menu (Edit or View) as a custom view.
+    /// Uses `NSMenuItem.setView` with an NSSearchField and aligns it via view frame + indentation.
+    /// Title is "Gallery Search" (not "Help") to avoid Apple Help search auto-insertion. The search field's
+    /// frame is inset (x=8) and the item's indentationLevel=1 to visually center the field in the menu.
+    /// Callers supply the NSSearchField (so they retain target/action); this method frames and centers it.
     public NSMenuItem insertGallerySearchFieldItem(NSSearchField field, long index) {
         NSMenuItem item = insertItemWithTitle("", "", "", index);
         if (field != null) {
@@ -350,24 +331,22 @@ public final class NSMenu extends NSObject {
         }
         return item;
     }
-    /** Convenience: add centered Gallery Search field at end of this menu. */
+    /// Convenience: add centered Gallery Search field at end of this menu.
     public NSMenuItem addGallerySearchFieldItem(NSSearchField field) {
         return insertGallerySearchFieldItem(field, numberOfItems());
     }
-    /** Create and insert a centered Gallery Search field with placeholder "Gallery Search". */
+    /// Create and insert a centered Gallery Search field with placeholder "Gallery Search".
     public NSMenuItem insertGallerySearchField(String placeholder, long index) {
         NSSearchField f = NSSearchField.create(new NSRect(8, 0, 184, 22));
         try { f.setPlaceholderString(placeholder == null ? "Gallery Search" : placeholder); } catch (Throwable ignored) {}
         try { f.setCentersPlaceholder(true); } catch (Throwable ignored) {}
         return insertGallerySearchFieldItem(f, index);
     }
-    /** Create and add a centered Gallery Search field at end. */
+    /// Create and add a centered Gallery Search field at end.
     public NSMenuItem addGallerySearchField(String placeholder) {
         return insertGallerySearchField(placeholder, numberOfItems());
     }
-    /**
-     * Legacy alias: insertCenteredSearchFieldItem — same as insertGallerySearchFieldItem.
-     */
+    /// Legacy alias: insertCenteredSearchFieldItem — same as insertGallerySearchFieldItem.
     public NSMenuItem insertCenteredSearchFieldItem(NSSearchField field, long index) {
         return insertGallerySearchFieldItem(field, index);
     }

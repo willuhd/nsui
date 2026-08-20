@@ -8,12 +8,10 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSProgressIndicator — an AppKit progress bar (bar style by default). Thin, 1:1,
- * stateless wrapper over a native {@code NSProgressIndicator}: every method maps
- * to one {@code objc_msgSend} selector. It is an {@link NSControl} (an
- * {@link NSView}), so it fits any view hierarchy.
- */
+/// NSProgressIndicator — an AppKit progress bar (bar style by default). Thin, 1:1,
+/// stateless wrapper over a native `NSProgressIndicator`: every method maps
+/// to one `objc_msgSend` selector. It is an `NSControl` (an
+/// `NSView`), so it fits any view hierarchy.
 public final class NSProgressIndicator extends NSControl {
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
@@ -35,7 +33,7 @@ public final class NSProgressIndicator extends NSControl {
         initialized = true;
     }
 
-    /** {@code [[NSProgressIndicator alloc] initWithFrame:frame]} — a new progress indicator at the given rect. */
+    /// `[[NSProgressIndicator alloc] initWithFrame:frame]` — a new progress indicator at the given rect.
     public static NSProgressIndicator create(NSRect frame) {
         ensureInit();
         MemorySegment p = ObjC.msgSendId(ObjC.cls("NSProgressIndicator"), ObjC.sel("alloc"));
@@ -52,27 +50,27 @@ public final class NSProgressIndicator extends NSControl {
 
     // ---------------------------------------------------------------- instance API
 
-    /** [indicator setIndeterminate:] — YES for a pulsing spinner, NO for a determinate bar. */
+    /// [indicator setIndeterminate:] — YES for a pulsing spinner, NO for a determinate bar.
     public void setIndeterminate(boolean flag) {
         ObjC.msgSendVoidBool(peer, ObjC.sel("setIndeterminate:"), flag);
     }
 
-    /** [indicator isIndeterminate] — the current indeterminate state. */
+    /// [indicator isIndeterminate] — the current indeterminate state.
     public boolean isIndeterminate() {
         return ObjC.msgSendBool(peer, ObjC.sel("isIndeterminate"));
     }
 
-    /** [indicator setStyle:] — NSProgressIndicatorStyle (0 = NSProgressIndicatorBarStyle). */
+    /// [indicator setStyle:] — NSProgressIndicatorStyle (0 = NSProgressIndicatorBarStyle).
     public void setStyle(long style) {
         ObjC.msgSendVoidLong(peer, ObjC.sel("setStyle:"), style);
     }
 
-    /** [indicator style] — current style. */
+    /// [indicator style] — current style.
     public long style() {
         return ObjC.msgSendLong(peer, ObjC.sel("style"));
     }
 
-    /** [indicator setMinValue:] — minimum of the determinate range. */
+    /// [indicator setMinValue:] — minimum of the determinate range.
     public void setMinValue(double v) {
         try {
             hSetDouble.invokeExact(peer, ObjC.sel("setMinValue:"), v);
@@ -81,7 +79,7 @@ public final class NSProgressIndicator extends NSControl {
         }
     }
 
-    /** [indicator minValue] — minimum. */
+    /// [indicator minValue] — minimum.
     public double minValue() {
         try {
             return (double) hDouble.invokeExact(peer, ObjC.sel("minValue"));
@@ -90,7 +88,7 @@ public final class NSProgressIndicator extends NSControl {
         }
     }
 
-    /** [indicator setMaxValue:] — maximum of the determinate range. */
+    /// [indicator setMaxValue:] — maximum of the determinate range.
     public void setMaxValue(double v) {
         try {
             hSetDouble.invokeExact(peer, ObjC.sel("setMaxValue:"), v);
@@ -99,7 +97,7 @@ public final class NSProgressIndicator extends NSControl {
         }
     }
 
-    /** [indicator maxValue] — maximum. */
+    /// [indicator maxValue] — maximum.
     public double maxValue() {
         try {
             return (double) hDouble.invokeExact(peer, ObjC.sel("maxValue"));
@@ -108,7 +106,7 @@ public final class NSProgressIndicator extends NSControl {
         }
     }
 
-    /** [indicator setDoubleValue:] — current fraction shown in determinate mode. */
+    /// [indicator setDoubleValue:] — current fraction shown in determinate mode.
     public void setDoubleValue(double v) {
         try {
             hSetDouble.invokeExact(peer, ObjC.sel("setDoubleValue:"), v);
@@ -117,7 +115,7 @@ public final class NSProgressIndicator extends NSControl {
         }
     }
 
-    /** [indicator doubleValue] — current value (getter, previously write-only). */
+    /// [indicator doubleValue] — current value (getter, previously write-only).
     public double doubleValue() {
         try {
             return (double) hDouble.invokeExact(peer, ObjC.sel("doubleValue"));
@@ -126,7 +124,7 @@ public final class NSProgressIndicator extends NSControl {
         }
     }
 
-    /** [indicator incrementBy:] — increment by delta. */
+    /// [indicator incrementBy:] — increment by delta.
     public void incrementBy(double delta) {
         try {
             hSetDouble.invokeExact(peer, ObjC.sel("incrementBy:"), delta);
@@ -135,57 +133,57 @@ public final class NSProgressIndicator extends NSControl {
         }
     }
 
-    /** [indicator isDisplayedWhenStopped] — whether hidden when stopped. */
+    /// [indicator isDisplayedWhenStopped] — whether hidden when stopped.
     public boolean isDisplayedWhenStopped() {
         return ObjC.msgSendBool(peer, ObjC.sel("isDisplayedWhenStopped"));
     }
 
-    /** [indicator setDisplayedWhenStopped:] — set displayed-when-stopped. */
+    /// [indicator setDisplayedWhenStopped:] — set displayed-when-stopped.
     public void setDisplayedWhenStopped(boolean flag) {
         ObjC.msgSendVoidBool(peer, ObjC.sel("setDisplayedWhenStopped:"), flag);
     }
 
-    /** [indicator controlTint] — NSControlTint (deprecated but present). */
+    /// [indicator controlTint] — NSControlTint (deprecated but present).
     public long controlTint() {
         return ObjC.msgSendLong(peer, ObjC.sel("controlTint"));
     }
 
-    /** [indicator setControlTint:] — set tint. */
+    /// [indicator setControlTint:] — set tint.
     public void setControlTint(long tint) {
         ObjC.msgSendVoidLong(peer, ObjC.sel("setControlTint:"), tint);
     }
 
-    /** [indicator controlSize] — NSControlSize (0=Regular,1=Small,2=Mini,3=Large). */
+    /// [indicator controlSize] — NSControlSize (0=Regular,1=Small,2=Mini,3=Large).
     public long controlSize() {
         return ObjC.msgSendLong(peer, ObjC.sel("controlSize"));
     }
 
-    /** [indicator setControlSize:] — set control size. */
+    /// [indicator setControlSize:] — set control size.
     public void setControlSize(long size) {
         ObjC.msgSendVoidLong(peer, ObjC.sel("setControlSize:"), size);
     }
 
-    /** [indicator usesThreadedAnimation] — whether uses threaded animation. */
+    /// [indicator usesThreadedAnimation] — whether uses threaded animation.
     public boolean usesThreadedAnimation() {
         return ObjC.msgSendBool(peer, ObjC.sel("usesThreadedAnimation"));
     }
 
-    /** [indicator setUsesThreadedAnimation:] — set threaded animation. */
+    /// [indicator setUsesThreadedAnimation:] — set threaded animation.
     public void setUsesThreadedAnimation(boolean flag) {
         ObjC.msgSendVoidBool(peer, ObjC.sel("setUsesThreadedAnimation:"), flag);
     }
 
-    /** [indicator startAnimation:] — begin animating (spinner) / start tracking (bar). */
+    /// [indicator startAnimation:] — begin animating (spinner) / start tracking (bar).
     public void startAnimation() {
         ObjC.msgSendVoidId(peer, ObjC.sel("startAnimation:"), MemorySegment.NULL);
     }
 
-    /** [indicator stopAnimation:] — stop animating (spinner) / stop tracking (bar). */
+    /// [indicator stopAnimation:] — stop animating (spinner) / stop tracking (bar).
     public void stopAnimation() {
         ObjC.msgSendVoidId(peer, ObjC.sel("stopAnimation:"), MemorySegment.NULL);
     }
 
-    /** [indicator sizeToFit] — size to recommended dimensions. */
+    /// [indicator sizeToFit] — size to recommended dimensions.
     public void sizeToFit() {
         ObjC.msgSendVoid(peer, ObjC.sel("sizeToFit"));
     }

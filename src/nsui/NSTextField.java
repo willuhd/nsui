@@ -8,12 +8,10 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSTextField — an AppKit single/multi-line text field control. Thin 1:1 wrapper
- * over a native {@code NSTextField}: every method maps to one {@code objc_msgSend}
- * selector, no cached Java state beyond the peer. Mirrors the native hierarchy:
- * NSTextField is an NSControl is an NSView.
- */
+/// NSTextField — an AppKit single/multi-line text field control. Thin 1:1 wrapper
+/// over a native `NSTextField`: every method maps to one `objc_msgSend`
+/// selector, no cached Java state beyond the peer. Mirrors the native hierarchy:
+/// NSTextField is an NSControl is an NSView.
 public class NSTextField extends NSControl {
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
@@ -35,7 +33,7 @@ public class NSTextField extends NSControl {
         initialized = true;
     }
 
-    /** {@code [[NSTextField alloc] initWithFrame:frame]} — a new text field at the given rect. */
+    /// `[[NSTextField alloc] initWithFrame:frame]` — a new text field at the given rect.
     public static NSTextField create(NSRect frame) {
         ensureInit();
         MemorySegment f = ObjC.msgSendId(ObjC.cls("NSTextField"), ObjC.sel("alloc"));
@@ -73,13 +71,13 @@ public class NSTextField extends NSControl {
     @Override
     public void setStringValue(String value) { super.setStringValue(value); }
 
-    /** [field setFont:] — the font used to render the text. */
+    /// [field setFont:] — the font used to render the text.
     @Override
     public void setFont(NSFont font) {
         ObjC.msgSendVoidId(peer, ObjC.sel("setFont:"), (MemorySegment) (font == null ? MemorySegment.NULL : font.peer()));
     }
 
-    /** [field setTextColor:] — the color of the text. */
+    /// [field setTextColor:] — the color of the text.
     public void setTextColor(NSColor color) {
         ObjC.msgSendVoidId(peer, ObjC.sel("setTextColor:"), (MemorySegment) (color == null ? MemorySegment.NULL : color.peer()));
     }
@@ -128,7 +126,7 @@ public class NSTextField extends NSControl {
     public boolean isBezeled() {
         return ObjC.msgSendBool(peer, ObjC.sel("isBezeled"));
     }
-    /** [field setBezeled:] — draw the field's rounded bezel border. */
+    /// [field setBezeled:] — draw the field's rounded bezel border.
     public void setBezeled(boolean flag) {
         ObjC.msgSendVoidBool(peer, ObjC.sel("setBezeled:"), flag);
     }
@@ -141,21 +139,21 @@ public class NSTextField extends NSControl {
     public boolean drawsBackground() {
         return ObjC.msgSendBool(peer, ObjC.sel("drawsBackground"));
     }
-    /** [field setDrawsBackground:] — whether the field fills its background. */
+    /// [field setDrawsBackground:] — whether the field fills its background.
     public void setDrawsBackground(boolean flag) {
         ObjC.msgSendVoidBool(peer, ObjC.sel("setDrawsBackground:"), flag);
     }
     public boolean isEditable() {
         return ObjC.msgSendBool(peer, ObjC.sel("isEditable"));
     }
-    /** [field setEditable:] — whether the field accepts text editing. */
+    /// [field setEditable:] — whether the field accepts text editing.
     public void setEditable(boolean flag) {
         ObjC.msgSendVoidBool(peer, ObjC.sel("setEditable:"), flag);
     }
     public boolean isSelectable() {
         return ObjC.msgSendBool(peer, ObjC.sel("isSelectable"));
     }
-    /** [field setSelectable:] — whether the field's text can be selected. */
+    /// [field setSelectable:] — whether the field's text can be selected.
     public void setSelectable(boolean flag) {
         ObjC.msgSendVoidBool(peer, ObjC.sel("setSelectable:"), flag);
     }

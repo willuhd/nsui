@@ -8,11 +8,9 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSColorWell — an AppKit color picker control ("well"). Thin, 1:1, stateless wrapper
- * over a native {@code NSColorWell}: every method maps to one {@code objc_msgSend}
- * selector. It is an {@link NSControl} (an {@link NSView}), so it fits any view hierarchy.
- */
+/// NSColorWell — an AppKit color picker control ("well"). Thin, 1:1, stateless wrapper
+/// over a native `NSColorWell`: every method maps to one `objc_msgSend`
+/// selector. It is an `NSControl` (an `NSView`), so it fits any view hierarchy.
 public final class NSColorWell extends NSControl {
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
@@ -40,7 +38,7 @@ public final class NSColorWell extends NSControl {
         initialized = true;
     }
 
-    /** {@code [[NSColorWell alloc] initWithFrame:frame]} — a new color well at the given rect. */
+    /// `[[NSColorWell alloc] initWithFrame:frame]` — a new color well at the given rect.
     public static NSColorWell create(NSRect frame) {
         ensureInit();
         MemorySegment p = ObjC.msgSendId(ObjC.cls("NSColorWell"), ObjC.sel("alloc"));
@@ -57,7 +55,7 @@ public final class NSColorWell extends NSControl {
 
     // ---------------------------------------------------------------- instance API
 
-    /** [well setColor:] — the well's current color (accepts a live NSColor). */
+    /// [well setColor:] — the well's current color (accepts a live NSColor).
     public void setColor(NSColor color) {
         try {
             hSetColor.invokeExact(peer, ObjC.sel("setColor:"), color.peer());
@@ -66,7 +64,7 @@ public final class NSColorWell extends NSControl {
         }
     }
 
-    /** [well color] — the current color as a typed NSColor (nil if none). */
+    /// [well color] — the current color as a typed NSColor (nil if none).
     public NSColor color() {
         try {
             MemorySegment c = (MemorySegment) hColor.invokeExact(peer, ObjC.sel("color"));
@@ -76,7 +74,7 @@ public final class NSColorWell extends NSControl {
         }
     }
 
-    /** [well color] raw id — the underlying NSColor id (for interop where a MemorySegment is needed). */
+    /// [well color] raw id — the underlying NSColor id (for interop where a MemorySegment is needed).
     public MemorySegment colorSegment() {
         try {
             return (MemorySegment) hColor.invokeExact(peer, ObjC.sel("color"));
@@ -85,22 +83,22 @@ public final class NSColorWell extends NSControl {
         }
     }
 
-    /** [well isActive] — whether the well is in the active (editing) state. */
+    /// [well isActive] — whether the well is in the active (editing) state.
     public boolean isActive() {
         return ObjC.msgSendBool(peer, ObjC.sel("isActive"));
     }
 
-    /** [well isBordered] — whether the well draws a border. */
+    /// [well isBordered] — whether the well draws a border.
     public boolean isBordered() {
         return ObjC.msgSendBool(peer, ObjC.sel("isBordered"));
     }
 
-    /** [well setBordered:] — set whether the well draws a border. */
+    /// [well setBordered:] — set whether the well draws a border.
     public void setBordered(boolean flag) {
         ObjC.msgSendVoidBool(peer, ObjC.sel("setBordered:"), flag);
     }
 
-    /** [well supportsAlpha] — whether the well supports alpha (macOS 14+). Returns false on older runtimes. */
+    /// [well supportsAlpha] — whether the well supports alpha (macOS 14+). Returns false on older runtimes.
     public boolean supportsAlpha() {
         ensureInit();
         try {
@@ -112,7 +110,7 @@ public final class NSColorWell extends NSControl {
         }
     }
 
-    /** [well setSupportsAlpha:] — set alpha support. No-op on <14 where selector is absent. */
+    /// [well setSupportsAlpha:] — set alpha support. No-op on <14 where selector is absent.
     public void setSupportsAlpha(boolean flag) {
         ensureInit();
         try {
@@ -124,16 +122,14 @@ public final class NSColorWell extends NSControl {
         }
     }
 
-    /** [well colorPanel] — the associated NSColorPanel (if any), as raw id. */
+    /// [well colorPanel] — the associated NSColorPanel (if any), as raw id.
     public MemorySegment colorPanel() {
         return ObjC.msgSendId(peer, ObjC.sel("colorPanel"));
     }
 
-    /**
-     * [well activate:] — begin editing (open the color panel if the style needs it).
-     * The selector is {@code activate:(BOOL)exclusive} — the BOOL is a real argument,
-     * not optional (a zero-arg send would read a garbage register).
-     */
+    /// [well activate:] — begin editing (open the color panel if the style needs it).
+    /// The selector is `activate:(BOOL)exclusive` — the BOOL is a real argument,
+    /// not optional (a zero-arg send would read a garbage register).
     public void activate(boolean exclusive) {
         try {
             hVoidBool.invokeExact(peer, ObjC.sel("activate:"), exclusive);
@@ -142,7 +138,7 @@ public final class NSColorWell extends NSControl {
         }
     }
 
-    /** [well deactivate] — end editing / dismiss the active state. */
+    /// [well deactivate] — end editing / dismiss the active state.
     public void deactivate() {
         try {
             hVoid.invokeExact(peer, ObjC.sel("deactivate"));
@@ -151,17 +147,17 @@ public final class NSColorWell extends NSControl {
         }
     }
 
-    /** [well takeColorFrom:] — take color from sender (sends color message to sender). */
+    /// [well takeColorFrom:] — take color from sender (sends color message to sender).
     public void takeColorFrom(MemorySegment sender) {
         ObjC.msgSendVoidId(peer, ObjC.sel("takeColorFrom:"), sender);
     }
 
-    /** [well setColorWellStyle:] — NSColorWellStyle (0=Default,1=Minimal,2=Expanded) macOS 13+. */
+    /// [well setColorWellStyle:] — NSColorWellStyle (0=Default,1=Minimal,2=Expanded) macOS 13+.
     public void setColorWellStyle(long style) {
         ObjC.msgSendVoidLong(peer, ObjC.sel("setColorWellStyle:"), style);
     }
 
-    /** [well colorWellStyle] — current style. */
+    /// [well colorWellStyle] — current style.
     public long colorWellStyle() {
         return ObjC.msgSendLong(peer, ObjC.sel("colorWellStyle"));
     }

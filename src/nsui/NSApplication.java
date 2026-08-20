@@ -4,10 +4,8 @@ import java.lang.foreign.MemorySegment;
 
 import nsui.objc.ObjC;
 
-/**
- * NSApplication — the app shell (SWT Display-equivalent). Owns the run loop,
- * activation policy, main menu, and event dispatch.
- */
+/// NSApplication — the app shell (SWT Display-equivalent). Owns the run loop,
+/// activation policy, main menu, and event dispatch.
 public final class NSApplication extends NSObject {
 
     private static NSApplication shared;
@@ -16,7 +14,7 @@ public final class NSApplication extends NSObject {
         super(peer);
     }
 
-    /** [NSApplication sharedApplication] — singleton. */
+    /// [NSApplication sharedApplication] — singleton.
     public static NSApplication shared() {
         if (shared == null) {
             shared = new NSApplication(ObjC.msgSendId(ObjC.cls("NSApplication"), ObjC.sel("sharedApplication")));
@@ -106,7 +104,7 @@ public final class NSApplication extends NSObject {
         return ObjC.msgSendId(peer, ObjC.sel("applicationIconImage"));
     }
 
-    /** Blocking: runs the AppKit run loop on this thread. Returns when the app terminates. */
+    /// Blocking: runs the AppKit run loop on this thread. Returns when the app terminates.
     public void run() {
         ObjC.msgSendVoid(peer, ObjC.sel("run"));
     }
@@ -121,10 +119,10 @@ public final class NSApplication extends NSObject {
 
     // ------------------------------------------------------- event dispatch
 
-    /** Cached NSStrings per run-loop mode (plain Java map; nsstring created lazily at runtime). */
+    /// Cached NSStrings per run-loop mode (plain Java map; nsstring created lazily at runtime).
     private static final java.util.concurrent.ConcurrentHashMap<String, MemorySegment> MODE_NS = new java.util.concurrent.ConcurrentHashMap<>();
 
-    /** nextEventMatchingMask:untilDate:inMode:dequeue: — the run-loop turn primitive. */
+    /// nextEventMatchingMask:untilDate:inMode:dequeue: — the run-loop turn primitive.
     public NSEvent nextEvent(long mask, MemorySegment untilDate, String mode, boolean dequeue) {
         MemorySegment modeSeg = MODE_NS.computeIfAbsent(mode, ObjC::nsstring);
         MemorySegment ev = ObjC.msgSendIdLongIdIdBool(peer,

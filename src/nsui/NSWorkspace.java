@@ -8,10 +8,8 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSWorkspace — minimal wrapper over AppKit NSWorkspace.
- * Provides openURL, iconForFile, runningApplications.
- */
+/// NSWorkspace — minimal wrapper over AppKit NSWorkspace.
+/// Provides openURL, iconForFile, runningApplications.
 public final class NSWorkspace extends NSObject {
 
     private static volatile boolean initialized;
@@ -42,7 +40,7 @@ public final class NSWorkspace extends NSObject {
         initialized = true;
     }
 
-    /** [NSWorkspace sharedWorkspace] */
+    /// [NSWorkspace sharedWorkspace]
     public static NSWorkspace sharedWorkspace() {
         ensureInit();
         try {
@@ -54,7 +52,7 @@ public final class NSWorkspace extends NSObject {
         }
     }
 
-    /** [workspace openURL:] — URL string -> BOOL */
+    /// [workspace openURL:] — URL string -> BOOL
     public boolean openURL(String urlString) {
         ensureInit();
         // Build NSURL via NSURL URLWithString:
@@ -70,7 +68,7 @@ public final class NSWorkspace extends NSObject {
         }
     }
 
-    /** [workspace openURL:] with MemorySegment NSURL */
+    /// [workspace openURL:] with MemorySegment NSURL
     public boolean openURL(MemorySegment url) {
         ensureInit();
         try {
@@ -81,7 +79,7 @@ public final class NSWorkspace extends NSObject {
         }
     }
 
-    /** [workspace iconForFile:] -> NSImage */
+    /// [workspace iconForFile:] -> NSImage
     public NSImage iconForFile(String fullPath) {
         ensureInit();
         try {
@@ -92,7 +90,7 @@ public final class NSWorkspace extends NSObject {
         }
     }
 
-    /** [workspace iconForFileType:] -> NSImage */
+    /// [workspace iconForFileType:] -> NSImage
     public NSImage iconForFileType(String fileType) {
         ensureInit();
         try {
@@ -103,7 +101,7 @@ public final class NSWorkspace extends NSObject {
         }
     }
 
-    /** [workspace runningApplications] -> NSArray of NSRunningApplication */
+    /// [workspace runningApplications] -> NSArray of NSRunningApplication
     public NSArray runningApplications() {
         ensureInit();
         try {
@@ -114,7 +112,7 @@ public final class NSWorkspace extends NSObject {
         }
     }
 
-    /** [workspace openFile:] */
+    /// [workspace openFile:]
     public boolean openFile(String fullPath) {
         ensureInit();
         try {
@@ -124,7 +122,7 @@ public final class NSWorkspace extends NSObject {
         }
     }
 
-    /** [workspace launchApplication:] -> BOOL */
+    /// [workspace launchApplication:] -> BOOL
     public boolean launchApplication(String appName) {
         ensureInit();
         try {

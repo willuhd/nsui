@@ -8,18 +8,16 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSGestureRecognizer — base class for gesture recognizers. Thin, 1:1,
- * stateless wrapper over the native {@code NSGestureRecognizer}: each method
- * maps to one {@code objc_msgSend} selector. Follows the project template:
- * volatile initialized, synchronized ensureInit, ObjC.handle(Sig.of...),
- * invokeExact, static create/wrap.
- *
- * <p>Created via {@code [[NSGestureRecognizer alloc] initWithTarget:action:]}.
- * Subclasses (NSPanGestureRecognizer, NSClickGestureRecognizer) inherit this
- * machinery. The target is an ObjC id (typically from DelegateProxy.actionTarget)
- * and the action is a selector string like {@code "panned:"}.
- */
+/// NSGestureRecognizer — base class for gesture recognizers. Thin, 1:1,
+/// stateless wrapper over the native `NSGestureRecognizer`: each method
+/// maps to one `objc_msgSend` selector. Follows the project template:
+/// volatile initialized, synchronized ensureInit, ObjC.handle(Sig.of...),
+/// invokeExact, static create/wrap.
+///
+/// Created via `[[NSGestureRecognizer alloc] initWithTarget:action:]`.
+/// Subclasses (NSPanGestureRecognizer, NSClickGestureRecognizer) inherit this
+/// machinery. The target is an ObjC id (typically from DelegateProxy.actionTarget)
+/// and the action is a selector string like `"panned:"`.
 public class NSGestureRecognizer extends NSObject {
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
@@ -37,7 +35,7 @@ public class NSGestureRecognizer extends NSObject {
         ensureInit();
     }
 
-    /** Wrap an existing NSGestureRecognizer peer. */
+    /// Wrap an existing NSGestureRecognizer peer.
     public static NSGestureRecognizer wrap(MemorySegment peer) {
         return (peer == null || peer.address() == 0) ? null : new NSGestureRecognizer(peer);
     }
@@ -54,7 +52,7 @@ public class NSGestureRecognizer extends NSObject {
         initialized = true;
     }
 
-    /** {@code [[NSGestureRecognizer alloc] initWithTarget:action:]} — base recognizer. */
+    /// `[[NSGestureRecognizer alloc] initWithTarget:action:]` — base recognizer.
     public static NSGestureRecognizer create(MemorySegment target, String actionSelector) {
         ensureInit();
         MemorySegment p = ObjC.msgSendId(ObjC.cls("NSGestureRecognizer"), ObjC.sel("alloc"));
@@ -70,12 +68,12 @@ public class NSGestureRecognizer extends NSObject {
 
     // ---------------------------------------------------------------- instance API
 
-    /** [recognizer state] — NSGestureRecognizerState (NSInteger). */
+    /// [recognizer state] — NSGestureRecognizerState (NSInteger).
     public long state() {
         return ObjC.msgSendLong(peer, ObjC.sel("state"));
     }
 
-    /** [recognizer isEnabled] */
+    /// [recognizer isEnabled]
     public boolean isEnabled() {
         try {
             return (boolean) hGetBool.invokeExact(peer, ObjC.sel("isEnabled"));
@@ -84,7 +82,7 @@ public class NSGestureRecognizer extends NSObject {
         }
     }
 
-    /** [recognizer setEnabled:] */
+    /// [recognizer setEnabled:]
     public void setEnabled(boolean flag) {
         try {
             hSetEnabled.invokeExact(peer, ObjC.sel("setEnabled:"), flag);
@@ -93,7 +91,7 @@ public class NSGestureRecognizer extends NSObject {
         }
     }
 
-    /** [recognizer view] — NSView peer or nil. */
+    /// [recognizer view] — NSView peer or nil.
     public NSView view() {
         try {
             MemorySegment v = (MemorySegment) hGetId.invokeExact(peer, ObjC.sel("view"));
@@ -103,7 +101,7 @@ public class NSGestureRecognizer extends NSObject {
         }
     }
 
-    /** [recognizer delegate] — id or nil. */
+    /// [recognizer delegate] — id or nil.
     public MemorySegment delegate() {
         try {
             return (MemorySegment) hGetId.invokeExact(peer, ObjC.sel("delegate"));
@@ -112,7 +110,7 @@ public class NSGestureRecognizer extends NSObject {
         }
     }
 
-    /** [recognizer setDelegate:] */
+    /// [recognizer setDelegate:]
     public void setDelegate(MemorySegment delegate) {
         try {
             hSetDelegate.invokeExact(peer, ObjC.sel("setDelegate:"), (MemorySegment) ((MemorySegment) (delegate == null ? MemorySegment.NULL : delegate)));
@@ -121,7 +119,7 @@ public class NSGestureRecognizer extends NSObject {
         }
     }
 
-    /** [recognizer target] — id or nil (if single target). */
+    /// [recognizer target] — id or nil (if single target).
     public MemorySegment target() {
         try {
             return (MemorySegment) hGetId.invokeExact(peer, ObjC.sel("target"));
@@ -130,7 +128,7 @@ public class NSGestureRecognizer extends NSObject {
         }
     }
 
-    /** [recognizer action] — SEL id or nil. */
+    /// [recognizer action] — SEL id or nil.
     public MemorySegment action() {
         try {
             return (MemorySegment) hGetId.invokeExact(peer, ObjC.sel("action"));
@@ -139,7 +137,7 @@ public class NSGestureRecognizer extends NSObject {
         }
     }
 
-    /** Add a target/action pair to the recognizer. */
+    /// Add a target/action pair to the recognizer.
     public void addTarget(MemorySegment target, String actionSelector) {
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.ID));
@@ -149,7 +147,7 @@ public class NSGestureRecognizer extends NSObject {
         }
     }
 
-    /** Remove a target/action pair. */
+    /// Remove a target/action pair.
     public void removeTarget(MemorySegment target, String actionSelector) {
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.ID));
@@ -159,7 +157,7 @@ public class NSGestureRecognizer extends NSObject {
         }
     }
 
-    /** [recognizer locationInView:] — point in view's coordinates. */
+    /// [recognizer locationInView:] — point in view's coordinates.
     public NSPoint locationInView(NSView view) {
         try {
             MemorySegment seg = (MemorySegment) hLocation.invokeExact((java.lang.foreign.SegmentAllocator) java.lang.foreign.Arena.global(), peer, ObjC.sel("locationInView:"), (MemorySegment) (view == null ? MemorySegment.NULL : view.peer()));
@@ -169,7 +167,7 @@ public class NSGestureRecognizer extends NSObject {
         }
     }
 
-    /** [recognizer cancelsTouchesInView] */
+    /// [recognizer cancelsTouchesInView]
     public boolean cancelsTouchesInView() {
         return ObjC.msgSendBool(peer, ObjC.sel("cancelsTouchesInView"));
     }
@@ -178,7 +176,7 @@ public class NSGestureRecognizer extends NSObject {
         ObjC.msgSendVoidBool(peer, ObjC.sel("setCancelsTouchesInView:"), flag);
     }
 
-    /** [recognizer delaysPrimaryMouseButtonEvents] */
+    /// [recognizer delaysPrimaryMouseButtonEvents]
     public boolean delaysPrimaryMouseButtonEvents() {
         return ObjC.msgSendBool(peer, ObjC.sel("delaysPrimaryMouseButtonEvents"));
     }

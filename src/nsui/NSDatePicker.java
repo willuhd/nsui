@@ -8,16 +8,14 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSDatePicker — an AppKit date/time picker control. Thin, 1:1, stateless wrapper
- * over a native {@code NSDatePicker}: every method maps to one {@code objc_msgSend}
- * selector. It is an {@link NSControl} (an {@link NSView}), so it fits any view
- * hierarchy.
- *
- * <p>Dates are passed as raw {@code NSDate} ids (a {@code MemorySegment}); this
- * toolkit does not yet own an {@code NSDate} wrapper, so callers build them via
- * {@code [[NSDate dateWithTimeIntervalSinceNow:]]} (see the test).
- */
+/// NSDatePicker — an AppKit date/time picker control. Thin, 1:1, stateless wrapper
+/// over a native `NSDatePicker`: every method maps to one `objc_msgSend`
+/// selector. It is an `NSControl` (an `NSView`), so it fits any view
+/// hierarchy.
+///
+/// Dates are passed as raw `NSDate` ids (a `MemorySegment`); this
+/// toolkit does not yet own an `NSDate` wrapper, so callers build them via
+/// `[[NSDate dateWithTimeIntervalSinceNow:]]` (see the test).
 public final class NSDatePicker extends NSControl {
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
@@ -43,7 +41,7 @@ public final class NSDatePicker extends NSControl {
         initialized = true;
     }
 
-    /** {@code [[NSDatePicker alloc] initWithFrame:frame]} — a new date picker at the given rect. */
+    /// `[[NSDatePicker alloc] initWithFrame:frame]` — a new date picker at the given rect.
     public static NSDatePicker create(NSRect frame) {
         ensureInit();
         MemorySegment p = ObjC.msgSendId(ObjC.cls("NSDatePicker"), ObjC.sel("alloc"));
@@ -60,7 +58,7 @@ public final class NSDatePicker extends NSControl {
 
     // ---------------------------------------------------------------- instance API
 
-    /** [picker setDateValue:] — the displayed/selected date (an NSDate id). */
+    /// [picker setDateValue:] — the displayed/selected date (an NSDate id).
     public void setDateValue(MemorySegment nsDate) {
         try {
             hSetDate.invokeExact(peer, ObjC.sel("setDateValue:"), nsDate);
@@ -69,7 +67,7 @@ public final class NSDatePicker extends NSControl {
         }
     }
 
-    /** [picker dateValue] — the currently selected date as an NSDate id (nil if none). */
+    /// [picker dateValue] — the currently selected date as an NSDate id (nil if none).
     public MemorySegment dateValue() {
         try {
             return (MemorySegment) hDate.invokeExact(peer, ObjC.sel("dateValue"));
@@ -78,7 +76,7 @@ public final class NSDatePicker extends NSControl {
         }
     }
 
-    /** [picker setDatePickerStyle:] — NSDatePickerStyle (1 = TextFieldAndStepper). */
+    /// [picker setDatePickerStyle:] — NSDatePickerStyle (1 = TextFieldAndStepper).
     public void setDatePickerStyle(long style) {
         try {
             hSetInt.invokeExact(peer, ObjC.sel("setDatePickerStyle:"), style);
@@ -87,12 +85,12 @@ public final class NSDatePicker extends NSControl {
         }
     }
 
-    /** [picker datePickerStyle] — current style. */
+    /// [picker datePickerStyle] — current style.
     public long datePickerStyle() {
         return ObjC.msgSendLong(peer, ObjC.sel("datePickerStyle"));
     }
 
-    /** [picker setDatePickerElements:] — bitmask of NSDatePickerElementFlags (0x3 = Hour|Minute). */
+    /// [picker setDatePickerElements:] — bitmask of NSDatePickerElementFlags (0x3 = Hour|Minute).
     public void setDatePickerElements(long elements) {
         try {
             hSetInt.invokeExact(peer, ObjC.sel("setDatePickerElements:"), elements);
@@ -101,12 +99,12 @@ public final class NSDatePicker extends NSControl {
         }
     }
 
-    /** [picker datePickerElements] — current element flags. */
+    /// [picker datePickerElements] — current element flags.
     public long datePickerElements() {
         return ObjC.msgSendLong(peer, ObjC.sel("datePickerElements"));
     }
 
-    /** [picker timeZone] — NSTimeZone id (or nil). */
+    /// [picker timeZone] — NSTimeZone id (or nil).
     public MemorySegment timeZone() {
         try {
             return (MemorySegment) hDate.invokeExact(peer, ObjC.sel("timeZone"));
@@ -115,7 +113,7 @@ public final class NSDatePicker extends NSControl {
         }
     }
 
-    /** [picker setTimeZone:] — set NSTimeZone (or nil for default). */
+    /// [picker setTimeZone:] — set NSTimeZone (or nil for default).
     public void setTimeZone(MemorySegment tz) {
         try {
             hSetId.invokeExact(peer, ObjC.sel("setTimeZone:"), (MemorySegment) ((MemorySegment) (tz == null ? MemorySegment.NULL : tz)));
@@ -124,7 +122,7 @@ public final class NSDatePicker extends NSControl {
         }
     }
 
-    /** [picker locale] — NSLocale id (or nil). */
+    /// [picker locale] — NSLocale id (or nil).
     public MemorySegment locale() {
         try {
             return (MemorySegment) hDate.invokeExact(peer, ObjC.sel("locale"));
@@ -133,7 +131,7 @@ public final class NSDatePicker extends NSControl {
         }
     }
 
-    /** [picker setLocale:] — set NSLocale (or nil). */
+    /// [picker setLocale:] — set NSLocale (or nil).
     public void setLocale(MemorySegment locale) {
         try {
             hSetId.invokeExact(peer, ObjC.sel("setLocale:"), (MemorySegment) ((MemorySegment) (locale == null ? MemorySegment.NULL : locale)));
@@ -142,7 +140,7 @@ public final class NSDatePicker extends NSControl {
         }
     }
 
-    /** [picker calendar] — NSCalendar id (or nil). */
+    /// [picker calendar] — NSCalendar id (or nil).
     public MemorySegment calendar() {
         try {
             return (MemorySegment) hDate.invokeExact(peer, ObjC.sel("calendar"));
@@ -151,7 +149,7 @@ public final class NSDatePicker extends NSControl {
         }
     }
 
-    /** [picker setCalendar:] — set NSCalendar (or nil). */
+    /// [picker setCalendar:] — set NSCalendar (or nil).
     public void setCalendar(MemorySegment calendar) {
         try {
             hSetId.invokeExact(peer, ObjC.sel("setCalendar:"), (MemorySegment) ((MemorySegment) (calendar == null ? MemorySegment.NULL : calendar)));
@@ -160,7 +158,7 @@ public final class NSDatePicker extends NSControl {
         }
     }
 
-    /** [picker minDate] — minimum selectable date (or nil). */
+    /// [picker minDate] — minimum selectable date (or nil).
     public MemorySegment minDate() {
         try {
             return (MemorySegment) hDate.invokeExact(peer, ObjC.sel("minDate"));
@@ -169,7 +167,7 @@ public final class NSDatePicker extends NSControl {
         }
     }
 
-    /** [picker setMinDate:] — set minimum date (nil clears). */
+    /// [picker setMinDate:] — set minimum date (nil clears).
     public void setMinDate(MemorySegment date) {
         try {
             hSetId.invokeExact(peer, ObjC.sel("setMinDate:"), (MemorySegment) ((MemorySegment) (date == null ? MemorySegment.NULL : date)));
@@ -178,7 +176,7 @@ public final class NSDatePicker extends NSControl {
         }
     }
 
-    /** [picker maxDate] — maximum selectable date (or nil). */
+    /// [picker maxDate] — maximum selectable date (or nil).
     public MemorySegment maxDate() {
         try {
             return (MemorySegment) hDate.invokeExact(peer, ObjC.sel("maxDate"));
@@ -187,7 +185,7 @@ public final class NSDatePicker extends NSControl {
         }
     }
 
-    /** [picker setMaxDate:] — set maximum date (nil clears). */
+    /// [picker setMaxDate:] — set maximum date (nil clears).
     public void setMaxDate(MemorySegment date) {
         try {
             hSetId.invokeExact(peer, ObjC.sel("setMaxDate:"), (MemorySegment) ((MemorySegment) (date == null ? MemorySegment.NULL : date)));
@@ -196,64 +194,64 @@ public final class NSDatePicker extends NSControl {
         }
     }
 
-    /** [picker drawsBackground] — whether draws background. */
+    /// [picker drawsBackground] — whether draws background.
     public boolean drawsBackground() {
         return ObjC.msgSendBool(peer, ObjC.sel("drawsBackground"));
     }
 
-    /** [picker setDrawsBackground:] — set draws background. */
+    /// [picker setDrawsBackground:] — set draws background.
     public void setDrawsBackground(boolean flag) {
         ObjC.msgSendVoidBool(peer, ObjC.sel("setDrawsBackground:"), flag);
     }
 
-    /** [picker isBezeled] — whether bezeled. */
+    /// [picker isBezeled] — whether bezeled.
     public boolean isBezeled() {
         return ObjC.msgSendBool(peer, ObjC.sel("isBezeled"));
     }
 
-    /** [picker setBezeled:] — set bezeled. */
+    /// [picker setBezeled:] — set bezeled.
     public void setBezeled(boolean flag) {
         ObjC.msgSendVoidBool(peer, ObjC.sel("setBezeled:"), flag);
     }
 
-    /** [picker isBordered] — whether bordered. */
+    /// [picker isBordered] — whether bordered.
     public boolean isBordered() {
         return ObjC.msgSendBool(peer, ObjC.sel("isBordered"));
     }
 
-    /** [picker setBordered:] — set bordered. */
+    /// [picker setBordered:] — set bordered.
     public void setBordered(boolean flag) {
         ObjC.msgSendVoidBool(peer, ObjC.sel("setBordered:"), flag);
     }
 
-    /** [picker backgroundColor] — background color id. */
+    /// [picker backgroundColor] — background color id.
     public MemorySegment backgroundColor() {
         return ObjC.msgSendId(peer, ObjC.sel("backgroundColor"));
     }
 
-    /** [picker setBackgroundColor:] — set background color. */
+    /// [picker setBackgroundColor:] — set background color.
     public void setBackgroundColor(NSColor color) {
         MemorySegment p = (color == null) ? MemorySegment.NULL : color.peer();
         ObjC.msgSendVoidId(peer, ObjC.sel("setBackgroundColor:"), p);
     }
 
-    /** [picker textColor] — text color id. */
+    /// [picker textColor] — text color id.
     public MemorySegment textColor() {
         return ObjC.msgSendId(peer, ObjC.sel("textColor"));
     }
 
-    /** [picker setTextColor:] — set text color. */
+    /// [picker setTextColor:] — set text color.
     public void setTextColor(NSColor color) {
         MemorySegment p = (color == null) ? MemorySegment.NULL : color.peer();
         ObjC.msgSendVoidId(peer, ObjC.sel("setTextColor:"), p);
     }
 
-    /** [picker datePickerMode] — NSDatePickerMode. */
+    /// [picker datePickerMode] — NSDatePickerMode.
     public long datePickerMode() {
         return ObjC.msgSendLong(peer, ObjC.sel("datePickerMode"));
     }
 
-    /** [picker setDatePickerMode:] — set mode. */
+    /// [picker setDatePickerMode:] — set mode.
     public void setDatePickerMode(long mode) {
         ObjC.msgSendVoidLong(peer, ObjC.sel("setDatePickerMode:"), mode);
     }

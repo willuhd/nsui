@@ -8,14 +8,12 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSTabView — an AppKit tabbed pane. Thin, 1:1, stateless wrapper over a native
- * {@code NSTabView}: every method maps to one {@code objc_msgSend} selector. It is an
- * {@link NSView}, so it fits any view hierarchy.
- *
- * <p>Tabs are added as {@link NSTabViewItem}s, each with a {@code label} and an
- * optional content {@link NSView}. Only the minimal add/count surface is wrapped here.
- */
+/// NSTabView — an AppKit tabbed pane. Thin, 1:1, stateless wrapper over a native
+/// `NSTabView`: every method maps to one `objc_msgSend` selector. It is an
+/// `NSView`, so it fits any view hierarchy.
+///
+/// Tabs are added as `NSTabViewItem`s, each with a `label` and an
+/// optional content `NSView`. Only the minimal add/count surface is wrapped here.
 public final class NSTabView extends NSView {
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
@@ -49,7 +47,7 @@ public final class NSTabView extends NSView {
         initialized = true;
     }
 
-    /** {@code [[NSTabView alloc] initWithFrame:frame]} — a new tab view at the given rect. */
+    /// `[[NSTabView alloc] initWithFrame:frame]` — a new tab view at the given rect.
     public static NSTabView create(NSRect frame) {
         ensureInit();
         MemorySegment p = ObjC.msgSendId(ObjC.cls("NSTabView"), ObjC.sel("alloc"));
@@ -66,7 +64,7 @@ public final class NSTabView extends NSView {
 
     // ---------------------------------------------------------------- instance API
 
-    /** [tabView addTabViewItem:] — append a tab item. */
+    /// [tabView addTabViewItem:] — append a tab item.
     public void addTabViewItem(NSTabViewItem item) {
         try {
             hAddItem.invokeExact(peer, ObjC.sel("addTabViewItem:"), item.peer());
@@ -75,7 +73,7 @@ public final class NSTabView extends NSView {
         }
     }
 
-    /** [tabView numberOfTabViewItems] — how many tabs are present. */
+    /// [tabView numberOfTabViewItems] — how many tabs are present.
     public long numberOfTabViewItems() {
         try {
             return (long) hCount.invokeExact(peer, ObjC.sel("numberOfTabViewItems"));
@@ -86,7 +84,7 @@ public final class NSTabView extends NSView {
 
     // ---------------------------------------------------------------- completeness
 
-    /** [tabView selectTabViewItem:] — select the given item. */
+    /// [tabView selectTabViewItem:] — select the given item.
     public void selectTabViewItem(NSTabViewItem item) {
         try {
             hVoidId.invokeExact(peer, ObjC.sel("selectTabViewItem:"), (MemorySegment) ((MemorySegment) (item == null ? MemorySegment.NULL : item.peer())));
@@ -95,7 +93,7 @@ public final class NSTabView extends NSView {
         }
     }
 
-    /** [tabView selectTabViewItemAtIndex:] — select by index. */
+    /// [tabView selectTabViewItemAtIndex:] — select by index.
     public void selectTabViewItemAtIndex(long index) {
         try {
             hVoidInt.invokeExact(peer, ObjC.sel("selectTabViewItemAtIndex:"), index);
@@ -104,7 +102,7 @@ public final class NSTabView extends NSView {
         }
     }
 
-    /** [tabView selectTabViewItemWithIdentifier:] — select by identifier. */
+    /// [tabView selectTabViewItemWithIdentifier:] — select by identifier.
     public void selectTabViewItemWithIdentifier(String identifier) {
         try {
             hVoidId.invokeExact(peer, ObjC.sel("selectTabViewItemWithIdentifier:"), ObjC.nsstring(identifier));
@@ -113,7 +111,7 @@ public final class NSTabView extends NSView {
         }
     }
 
-    /** [tabView selectedTabViewItem] — currently selected item or nil. */
+    /// [tabView selectedTabViewItem] — currently selected item or nil.
     public NSTabViewItem selectedTabViewItem() {
         try {
             MemorySegment p = (MemorySegment) hId.invokeExact(peer, ObjC.sel("selectedTabViewItem"));
@@ -123,37 +121,37 @@ public final class NSTabView extends NSView {
         }
     }
 
-    /** [tabView tabViewType] — NSTabViewType. */
+    /// [tabView tabViewType] — NSTabViewType.
     public long tabViewType() {
         return ObjC.msgSendLong(peer, ObjC.sel("tabViewType"));
     }
 
-    /** [tabView setTabViewType:]. */
+    /// [tabView setTabViewType:].
     public void setTabViewType(long type) {
         ObjC.msgSendVoidLong(peer, ObjC.sel("setTabViewType:"), type);
     }
 
-    /** [tabView tabPosition] — NSTabPosition. */
+    /// [tabView tabPosition] — NSTabPosition.
     public long tabPosition() {
         return ObjC.msgSendLong(peer, ObjC.sel("tabPosition"));
     }
 
-    /** [tabView setTabPosition:]. */
+    /// [tabView setTabPosition:].
     public void setTabPosition(long pos) {
         ObjC.msgSendVoidLong(peer, ObjC.sel("setTabPosition:"), pos);
     }
 
-    /** [tabView tabViewBorderType]. */
+    /// [tabView tabViewBorderType].
     public long tabViewBorderType() {
         return ObjC.msgSendLong(peer, ObjC.sel("tabViewBorderType"));
     }
 
-    /** [tabView setTabViewBorderType:]. */
+    /// [tabView setTabViewBorderType:].
     public void setTabViewBorderType(long t) {
         ObjC.msgSendVoidLong(peer, ObjC.sel("setTabViewBorderType:"), t);
     }
 
-    /** [tabView tabViewItemAtIndex:]. */
+    /// [tabView tabViewItemAtIndex:].
     public NSTabViewItem tabViewItemAtIndex(long index) {
         try {
             MemorySegment p = (MemorySegment) hIdInt.invokeExact(peer, ObjC.sel("tabViewItemAtIndex:"), index);
@@ -163,7 +161,7 @@ public final class NSTabView extends NSView {
         }
     }
 
-    /** [tabView indexOfTabViewItem:]. */
+    /// [tabView indexOfTabViewItem:].
     public long indexOfTabViewItem(NSTabViewItem item) {
         // (id, SEL, id) -> long  shape not in vocab? Use handle (Ret.INT, Arg.ID) is present
         try {
@@ -174,7 +172,7 @@ public final class NSTabView extends NSView {
         }
     }
 
-    /** [tabView removeTabViewItem:]. */
+    /// [tabView removeTabViewItem:].
     public void removeTabViewItem(NSTabViewItem item) {
         try {
             hVoidId.invokeExact(peer, ObjC.sel("removeTabViewItem:"), item.peer());
@@ -183,7 +181,7 @@ public final class NSTabView extends NSView {
         }
     }
 
-    /** [tabView insertTabViewItem:atIndex:]. */
+    /// [tabView insertTabViewItem:atIndex:].
     public void insertTabViewItem(NSTabViewItem item, long index) {
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.INT));
@@ -193,27 +191,27 @@ public final class NSTabView extends NSView {
         }
     }
 
-    /** [tabView allowsTruncatedLabels]. */
+    /// [tabView allowsTruncatedLabels].
     public boolean allowsTruncatedLabels() {
         return ObjC.msgSendBool(peer, ObjC.sel("allowsTruncatedLabels"));
     }
 
-    /** [tabView setAllowsTruncatedLabels:]. */
+    /// [tabView setAllowsTruncatedLabels:].
     public void setAllowsTruncatedLabels(boolean flag) {
         ObjC.msgSendVoidBool(peer, ObjC.sel("setAllowsTruncatedLabels:"), flag);
     }
 
-    /** [tabView drawsBackground]. */
+    /// [tabView drawsBackground].
     public boolean drawsBackground() {
         return ObjC.msgSendBool(peer, ObjC.sel("drawsBackground"));
     }
 
-    /** [tabView setDrawsBackground:]. */
+    /// [tabView setDrawsBackground:].
     public void setDrawsBackground(boolean flag) {
         ObjC.msgSendVoidBool(peer, ObjC.sel("setDrawsBackground:"), flag);
     }
 
-    /** [tabView minimumSize] — NSSize. */
+    /// [tabView minimumSize] — NSSize.
     public NSSize minimumSize() {
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.SIZE));
@@ -224,7 +222,7 @@ public final class NSTabView extends NSView {
         }
     }
 
-    /** [tabView contentRect]. */
+    /// [tabView contentRect].
     public NSRect contentRect() {
         return NSRect.fromSegment(ObjC.msgSendRect(peer, ObjC.sel("contentRect")));
     }

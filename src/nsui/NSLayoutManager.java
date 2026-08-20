@@ -9,10 +9,8 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSLayoutManager — the central layout engine linking {@link NSTextStorage}
- * and {@link NSTextContainer}. Thin 1:1 wrapper over native {@code NSLayoutManager}.
- */
+/// NSLayoutManager — the central layout engine linking `NSTextStorage`
+/// and `NSTextContainer`. Thin 1:1 wrapper over native `NSLayoutManager`.
 public final class NSLayoutManager extends NSObject {
 
     private static volatile boolean initialized;
@@ -47,7 +45,7 @@ public final class NSLayoutManager extends NSObject {
         initialized = true;
     }
 
-    /** {@code [[NSLayoutManager alloc] init]} */
+    /// `[[NSLayoutManager alloc] init]`
     public static NSLayoutManager create() {
         ensureInit();
         MemorySegment alloc = ObjC.msgSendId(ObjC.cls("NSLayoutManager"), ObjC.sel("alloc"));
@@ -62,7 +60,7 @@ public final class NSLayoutManager extends NSObject {
 
     // ---- text storage ----
 
-    /** [layoutManager textStorage] — may be nil. */
+    /// [layoutManager textStorage] — may be nil.
     public NSTextStorage textStorage() {
         ensureInit();
         try {
@@ -73,7 +71,7 @@ public final class NSLayoutManager extends NSObject {
         }
     }
 
-    /** [layoutManager setTextStorage:] — rarely set directly; normally via NSTextStorage addLayoutManager. */
+    /// [layoutManager setTextStorage:] — rarely set directly; normally via NSTextStorage addLayoutManager.
     public void setTextStorage(NSTextStorage storage) {
         ensureInit();
         try {
@@ -83,14 +81,14 @@ public final class NSLayoutManager extends NSObject {
         }
     }
 
-    /** [layoutManager replaceTextStorage:] */
+    /// [layoutManager replaceTextStorage:]
     public void replaceTextStorage(NSTextStorage storage) {
         ObjC.msgSendVoidId(peer, ObjC.sel("replaceTextStorage:"), (MemorySegment) (storage == null ? MemorySegment.NULL : storage.peer()));
     }
 
     // ---- text containers ----
 
-    /** [layoutManager addTextContainer:] */
+    /// [layoutManager addTextContainer:]
     public void addTextContainer(NSTextContainer container) {
         ensureInit();
         try {
@@ -100,7 +98,7 @@ public final class NSLayoutManager extends NSObject {
         }
     }
 
-    /** [layoutManager insertTextContainer:atIndex:] */
+    /// [layoutManager insertTextContainer:atIndex:]
     public void insertTextContainerAtIndex(NSTextContainer container, long index) {
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.INT));
@@ -110,7 +108,7 @@ public final class NSLayoutManager extends NSObject {
         }
     }
 
-    /** [layoutManager removeTextContainerAtIndex:] */
+    /// [layoutManager removeTextContainerAtIndex:]
     public void removeTextContainerAtIndex(long index) {
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.INT));
@@ -120,7 +118,7 @@ public final class NSLayoutManager extends NSObject {
         }
     }
 
-    /** [layoutManager textContainers] — NSArray of NSTextContainer */
+    /// [layoutManager textContainers] — NSArray of NSTextContainer
     public java.util.List<NSTextContainer> textContainers() {
         MemorySegment arr = ObjC.msgSendId(peer, ObjC.sel("textContainers"));
         if (arr == null || arr.address() == 0) return java.util.List.of();
@@ -140,7 +138,7 @@ public final class NSLayoutManager extends NSObject {
 
     // ---- layout ----
 
-    /** [layoutManager ensureLayoutForTextContainer:] */
+    /// [layoutManager ensureLayoutForTextContainer:]
     public void ensureLayoutForTextContainer(NSTextContainer container) {
         ensureInit();
         try {
@@ -150,7 +148,7 @@ public final class NSLayoutManager extends NSObject {
         }
     }
 
-    /** [layoutManager glyphRangeForTextContainer:] -> NSRange */
+    /// [layoutManager glyphRangeForTextContainer:] -> NSRange
     public NSRange glyphRangeForTextContainer(NSTextContainer container) {
         ensureInit();
         try {
@@ -161,7 +159,7 @@ public final class NSLayoutManager extends NSObject {
         }
     }
 
-    /** [layoutManager numberOfGlyphs] */
+    /// [layoutManager numberOfGlyphs]
     public long numberOfGlyphs() {
         ensureInit();
         try {
@@ -171,7 +169,7 @@ public final class NSLayoutManager extends NSObject {
         }
     }
 
-    /** [layoutManager characterIndexForGlyphAtIndex:] -> long */
+    /// [layoutManager characterIndexForGlyphAtIndex:] -> long
     public long characterIndexForGlyphAtIndex(long glyphIndex) {
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.INT, Arg.INT));
@@ -181,7 +179,7 @@ public final class NSLayoutManager extends NSObject {
         }
     }
 
-    /** [layoutManager glyphIndexForCharacterAtIndex:] -> long */
+    /// [layoutManager glyphIndexForCharacterAtIndex:] -> long
     public long glyphIndexForCharacterAtIndex(long charIndex) {
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.INT, Arg.INT));
@@ -191,7 +189,7 @@ public final class NSLayoutManager extends NSObject {
         }
     }
 
-    /** [layoutManager invalidateLayoutForCharacterRange:actualCharacterRange:] simplified untyped */
+    /// [layoutManager invalidateLayoutForCharacterRange:actualCharacterRange:] simplified untyped
     public void invalidateDisplayForCharacterRange(NSRange range) {
         try {
             hVoidRange.invokeExact(peer, ObjC.sel("invalidateDisplayForCharacterRange:"), range.toSegment());
@@ -200,7 +198,7 @@ public final class NSLayoutManager extends NSObject {
         }
     }
 
-    /** [layoutManager usedRectForTextContainer:] -> NSRect */
+    /// [layoutManager usedRectForTextContainer:] -> NSRect
     public NSRect usedRectForTextContainer(NSTextContainer container) {
         ensureInit();
         try {
@@ -214,24 +212,24 @@ public final class NSLayoutManager extends NSObject {
 
     // ---- delegate (generic id) ----
 
-    /** [layoutManager delegate] raw id. */
+    /// [layoutManager delegate] raw id.
     public MemorySegment delegate() {
         return ObjC.msgSendId(peer, ObjC.sel("delegate"));
     }
 
-    /** [layoutManager setDelegate:] */
+    /// [layoutManager setDelegate:]
     public void setDelegate(MemorySegment delegate) {
         ObjC.msgSendVoidId(peer, ObjC.sel("setDelegate:"), (MemorySegment) (delegate == null ? MemorySegment.NULL : delegate));
     }
 
     // ---- extras ----
 
-    /** [layoutManager allowsNonContiguousLayout] */
+    /// [layoutManager allowsNonContiguousLayout]
     public boolean allowsNonContiguousLayout() {
         return ObjC.msgSendBool(peer, ObjC.sel("allowsNonContiguousLayout"));
     }
 
-    /** [layoutManager setAllowsNonContiguousLayout:] */
+    /// [layoutManager setAllowsNonContiguousLayout:]
     public void setAllowsNonContiguousLayout(boolean flag) {
         ObjC.msgSendVoidBool(peer, ObjC.sel("setAllowsNonContiguousLayout:"), flag);
     }

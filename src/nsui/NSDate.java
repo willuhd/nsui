@@ -8,9 +8,7 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSDate — minimal wrapper over native {@code NSDate}.
- */
+/// NSDate — minimal wrapper over native `NSDate`.
 public final class NSDate extends NSObject {
 
     private static volatile boolean initialized;
@@ -27,14 +25,14 @@ public final class NSDate extends NSObject {
         return (peer == null || peer.address() == 0) ? null : new NSDate(peer);
     }
 
-    /** [NSDate date] — now. */
+    /// [NSDate date] — now.
     public static NSDate date() {
         ensureInit();
         MemorySegment s = ObjC.msgSendId(ObjC.cls("NSDate"), ObjC.sel("date"));
         return wrap(s);
     }
 
-    /** [NSDate dateWithTimeIntervalSince1970:] */
+    /// [NSDate dateWithTimeIntervalSince1970:]
     public static NSDate dateWithTimeIntervalSince1970(double seconds) {
         ensureInit();
         try {
@@ -44,7 +42,7 @@ public final class NSDate extends NSObject {
         } catch (Throwable t) { throw new RuntimeException("dateWithTimeIntervalSince1970: failed", t); }
     }
 
-    /** [NSDate dateWithTimeIntervalSinceNow:] */
+    /// [NSDate dateWithTimeIntervalSinceNow:]
     public static NSDate dateWithTimeIntervalSinceNow(double seconds) {
         ensureInit();
         try {
@@ -54,14 +52,14 @@ public final class NSDate extends NSObject {
         } catch (Throwable t) { throw new RuntimeException("dateWithTimeIntervalSinceNow: failed", t); }
     }
 
-    /** [NSDate distantPast] */
+    /// [NSDate distantPast]
     public static NSDate distantPast() {
         ensureInit();
         MemorySegment s = ObjC.msgSendId(ObjC.cls("NSDate"), ObjC.sel("distantPast"));
         return wrap(s);
     }
 
-    /** [NSDate distantFuture] */
+    /// [NSDate distantFuture]
     public static NSDate distantFuture() {
         ensureInit();
         MemorySegment s = ObjC.msgSendId(ObjC.cls("NSDate"), ObjC.sel("distantFuture"));
@@ -76,21 +74,21 @@ public final class NSDate extends NSObject {
         initialized = true;
     }
 
-    /** timeIntervalSince1970 */
+    /// timeIntervalSince1970
     public double timeIntervalSince1970() {
         ensureInit();
         try { return (double) hTimeIntervalSince1970.invokeExact(peer, ObjC.sel("timeIntervalSince1970")); }
         catch (Throwable t) { throw new RuntimeException("timeIntervalSince1970 failed", t); }
     }
 
-    /** timeIntervalSinceNow */
+    /// timeIntervalSinceNow
     public double timeIntervalSinceNow() {
         ensureInit();
         try { return (double) hTimeIntervalSinceNow.invokeExact(peer, ObjC.sel("timeIntervalSinceNow")); }
         catch (Throwable t) { throw new RuntimeException("timeIntervalSinceNow failed", t); }
     }
 
-    /** timeIntervalSinceDate: */
+    /// timeIntervalSinceDate:
     public double timeIntervalSinceDate(NSDate other) {
         ensureInit();
         if (other == null) throw new IllegalArgumentException("other null");
@@ -100,7 +98,7 @@ public final class NSDate extends NSObject {
         } catch (Throwable t) { throw new RuntimeException("timeIntervalSinceDate: failed", t); }
     }
 
-    /** compare: — NSComparisonResult. */
+    /// compare: — NSComparisonResult.
     public long compare(NSDate other) {
         ensureInit();
         if (other == null) throw new IllegalArgumentException("other null");
@@ -108,7 +106,7 @@ public final class NSDate extends NSObject {
         catch (Throwable t) { throw new RuntimeException("compare: failed", t); }
     }
 
-    /** isEqualToDate: */
+    /// isEqualToDate:
     public boolean isEqualToDate(NSDate other) {
         ensureInit();
         if (other == null) return false;
@@ -118,7 +116,7 @@ public final class NSDate extends NSObject {
         } catch (Throwable t) { throw new RuntimeException("isEqualToDate: failed", t); }
     }
 
-    /** dateByAddingTimeInterval: — returns new date. */
+    /// dateByAddingTimeInterval: — returns new date.
     public NSDate dateByAddingTimeInterval(double seconds) {
         ensureInit();
         try {

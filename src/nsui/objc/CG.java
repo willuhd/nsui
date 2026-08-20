@@ -5,22 +5,18 @@ import java.lang.foreign.MemorySegment;
 import java.lang.foreign.SymbolLookup;
 import java.lang.invoke.MethodHandle;
 
-/**
- * CoreGraphics 2D drawing shim — the C functions (NOT ObjC) used to paint into
- * an NSGraphicsContext's CGContext. Purely FFM downcalls resolved at runtime;
- * CGFloat is a double on 64-bit, so every C function here is trivial.
- *
- * <p>The two Arg classes this touches are all pre-seeded:
- * <ul>
- *   <li>{@link NsuiForeign#cgSetRGBFillColor()} &amp; friends — the descriptors;</li>
- *   <li>the drawing functions take a {@code CGRect} <em>by value</em>; we allocate
- *       the 4-double struct via {@link ObjC#rect(double,double,double,double)} and
- *       hand the segment to the downcall (FFM copies it, so the caller keeps it).</li>
- * </ul>
- */
+/// CoreGraphics 2D drawing shim — the C functions (NOT ObjC) used to paint into
+/// an NSGraphicsContext's CGContext. Purely FFM downcalls resolved at runtime;
+/// CGFloat is a double on 64-bit, so every C function here is trivial.
+///
+/// The two Arg classes this touches are all pre-seeded:
+/// - `cgSetRGBFillColor` & friends — the descriptors;
+/// - the drawing functions take a `CGRect` *by value*; we allocate
+///   the 4-double struct via `rect` and
+/// hand the segment to the downcall (FFM copies it, so the caller keeps it).
 public final class CG {
 
-    /** CoreGraphics framework dylib path. All CG_DRAW symbols are confirmed exported. */
+    /// CoreGraphics framework dylib path. All CG_DRAW symbols are confirmed exported.
     public static final String CORE_GRAPHICS = "/System/Library/Frameworks/CoreGraphics.framework/CoreGraphics";
 
     // ---- one downcall handle per drawing function, built lazily in ensureInit() ----
@@ -39,10 +35,8 @@ public final class CG {
 
     private CG() {}
 
-    /**
-     * Resolve CoreGraphics and build the downcall handles. Must run at RUNTIME
-     * (native-image rule — never in a static initializer). Idempotent.
-     */
+    /// Resolve CoreGraphics and build the downcall handles. Must run at RUNTIME
+    /// (native-image rule — never in a static initializer). Idempotent.
     public static synchronized void ensureInit() {
         if (initialized) return;
         SymbolLookup cg = SymbolLookup.libraryLookup(CORE_GRAPHICS, Arena.global());
@@ -68,7 +62,7 @@ public final class CG {
         }
     }
 
-    /** Cache the native linker (linking is fine at runtime; nothing in a static init). */
+    /// Cache the native linker (linking is fine at runtime; nothing in a static init).
     private static final class LinkerHolder {
         static final java.lang.foreign.Linker LINKER = java.lang.foreign.Linker.nativeLinker();
     }

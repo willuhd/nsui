@@ -10,11 +10,9 @@ import nsui.objc.ObjC;
 import nsui.objc.Sig;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSData — minimal wrapper over native {@code NSData} / {@code NSMutableData}.
- * Stores Java bytes in a side map for synthetic instances; delegates to native
- * for length/bytes where no synthetic storage exists.
- */
+/// NSData — minimal wrapper over native `NSData` / `NSMutableData`.
+/// Stores Java bytes in a side map for synthetic instances; delegates to native
+/// for length/bytes where no synthetic storage exists.
 public class NSData extends NSObject {
 
     private static final ConcurrentHashMap<Long, byte[]> STORE = new ConcurrentHashMap<>();
@@ -31,14 +29,14 @@ public class NSData extends NSObject {
         return (peer == null || peer.address() == 0) ? null : new NSData(peer);
     }
 
-    /** [NSData data] — empty. */
+    /// [NSData data] — empty.
     public static NSData data() {
         ensureInit();
         MemorySegment s = ObjC.msgSendId(ObjC.cls("NSData"), ObjC.sel("data"));
         return wrap(s);
     }
 
-    /** Create NSData from Java bytes — Java-cached, with real native peer. */
+    /// Create NSData from Java bytes — Java-cached, with real native peer.
     public static NSData dataWithBytes(byte[] bytes) {
         if (bytes == null) bytes = new byte[0];
         ensureInit();
@@ -63,7 +61,7 @@ public class NSData extends NSObject {
         return d;
     }
 
-    /** dataWithBytesNoCopy variant — same as dataWithBytes for minimal. */
+    /// dataWithBytesNoCopy variant — same as dataWithBytes for minimal.
     public static NSData dataWithBytes(byte[] bytes, long length) {
         if (bytes == null) bytes = new byte[0];
         long len = Math.min(length, bytes.length);
@@ -79,7 +77,7 @@ public class NSData extends NSObject {
         initialized = true;
     }
 
-    /** length */
+    /// length
     public long length() {
         byte[] cached = STORE.get(peer.address());
         if (cached != null) return cached.length;
@@ -88,7 +86,7 @@ public class NSData extends NSObject {
         catch (Throwable t) { throw new RuntimeException("NSData length failed", t); }
     }
 
-    /** bytes — raw pointer (may be null for empty). */
+    /// bytes — raw pointer (may be null for empty).
     public MemorySegment bytes() {
         ensureInit();
         try {
@@ -97,7 +95,7 @@ public class NSData extends NSObject {
         } catch (Throwable t) { throw new RuntimeException("bytes failed", t); }
     }
 
-    /** toByteArray — copy to Java array. */
+    /// toByteArray — copy to Java array.
     public byte[] toByteArray() {
         byte[] cached = STORE.get(peer.address());
         if (cached != null) return cached.clone();
@@ -113,7 +111,7 @@ public class NSData extends NSObject {
         return out;
     }
 
-    /** isEqualToData: */
+    /// isEqualToData:
     public boolean isEqualToData(NSData other) {
         ensureInit();
         if (other == null) return false;
@@ -126,7 +124,7 @@ public class NSData extends NSObject {
         } catch (Throwable t) { throw new RuntimeException("isEqualToData: failed", t); }
     }
 
-    /** subdataWithRange: */
+    /// subdataWithRange:
     public NSData subdataWithRange(NSRange range) {
         byte[] cached = STORE.get(peer.address());
         if (cached != null) {

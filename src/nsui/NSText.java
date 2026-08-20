@@ -8,15 +8,13 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSText — AppKit's abstract text view base (NSView -> NSText -> NSTextView).
- * Thin 1:1 wrapper over native {@code NSText}: every method maps to one
- * {@code objc_msgSend} selector, no cached Java state beyond the peer.
- *
- * <p>This is the shared surface for {@link NSTextView}; it exposes the
- * common text attributes so the hierarchy mirrors AppKit (NSText is an
- * NSView, NSTextView is an NSText).
- */
+/// NSText — AppKit's abstract text view base (NSView -> NSText -> NSTextView).
+/// Thin 1:1 wrapper over native `NSText`: every method maps to one
+/// `objc_msgSend` selector, no cached Java state beyond the peer.
+///
+/// This is the shared surface for `NSTextView`; it exposes the
+/// common text attributes so the hierarchy mirrors AppKit (NSText is an
+/// NSView, NSTextView is an NSText).
 public class NSText extends NSView {
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
@@ -38,7 +36,7 @@ public class NSText extends NSView {
         initialized = true;
     }
 
-    /** {@code [[NSText alloc] initWithFrame:frame]} — a new text object at the given rect. */
+    /// `[[NSText alloc] initWithFrame:frame]` — a new text object at the given rect.
     public static NSText create(NSRect frame) {
         ensureInit();
         MemorySegment v = ObjC.msgSendId(ObjC.cls("NSText"), ObjC.sel("alloc"));
@@ -55,12 +53,12 @@ public class NSText extends NSView {
 
     // ---------------------------------------------------------------- string
 
-    /** [text string] — the plain string contents (NSString -> String). */
+    /// [text string] — the plain string contents (NSString -> String).
     public String string() {
         return ObjC.toString(ObjC.msgSendId(peer, ObjC.sel("string")));
     }
 
-    /** [text setString:] — replace the plain string contents. */
+    /// [text setString:] — replace the plain string contents.
     public void setString(String s) {
         ObjC.msgSendVoidId(peer, ObjC.sel("setString:"), s == null ? MemorySegment.NULL : ObjC.nsstring(s));
     }
@@ -160,13 +158,13 @@ public class NSText extends NSView {
 
     // ---- layout trio hooks (minimal) ----
 
-    /** [text textStorage] as NSTextStorage (typed) — nil if no storage. */
+    /// [text textStorage] as NSTextStorage (typed) — nil if no storage.
     public NSTextStorage textStorageAsStorage() {
         MemorySegment p = ObjC.msgSendId(peer, ObjC.sel("textStorage"));
         return NSTextStorage.wrap(p);
     }
 
-    /** Replace the underlying text storage (via textStorage setAttributedString:). */
+    /// Replace the underlying text storage (via textStorage setAttributedString:).
     public void replaceTextStorage(NSTextStorage storage) {
         if (storage == null) return;
         MemorySegment ts = ObjC.msgSendId(peer, ObjC.sel("textStorage"));

@@ -9,10 +9,8 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSTextContainer — a region that holds text layout.
- * Thin 1:1 wrapper over native {@code NSTextContainer}.
- */
+/// NSTextContainer — a region that holds text layout.
+/// Thin 1:1 wrapper over native `NSTextContainer`.
 public final class NSTextContainer extends NSObject {
 
     private static volatile boolean initialized;
@@ -55,7 +53,7 @@ public final class NSTextContainer extends NSObject {
         initialized = true;
     }
 
-    /** {@code [[NSTextContainer alloc] init]} — default sized container. */
+    /// `[[NSTextContainer alloc] init]` — default sized container.
     public static NSTextContainer create() {
         ensureInit();
         MemorySegment alloc = ObjC.msgSendId(ObjC.cls("NSTextContainer"), ObjC.sel("alloc"));
@@ -68,7 +66,7 @@ public final class NSTextContainer extends NSObject {
         }
     }
 
-    /** {@code [[NSTextContainer alloc] initWithContainerSize:size]} — sized container. */
+    /// `[[NSTextContainer alloc] initWithContainerSize:size]` — sized container.
     public static NSTextContainer create(NSSize size) {
         ensureInit();
         MemorySegment alloc = ObjC.msgSendId(ObjC.cls("NSTextContainer"), ObjC.sel("alloc"));
@@ -92,14 +90,14 @@ public final class NSTextContainer extends NSObject {
         }
     }
 
-    /** Convenience: create with tracking defaults (size zero means tracking). */
+    /// Convenience: create with tracking defaults (size zero means tracking).
     public static NSTextContainer create(double width, double height) {
         return create(new NSSize(width, height));
     }
 
     // ---- containerSize ----
 
-    /** [container containerSize] -> NSSize */
+    /// [container containerSize] -> NSSize
     public NSSize containerSize() {
         ensureInit();
         try {
@@ -110,7 +108,7 @@ public final class NSTextContainer extends NSObject {
         }
     }
 
-    /** [container setContainerSize:] */
+    /// [container setContainerSize:]
     public void setContainerSize(NSSize size) {
         ensureInit();
         try {
@@ -122,7 +120,7 @@ public final class NSTextContainer extends NSObject {
 
     // ---- tracking ----
 
-    /** [container widthTracksTextView] */
+    /// [container widthTracksTextView]
     public boolean widthTracksTextView() {
         ensureInit();
         try { return (boolean) hGetBool.invokeExact(peer, ObjC.sel("widthTracksTextView")); } catch (Throwable t) { throw new RuntimeException("widthTracksTextView failed", t); }
@@ -132,7 +130,7 @@ public final class NSTextContainer extends NSObject {
         try { hSetBool.invokeExact(peer, ObjC.sel("setWidthTracksTextView:"), flag); } catch (Throwable t) { throw new RuntimeException("setWidthTracksTextView: failed", t); }
     }
 
-    /** [container heightTracksTextView] */
+    /// [container heightTracksTextView]
     public boolean heightTracksTextView() {
         ensureInit();
         try { return (boolean) hGetBool.invokeExact(peer, ObjC.sel("heightTracksTextView")); } catch (Throwable t) { throw new RuntimeException("heightTracksTextView failed", t); }
@@ -144,7 +142,7 @@ public final class NSTextContainer extends NSObject {
 
     // ---- padding ----
 
-    /** [container lineFragmentPadding] -> double */
+    /// [container lineFragmentPadding] -> double
     public double lineFragmentPadding() {
         ensureInit();
         try { return (double) hGetDouble.invokeExact(peer, ObjC.sel("lineFragmentPadding")); } catch (Throwable t) { throw new RuntimeException("lineFragmentPadding failed", t); }
@@ -156,7 +154,7 @@ public final class NSTextContainer extends NSObject {
 
     // ---- layoutManager ----
 
-    /** [container layoutManager] -> NSLayoutManager */
+    /// [container layoutManager] -> NSLayoutManager
     public NSLayoutManager layoutManager() {
         ensureInit();
         try {
@@ -167,12 +165,12 @@ public final class NSTextContainer extends NSObject {
         }
     }
 
-    /** [container setLayoutManager:] — normally managed by NSLayoutManager addTextContainer. */
+    /// [container setLayoutManager:] — normally managed by NSLayoutManager addTextContainer.
     public void setLayoutManager(NSLayoutManager lm) {
         ObjC.msgSendVoidId(peer, ObjC.sel("setLayoutManager:"), (MemorySegment) (lm == null ? MemorySegment.NULL : lm.peer()));
     }
 
-    /** [container textView] — the owning NSTextView if any. */
+    /// [container textView] — the owning NSTextView if any.
     public NSTextView textView() {
         ensureInit();
         try {
@@ -185,7 +183,7 @@ public final class NSTextContainer extends NSObject {
 
     // ---- exclusion paths (minimal stub) ----
 
-    /** [container exclusionPaths] — NSArray of NSBezierPath ids */
+    /// [container exclusionPaths] — NSArray of NSBezierPath ids
     public MemorySegment exclusionPaths() {
         return ObjC.msgSendId(peer, ObjC.sel("exclusionPaths"));
     }

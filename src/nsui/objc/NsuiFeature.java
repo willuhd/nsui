@@ -8,25 +8,21 @@ import java.lang.invoke.MethodType;
 import org.graalvm.nativeimage.hosted.Feature;
 import org.graalvm.nativeimage.hosted.RuntimeForeignAccess;
 
-/**
- * Build-time registration of every FFM call the app makes — the "no tracing
- * agent" path. Native-image must generate the native call stubs at build time,
- * so every downcall/upcall {@code FunctionDescriptor} used at run time is
- * registered here with {@link RuntimeForeignAccess}.
- *
- * <p>Everything derives from single-source-of-truth lists, so the registered set
- * can never drift from the runtime set:
- * <ul>
- *   <li>{@link NsuiForeign#RUNTIME} / {@link NsuiForeign#CORE} — C-function downcalls;</li>
- *   <li>{@link Sig#VOCABULARY} — one descriptor per message signature (this is
- *       where the whole objc_msgSend surface comes from);</li>
- *   <li>the delegate upcalls, registered explicitly (upcall stubs are per target
- *       method, not per signature).</li>
- * </ul>
- *
- * <p>Register the feature with {@code --features=nsui.objc.NsuiFeature}.
- * This class runs only inside the image builder; it never ends up in the image.
- */
+/// Build-time registration of every FFM call the app makes — the "no tracing
+/// agent" path. Native-image must generate the native call stubs at build time,
+/// so every downcall/upcall `FunctionDescriptor` used at run time is
+/// registered here with `RuntimeForeignAccess`.
+///
+/// Everything derives from single-source-of-truth lists, so the registered set
+/// can never drift from the runtime set:
+/// - `RUNTIME` / `CORE` — C-function downcalls;
+/// - `VOCABULARY` — one descriptor per message signature (this is
+///   where the whole objc_msgSend surface comes from);
+/// - the delegate upcalls, registered explicitly (upcall stubs are per target
+///   method, not per signature).
+///
+/// Register the feature with `--features=nsui.objc.NsuiFeature`.
+/// This class runs only inside the image builder; it never ends up in the image.
 public final class NsuiFeature implements Feature {
 
     @Override

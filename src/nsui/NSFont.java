@@ -8,11 +8,9 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSFont — an AppKit font. Thin 1:1 wrapper; constructors map to the message-send
- * shortcuts {@code +fontWithName:size:}, {@code +systemFontOfSize:} and
- * {@code +boldSystemFontOfSize:}.
- */
+/// NSFont — an AppKit font. Thin 1:1 wrapper; constructors map to the message-send
+/// shortcuts `+fontWithName:size:`, `+systemFontOfSize:` and
+/// `+boldSystemFontOfSize:`.
 public final class NSFont extends NSObject {
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
@@ -46,7 +44,7 @@ public final class NSFont extends NSObject {
         initialized = true;
     }
 
-    /** [+[NSFont fontWithName:size:]] — the named font at a point size. */
+    /// [+[NSFont fontWithName:size:]] — the named font at a point size.
     public static NSFont fontWithName(String name, double size) {
         ensureInit();
         try {
@@ -59,17 +57,17 @@ public final class NSFont extends NSObject {
         }
     }
 
-    /** [+[NSFont systemFontOfSize:]] — the system font at a point size. */
+    /// [+[NSFont systemFontOfSize:]] — the system font at a point size.
     public static NSFont systemFontOfSize(double size) {
         return new NSFont(ObjC.msgSendIdDouble(ObjC.cls("NSFont"), ObjC.sel("systemFontOfSize:"), size));
     }
 
-    /** [+[NSFont boldSystemFontOfSize:]] — the bold system font at a point size. */
+    /// [+[NSFont boldSystemFontOfSize:]] — the bold system font at a point size.
     public static NSFont boldSystemFontOfSize(double size) {
         return new NSFont(ObjC.msgSendIdDouble(ObjC.cls("NSFont"), ObjC.sel("boldSystemFontOfSize:"), size));
     }
 
-    /** [+[NSFont systemFontOfSize:weight:]] — system font with explicit weight (NSFontWeight  -1..1, 0 = regular). */
+    /// [+[NSFont systemFontOfSize:weight:]] — system font with explicit weight (NSFontWeight  -1..1, 0 = regular).
     public static NSFont systemFontOfSizeWeight(double size, double weight) {
         ensureInit();
         try {
@@ -82,7 +80,7 @@ public final class NSFont extends NSObject {
         }
     }
 
-    /** [+[NSFont monospacedSystemFontOfSize:weight:]] — monospaced system font. */
+    /// [+[NSFont monospacedSystemFontOfSize:weight:]] — monospaced system font.
     public static NSFont monospacedSystemFontOfSizeWeight(double size, double weight) {
         ensureInit();
         try {
@@ -95,17 +93,17 @@ public final class NSFont extends NSObject {
         }
     }
 
-    /** [+[NSFont labelFontOfSize:]] — label font. */
+    /// [+[NSFont labelFontOfSize:]] — label font.
     public static NSFont labelFontOfSize(double size) {
         return new NSFont(ObjC.msgSendIdDouble(ObjC.cls("NSFont"), ObjC.sel("labelFontOfSize:"), size));
     }
 
-    /** [+[NSFont userFontOfSize:]] — application font. */
+    /// [+[NSFont userFontOfSize:]] — application font.
     public static NSFont userFontOfSize(double size) {
         return new NSFont(ObjC.msgSendIdDouble(ObjC.cls("NSFont"), ObjC.sel("userFontOfSize:"), size));
     }
 
-    /** [+[NSFont fontWithDescriptor:size:]] — font from descriptor. */
+    /// [+[NSFont fontWithDescriptor:size:]] — font from descriptor.
     public static NSFont fontWithDescriptor(MemorySegment descriptor, double size) {
         ensureInit();
         try {
@@ -118,7 +116,7 @@ public final class NSFont extends NSObject {
         }
     }
 
-    /** [+[NSFont systemFontSize]] — standard system font size. */
+    /// [+[NSFont systemFontSize]] — standard system font size.
     public static double systemFontSize() {
         ensureInit();
         try {
@@ -130,7 +128,7 @@ public final class NSFont extends NSObject {
         }
     }
 
-    /** [+[NSFont smallSystemFontSize]] */
+    /// [+[NSFont smallSystemFontSize]]
     public static double smallSystemFontSize() {
         ensureInit();
         try {
@@ -140,17 +138,17 @@ public final class NSFont extends NSObject {
         }
     }
 
-    /** [+[NSFontManager sharedFontManager]] — returns raw NSFontManager peer. */
+    /// [+[NSFontManager sharedFontManager]] — returns raw NSFontManager peer.
     public static MemorySegment sharedFontManager() {
         return ObjC.msgSendId(ObjC.cls("NSFontManager"), ObjC.sel("sharedFontManager"));
     }
 
-    /** [font fontName] — the font's PostScript name (NSString -> String). */
+    /// [font fontName] — the font's PostScript name (NSString -> String).
     public String fontName() {
         return ObjC.toString(ObjC.msgSendId(peer, ObjC.sel("fontName")));
     }
 
-    /** [font displayName] — human-readable name. */
+    /// [font displayName] — human-readable name.
     public String displayName() {
         try {
             MemorySegment s = (MemorySegment) hId.invokeExact(peer, ObjC.sel("displayName"));
@@ -160,7 +158,7 @@ public final class NSFont extends NSObject {
         }
     }
 
-    /** [font familyName] — family name. */
+    /// [font familyName] — family name.
     public String familyName() {
         try {
             MemorySegment s = (MemorySegment) hId.invokeExact(peer, ObjC.sel("familyName"));
@@ -170,7 +168,7 @@ public final class NSFont extends NSObject {
         }
     }
 
-    /** [font pointSize] — the font's size in points. */
+    /// [font pointSize] — the font's size in points.
     public double pointSize() {
         try {
             return (double) hDouble.invokeExact(peer, ObjC.sel("pointSize"));
@@ -179,49 +177,49 @@ public final class NSFont extends NSObject {
         }
     }
 
-    /** [font ascender] */
+    /// [font ascender]
     public double ascender() {
         try { return (double) hDouble.invokeExact(peer, ObjC.sel("ascender")); } catch (Throwable t) { throw new RuntimeException("ascender failed", t); }
     }
 
-    /** [font descender] */
+    /// [font descender]
     public double descender() {
         try { return (double) hDouble.invokeExact(peer, ObjC.sel("descender")); } catch (Throwable t) { throw new RuntimeException("descender failed", t); }
     }
 
-    /** [font capHeight] */
+    /// [font capHeight]
     public double capHeight() {
         try { return (double) hDouble.invokeExact(peer, ObjC.sel("capHeight")); } catch (Throwable t) { throw new RuntimeException("capHeight failed", t); }
     }
 
-    /** [font xHeight] */
+    /// [font xHeight]
     public double xHeight() {
         try { return (double) hDouble.invokeExact(peer, ObjC.sel("xHeight")); } catch (Throwable t) { throw new RuntimeException("xHeight failed", t); }
     }
 
-    /** [font isFixedPitch] */
+    /// [font isFixedPitch]
     public boolean isFixedPitch() {
         try { return (boolean) hBool.invokeExact(peer, ObjC.sel("isFixedPitch")); } catch (Throwable t) { throw new RuntimeException("isFixedPitch failed", t); }
     }
 
-    /** [font fontDescriptor] — raw NSFontDescriptor peer. */
+    /// [font fontDescriptor] — raw NSFontDescriptor peer.
     public MemorySegment fontDescriptor() {
         try { return (MemorySegment) hId.invokeExact(peer, ObjC.sel("fontDescriptor")); } catch (Throwable t) { throw new RuntimeException("fontDescriptor failed", t); }
     }
 
-    /** [fontDescriptor symbolicTraits] — bitmask (NSFontDescriptorSymbolicTraits). */
+    /// [fontDescriptor symbolicTraits] — bitmask (NSFontDescriptorSymbolicTraits).
     public long symbolicTraits() {
         MemorySegment desc = fontDescriptor();
         if (desc == null || desc.address() == 0) return 0;
         try { return (long) hInt.invokeExact(desc, ObjC.sel("symbolicTraits")); } catch (Throwable t) { throw new RuntimeException("symbolicTraits failed", t); }
     }
 
-    /** [font textTransform] — NSAffineTransform peer or null. */
+    /// [font textTransform] — NSAffineTransform peer or null.
     public MemorySegment textTransform() {
         try { return (MemorySegment) hId.invokeExact(peer, ObjC.sel("textTransform")); } catch (Throwable t) { throw new RuntimeException("textTransform failed", t); }
     }
 
-    /** [font boundingRectForFont] — NSRect */
+    /// [font boundingRectForFont] — NSRect
     public NSRect boundingRectForFont() {
         try {
             MemorySegment r = (MemorySegment) ObjC.handle(Sig.of(Ret.RECT)).invokeExact((java.lang.foreign.SegmentAllocator) java.lang.foreign.Arena.global(), peer, ObjC.sel("boundingRectForFont"));
@@ -229,7 +227,7 @@ public final class NSFont extends NSObject {
         } catch (Throwable t) { throw new RuntimeException("boundingRectForFont failed", t); }
     }
 
-    /** [font maximumAdvancement] — NSSize */
+    /// [font maximumAdvancement] — NSSize
     public NSSize maximumAdvancement() {
         try {
             MemorySegment s = (MemorySegment) ObjC.handle(Sig.of(Ret.SIZE)).invokeExact((java.lang.foreign.SegmentAllocator) java.lang.foreign.Arena.global(), peer, ObjC.sel("maximumAdvancement"));
@@ -237,7 +235,7 @@ public final class NSFont extends NSObject {
         } catch (Throwable t) { throw new RuntimeException("maximumAdvancement failed", t); }
     }
 
-    /** [font fontWithSize:] — same font at different size. */
+    /// [font fontWithSize:] — same font at different size.
     public NSFont fontWithSize(double size) {
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.DOUBLE));
@@ -246,7 +244,7 @@ public final class NSFont extends NSObject {
         } catch (Throwable t) { throw new RuntimeException("fontWithSize: failed", t); }
     }
 
-    /** [font set] — make current in graphics context (requires context). */
+    /// [font set] — make current in graphics context (requires context).
     public void set() {
         ObjC.msgSendVoid(peer, ObjC.sel("set"));
     }

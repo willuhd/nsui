@@ -8,13 +8,11 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSLayoutConstraint — Auto Layout constraint wrapper.
- *
- * Thin 1:1 wrapper over native NSLayoutConstraint, following the same
- * stateless, SWT-style, lazy-ensureInit pattern as NSView/NSStackView.
- * Every method is one objc_msgSend.
- */
+/// NSLayoutConstraint — Auto Layout constraint wrapper.
+///
+/// Thin 1:1 wrapper over native NSLayoutConstraint, following the same
+/// stateless, SWT-style, lazy-ensureInit pattern as NSView/NSStackView.
+/// Every method is one objc_msgSend.
 public class NSLayoutConstraint extends NSObject {
 
     // NSLayoutAttribute
@@ -74,10 +72,8 @@ public class NSLayoutConstraint extends NSObject {
         initialized = true;
     }
 
-    /**
-     * +constraintWithItem:attribute:relatedBy:toItem:attribute:multiplier:constant:
-     * Mirrors ObjC handle creation. Null items are allowed (pass null -> nil).
-     */
+    /// +constraintWithItem:attribute:relatedBy:toItem:attribute:multiplier:constant:
+    /// Mirrors ObjC handle creation. Null items are allowed (pass null -> nil).
     public static NSLayoutConstraint constraintWithItem(NSObject view1, int attr1, int relation, NSObject view2, int attr2, double multiplier, double constant) {
         ensureInit();
         MemorySegment p1 = (view1 == null) ? MemorySegment.NULL : view1.peer();
@@ -94,12 +90,12 @@ public class NSLayoutConstraint extends NSObject {
         }
     }
 
-    /** Overload accepting NSView directly. */
+    /// Overload accepting NSView directly.
     public static NSLayoutConstraint constraintWithItem(NSView view1, int attr1, int relation, NSView view2, int attr2, double multiplier, double constant) {
         return constraintWithItem((NSObject) view1, attr1, relation, (NSObject) view2, attr2, multiplier, constant);
     }
 
-    /** isActive — whether the constraint is installed/active. */
+    /// isActive — whether the constraint is installed/active.
     public boolean isActive() {
         ensureInit();
         try {
@@ -109,12 +105,12 @@ public class NSLayoutConstraint extends NSObject {
         }
     }
 
-    /** active — alias for isActive (some callers expect active). */
+    /// active — alias for isActive (some callers expect active).
     public boolean active() {
         return isActive();
     }
 
-    /** setActive: — install or uninstall the constraint. */
+    /// setActive: — install or uninstall the constraint.
     public void setActive(boolean active) {
         ensureInit();
         try {
@@ -124,7 +120,7 @@ public class NSLayoutConstraint extends NSObject {
         }
     }
 
-    /** constant — the constant component. */
+    /// constant — the constant component.
     public double constant() {
         ensureInit();
         if (hConstant == null) {

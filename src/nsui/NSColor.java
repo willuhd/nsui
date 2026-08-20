@@ -10,11 +10,9 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSColor — an AppKit color in the sRGB extended color space. Thin 1:1 wrapper
- * over a native {@code NSColor}; components are read back with
- * {@code getRed:green:blue:alpha:}.
- */
+/// NSColor — an AppKit color in the sRGB extended color space. Thin 1:1 wrapper
+/// over a native `NSColor`; components are read back with
+/// `getRed:green:blue:alpha:`.
 public final class NSColor extends NSObject {
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
@@ -48,12 +46,12 @@ public final class NSColor extends NSObject {
         initialized = true;
     }
 
-    /** Wrap a native NSColor id as an NSColor (null for nil). Enables typed bridging from controls that return NSColor. */
+    /// Wrap a native NSColor id as an NSColor (null for nil). Enables typed bridging from controls that return NSColor.
     public static NSColor wrap(MemorySegment peer) {
         return (peer == null || peer.address() == 0) ? null : new NSColor(peer);
     }
 
-    /** [+[NSColor colorWithSRGBRed:green:blue:alpha:]] — sRGB extended color. */
+    /// [+[NSColor colorWithSRGBRed:green:blue:alpha:]] — sRGB extended color.
     public static NSColor create(double r, double g, double b, double a) {
         ensureInit();
         MemorySegment color;
@@ -121,7 +119,7 @@ public final class NSColor extends NSObject {
     public static NSColor windowFrameTextColor() { return classColor("windowFrameTextColor"); }
     public static NSColor headerTextColor() { return classColor("headerTextColor"); }
 
-    /** [+[NSColor colorWithPatternImage:]] — pattern color tiled from an image. */
+    /// [+[NSColor colorWithPatternImage:]] — pattern color tiled from an image.
     public static NSColor colorWithPatternImage(NSImage image) {
         ensureInit();
         try {
@@ -132,7 +130,7 @@ public final class NSColor extends NSObject {
         }
     }
 
-    /** [+[NSColor colorWithCatalogName:colorName:]] — catalog color, or null. */
+    /// [+[NSColor colorWithCatalogName:colorName:]] — catalog color, or null.
     public static NSColor colorWithCatalogName(String catalog, String colorName) {
         ensureInit();
         try {
@@ -145,22 +143,22 @@ public final class NSColor extends NSObject {
 
     // ---- instance API ----
 
-    /** [color setFill] — set as the current fill color (apps need a graphics context). */
+    /// [color setFill] — set as the current fill color (apps need a graphics context).
     public void setFill() {
         ObjC.msgSendVoid(peer, ObjC.sel("setFill"));
     }
 
-    /** [color setStroke] — set as the current stroke color (apps need a graphics context). */
+    /// [color setStroke] — set as the current stroke color (apps need a graphics context).
     public void setStroke() {
         ObjC.msgSendVoid(peer, ObjC.sel("setStroke"));
     }
 
-    /** [color set] — set as current fill + stroke. */
+    /// [color set] — set as current fill + stroke.
     public void set() {
         ObjC.msgSendVoid(peer, ObjC.sel("set"));
     }
 
-    /** [color alphaComponent] — alpha in 0..1. */
+    /// [color alphaComponent] — alpha in 0..1.
     public double alphaComponent() {
         try {
             return (double) hAlpha.invokeExact(peer, ObjC.sel("alphaComponent"));
@@ -169,7 +167,7 @@ public final class NSColor extends NSObject {
         }
     }
 
-    /** [color colorWithAlphaComponent:] — same color with different alpha. */
+    /// [color colorWithAlphaComponent:] — same color with different alpha.
     public NSColor colorWithAlphaComponent(double alpha) {
         try {
             MemorySegment c = (MemorySegment) hWithAlpha.invokeExact(peer, ObjC.sel("colorWithAlphaComponent:"), alpha);
@@ -179,7 +177,7 @@ public final class NSColor extends NSObject {
         }
     }
 
-    /** [color blendedColorWithFraction:ofColor:] — blend with another color. */
+    /// [color blendedColorWithFraction:ofColor:] — blend with another color.
     public NSColor blendedColorWithFraction(double fraction, NSColor other) {
         try {
             MemorySegment c = (MemorySegment) hBlended.invokeExact(peer, ObjC.sel("blendedColorWithFraction:ofColor:"), fraction, other.peer());
@@ -189,7 +187,7 @@ public final class NSColor extends NSObject {
         }
     }
 
-    /** [color catalogNameComponent] — catalog name, or null for non-catalog colors. */
+    /// [color catalogNameComponent] — catalog name, or null for non-catalog colors.
     public String catalogNameComponent() {
         try {
             MemorySegment s = (MemorySegment) hCatalogName.invokeExact(peer, ObjC.sel("catalogNameComponent"));
@@ -199,7 +197,7 @@ public final class NSColor extends NSObject {
         }
     }
 
-    /** [color colorNameComponent] — color name within its catalog, or null. */
+    /// [color colorNameComponent] — color name within its catalog, or null.
     public String colorNameComponent() {
         try {
             MemorySegment s = (MemorySegment) hColorName.invokeExact(peer, ObjC.sel("colorNameComponent"));
@@ -209,11 +207,9 @@ public final class NSColor extends NSObject {
         }
     }
 
-    /**
-     * Read the RGBA components back via {@code getRed:green:blue:alpha:} (four
-     * CGFloat* out-params). Goes through the {@code ObjC.invokeVoid} escape hatch
-     * (6-object-arg descriptor, NULL-padded) with four 8-byte out-buffers.
-     */
+    /// Read the RGBA components back via `getRed:green:blue:alpha:` (four
+    /// CGFloat* out-params). Goes through the `ObjC.invokeVoid` escape hatch
+    /// (6-object-arg descriptor, NULL-padded) with four 8-byte out-buffers.
     public double[] rgba() {
         MemorySegment b0 = Arena.global().allocate(8);
         MemorySegment b1 = Arena.global().allocate(8);
@@ -228,7 +224,7 @@ public final class NSColor extends NSObject {
         };
     }
 
-    /** [color description] — the AppKit description string. */
+    /// [color description] — the AppKit description string.
     public String description() {
         return ObjC.toString(ObjC.msgSendId(peer, ObjC.sel("description")));
     }

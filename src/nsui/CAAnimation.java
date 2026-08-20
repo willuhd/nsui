@@ -8,10 +8,8 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * CAAnimation — thin wrapper for QuartzCore CAAnimation.
- * Covers CABasicAnimation-style key-path animations via the same peer.
- */
+/// CAAnimation — thin wrapper for QuartzCore CAAnimation.
+/// Covers CABasicAnimation-style key-path animations via the same peer.
 public class CAAnimation extends NSObject {
 
     private static volatile boolean initialized;
@@ -43,7 +41,7 @@ public class CAAnimation extends NSObject {
         initialized = true;
     }
 
-    /** +[CABasicAnimation animationWithKeyPath:] */
+    /// +[CABasicAnimation animationWithKeyPath:]
     public static CAAnimation animationWithKeyPath(String keyPath) {
         ensureInit();
         try {

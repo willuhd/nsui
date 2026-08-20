@@ -8,12 +8,10 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSAttributedString — immutable attributed string.
- * Thin 1:1 wrapper over native {@code NSAttributedString}: every method maps to one
- * {@code objc_msgSend} selector, no cached Java state beyond the peer.
- * Follows FFM pattern: no reflection, cached handles, ensureInit.
- */
+/// NSAttributedString — immutable attributed string.
+/// Thin 1:1 wrapper over native `NSAttributedString`: every method maps to one
+/// `objc_msgSend` selector, no cached Java state beyond the peer.
+/// Follows FFM pattern: no reflection, cached handles, ensureInit.
 public class NSAttributedString extends NSObject {
 
     private static volatile boolean initialized;
@@ -44,7 +42,7 @@ public class NSAttributedString extends NSObject {
         initialized = true;
     }
 
-    /** {@code [[NSAttributedString alloc] initWithString:string]} */
+    /// `[[NSAttributedString alloc] initWithString:string]`
     public static NSAttributedString create(String s) {
         ensureInit();
         MemorySegment alloc = ObjC.msgSendId(ObjC.cls("NSAttributedString"), ObjC.sel("alloc"));
@@ -57,7 +55,7 @@ public class NSAttributedString extends NSObject {
         }
     }
 
-    /** {@code [[NSAttributedString alloc] initWithString:string attributes:dict]} — dict may be NULL. */
+    /// `[[NSAttributedString alloc] initWithString:string attributes:dict]` — dict may be NULL.
     public static NSAttributedString create(String s, MemorySegment attributes) {
         ensureInit();
         MemorySegment alloc = ObjC.msgSendId(ObjC.cls("NSAttributedString"), ObjC.sel("alloc"));
@@ -71,7 +69,7 @@ public class NSAttributedString extends NSObject {
         }
     }
 
-    /** [attributedString length] -> NSUInteger */
+    /// [attributedString length] -> NSUInteger
     public long length() {
         ensureInit();
         try {
@@ -81,7 +79,7 @@ public class NSAttributedString extends NSObject {
         }
     }
 
-    /** [attributedString string] -> NSString -> String */
+    /// [attributedString string] -> NSString -> String
     public String string() {
         ensureInit();
         try {
@@ -92,13 +90,11 @@ public class NSAttributedString extends NSObject {
         }
     }
 
-    /**
-     * [attributedString attribute:name atIndex:index effectiveRange:rangePtr]
-     * @param attrName attribute name (e.g. NSFontAttributeName)
-     * @param index character index
-     * @param effectiveRangeOut 16-byte NSRange* out buffer or NULL — if non-null, filled with effective range
-     * @return attribute value as MemorySegment (id) or NULL
-     */
+    /// [attributedString attribute:name atIndex:index effectiveRange:rangePtr]
+    /// @param attrName attribute name (e.g. NSFontAttributeName)
+    /// @param index character index
+    /// @param effectiveRangeOut 16-byte NSRange* out buffer or NULL — if non-null, filled with effective range
+    /// @return attribute value as MemorySegment (id) or NULL
     public MemorySegment attribute(String attrName, long index, MemorySegment effectiveRangeOut) {
         ensureInit();
         try {
@@ -109,20 +105,18 @@ public class NSAttributedString extends NSObject {
         }
     }
 
-    /** Convenience without effectiveRange. */
+    /// Convenience without effectiveRange.
     public MemorySegment attribute(String attrName, long index) {
         return attribute(attrName, index, null);
     }
 
-    /**
-     * Typed helper that returns attribute and fills NSRange if requested.
-     * @param effectiveRange capsule for out range; pass null to ignore
-     */
+    /// Typed helper that returns attribute and fills NSRange if requested.
+    /// @param effectiveRange capsule for out range; pass null to ignore
     public MemorySegment attributeAtIndexEffectiveRange(String attrName, long index, MemorySegment effectiveRangeOut) {
         return attribute(attrName, index, effectiveRangeOut);
     }
 
-    /** [attributedString attributesAtIndex:effectiveRange:] -> NSDictionary* */
+    /// [attributedString attributesAtIndex:effectiveRange:] -> NSDictionary*
     public MemorySegment attributesAtIndexEffectiveRange(long index, MemorySegment effectiveRangeOut) {
         ensureInit();
         try {
@@ -137,7 +131,7 @@ public class NSAttributedString extends NSObject {
         return attributesAtIndexEffectiveRange(index, null);
     }
 
-    /** [attributedString attributedSubstringFromRange:] -> NSAttributedString */
+    /// [attributedString attributedSubstringFromRange:] -> NSAttributedString
     public NSAttributedString attributedSubstring(NSRange range) {
         ensureInit();
         try {
@@ -149,7 +143,7 @@ public class NSAttributedString extends NSObject {
         }
     }
 
-    /** [attributedString isEqualToAttributedString:] */
+    /// [attributedString isEqualToAttributedString:]
     public boolean isEqualToAttributedString(NSAttributedString other) {
         ensureInit();
         try {
@@ -160,7 +154,7 @@ public class NSAttributedString extends NSObject {
         }
     }
 
-    /** [attributedString mutableCopy] -> NSMutableAttributedString */
+    /// [attributedString mutableCopy] -> NSMutableAttributedString
     public NSMutableAttributedString mutableCopy() {
         ensureInit();
         try {

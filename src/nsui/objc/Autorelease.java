@@ -6,24 +6,22 @@ import java.lang.foreign.MemorySegment;
 import java.lang.foreign.SymbolLookup;
 import java.lang.invoke.MethodHandle;
 
-/**
- * Objective-C autorelease-pool management, pure FFM.
- *
- * <p>A balanced push/pop around a block of message sends keeps autoreleased
- * objects (everything created with a {@code +[ClassName className...]} "convenience"
- * constructor, such as {@code [NSString stringWithUTF8String:]}) from accumulating
- * for the lifetime of the process. {@link #run(Runnable)} is the intended API: it
- * pushes, runs the body, and pops in a {@code finally} so the pool is always drained
- * even when the body throws.
- *
- * <p>Both downcalls are resolved at run time in {@link #ensureInit()} — never in a
- * static initializer (native-image rule #1). Symbols are confirmed exported by
- * {@code /usr/lib/libobjc.A.dylib}:
- * <pre>
- *   void  *objc_autoreleasePoolPush(void);
- *   void   objc_autoreleasePoolPop(void *pool);
- * </pre>
- */
+/// Objective-C autorelease-pool management, pure FFM.
+///
+/// A balanced push/pop around a block of message sends keeps autoreleased
+/// objects (everything created with a `+[ClassName className...]` "convenience"
+/// constructor, such as `[NSString stringWithUTF8String:]`) from accumulating
+/// for the lifetime of the process. `run` is the intended API: it
+/// pushes, runs the body, and pops in a `finally` so the pool is always drained
+/// even when the body throws.
+///
+/// Both downcalls are resolved at run time in `ensureInit` — never in a
+/// static initializer (native-image rule #1). Symbols are confirmed exported by
+/// `/usr/lib/libobjc.A.dylib`:
+/// ```
+///   void  *objc_autoreleasePoolPush(void);
+///   void   objc_autoreleasePoolPop(void *pool);
+/// ```
 public final class Autorelease {
 
     private static Linker LINKER;
@@ -34,7 +32,7 @@ public final class Autorelease {
 
     private Autorelease() {}
 
-    /** idempotent — safe to call from anywhere at runtime. */
+    /// idempotent — safe to call from anywhere at runtime.
     public static synchronized void ensureInit() {
         if (INIT) return;
         LINKER = Linker.nativeLinker();
@@ -51,7 +49,7 @@ public final class Autorelease {
         INIT = true;
     }
 
-    /** Push a new autorelease pool; returns the token the matching {@link #pop} needs. */
+    /// Push a new autorelease pool; returns the token the matching `pop` needs.
     public static MemorySegment push() {
         ensureInit();
         try {
@@ -61,7 +59,7 @@ public final class Autorelease {
         }
     }
 
-    /** Pop the autorelease pool identified by {@code token} (drains all autoreleased objects). */
+    /// Pop the autorelease pool identified by `token` (drains all autoreleased objects).
     public static void pop(MemorySegment token) {
         ensureInit();
         try {
@@ -71,11 +69,9 @@ public final class Autorelease {
         }
     }
 
-    /**
-     * Run {@code body} inside a fresh autorelease pool that is drained in a
-     * {@code finally} — the pool is always balanced, and the body's exception is
-     * never swallowed: it propagates after the pop.
-     */
+    /// Run `body` inside a fresh autorelease pool that is drained in a
+    /// `finally` — the pool is always balanced, and the body's exception is
+    /// never swallowed: it propagates after the pop.
     public static void run(Runnable body) {
         ensureInit();
         MemorySegment token = push();

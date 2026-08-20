@@ -8,10 +8,8 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSColorPanel — the system Color panel.
- * Thin 1:1 wrapper over native {@code NSColorPanel} (an NSPanel subclass).
- */
+/// NSColorPanel — the system Color panel.
+/// Thin 1:1 wrapper over native `NSColorPanel` (an NSPanel subclass).
 public final class NSColorPanel extends NSObject {
 
     private static volatile boolean initialized;
@@ -42,14 +40,14 @@ public final class NSColorPanel extends NSObject {
 
     // ---- shared ----
 
-    /** {@code +[NSColorPanel sharedColorPanel]} */
+    /// `+[NSColorPanel sharedColorPanel]`
     public static NSColorPanel sharedColorPanel() {
         ensureInit();
         MemorySegment p = ObjC.msgSendId(ObjC.cls("NSColorPanel"), ObjC.sel("sharedColorPanel"));
         return wrap(p);
     }
 
-    /** {@code +[NSColorPanel sharedColorPanelExists]} */
+    /// `+[NSColorPanel sharedColorPanelExists]`
     public static boolean sharedColorPanelExists() {
         ensureInit();
         try {
@@ -61,7 +59,7 @@ public final class NSColorPanel extends NSObject {
 
     // ---- color ----
 
-    /** [panel color] -> NSColor */
+    /// [panel color] -> NSColor
     public NSColor color() {
         ensureInit();
         try {
@@ -72,12 +70,12 @@ public final class NSColorPanel extends NSObject {
         }
     }
 
-    /** [panel setColor:] */
+    /// [panel setColor:]
     public void setColor(NSColor color) {
         ObjC.msgSendVoidId(peer, ObjC.sel("setColor:"), (MemorySegment) (color == null ? MemorySegment.NULL : color.peer()));
     }
 
-    /** [panel showsAlpha] */
+    /// [panel showsAlpha]
     public boolean showsAlpha() {
         ensureInit();
         try { return (boolean) hGetBool.invokeExact(peer, ObjC.sel("showsAlpha")); } catch (Throwable t) { throw new RuntimeException("showsAlpha failed", t); }
@@ -87,7 +85,7 @@ public final class NSColorPanel extends NSObject {
         try { hSetBool.invokeExact(peer, ObjC.sel("setShowsAlpha:"), flag); } catch (Throwable t) { throw new RuntimeException("setShowsAlpha: failed", t); }
     }
 
-    /** [panel isContinuous] */
+    /// [panel isContinuous]
     public boolean isContinuous() {
         ensureInit();
         try { return (boolean) hGetBool.invokeExact(peer, ObjC.sel("isContinuous")); } catch (Throwable t) { throw new RuntimeException("isContinuous failed", t); }
@@ -99,7 +97,7 @@ public final class NSColorPanel extends NSObject {
 
     // ---- mode ----
 
-    /** [panel mode] -> long (NSColorPanelMode) */
+    /// [panel mode] -> long (NSColorPanelMode)
     public long mode() {
         ensureInit();
         try { return (long) hGetInt.invokeExact(peer, ObjC.sel("mode")); } catch (Throwable t) { throw new RuntimeException("mode failed", t); }
@@ -111,22 +109,22 @@ public final class NSColorPanel extends NSObject {
 
     // ---- visibility ----
 
-    /** [panel isVisible] */
+    /// [panel isVisible]
     public boolean isVisible() {
         return ObjC.msgSendBool(peer, ObjC.sel("isVisible"));
     }
 
-    /** [panel orderFront:] */
+    /// [panel orderFront:]
     public void orderFront(MemorySegment sender) {
         ObjC.msgSendVoidId(peer, ObjC.sel("orderFront:"), (MemorySegment) (sender == null ? MemorySegment.NULL : sender));
     }
 
-    /** [panel orderOut:] */
+    /// [panel orderOut:]
     public void orderOut(MemorySegment sender) {
         ObjC.msgSendVoidId(peer, ObjC.sel("orderOut:"), (MemorySegment) (sender == null ? MemorySegment.NULL : sender));
     }
 
-    /** [panel setAction:] / setTarget: — color well target wiring */
+    /// [panel setAction:] / setTarget: — color well target wiring
     public void setTarget(MemorySegment target) {
         ObjC.msgSendVoidId(peer, ObjC.sel("setTarget:"), (MemorySegment) (target == null ? MemorySegment.NULL : target));
     }
@@ -134,7 +132,7 @@ public final class NSColorPanel extends NSObject {
         ObjC.msgSendVoidId(peer, ObjC.sel("setAction:"), ObjC.sel(action));
     }
 
-    /** [panel accessoryView] */
+    /// [panel accessoryView]
     public NSView accessoryView() {
         ensureInit();
         try {
@@ -146,12 +144,12 @@ public final class NSColorPanel extends NSObject {
         ObjC.msgSendVoidId(peer, ObjC.sel("setAccessoryView:"), (MemorySegment) (view == null ? MemorySegment.NULL : view.peer()));
     }
 
-    /** [panel attachColorList:] */
+    /// [panel attachColorList:]
     public void attachColorList(MemorySegment colorList) {
         ObjC.msgSendVoidId(peer, ObjC.sel("attachColorList:"), (MemorySegment) (colorList == null ? MemorySegment.NULL : colorList));
     }
 
-    /** [panel detachColorList:] */
+    /// [panel detachColorList:]
     public void detachColorList(MemorySegment colorList) {
         ObjC.msgSendVoidId(peer, ObjC.sel("detachColorList:"), (MemorySegment) (colorList == null ? MemorySegment.NULL : colorList));
     }

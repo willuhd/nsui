@@ -8,15 +8,13 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSLayoutAnchor — wrapper for native NSLayoutAnchor hierarchy.
- *
- * Covers XAxisAnchor, YAxisAnchor, and Dimension anchors with a single
- * stateless wrapper (SWT-style). NSView's anchor getters return this type;
- * callers may treat it as opaque and call constraint creation helpers.
- *
- * Lazy synchronized ensureInit + ObjC.handle mirrors NSView/NSLayoutConstraint.
- */
+/// NSLayoutAnchor — wrapper for native NSLayoutAnchor hierarchy.
+///
+/// Covers XAxisAnchor, YAxisAnchor, and Dimension anchors with a single
+/// stateless wrapper (SWT-style). NSView's anchor getters return this type;
+/// callers may treat it as opaque and call constraint creation helpers.
+///
+/// Lazy synchronized ensureInit + ObjC.handle mirrors NSView/NSLayoutConstraint.
 public class NSLayoutAnchor extends NSObject {
 
     private static volatile boolean initialized;
@@ -122,7 +120,7 @@ public class NSLayoutAnchor extends NSObject {
 
     // ---- dimension anchor constraints ----
 
-    /** For NSLayoutDimension: constraintEqualToConstant: */
+    /// For NSLayoutDimension: constraintEqualToConstant:
     public NSLayoutConstraint constraintEqualToConstant(double constant) {
         ensureInit();
         try {
@@ -153,7 +151,7 @@ public class NSLayoutAnchor extends NSObject {
         }
     }
 
-    /** Dimension: constraintEqualToAnchor:multiplier:constant: (3-arg) */
+    /// Dimension: constraintEqualToAnchor:multiplier:constant: (3-arg)
     public NSLayoutConstraint constraintEqualToAnchorWithMultiplier(NSLayoutAnchor anchor, double multiplier, double constant) {
         ensureInit();
         if (hEqualToAnchorMultiplierConstant != null) {
@@ -167,7 +165,7 @@ public class NSLayoutAnchor extends NSObject {
         return constraintEqualToAnchor(anchor, constant);
     }
 
-    /** Dimension: constraintEqualToAnchor:multiplier: (single multiplier) */
+    /// Dimension: constraintEqualToAnchor:multiplier: (single multiplier)
     public NSLayoutConstraint constraintEqualToAnchorWithMultiplier(NSLayoutAnchor anchor, double multiplier) {
         ensureInit();
         try {
@@ -178,7 +176,7 @@ public class NSLayoutAnchor extends NSObject {
         }
     }
 
-    /** Keep 3-arg overload under original name for callers using (anchor,multiplier,constant) */
+    /// Keep 3-arg overload under original name for callers using (anchor,multiplier,constant)
     public NSLayoutConstraint constraintEqualToAnchor(NSLayoutAnchor anchor, double multiplier, double constant) {
         return constraintEqualToAnchorWithMultiplier(anchor, multiplier, constant);
     }

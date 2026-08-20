@@ -8,15 +8,13 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSClickGestureRecognizer — a click gesture. Thin, 1:1, stateless wrapper over
- * the native {@code NSClickGestureRecognizer}. Follows the project template:
- * volatile initialized, synchronized ensureInit, ObjC.handle(Sig.of...),
- * invokeExact, static create/wrap.
- *
- * <p>Created via {@code [[NSClickGestureRecognizer alloc] initWithTarget:action:]}.
- * Adds click-specific state: buttonMask, numberOfClicksRequired.
- */
+/// NSClickGestureRecognizer — a click gesture. Thin, 1:1, stateless wrapper over
+/// the native `NSClickGestureRecognizer`. Follows the project template:
+/// volatile initialized, synchronized ensureInit, ObjC.handle(Sig.of...),
+/// invokeExact, static create/wrap.
+///
+/// Created via `[[NSClickGestureRecognizer alloc] initWithTarget:action:]`.
+/// Adds click-specific state: buttonMask, numberOfClicksRequired.
 public final class NSClickGestureRecognizer extends NSGestureRecognizer {
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
@@ -32,7 +30,7 @@ public final class NSClickGestureRecognizer extends NSGestureRecognizer {
         ensureClickInit();
     }
 
-    /** Wrap an existing NSClickGestureRecognizer peer. */
+    /// Wrap an existing NSClickGestureRecognizer peer.
     public static NSClickGestureRecognizer wrap(MemorySegment peer) {
         return (peer == null || peer.address() == 0) ? null : new NSClickGestureRecognizer(peer);
     }
@@ -48,7 +46,7 @@ public final class NSClickGestureRecognizer extends NSGestureRecognizer {
         initialized = true;
     }
 
-    /** {@code [[NSClickGestureRecognizer alloc] initWithTarget:action:]} — a new click recognizer. */
+    /// `[[NSClickGestureRecognizer alloc] initWithTarget:action:]` — a new click recognizer.
     public static NSClickGestureRecognizer create(MemorySegment target, String actionSelector) {
         ensureClickInit();
         MemorySegment p = ObjC.msgSendId(ObjC.cls("NSClickGestureRecognizer"), ObjC.sel("alloc"));
@@ -64,7 +62,7 @@ public final class NSClickGestureRecognizer extends NSGestureRecognizer {
 
     // ---------------------------------------------------------------- click-specific API
 
-    /** [recognizer buttonMask] — NSEventButtonMask (NSInteger). */
+    /// [recognizer buttonMask] — NSEventButtonMask (NSInteger).
     public long buttonMask() {
         try {
             return (long) hButtonMask.invokeExact(peer, ObjC.sel("buttonMask"));
@@ -73,7 +71,7 @@ public final class NSClickGestureRecognizer extends NSGestureRecognizer {
         }
     }
 
-    /** [recognizer setButtonMask:] */
+    /// [recognizer setButtonMask:]
     public void setButtonMask(long mask) {
         try {
             hSetButtonMask.invokeExact(peer, ObjC.sel("setButtonMask:"), mask);
@@ -82,7 +80,7 @@ public final class NSClickGestureRecognizer extends NSGestureRecognizer {
         }
     }
 
-    /** [recognizer numberOfClicksRequired] */
+    /// [recognizer numberOfClicksRequired]
     public long numberOfClicksRequired() {
         try {
             return (long) hClicksRequired.invokeExact(peer, ObjC.sel("numberOfClicksRequired"));
@@ -99,7 +97,7 @@ public final class NSClickGestureRecognizer extends NSGestureRecognizer {
         }
     }
 
-    /** [recognizer numberOfTouchesRequired] — if supported. */
+    /// [recognizer numberOfTouchesRequired] — if supported.
     public long numberOfTouchesRequired() {
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.INT));

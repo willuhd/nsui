@@ -6,57 +6,49 @@ import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.ValueLayout;
 import java.util.List;
 
-/**
- * The signature-keyed message vocabulary — the single source of truth for every
- * {@code objc_msgSend} call shape the toolkit can make.
- *
- * <p>Two consumers, one list:
- * <ul>
- *   <li>at RUNTIME, {@code ObjC.init()} builds one downcall handle per entry;</li>
- *   <li>at BUILD time, {@code NsuiFeature} registers one descriptor per entry with
- *       the native-image builder. Registration set == vocabulary set, always — the
- *       invariant that keeps the default build free of tracing agents and JSON
- *       metadata (no reflection, no drift).</li>
- * </ul>
- *
- * <p>Descriptors are keyed by <em>signature, not selector</em>: every AppKit method
- * with the same shape (return class + argument classes) shares one descriptor and
- * one native stub. Measured against the macOS 15 SDK headers, AppKit's ~4,500
- * methods collapse to 438 distinct shapes and the top ~40 cover ~78% of all calls;
- * the entries below are the curated core and grow one line at a time.
- *
- * <p>ABI notes:
- * <ul>
- *   <li>{@code id}/{@code SEL}/Class/pointers are one argument class ({@link Arg#ID})
- *       — integer-class registers on both x86_64 and arm64.</li>
- *   <li>On x86_64, 32-byte struct returns ({@link Ret#RECT}) go through
- *       {@code objc_msgSend_stret}; arm64 has a single {@code objc_msgSend} for
- *       everything ({@link #msgSendSymbol}).</li>
- *   <li>FFM gives downcalls with group-layout returns an implicit leading
- *       {@code SegmentAllocator} parameter; the handle types in {@code ObjC}
- *       reflect that.</li>
- * </ul>
- */
+/// The signature-keyed message vocabulary — the single source of truth for every
+/// `objc_msgSend` call shape the toolkit can make.
+///
+/// Two consumers, one list:
+/// - at RUNTIME, `ObjC.init()` builds one downcall handle per entry;
+/// - at BUILD time, `NsuiFeature` registers one descriptor per entry with
+///   the native-image builder. Registration set == vocabulary set, always — the
+/// invariant that keeps the default build free of tracing agents and JSON
+/// metadata (no reflection, no drift).
+///
+/// Descriptors are keyed by *signature, not selector*: every AppKit method
+/// with the same shape (return class + argument classes) shares one descriptor and
+/// one native stub. Measured against the macOS 15 SDK headers, AppKit's ~4,500
+/// methods collapse to 438 distinct shapes and the top ~40 cover ~78% of all calls;
+/// the entries below are the curated core and grow one line at a time.
+///
+/// ABI notes:
+/// - `id`/`SEL`/Class/pointers are one argument class (`ID`)
+///   — integer-class registers on both x86_64 and arm64.
+/// - On x86_64, 32-byte struct returns (`RECT`) go through
+///   `objc_msgSend_stret`; arm64 has a single `objc_msgSend` for
+/// everything (`msgSendSymbol`).
+/// - FFM gives downcalls with group-layout returns an implicit leading
+///   `SegmentAllocator` parameter; the handle types in `ObjC`
+/// reflect that.
 public final class Sig {
 
-    /** Argument classes. {@link #ID} covers id/SEL/Class/pointers — one ABI class. */
+    /// Argument classes. `ID` covers id/SEL/Class/pointers — one ABI class.
     public enum Arg { ID, INT, BOOL, DOUBLE, RECT, POINT, SIZE, FLOAT, RANGE }
 
-    /** Return classes. {@link #RECT} is a 32-byte struct (stret on x86_64); POINT/SIZE/RANGE are 16-byte structs. */
+    /// Return classes. `RECT` is a 32-byte struct (stret on x86_64); POINT/SIZE/RANGE are 16-byte structs.
     public enum Ret { VOID, ID, INT, BOOL, DOUBLE, RECT, POINT, SIZE, FLOAT, RANGE }
 
-    /**
-     * A message signature: return class plus argument classes, packed into a
-     * 4-bits-per-arg long key so the record's value-based {@code equals}/{@code hashCode}
-     * are exact and cheap.
-     */
+    /// A message signature: return class plus argument classes, packed into a
+    /// 4-bits-per-arg long key so the record's value-based `equals`/`hashCode`
+    /// are exact and cheap.
     public record S(Ret ret, long key, int argc) {
 
         public S {
             if (argc < 0 || argc > 10) throw new IllegalArgumentException("argc=" + argc);
         }
 
-        /** Human-readable shape, e.g. {@code "void(id,int)"} — used in error messages. */
+        /// Human-readable shape, e.g. `"void(id,int)"` — used in error messages.
         public String shape() {
             StringBuilder b = new StringBuilder(ret.name().toLowerCase());
             b.append('(');
@@ -67,13 +59,13 @@ public final class Sig {
             return b.append(')').toString();
         }
 
-        /** The FFM descriptor for this signature (plain data — safe at build time and run time). */
+        /// The FFM descriptor for this signature (plain data — safe at build time and run time).
         public FunctionDescriptor descriptor() { return Sig.descriptor(this); }
     }
 
     private Sig() {}
 
-    /** Build a signature from its return class and argument classes. */
+    /// Build a signature from its return class and argument classes.
     public static S of(Ret ret, Arg... args) {
         long key = 0;
         for (int i = 0; i < args.length; i++) key |= ((long) args[i].ordinal()) << (i * 4);
@@ -125,10 +117,8 @@ public final class Sig {
         };
     }
 
-    /**
-     * The message-send symbol for a return class: x86_64 needs {@code objc_msgSend_stret}
-     * for 32-byte struct returns; arm64 has a single {@code objc_msgSend} for everything.
-     */
+    /// The message-send symbol for a return class: x86_64 needs `objc_msgSend_stret`
+    /// for 32-byte struct returns; arm64 has a single `objc_msgSend` for everything.
     public static String msgSendSymbol(Ret ret) {
         if (System.getProperty("os.arch").equals("aarch64")) return "objc_msgSend";
         return ret == Ret.RECT ? "objc_msgSend_stret" : "objc_msgSend";

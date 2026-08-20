@@ -8,16 +8,14 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSFindPanel — minimal wrapper for the system Find panel.
- * Thin 1:1 wrapper; native class is {@code NSPanel} subclass used by
- * {@code NSTextView}’s find bar / find panel integration.
- *
- * <p>On AppKit the find panel is exposed via {@code NSTextFinder} /
- * {@code NSFindPanelAction}; this wrapper keeps a conventional
- * {@code NSObject} shape with {@code shared} accessor so build passes
- * even where the underlying native class name differs across OS versions.
- */
+/// NSFindPanel — minimal wrapper for the system Find panel.
+/// Thin 1:1 wrapper; native class is `NSPanel` subclass used by
+/// `NSTextView`’s find bar / find panel integration.
+///
+/// On AppKit the find panel is exposed via `NSTextFinder` /
+/// `NSFindPanelAction`; this wrapper keeps a conventional
+/// `NSObject` shape with `shared` accessor so build passes
+/// even where the underlying native class name differs across OS versions.
 public final class NSFindPanel extends NSObject {
 
     private static volatile boolean initialized;
@@ -44,7 +42,7 @@ public final class NSFindPanel extends NSObject {
 
     // ---- shared accessor (tries NSFindPanel, falls back to NSPanel) ----
 
-    /** {@code +[NSFindPanel sharedFindPanel]} — if class exists, otherwise nil. */
+    /// `+[NSFindPanel sharedFindPanel]` — if class exists, otherwise nil.
     public static NSFindPanel sharedFindPanel() {
         ensureInit();
         // NSFindPanel is private on some SDKs; try NSFindPanel first, then NSTextFinder's panel
@@ -66,7 +64,7 @@ public final class NSFindPanel extends NSObject {
         }
     }
 
-    /** Create a basic panel for find UI (alloc+init). */
+    /// Create a basic panel for find UI (alloc+init).
     public static NSFindPanel create() {
         ensureInit();
         MemorySegment p = ObjC.msgSendId(ObjC.cls("NSPanel"), ObjC.sel("alloc"));
@@ -80,7 +78,7 @@ public final class NSFindPanel extends NSObject {
 
     // ---- find string ----
 
-    /** [panel findString] — placeholder; backed by find pasteboard on real FindPanel. */
+    /// [panel findString] — placeholder; backed by find pasteboard on real FindPanel.
     public String findString() {
         // Try native find string if selector exists
         try {
@@ -130,7 +128,7 @@ public final class NSFindPanel extends NSObject {
 
     // ---- action support for NSTextFinder integration ----
 
-    /** [panel performFindPanelAction:] — forward to sender if needed. */
+    /// [panel performFindPanelAction:] — forward to sender if needed.
     public void performFindPanelAction(MemorySegment sender) {
         ObjC.msgSendVoidId(peer, ObjC.sel("performFindPanelAction:"), (MemorySegment) (sender == null ? MemorySegment.NULL : sender));
     }

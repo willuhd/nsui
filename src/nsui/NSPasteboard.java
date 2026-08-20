@@ -8,10 +8,8 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSPasteboard — minimal wrapper over native {@code NSPasteboard}.
- * Provides generalPasteboard, clearContents, setString:forType:, stringForType:.
- */
+/// NSPasteboard — minimal wrapper over native `NSPasteboard`.
+/// Provides generalPasteboard, clearContents, setString:forType:, stringForType:.
 public final class NSPasteboard extends NSObject {
 
     private static volatile boolean initialized;
@@ -29,14 +27,14 @@ public final class NSPasteboard extends NSObject {
         return (peer == null || peer.address() == 0) ? null : new NSPasteboard(peer);
     }
 
-    /** [NSPasteboard generalPasteboard] */
+    /// [NSPasteboard generalPasteboard]
     public static NSPasteboard generalPasteboard() {
         ensureInit();
         MemorySegment pb = ObjC.msgSendId(ObjC.cls("NSPasteboard"), ObjC.sel("generalPasteboard"));
         return wrap(pb);
     }
 
-    /** [NSPasteboard pasteboardWithName:] */
+    /// [NSPasteboard pasteboardWithName:]
     public static NSPasteboard pasteboardWithName(String name) {
         ensureInit();
         MemorySegment pb = ObjC.msgSendIdId(ObjC.cls("NSPasteboard"), ObjC.sel("pasteboardWithName:"), ObjC.nsstring(name));
@@ -52,14 +50,14 @@ public final class NSPasteboard extends NSObject {
         initialized = true;
     }
 
-    /** clearContents — returns changeCount. */
+    /// clearContents — returns changeCount.
     public long clearContents() {
         ensureInit();
         try { return (long) hClear.invokeExact(peer, ObjC.sel("clearContents")); }
         catch (Throwable t) { throw new RuntimeException("clearContents failed", t); }
     }
 
-    /** setString:forType: */
+    /// setString:forType:
     public boolean setStringForType(String string, String type) {
         ensureInit();
         if (string == null || type == null) return false;
@@ -76,7 +74,7 @@ public final class NSPasteboard extends NSObject {
         } catch (Throwable t) { throw new RuntimeException("setString:forType: failed", t); }
     }
 
-    /** stringForType: — returns Java String or null. */
+    /// stringForType: — returns Java String or null.
     public String stringForType(String type) {
         ensureInit();
         if (type == null) return null;
@@ -95,7 +93,7 @@ public final class NSPasteboard extends NSObject {
         } catch (Throwable t) { throw new RuntimeException("stringForType: failed", t); }
     }
 
-    /** name */
+    /// name
     public String name() {
         ensureInit();
         try {
@@ -104,13 +102,13 @@ public final class NSPasteboard extends NSObject {
         } catch (Throwable t) { throw new RuntimeException("name failed", t); }
     }
 
-    /** Common pasteboard type constants as Java strings. */
+    /// Common pasteboard type constants as Java strings.
     public static final String NSPasteboardTypeString = "public.utf8-plain-text";
     public static final String NSPasteboardTypePNG = "public.png";
     public static final String NSPasteboardTypeTIFF = "public.tiff";
     public static final String NSPasteboardTypePDF = "com.adobe.pdf";
 
-    /** declareTypes:owner: — minimal. */
+    /// declareTypes:owner: — minimal.
     public long declareTypes(NSArray types, NSObject owner) {
         ensureInit();
         try {
@@ -120,7 +118,7 @@ public final class NSPasteboard extends NSObject {
         } catch (Throwable t) { throw new RuntimeException("declareTypes:owner: failed", t); }
     }
 
-    /** availableTypeFromArray: */
+    /// availableTypeFromArray:
     public String availableTypeFromArray(NSArray types) {
         ensureInit();
         if (types == null) return null;

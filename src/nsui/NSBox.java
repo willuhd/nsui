@@ -8,15 +8,13 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSBox — an AppKit titled box/dividing container view. Thin, 1:1, stateless wrapper
- * over a native {@code NSBox}: every method maps to one {@code objc_msgSend} selector.
- * It is an {@link NSView}, so it can host subviews and be placed in any view hierarchy.
- *
- * <p>Only the title/type/border/titlePosition surface is wrapped here — enough for a
- * titled group box. {@code NSBox} inherits {@code setTitle:}/{@code title} from its own
- * title {@code NSCell}; the selectors used below are the real AppKit ones.
- */
+/// NSBox — an AppKit titled box/dividing container view. Thin, 1:1, stateless wrapper
+/// over a native `NSBox`: every method maps to one `objc_msgSend` selector.
+/// It is an `NSView`, so it can host subviews and be placed in any view hierarchy.
+///
+/// Only the title/type/border/titlePosition surface is wrapped here — enough for a
+/// titled group box. `NSBox` inherits `setTitle:`/`title` from its own
+/// title `NSCell`; the selectors used below are the real AppKit ones.
 public final class NSBox extends NSView {
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
@@ -48,7 +46,7 @@ public final class NSBox extends NSView {
         initialized = true;
     }
 
-    /** {@code [[NSBox alloc] initWithFrame:frame]} — a new box at the given rect. */
+    /// `[[NSBox alloc] initWithFrame:frame]` — a new box at the given rect.
     public static NSBox create(NSRect frame) {
         ensureInit();
         MemorySegment p = ObjC.msgSendId(ObjC.cls("NSBox"), ObjC.sel("alloc"));
@@ -65,7 +63,7 @@ public final class NSBox extends NSView {
 
     // ---------------------------------------------------------------- instance API
 
-    /** [box setTitle:] — the box's title text. */
+    /// [box setTitle:] — the box's title text.
     public void setTitle(String title) {
         try {
             hSetTitle.invokeExact(peer, ObjC.sel("setTitle:"), ObjC.nsstring(title));
@@ -74,7 +72,7 @@ public final class NSBox extends NSView {
         }
     }
 
-    /** [box title] — the box's current title. */
+    /// [box title] — the box's current title.
     public String title() {
         try {
             return ObjC.toString((MemorySegment) hTitle.invokeExact(peer, ObjC.sel("title")));
@@ -83,7 +81,7 @@ public final class NSBox extends NSView {
         }
     }
 
-    /** [box setBoxType:] — NSBoxType (0 = NSBoxPrimary). */
+    /// [box setBoxType:] — NSBoxType (0 = NSBoxPrimary).
     public void setBoxType(long type) {
         try {
             hSetInt.invokeExact(peer, ObjC.sel("setBoxType:"), type);
@@ -92,7 +90,7 @@ public final class NSBox extends NSView {
         }
     }
 
-    /** [box setBorderType:] — NSBorderType (0 = NSNoBorder). */
+    /// [box setBorderType:] — NSBorderType (0 = NSNoBorder).
     public void setBorderType(long type) {
         try {
             hSetInt.invokeExact(peer, ObjC.sel("setBorderType:"), type);
@@ -101,7 +99,7 @@ public final class NSBox extends NSView {
         }
     }
 
-    /** [box setTitlePosition:] — NSTitlePosition (0 = NSNoTitle). */
+    /// [box setTitlePosition:] — NSTitlePosition (0 = NSNoTitle).
     public void setTitlePosition(long position) {
         try {
             hSetInt.invokeExact(peer, ObjC.sel("setTitlePosition:"), position);
@@ -112,33 +110,33 @@ public final class NSBox extends NSView {
 
     // ---------------------------------------------------------------- completeness
 
-    /** [box boxType]. */
+    /// [box boxType].
     public long boxType() {
         return ObjC.msgSendLong(peer, ObjC.sel("boxType"));
     }
 
-    /** [box borderType]. */
+    /// [box borderType].
     public long borderType() {
         return ObjC.msgSendLong(peer, ObjC.sel("borderType"));
     }
 
-    /** [box titlePosition]. */
+    /// [box titlePosition].
     public long titlePosition() {
         return ObjC.msgSendLong(peer, ObjC.sel("titlePosition"));
     }
 
-    /** [box contentView] — the box's content view. */
+    /// [box contentView] — the box's content view.
     public NSView contentView() {
         MemorySegment v = ObjC.msgSendId(peer, ObjC.sel("contentView"));
         return NSView.wrap(v);
     }
 
-    /** [box setContentView:]. */
+    /// [box setContentView:].
     public void setContentView(NSView view) {
         ObjC.msgSendVoidId(peer, ObjC.sel("setContentView:"), (MemorySegment) (view == null ? MemorySegment.NULL : view.peer()));
     }
 
-    /** [box contentViewMargins] — NSSize. */
+    /// [box contentViewMargins] — NSSize.
     public NSSize contentViewMargins() {
         try {
             MemorySegment s = (MemorySegment) hGetSize.invokeExact((java.lang.foreign.SegmentAllocator) java.lang.foreign.Arena.global(), peer, ObjC.sel("contentViewMargins"));
@@ -148,7 +146,7 @@ public final class NSBox extends NSView {
         }
     }
 
-    /** [box setContentViewMargins:]. */
+    /// [box setContentViewMargins:].
     public void setContentViewMargins(NSSize margins) {
         try {
             hSetSize.invokeExact(peer, ObjC.sel("setContentViewMargins:"), margins.toSegment());
@@ -157,50 +155,50 @@ public final class NSBox extends NSView {
         }
     }
 
-    /** [box isTransparent]. */
+    /// [box isTransparent].
     public boolean isTransparent() {
         return ObjC.msgSendBool(peer, ObjC.sel("isTransparent"));
     }
 
-    /** [box setTransparent:]. */
+    /// [box setTransparent:].
     public void setTransparent(boolean flag) {
         ObjC.msgSendVoidBool(peer, ObjC.sel("setTransparent:"), flag);
     }
 
-    /** [box titleFont] — NSFont. */
+    /// [box titleFont] — NSFont.
     public NSFont titleFont() {
         MemorySegment f = ObjC.msgSendId(peer, ObjC.sel("titleFont"));
         return NSFont.wrap(f);
     }
 
-    /** [box setTitleFont:]. */
+    /// [box setTitleFont:].
     public void setTitleFont(NSFont font) {
         ObjC.msgSendVoidId(peer, ObjC.sel("setTitleFont:"), (MemorySegment) (font == null ? MemorySegment.NULL : font.peer()));
     }
 
-    /** [box borderColor] — NSColor. */
+    /// [box borderColor] — NSColor.
     public NSColor borderColor() {
         MemorySegment c = ObjC.msgSendId(peer, ObjC.sel("borderColor"));
         return NSColor.wrap(c);
     }
 
-    /** [box setBorderColor:]. */
+    /// [box setBorderColor:].
     public void setBorderColor(NSColor color) {
         ObjC.msgSendVoidId(peer, ObjC.sel("setBorderColor:"), (MemorySegment) (color == null ? MemorySegment.NULL : color.peer()));
     }
 
-    /** [box fillColor]. */
+    /// [box fillColor].
     public NSColor fillColor() {
         MemorySegment c = ObjC.msgSendId(peer, ObjC.sel("fillColor"));
         return NSColor.wrap(c);
     }
 
-    /** [box setFillColor:]. */
+    /// [box setFillColor:].
     public void setFillColor(NSColor color) {
         ObjC.msgSendVoidId(peer, ObjC.sel("setFillColor:"), (MemorySegment) (color == null ? MemorySegment.NULL : color.peer()));
     }
 
-    /** [box borderWidth] — CGFloat. */
+    /// [box borderWidth] — CGFloat.
     public double borderWidth() {
         try {
             return (double) hGetDouble.invokeExact(peer, ObjC.sel("borderWidth"));
@@ -209,7 +207,7 @@ public final class NSBox extends NSView {
         }
     }
 
-    /** [box setBorderWidth:]. */
+    /// [box setBorderWidth:].
     public void setBorderWidth(double w) {
         try {
             hSetDouble.invokeExact(peer, ObjC.sel("setBorderWidth:"), w);
@@ -218,7 +216,7 @@ public final class NSBox extends NSView {
         }
     }
 
-    /** [box cornerRadius] — CGFloat. */
+    /// [box cornerRadius] — CGFloat.
     public double cornerRadius() {
         try {
             return (double) hGetDouble.invokeExact(peer, ObjC.sel("cornerRadius"));
@@ -227,7 +225,7 @@ public final class NSBox extends NSView {
         }
     }
 
-    /** [box setCornerRadius:]. */
+    /// [box setCornerRadius:].
     public void setCornerRadius(double r) {
         try {
             hSetDouble.invokeExact(peer, ObjC.sel("setCornerRadius:"), r);
@@ -236,7 +234,7 @@ public final class NSBox extends NSView {
         }
     }
 
-    /** [box sizeToFit]. */
+    /// [box sizeToFit].
     public void sizeToFit() {
         ObjC.msgSendVoid(peer, ObjC.sel("sizeToFit"));
     }

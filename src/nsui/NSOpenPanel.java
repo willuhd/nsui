@@ -8,10 +8,8 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSOpenPanel — native open dialog (subclass of NSSavePanel).
- * Thin 1:1 wrapper over AppKit NSOpenPanel.
- */
+/// NSOpenPanel — native open dialog (subclass of NSSavePanel).
+/// Thin 1:1 wrapper over AppKit NSOpenPanel.
 public final class NSOpenPanel extends NSSavePanel {
 
     private static volatile boolean initialized;
@@ -38,7 +36,7 @@ public final class NSOpenPanel extends NSSavePanel {
         return (peer == null || peer.address() == 0) ? null : new NSOpenPanel(peer);
     }
 
-    /** +[NSOpenPanel openPanel] */
+    /// +[NSOpenPanel openPanel]
     public static NSOpenPanel openPanel() {
         ensureInitOpen();
         MemorySegment p = ObjC.msgSendId(ObjC.cls("NSOpenPanel"), ObjC.sel("openPanel"));

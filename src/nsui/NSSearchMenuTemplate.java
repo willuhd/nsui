@@ -8,11 +8,9 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSSearchMenuTemplate — helper for Help-menu / search-field menu templates.
- * Thin wrapper over NSMenu suitable as a searchMenuTemplate.
- * Also provides convenience to install as help-menu search template.
- */
+/// NSSearchMenuTemplate — helper for Help-menu / search-field menu templates.
+/// Thin wrapper over NSMenu suitable as a searchMenuTemplate.
+/// Also provides convenience to install as help-menu search template.
 public final class NSSearchMenuTemplate extends NSObject {
 
     private static volatile boolean initialized;
@@ -35,7 +33,7 @@ public final class NSSearchMenuTemplate extends NSObject {
         initialized = true;
     }
 
-    /** alloc + init — empty menu template. */
+    /// alloc + init — empty menu template.
     public static NSSearchMenuTemplate create() {
         ensureInit();
         MemorySegment p = ObjC.msgSendId(ObjC.cls("NSMenu"), ObjC.sel("alloc"));
@@ -52,24 +50,24 @@ public final class NSSearchMenuTemplate extends NSObject {
         return new NSSearchMenuTemplate(n);
     }
 
-    /** Underlying NSMenu peer as NSMenu wrapper. */
+    /// Underlying NSMenu peer as NSMenu wrapper.
     public NSMenu asMenu() {
         return NSMenu.wrap(peer);
     }
 
-    /** addItem: */
+    /// addItem:
     public void addItem(NSMenuItem item) {
         ensureInit();
         try { hVoidId.invokeExact(peer, ObjC.sel("addItem:"), item.peer()); }
         catch (Throwable t) { throw new RuntimeException("addItem: failed", t); }
     }
 
-    /** numberOfItems */
+    /// numberOfItems
     public long numberOfItems() {
         return ObjC.msgSendLong(peer, ObjC.sel("numberOfItems"));
     }
 
-    /** title */
+    /// title
     public String title() {
         ensureInit();
         try {
@@ -84,12 +82,12 @@ public final class NSSearchMenuTemplate extends NSObject {
         catch (Throwable e) { throw new RuntimeException("setTitle: failed", e); }
     }
 
-    /** Install this template onto a search field. */
+    /// Install this template onto a search field.
     public void installOn(NSSearchField field) {
         if (field != null) field.setSearchMenuTemplate(asMenu());
     }
 
-    /** Convenience: set as the template for given search field and return self. */
+    /// Convenience: set as the template for given search field and return self.
     public NSSearchMenuTemplate attachTo(NSSearchField field) {
         installOn(field);
         return this;

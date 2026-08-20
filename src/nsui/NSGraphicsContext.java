@@ -8,10 +8,8 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSGraphicsContext — minimal wrapper over AppKit NSGraphicsContext.
- * Provides currentContext and CGContext access.
- */
+/// NSGraphicsContext — minimal wrapper over AppKit NSGraphicsContext.
+/// Provides currentContext and CGContext access.
 public final class NSGraphicsContext extends NSObject {
 
     private static volatile boolean initialized;
@@ -40,7 +38,7 @@ public final class NSGraphicsContext extends NSObject {
         initialized = true;
     }
 
-    /** +[NSGraphicsContext currentContext] */
+    /// +[NSGraphicsContext currentContext]
     public static NSGraphicsContext currentContext() {
         ensureInit();
         try {
@@ -51,7 +49,7 @@ public final class NSGraphicsContext extends NSObject {
         }
     }
 
-    /** -CGContext -> CGContextRef as MemorySegment */
+    /// -CGContext -> CGContextRef as MemorySegment
     public MemorySegment CGContext() {
         ensureInit();
         try {
@@ -61,7 +59,7 @@ public final class NSGraphicsContext extends NSObject {
         }
     }
 
-    /** -saveGraphicsState */
+    /// -saveGraphicsState
     public void saveGraphicsState() {
         ensureInit();
         try {
@@ -71,7 +69,7 @@ public final class NSGraphicsContext extends NSObject {
         }
     }
 
-    /** -restoreGraphicsState */
+    /// -restoreGraphicsState
     public void restoreGraphicsState() {
         ensureInit();
         try {
@@ -81,19 +79,19 @@ public final class NSGraphicsContext extends NSObject {
         }
     }
 
-    /** Static helper: saveGraphicsState class-side via current context */
+    /// Static helper: saveGraphicsState class-side via current context
     public static void save() {
         NSGraphicsContext ctx = currentContext();
         if (ctx != null) ctx.saveGraphicsState();
     }
 
-    /** Static helper: restoreGraphicsState */
+    /// Static helper: restoreGraphicsState
     public static void restore() {
         NSGraphicsContext ctx = currentContext();
         if (ctx != null) ctx.restoreGraphicsState();
     }
 
-    /** +[NSGraphicsContext graphicsContextWithCGContext:flipped:] */
+    /// +[NSGraphicsContext graphicsContextWithCGContext:flipped:]
     public static NSGraphicsContext graphicsContextWithCGContextFlipped(MemorySegment cgContext, boolean flipped) {
         ensureInit();
         try {
@@ -105,19 +103,19 @@ public final class NSGraphicsContext extends NSObject {
         }
     }
 
-    /** [context isDrawingToScreen] */
+    /// [context isDrawingToScreen]
     public boolean isDrawingToScreen() {
         ensureInit();
         return ObjC.msgSendBool(peer, ObjC.sel("isDrawingToScreen"));
     }
 
-    /** [context isFlipped] */
+    /// [context isFlipped]
     public boolean isFlipped() {
         ensureInit();
         return ObjC.msgSendBool(peer, ObjC.sel("isFlipped"));
     }
 
-    /** [NSGraphicsContext currentContextDrawingToScreen] -> BOOL class method */
+    /// [NSGraphicsContext currentContextDrawingToScreen] -> BOOL class method
     public static boolean currentContextDrawingToScreen() {
         ensureInit();
         try {

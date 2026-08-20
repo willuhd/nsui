@@ -8,15 +8,13 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * CALayer — thin wrapper for QuartzCore CALayer.
- * Unifies cornerRadius, borderWidth, backgroundColor already exposed via NSBox but as a
- * standalone layer wrapper. Every method maps to one {@code objc_msgSend} selector.
- * Follows FFM pattern: no reflection, cached handles, ensureInit.
- * <p>
- * Note: CALayer lives in QuartzCore.framework; ObjC.ensureFramework loads it lazily via
- * AppKit/CoreGraphics dependencies, but we ensure QuartzCore explicitly if needed.
- */
+/// CALayer — thin wrapper for QuartzCore CALayer.
+/// Unifies cornerRadius, borderWidth, backgroundColor already exposed via NSBox but as a
+/// standalone layer wrapper. Every method maps to one `objc_msgSend` selector.
+/// Follows FFM pattern: no reflection, cached handles, ensureInit.
+///
+/// Note: CALayer lives in QuartzCore.framework; ObjC.ensureFramework loads it lazily via
+/// AppKit/CoreGraphics dependencies, but we ensure QuartzCore explicitly if needed.
 public final class CALayer extends NSObject {
 
     private static volatile boolean initialized;
@@ -49,7 +47,7 @@ public final class CALayer extends NSObject {
         initialized = true;
     }
 
-    /** {@code [[CALayer alloc] init]} */
+    /// `[[CALayer alloc] init]`
     public static CALayer create() {
         ensureInit();
         MemorySegment alloc = ObjC.msgSendId(ObjC.cls("CALayer"), ObjC.sel("alloc"));
@@ -58,7 +56,7 @@ public final class CALayer extends NSObject {
         return new CALayer(p);
     }
 
-    /** [layer cornerRadius] -> CGFloat */
+    /// [layer cornerRadius] -> CGFloat
     public double cornerRadius() {
         ensureInit();
         try {
@@ -68,7 +66,7 @@ public final class CALayer extends NSObject {
         }
     }
 
-    /** [layer setCornerRadius:] */
+    /// [layer setCornerRadius:]
     public void setCornerRadius(double radius) {
         ensureInit();
         try {
@@ -78,7 +76,7 @@ public final class CALayer extends NSObject {
         }
     }
 
-    /** [layer borderWidth] -> CGFloat */
+    /// [layer borderWidth] -> CGFloat
     public double borderWidth() {
         ensureInit();
         try {
@@ -88,7 +86,7 @@ public final class CALayer extends NSObject {
         }
     }
 
-    /** [layer setBorderWidth:] */
+    /// [layer setBorderWidth:]
     public void setBorderWidth(double width) {
         ensureInit();
         try {
@@ -98,7 +96,7 @@ public final class CALayer extends NSObject {
         }
     }
 
-    /** [layer borderColor] -> CGColorRef (as id) */
+    /// [layer borderColor] -> CGColorRef (as id)
     public MemorySegment borderColor() {
         ensureInit();
         try {
@@ -108,7 +106,7 @@ public final class CALayer extends NSObject {
         }
     }
 
-    /** [layer setBorderColor:] — CGColorRef */
+    /// [layer setBorderColor:] — CGColorRef
     public void setBorderColor(MemorySegment cgColor) {
         ensureInit();
         try {
@@ -119,7 +117,7 @@ public final class CALayer extends NSObject {
         }
     }
 
-    /** Convenience: set borderColor from NSColor via [NSColor CGColor] */
+    /// Convenience: set borderColor from NSColor via [NSColor CGColor]
     public void setBorderColor(NSColor color) {
         MemorySegment cg = MemorySegment.NULL;
         if (color != null) {
@@ -129,7 +127,7 @@ public final class CALayer extends NSObject {
         setBorderColor(cg);
     }
 
-    /** [layer backgroundColor] -> CGColorRef */
+    /// [layer backgroundColor] -> CGColorRef
     public MemorySegment backgroundColor() {
         ensureInit();
         try {
@@ -139,7 +137,7 @@ public final class CALayer extends NSObject {
         }
     }
 
-    /** [layer setBackgroundColor:] — CGColorRef */
+    /// [layer setBackgroundColor:] — CGColorRef
     public void setBackgroundColor(MemorySegment cgColor) {
         ensureInit();
         try {
@@ -150,7 +148,7 @@ public final class CALayer extends NSObject {
         }
     }
 
-    /** Convenience: set backgroundColor from NSColor */
+    /// Convenience: set backgroundColor from NSColor
     public void setBackgroundColor(NSColor color) {
         MemorySegment cg = MemorySegment.NULL;
         if (color != null) {
@@ -160,19 +158,19 @@ public final class CALayer extends NSObject {
         setBackgroundColor(cg);
     }
 
-    /** [layer masksToBounds] */
+    /// [layer masksToBounds]
     public boolean masksToBounds() {
         ensureInit();
         return ObjC.msgSendBool(peer, ObjC.sel("masksToBounds"));
     }
 
-    /** [layer setMasksToBounds:] */
+    /// [layer setMasksToBounds:]
     public void setMasksToBounds(boolean flag) {
         ensureInit();
         ObjC.msgSendVoidBool(peer, ObjC.sel("setMasksToBounds:"), flag);
     }
 
-    /** [layer opacity] -> float (0..1) */
+    /// [layer opacity] -> float (0..1)
     public double opacity() {
         ensureInit();
         try {
@@ -182,7 +180,7 @@ public final class CALayer extends NSObject {
         }
     }
 
-    /** [layer setOpacity:] — float. Also accepts double convenience. */
+    /// [layer setOpacity:] — float. Also accepts double convenience.
     public void setOpacity(float o) {
         ensureInit();
         try {
@@ -196,7 +194,7 @@ public final class CALayer extends NSObject {
 
     // ---- CAAnimation full compatibility ----
 
-    /** [layer addAnimation:forKey:] — add CAAnimation (e.g., CABasicAnimation). */
+    /// [layer addAnimation:forKey:] — add CAAnimation (e.g., CABasicAnimation).
     public void addAnimation(CAAnimation anim, String key) {
         ensureInit();
         try {
@@ -206,7 +204,7 @@ public final class CALayer extends NSObject {
         } catch (Throwable t) { throw new RuntimeException("addAnimation:forKey: failed", t); }
     }
 
-    /** [layer addAnimation:forKey:] raw MemorySegment variant. */
+    /// [layer addAnimation:forKey:] raw MemorySegment variant.
     public void addAnimation(MemorySegment animPeer, String key) {
         ensureInit();
         try {
@@ -215,7 +213,7 @@ public final class CALayer extends NSObject {
         } catch (Throwable t) { throw new RuntimeException("addAnimation:forKey: failed", t); }
     }
 
-    /** [layer removeAnimationForKey:] */
+    /// [layer removeAnimationForKey:]
     public void removeAnimationForKey(String key) {
         ensureInit();
         try {
@@ -224,7 +222,7 @@ public final class CALayer extends NSObject {
         } catch (Throwable t) { throw new RuntimeException("removeAnimationForKey: failed", t); }
     }
 
-    /** [layer animationForKey:] -> CAAnimation or null. */
+    /// [layer animationForKey:] -> CAAnimation or null.
     public CAAnimation animationForKey(String key) {
         ensureInit();
         try {
@@ -234,22 +232,22 @@ public final class CALayer extends NSObject {
         } catch (Throwable t) { throw new RuntimeException("animationForKey: failed", t); }
     }
 
-    /** [layer removeAllAnimations] */
+    /// [layer removeAllAnimations]
     public void removeAllAnimations() {
         ensureInit();
         ObjC.msgSendVoid(peer, ObjC.sel("removeAllAnimations"));
     }
 
-    /** [layer layoutIfNeeded] — force layout. */
+    /// [layer layoutIfNeeded] — force layout.
     public void layoutIfNeeded() { ensureInit(); ObjC.msgSendVoid(peer, ObjC.sel("layoutIfNeeded")); }
 
-    /** [layer setNeedsDisplay] */
+    /// [layer setNeedsDisplay]
     public void setNeedsDisplay() { ensureInit(); ObjC.msgSendVoid(peer, ObjC.sel("setNeedsDisplay")); }
 
-    /** [layer displayIfNeeded] */
+    /// [layer displayIfNeeded]
     public void displayIfNeeded() { ensureInit(); ObjC.msgSendVoid(peer, ObjC.sel("displayIfNeeded")); }
 
-    /** [CALayer needsDisplay] helper via CATransaction */
+    /// [CALayer needsDisplay] helper via CATransaction
     public static void transaction(Runnable block, double duration) {
         ensureInit();
         try {

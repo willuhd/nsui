@@ -9,14 +9,12 @@ import nsui.objc.ObjC;
 import nsui.objc.Sig;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSValue — minimal wrapper over native {@code NSValue}.
- * Provides wrap/create and typed accessors for common struct types.
- * Struct creation uses a Java-side cache so no new Sig vocabulary is required:
- * a real native NSValue peer is allocated via alloc/init and the Java value is
- * stored in a side map. Native peers created elsewhere return their live value
- * via struct-return msgSend where possible.
- */
+/// NSValue — minimal wrapper over native `NSValue`.
+/// Provides wrap/create and typed accessors for common struct types.
+/// Struct creation uses a Java-side cache so no new Sig vocabulary is required:
+/// a real native NSValue peer is allocated via alloc/init and the Java value is
+/// stored in a side map. Native peers created elsewhere return their live value
+/// via struct-return msgSend where possible.
 public class NSValue extends NSObject {
 
     private static final ConcurrentHashMap<Long, Object> STORE = new ConcurrentHashMap<>();
@@ -57,7 +55,7 @@ public class NSValue extends NSObject {
         return a;
     }
 
-    /** valueWithPoint: — Java-cached. */
+    /// valueWithPoint: — Java-cached.
     public static NSValue valueWithPoint(NSPoint point) {
         if (point == null) throw new IllegalArgumentException("point null");
         MemorySegment peer = allocInit("NSValue");
@@ -66,7 +64,7 @@ public class NSValue extends NSObject {
         return v;
     }
 
-    /** valueWithSize: */
+    /// valueWithSize:
     public static NSValue valueWithSize(NSSize size) {
         if (size == null) throw new IllegalArgumentException("size null");
         MemorySegment peer = allocInit("NSValue");
@@ -75,7 +73,7 @@ public class NSValue extends NSObject {
         return v;
     }
 
-    /** valueWithRect: */
+    /// valueWithRect:
     public static NSValue valueWithRect(NSRect rect) {
         if (rect == null) throw new IllegalArgumentException("rect null");
         MemorySegment peer = allocInit("NSValue");
@@ -84,7 +82,7 @@ public class NSValue extends NSObject {
         return v;
     }
 
-    /** valueWithRange: */
+    /// valueWithRange:
     public static NSValue valueWithRange(NSRange range) {
         if (range == null) throw new IllegalArgumentException("range null");
         MemorySegment peer = allocInit("NSValue");
@@ -93,7 +91,7 @@ public class NSValue extends NSObject {
         return v;
     }
 
-    /** valueWithNonretainedObject: — native. */
+    /// valueWithNonretainedObject: — native.
     public static NSValue valueWithNonretainedObject(NSObject object) {
         ensureInit();
         if (object == null) throw new IllegalArgumentException("object null");
@@ -101,7 +99,7 @@ public class NSValue extends NSObject {
         return wrap(v);
     }
 
-    /** valueWithPointer: */
+    /// valueWithPointer:
     public static NSValue valueWithPointer(MemorySegment pointer) {
         ensureInit();
         if (pointer == null) pointer = MemorySegment.NULL;
@@ -109,7 +107,7 @@ public class NSValue extends NSObject {
         return wrap(v);
     }
 
-    /** pointValue */
+    /// pointValue
     public NSPoint pointValue() {
         Object cached = STORE.get(peer.address());
         if (cached instanceof NSPoint p) return p;
@@ -120,7 +118,7 @@ public class NSValue extends NSObject {
         } catch (Throwable t) { throw new RuntimeException("pointValue failed", t); }
     }
 
-    /** sizeValue */
+    /// sizeValue
     public NSSize sizeValue() {
         Object cached = STORE.get(peer.address());
         if (cached instanceof NSSize s) return s;
@@ -131,7 +129,7 @@ public class NSValue extends NSObject {
         } catch (Throwable t) { throw new RuntimeException("sizeValue failed", t); }
     }
 
-    /** rectValue */
+    /// rectValue
     public NSRect rectValue() {
         Object cached = STORE.get(peer.address());
         if (cached instanceof NSRect r) return r;
@@ -142,7 +140,7 @@ public class NSValue extends NSObject {
         } catch (Throwable t) { throw new RuntimeException("rectValue failed", t); }
     }
 
-    /** rangeValue */
+    /// rangeValue
     public NSRange rangeValue() {
         Object cached = STORE.get(peer.address());
         if (cached instanceof NSRange r) return r;
@@ -153,7 +151,7 @@ public class NSValue extends NSObject {
         } catch (Throwable t) { throw new RuntimeException("rangeValue failed", t); }
     }
 
-    /** objCType — C string */
+    /// objCType — C string
     public String objCType() {
         ensureInit();
         try {
@@ -166,7 +164,7 @@ public class NSValue extends NSObject {
         } catch (Throwable t) { throw new RuntimeException("objCType failed", t); }
     }
 
-    /** nonretainedObjectValue */
+    /// nonretainedObjectValue
     public MemorySegment nonretainedObjectValue() {
         ensureInit();
         try {
@@ -175,7 +173,7 @@ public class NSValue extends NSObject {
         } catch (Throwable t) { throw new RuntimeException("nonretainedObjectValue failed", t); }
     }
 
-    /** pointerValue */
+    /// pointerValue
     public MemorySegment pointerValue() {
         ensureInit();
         try {

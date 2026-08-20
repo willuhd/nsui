@@ -8,12 +8,10 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSMutableParagraphStyle — mutable paragraph style.
- * Thin 1:1 wrapper over native {@code NSMutableParagraphStyle}: every method maps to one
- * {@code objc_msgSend} selector, no cached Java state beyond the peer.
- * Follows FFM pattern: no reflection, cached handles, ensureInit.
- */
+/// NSMutableParagraphStyle — mutable paragraph style.
+/// Thin 1:1 wrapper over native `NSMutableParagraphStyle`: every method maps to one
+/// `objc_msgSend` selector, no cached Java state beyond the peer.
+/// Follows FFM pattern: no reflection, cached handles, ensureInit.
 public class NSMutableParagraphStyle extends NSParagraphStyle {
 
     private static volatile boolean mutableInitialized;
@@ -36,7 +34,7 @@ public class NSMutableParagraphStyle extends NSParagraphStyle {
         mutableInitialized = true;
     }
 
-    /** {@code [[NSMutableParagraphStyle alloc] init]} */
+    /// `[[NSMutableParagraphStyle alloc] init]`
     public static NSMutableParagraphStyle create() {
         ensureMutInit();
         MemorySegment alloc = ObjC.msgSendId(ObjC.cls("NSMutableParagraphStyle"), ObjC.sel("alloc"));
@@ -45,7 +43,7 @@ public class NSMutableParagraphStyle extends NSParagraphStyle {
         return new NSMutableParagraphStyle(p);
     }
 
-    /** [style setAlignment:] — NSTextAlignment */
+    /// [style setAlignment:] — NSTextAlignment
     public void setAlignment(long alignment) {
         ensureMutInit();
         try {
@@ -55,7 +53,7 @@ public class NSMutableParagraphStyle extends NSParagraphStyle {
         }
     }
 
-    /** [style setLineBreakMode:] — NSLineBreakMode */
+    /// [style setLineBreakMode:] — NSLineBreakMode
     public void setLineBreakMode(long mode) {
         ensureMutInit();
         try {
@@ -71,7 +69,7 @@ public class NSMutableParagraphStyle extends NSParagraphStyle {
     @Override
     public long lineBreakMode() { return super.lineBreakMode(); }
 
-    /** [style setLineSpacing:] */
+    /// [style setLineSpacing:]
     public void setLineSpacing(double spacing) {
         ensureMutInit();
         try {

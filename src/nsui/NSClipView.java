@@ -8,10 +8,8 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSClipView — minimal wrapper over AppKit NSClipView.
- * The content view of an NSScrollView; clips its document view.
- */
+/// NSClipView — minimal wrapper over AppKit NSClipView.
+/// The content view of an NSScrollView; clips its document view.
 public class NSClipView extends NSView {
 
     private static volatile boolean initialized;
@@ -46,7 +44,7 @@ public class NSClipView extends NSView {
         initialized = true;
     }
 
-    /** [[NSClipView alloc] initWithFrame:] */
+    /// [[NSClipView alloc] initWithFrame:]
     public static NSClipView create(NSRect frame) {
         ensureInit();
         MemorySegment p = ObjC.msgSendId(ObjC.cls("NSClipView"), ObjC.sel("alloc"));
@@ -59,7 +57,7 @@ public class NSClipView extends NSView {
         return new NSClipView(p);
     }
 
-    /** [clip documentView] */
+    /// [clip documentView]
     public NSView documentView() {
         ensureInit();
         try {
@@ -70,7 +68,7 @@ public class NSClipView extends NSView {
         }
     }
 
-    /** [clip setDocumentView:] */
+    /// [clip setDocumentView:]
     public void setDocumentView(NSView view) {
         ensureInit();
         try {
@@ -80,7 +78,7 @@ public class NSClipView extends NSView {
         }
     }
 
-    /** [clip documentRect] -> NSRect */
+    /// [clip documentRect] -> NSRect
     public NSRect documentRect() {
         ensureInit();
         try {
@@ -91,7 +89,7 @@ public class NSClipView extends NSView {
         }
     }
 
-    /** [clip documentVisibleRect] -> NSRect */
+    /// [clip documentVisibleRect] -> NSRect
     public NSRect documentVisibleRect() {
         ensureInit();
         try {
@@ -102,7 +100,7 @@ public class NSClipView extends NSView {
         }
     }
 
-    /** [clip scrollToPoint:] */
+    /// [clip scrollToPoint:]
     public void scrollToPoint(NSPoint point) {
         ensureInit();
         try {
@@ -112,7 +110,7 @@ public class NSClipView extends NSView {
         }
     }
 
-    /** [clip copiesOnScroll] */
+    /// [clip copiesOnScroll]
     public boolean copiesOnScroll() {
         ensureInit();
         try {
@@ -122,7 +120,7 @@ public class NSClipView extends NSView {
         }
     }
 
-    /** [clip setCopiesOnScroll:] */
+    /// [clip setCopiesOnScroll:]
     public void setCopiesOnScroll(boolean flag) {
         ensureInit();
         try {
@@ -132,7 +130,7 @@ public class NSClipView extends NSView {
         }
     }
 
-    /** [clip drawsBackground] */
+    /// [clip drawsBackground]
     public boolean drawsBackground() {
         ensureInit();
         try {
@@ -142,7 +140,7 @@ public class NSClipView extends NSView {
         }
     }
 
-    /** [clip setDrawsBackground:] */
+    /// [clip setDrawsBackground:]
     public void setDrawsBackground(boolean flag) {
         ensureInit();
         try {
@@ -152,7 +150,7 @@ public class NSClipView extends NSView {
         }
     }
 
-    /** [clip backgroundColor] -> NSColor */
+    /// [clip backgroundColor] -> NSColor
     public NSColor backgroundColor() {
         ensureInit();
         try {
@@ -163,7 +161,7 @@ public class NSClipView extends NSView {
         }
     }
 
-    /** [clip setBackgroundColor:] */
+    /// [clip setBackgroundColor:]
     public void setBackgroundColor(NSColor color) {
         ensureInit();
         try {

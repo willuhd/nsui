@@ -8,12 +8,10 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSMutableAttributedString — mutable attributed string.
- * Thin 1:1 wrapper over native {@code NSMutableAttributedString}: every method maps to one
- * {@code objc_msgSend} selector, no cached Java state beyond the peer.
- * Follows FFM pattern: no reflection, cached handles, ensureInit.
- */
+/// NSMutableAttributedString — mutable attributed string.
+/// Thin 1:1 wrapper over native `NSMutableAttributedString`: every method maps to one
+/// `objc_msgSend` selector, no cached Java state beyond the peer.
+/// Follows FFM pattern: no reflection, cached handles, ensureInit.
 public class NSMutableAttributedString extends NSAttributedString {
 
     private static volatile boolean mutableInitialized;
@@ -44,7 +42,7 @@ public class NSMutableAttributedString extends NSAttributedString {
         mutableInitialized = true;
     }
 
-    /** {@code [[NSMutableAttributedString alloc] initWithString:string]} */
+    /// `[[NSMutableAttributedString alloc] initWithString:string]`
     public static NSMutableAttributedString create(String s) {
         ensureMutInit();
         MemorySegment alloc = ObjC.msgSendId(ObjC.cls("NSMutableAttributedString"), ObjC.sel("alloc"));
@@ -57,7 +55,7 @@ public class NSMutableAttributedString extends NSAttributedString {
         }
     }
 
-    /** {@code [[NSMutableAttributedString alloc] initWithString:string attributes:dict]} */
+    /// `[[NSMutableAttributedString alloc] initWithString:string attributes:dict]`
     public static NSMutableAttributedString create(String s, MemorySegment attributes) {
         ensureMutInit();
         MemorySegment alloc = ObjC.msgSendId(ObjC.cls("NSMutableAttributedString"), ObjC.sel("alloc"));
@@ -71,7 +69,7 @@ public class NSMutableAttributedString extends NSAttributedString {
         }
     }
 
-    /** [mutable appendAttributedString:other] — also satisfies task's "append" requirement */
+    /// [mutable appendAttributedString:other] — also satisfies task's "append" requirement
     public void append(NSAttributedString other) {
         ensureMutInit();
         try {
@@ -81,20 +79,18 @@ public class NSMutableAttributedString extends NSAttributedString {
         }
     }
 
-    /** Alias per task description: append */
+    /// Alias per task description: append
     public void appendAttributedString(NSAttributedString other) { append(other); }
 
-    /** Convenience append with plain string */
+    /// Convenience append with plain string
     public void appendString(String s) {
         append(NSAttributedString.create(s));
     }
 
-    /**
-     * [mutable addAttribute:name value:value range:range]
-     * @param name attribute name (e.g. NSFontAttributeName)
-     * @param value attribute value as id (MemorySegment) — pass NSFont.peer(), NSColor.peer(), etc.
-     * @param range range to apply
-     */
+    /// [mutable addAttribute:name value:value range:range]
+    /// @param name attribute name (e.g. NSFontAttributeName)
+    /// @param value attribute value as id (MemorySegment) — pass NSFont.peer(), NSColor.peer(), etc.
+    /// @param range range to apply
     public void addAttribute(String name, MemorySegment value, NSRange range) {
         ensureMutInit();
         try {
@@ -105,12 +101,12 @@ public class NSMutableAttributedString extends NSAttributedString {
         }
     }
 
-    /** Convenience with location/length longs. */
+    /// Convenience with location/length longs.
     public void addAttribute(String name, MemorySegment value, long loc, long len) {
         addAttribute(name, value, new NSRange(loc, len));
     }
 
-    /** [mutable addAttributes:range:] — dict is NSDictionary* */
+    /// [mutable addAttributes:range:] — dict is NSDictionary*
     public void addAttributes(MemorySegment attrsDict, NSRange range) {
         ensureMutInit();
         try {
@@ -122,7 +118,7 @@ public class NSMutableAttributedString extends NSAttributedString {
         }
     }
 
-    /** [mutable removeAttribute:name range:range] */
+    /// [mutable removeAttribute:name range:range]
     public void removeAttribute(String name, NSRange range) {
         ensureMutInit();
         try {
@@ -132,7 +128,7 @@ public class NSMutableAttributedString extends NSAttributedString {
         }
     }
 
-    /** [mutable setAttributes:range:] */
+    /// [mutable setAttributes:range:]
     public void setAttributes(MemorySegment attrsDict, NSRange range) {
         ensureMutInit();
         try {

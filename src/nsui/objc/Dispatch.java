@@ -9,44 +9,40 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-/**
- * Minimal libdispatch bindings (Grand Central Dispatch), built purely via the Java
- * FFM API. Currently supports dispatching work onto the main dispatch queue.
- *
- * <p>Key facts:
- * <ul>
- *   <li>{@code dispatch_async(queue, block)} is a real exported function of
- *       {@code /usr/lib/libSystem.B.dylib}.</li>
- *   <li>{@code dispatch_get_main_queue()} is an <em>inline</em> function and is
- *       <em>not</em> exported. Its backing exported DATA symbol is
- *       {@code _dispatch_main_q}, which <em>is</em> the main queue object itself —
- *       so the queue handle is the symbol's <em>address</em> (it must NOT be dereferenced).</li>
- * </ul>
- *
- * <p>Dispatch model (AOT-safe): the block body is a SINGLE static upcall target
- * ({@link #runBody}) that polls a {@link ConcurrentLinkedQueue} of Runnables. Every
- * {@link #onMain} call enqueues the body and dispatches a fresh block; each executed
- * block pops exactly one Runnable. No captured/bound MethodHandles anywhere — the
- * upcall target is statically registered for native-image in NsuiFeature.
- */
+/// Minimal libdispatch bindings (Grand Central Dispatch), built purely via the Java
+/// FFM API. Currently supports dispatching work onto the main dispatch queue.
+///
+/// Key facts:
+/// - `dispatch_async(queue, block)` is a real exported function of
+///   `/usr/lib/libSystem.B.dylib`.
+/// - `dispatch_get_main_queue()` is an *inline* function and is
+///   *not* exported. Its backing exported DATA symbol is
+/// `_dispatch_main_q`, which *is* the main queue object itself —
+/// so the queue handle is the symbol's *address* (it must NOT be dereferenced).
+///
+/// Dispatch model (AOT-safe): the block body is a SINGLE static upcall target
+/// (`runBody`) that polls a `ConcurrentLinkedQueue` of Runnables. Every
+/// `onMain` call enqueues the body and dispatches a fresh block; each executed
+/// block pops exactly one Runnable. No captured/bound MethodHandles anywhere — the
+/// upcall target is statically registered for native-image in NsuiFeature.
 public final class Dispatch {
 
     private static Linker LINKER;
     private static Arena ARENA;
     private static SymbolLookup SYSTEM;
 
-    /** The main dispatch queue (address of the exported _dispatch_main_q data symbol). */
+    /// The main dispatch queue (address of the exported _dispatch_main_q data symbol).
     private static MemorySegment MAIN_QUEUE;
 
-    /** dispatch_async(queue, block) -> void downcall handle. */
+    /// dispatch_async(queue, block) -> void downcall handle.
     private static MethodHandle hDispatchAsync;
 
-    /** Runnables awaiting their block's execution on the main queue (FIFO). */
+    /// Runnables awaiting their block's execution on the main queue (FIFO).
     private static final ConcurrentLinkedQueue<Runnable> PENDING = new ConcurrentLinkedQueue<>();
 
     private Dispatch() {}
 
-    /** Run-time init (native-image: no FFM work in static initializers). */
+    /// Run-time init (native-image: no FFM work in static initializers).
     public static synchronized void ensureInit() {
         if (LINKER != null) return;
         LINKER = Linker.nativeLinker();
@@ -69,13 +65,11 @@ public final class Dispatch {
         }
     }
 
-    /**
-     * Run {@code body} asynchronously on the main dispatch queue.
-     *
-     * <p>The body is enqueued and a {@code void(^)(void)} block is dispatched; when
-     * the main run loop drains the queue, {@link #runBody} pops the body and runs it.
-     * The test's main thread must pump the run loop for the block to be drained.
-     */
+    /// Run `body` asynchronously on the main dispatch queue.
+    ///
+    /// The body is enqueued and a `void(^)(void)` block is dispatched; when
+    /// the main run loop drains the queue, `runBody` pops the body and runs it.
+    /// The test's main thread must pump the run loop for the block to be drained.
     public static void onMain(Runnable body) {
         ensureInit();
         PENDING.add(body);
@@ -96,10 +90,8 @@ public final class Dispatch {
         }
     }
 
-    /**
-     * Block body: pops one enqueued Runnable and runs it. STATIC and capture-free —
-     * the single upcall target behind every block, registered for AOT in NsuiFeature.
-     */
+    /// Block body: pops one enqueued Runnable and runs it. STATIC and capture-free —
+    /// the single upcall target behind every block, registered for AOT in NsuiFeature.
     static void runBody(MemorySegment blockSelf) {
         Runnable body = PENDING.poll();
         if (body != null) {

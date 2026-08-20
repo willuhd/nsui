@@ -8,13 +8,11 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSComboBox — an AppKit editable combo box (text field + drop-down list).
- * Thin, 1:1, stateless wrapper over a native {@code NSComboBox} (SWT-style):
- * every method maps to one {@code objc_msgSend} selector, no cached Java state
- * beyond the peer. It is an {@link NSControl} (an {@link NSView}), so it fits
- * any view hierarchy and supports enable/disable via {@link #setEnabled}.
- */
+/// NSComboBox — an AppKit editable combo box (text field + drop-down list).
+/// Thin, 1:1, stateless wrapper over a native `NSComboBox` (SWT-style):
+/// every method maps to one `objc_msgSend` selector, no cached Java state
+/// beyond the peer. It is an `NSControl` (an `NSView`), so it fits
+/// any view hierarchy and supports enable/disable via `setEnabled`.
 public final class NSComboBox extends NSControl {
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
@@ -42,7 +40,7 @@ public final class NSComboBox extends NSControl {
         initialized = true;
     }
 
-    /** {@code [[NSComboBox alloc] initWithFrame:frame]} — a new combo box at the given rect. */
+    /// `[[NSComboBox alloc] initWithFrame:frame]` — a new combo box at the given rect.
     public static NSComboBox create(NSRect frame) {
         ensureInit();
         MemorySegment b = ObjC.msgSendId(ObjC.cls("NSComboBox"), ObjC.sel("alloc"));
@@ -59,7 +57,7 @@ public final class NSComboBox extends NSControl {
 
     // ---------------------------------------------------------------- instance API
 
-    /** [combo addItemWithObjectValue:] — append a value to the item list. */
+    /// [combo addItemWithObjectValue:] — append a value to the item list.
     public void addItemWithObjectValue(String value) {
         try {
             hAddItem.invokeExact(peer, ObjC.sel("addItemWithObjectValue:"), ObjC.nsstring(value));
@@ -68,7 +66,7 @@ public final class NSComboBox extends NSControl {
         }
     }
 
-    /** [combo insertItemWithObjectValue:atIndex:] — insert a value at index. */
+    /// [combo insertItemWithObjectValue:atIndex:] — insert a value at index.
     public void insertItemWithObjectValueAtIndex(String value, long index) {
         try {
             hInsert.invokeExact(peer, ObjC.sel("insertItemWithObjectValue:atIndex:"), ObjC.nsstring(value), index);
@@ -77,7 +75,7 @@ public final class NSComboBox extends NSControl {
         }
     }
 
-    /** [combo removeItemAtIndex:] — remove the item at index. */
+    /// [combo removeItemAtIndex:] — remove the item at index.
     public void removeItemAtIndex(long index) {
         try {
             hSelect.invokeExact(peer, ObjC.sel("removeItemAtIndex:"), index);
@@ -86,7 +84,7 @@ public final class NSComboBox extends NSControl {
         }
     }
 
-    /** [combo removeItemWithObjectValue:] — remove the item matching object. */
+    /// [combo removeItemWithObjectValue:] — remove the item matching object.
     public void removeItemWithObjectValue(String value) {
         try {
             hAddItem.invokeExact(peer, ObjC.sel("removeItemWithObjectValue:"), ObjC.nsstring(value));
@@ -95,12 +93,12 @@ public final class NSComboBox extends NSControl {
         }
     }
 
-    /** [combo removeAllItems] — remove all items. */
+    /// [combo removeAllItems] — remove all items.
     public void removeAllItems() {
         ObjC.msgSendVoid(peer, ObjC.sel("removeAllItems"));
     }
 
-    /** [combo selectItemAtIndex:] — select the item at the given index. */
+    /// [combo selectItemAtIndex:] — select the item at the given index.
     public void selectItemAtIndex(long index) {
         try {
             hSelect.invokeExact(peer, ObjC.sel("selectItemAtIndex:"), index);
@@ -109,7 +107,7 @@ public final class NSComboBox extends NSControl {
         }
     }
 
-    /** [combo deselectItemAtIndex:] — deselect the item at index. */
+    /// [combo deselectItemAtIndex:] — deselect the item at index.
     public void deselectItemAtIndex(long index) {
         try {
             hSelect.invokeExact(peer, ObjC.sel("deselectItemAtIndex:"), index);
@@ -118,7 +116,7 @@ public final class NSComboBox extends NSControl {
         }
     }
 
-    /** [combo selectItemWithObjectValue:] — select the item matching object. */
+    /// [combo selectItemWithObjectValue:] — select the item matching object.
     public void selectItemWithObjectValue(String value) {
         try {
             hAddItem.invokeExact(peer, ObjC.sel("selectItemWithObjectValue:"), ObjC.nsstring(value));
@@ -127,17 +125,17 @@ public final class NSComboBox extends NSControl {
         }
     }
 
-    /** [combo indexOfSelectedItem] — index of the current selection, or -1 if none. */
+    /// [combo indexOfSelectedItem] — index of the current selection, or -1 if none.
     public long indexOfSelectedItem() {
         return ObjC.msgSendLong(peer, ObjC.sel("indexOfSelectedItem"));
     }
 
-    /** [combo objectValueOfSelectedItem] — the object value of the selected item (or nil). */
+    /// [combo objectValueOfSelectedItem] — the object value of the selected item (or nil).
     public MemorySegment objectValueOfSelectedItem() {
         return ObjC.msgSendId(peer, ObjC.sel("objectValueOfSelectedItem"));
     }
 
-    /** [combo objectValueOfSelectedItem] as String (convenience). */
+    /// [combo objectValueOfSelectedItem] as String (convenience).
     public String objectValueOfSelectedItemString() {
         MemorySegment v = ObjC.msgSendId(peer, ObjC.sel("objectValueOfSelectedItem"));
         if (v == null || v.address() == 0) return null;
@@ -148,7 +146,7 @@ public final class NSComboBox extends NSControl {
         return ObjC.toString(ObjC.msgSendId(v, ObjC.sel("description")));
     }
 
-    /** [combo itemObjectValueAtIndex:] — object value at index. */
+    /// [combo itemObjectValueAtIndex:] — object value at index.
     public MemorySegment itemObjectValueAtIndex(long index) {
         try {
             return (MemorySegment) hItemValue.invokeExact(peer, ObjC.sel("itemObjectValueAtIndex:"), index);
@@ -157,7 +155,7 @@ public final class NSComboBox extends NSControl {
         }
     }
 
-    /** [combo indexOfItemWithObjectValue:] — index of item with object value, or NSNotFound. */
+    /// [combo indexOfItemWithObjectValue:] — index of item with object value, or NSNotFound.
     public long indexOfItemWithObjectValue(String value) {
         try {
             return (long) hIndexOf.invokeExact(peer, ObjC.sel("indexOfItemWithObjectValue:"), ObjC.nsstring(value));
@@ -166,87 +164,87 @@ public final class NSComboBox extends NSControl {
         }
     }
 
-    /** [combo stringValue] — the string shown/edited in the field. */
+    /// [combo stringValue] — the string shown/edited in the field.
     public String stringValue() {
         return ObjC.toString(ObjC.msgSendId(peer, ObjC.sel("stringValue")));
     }
 
-    /** [combo setEditable:] — YES lets the user type a free-form value. */
+    /// [combo setEditable:] — YES lets the user type a free-form value.
     public void setEditable(boolean flag) {
         ObjC.msgSendVoidBool(peer, ObjC.sel("setEditable:"), flag);
     }
 
-    /** [combo isEditable] — whether the user can type a free-form value. */
+    /// [combo isEditable] — whether the user can type a free-form value.
     public boolean isEditable() {
         return ObjC.msgSendBool(peer, ObjC.sel("isEditable"));
     }
 
-    /** [combo numberOfItems] — number of items in the list. */
+    /// [combo numberOfItems] — number of items in the list.
     public long numberOfItems() {
         return ObjC.msgSendLong(peer, ObjC.sel("numberOfItems"));
     }
 
-    /** [combo completes] — whether completes as you type. */
+    /// [combo completes] — whether completes as you type.
     public boolean completes() {
         return ObjC.msgSendBool(peer, ObjC.sel("completes"));
     }
 
-    /** [combo setCompletes:] — set completes behavior. */
+    /// [combo setCompletes:] — set completes behavior.
     public void setCompletes(boolean flag) {
         ObjC.msgSendVoidBool(peer, ObjC.sel("setCompletes:"), flag);
     }
 
-    /** [combo hasVerticalScroller] — whether vertical scroller is shown. */
+    /// [combo hasVerticalScroller] — whether vertical scroller is shown.
     public boolean hasVerticalScroller() {
         return ObjC.msgSendBool(peer, ObjC.sel("hasVerticalScroller"));
     }
 
-    /** [combo setHasVerticalScroller:] — set scroller visibility. */
+    /// [combo setHasVerticalScroller:] — set scroller visibility.
     public void setHasVerticalScroller(boolean flag) {
         ObjC.msgSendVoidBool(peer, ObjC.sel("setHasVerticalScroller:"), flag);
     }
 
-    /** [combo usesDataSource] — whether data source drives items. */
+    /// [combo usesDataSource] — whether data source drives items.
     public boolean usesDataSource() {
         return ObjC.msgSendBool(peer, ObjC.sel("usesDataSource"));
     }
 
-    /** [combo setUsesDataSource:] — set data source mode. */
+    /// [combo setUsesDataSource:] — set data source mode.
     public void setUsesDataSource(boolean flag) {
         ObjC.msgSendVoidBool(peer, ObjC.sel("setUsesDataSource:"), flag);
     }
 
-    /** [combo numberOfVisibleItems] — number of visible items in dropdown. */
+    /// [combo numberOfVisibleItems] — number of visible items in dropdown.
     public long numberOfVisibleItems() {
         return ObjC.msgSendLong(peer, ObjC.sel("numberOfVisibleItems"));
     }
 
-    /** [combo setNumberOfVisibleItems:] — set visible count. */
+    /// [combo setNumberOfVisibleItems:] — set visible count.
     public void setNumberOfVisibleItems(long n) {
         ObjC.msgSendVoidLong(peer, ObjC.sel("setNumberOfVisibleItems:"), n);
     }
 
-    /** [combo isButtonBordered] — whether button border is shown. */
+    /// [combo isButtonBordered] — whether button border is shown.
     public boolean isButtonBordered() {
         return ObjC.msgSendBool(peer, ObjC.sel("isButtonBordered"));
     }
 
-    /** [combo setButtonBordered:] — set button border. */
+    /// [combo setButtonBordered:] — set button border.
     public void setButtonBordered(boolean flag) {
         ObjC.msgSendVoidBool(peer, ObjC.sel("setButtonBordered:"), flag);
     }
 
-    /** [combo reloadData] — reload from data source. */
+    /// [combo reloadData] — reload from data source.
     public void reloadData() {
         ObjC.msgSendVoid(peer, ObjC.sel("reloadData"));
     }
 
-    /** [combo noteNumberOfItemsChanged] — inform that count changed (data source). */
+    /// [combo noteNumberOfItemsChanged] — inform that count changed (data source).
     public void noteNumberOfItemsChanged() {
         ObjC.msgSendVoid(peer, ObjC.sel("noteNumberOfItemsChanged"));
     }
 
-    /** [combo itemHeight] — height of each item. */
+    /// [combo itemHeight] — height of each item.
     public double itemHeight() {
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.DOUBLE));
@@ -256,7 +254,7 @@ public final class NSComboBox extends NSControl {
         }
     }
 
-    /** [combo setItemHeight:] — set item height. */
+    /// [combo setItemHeight:] — set item height.
     public void setItemHeight(double h) {
         try {
             MethodHandle mh = ObjC.handle(Sig.of(Ret.VOID, Arg.DOUBLE));
@@ -266,7 +264,7 @@ public final class NSComboBox extends NSControl {
         }
     }
 
-    /** [combo objectValues] — copy of object values array id. */
+    /// [combo objectValues] — copy of object values array id.
     public MemorySegment objectValues() {
         return ObjC.msgSendId(peer, ObjC.sel("objectValues"));
     }

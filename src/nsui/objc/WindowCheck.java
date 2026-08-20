@@ -8,12 +8,10 @@ import java.lang.foreign.SymbolLookup;
 import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
 
-/**
- * Pure-FFM verification helper: asks the macOS window server (CoreGraphics
- * CGWindowListCopyWindowInfo) which windows are actually on screen and reports
- * the ones owned by our process. This proves — from outside AppKit — that the
- * window really exists on the display.
- */
+/// Pure-FFM verification helper: asks the macOS window server (CoreGraphics
+/// CGWindowListCopyWindowInfo) which windows are actually on screen and reports
+/// the ones owned by our process. This proves — from outside AppKit — that the
+/// window really exists on the display.
 public final class WindowCheck {
 
     private static final long KCG_WINDOW_LIST_OPTION_ON_SCREEN_ONLY = 1L;
@@ -40,7 +38,7 @@ public final class WindowCheck {
 
     private WindowCheck() {}
 
-    /** Run-time init, from main() (native-image: no FFM work in static initializers). */
+    /// Run-time init, from main() (native-image: no FFM work in static initializers).
     public static void init() {
         LINKER = Linker.nativeLinker();
         ARENA = Arena.global();
@@ -68,7 +66,7 @@ public final class WindowCheck {
         kBounds = readConst(cg, "kCGWindowBounds");
     }
 
-    /** List on-screen windows owned by {@code pid}; returns true if our window is there. */
+    /// List on-screen windows owned by `pid`; returns true if our window is there.
     public static boolean report(long pid, long expectedWindowNumber) {
         try {
             MemorySegment list = (MemorySegment) invoke(hListCopy, KCG_WINDOW_LIST_OPTION_ON_SCREEN_ONLY, 0L);
@@ -136,7 +134,7 @@ public final class WindowCheck {
         return ok ? buf.getString(0L) : null;
     }
 
-    /** dlsym-style read of an exported data symbol: the symbol address holds a pointer value. */
+    /// dlsym-style read of an exported data symbol: the symbol address holds a pointer value.
     static MemorySegment readConst(SymbolLookup lookup, String name) {
         MemorySegment sym = lookup.find(name).orElseThrow(() -> new IllegalStateException("symbol not found: " + name));
         return sym.reinterpret(PTR.byteSize()).get(ValueLayout.ADDRESS, 0);

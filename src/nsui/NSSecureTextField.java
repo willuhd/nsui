@@ -8,12 +8,10 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSSecureTextField — an AppKit secure (password) text field control.
- * Thin 1:1 wrapper over a native {@code NSSecureTextField}: every method maps
- * to one {@code objc_msgSend} selector, no cached Java state beyond the peer.
- * Mirrors the native hierarchy: NSSecureTextField is an NSTextField is an NSControl is an NSView.
- */
+/// NSSecureTextField — an AppKit secure (password) text field control.
+/// Thin 1:1 wrapper over a native `NSSecureTextField`: every method maps
+/// to one `objc_msgSend` selector, no cached Java state beyond the peer.
+/// Mirrors the native hierarchy: NSSecureTextField is an NSTextField is an NSControl is an NSView.
 public class NSSecureTextField extends NSTextField {
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
@@ -33,7 +31,7 @@ public class NSSecureTextField extends NSTextField {
         initialized = true;
     }
 
-    /** {@code [[NSSecureTextField alloc] initWithFrame:frame]} — a new secure field at the given rect. */
+    /// `[[NSSecureTextField alloc] initWithFrame:frame]` — a new secure field at the given rect.
     public static NSSecureTextField create(NSRect frame) {
         ensureInit();
         MemorySegment f = ObjC.msgSendId(ObjC.cls("NSSecureTextField"), ObjC.sel("alloc"));
@@ -56,7 +54,7 @@ public class NSSecureTextField extends NSTextField {
     @Override
     public void setStringValue(String value) { super.setStringValue(value); }
 
-    /** [field echosBullets] — whether the field echoes bullets instead of the actual text (via its cell). */
+    /// [field echosBullets] — whether the field echoes bullets instead of the actual text (via its cell).
     public boolean echosBullets() {
         MemorySegment cell = ObjC.msgSendId(peer, ObjC.sel("cell"));
         if (cell == null || cell.address() == 0) return false;
@@ -70,12 +68,12 @@ public class NSSecureTextField extends NSTextField {
         return ObjC.msgSendBool(cell, ObjC.sel("echosBullets"));
     }
 
-    /** Alias for {@link #echosBullets()} — Java-bean is-prefix. */
+    /// Alias for `echosBullets` — Java-bean is-prefix.
     public boolean isEchosBullets() {
         return echosBullets();
     }
 
-    /** [field setEchosBullets:] — set whether bullets are echoed (via its cell). */
+    /// [field setEchosBullets:] — set whether bullets are echoed (via its cell).
     public void setEchosBullets(boolean flag) {
         MemorySegment cell = ObjC.msgSendId(peer, ObjC.sel("cell"));
         if (cell == null || cell.address() == 0) return;

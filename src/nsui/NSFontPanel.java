@@ -8,10 +8,8 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSFontPanel — the system Font panel.
- * Thin 1:1 wrapper over native {@code NSFontPanel} (an NSPanel subclass).
- */
+/// NSFontPanel — the system Font panel.
+/// Thin 1:1 wrapper over native `NSFontPanel` (an NSPanel subclass).
 public final class NSFontPanel extends NSObject {
 
     private static volatile boolean initialized;
@@ -40,14 +38,14 @@ public final class NSFontPanel extends NSObject {
 
     // ---- shared ----
 
-    /** {@code +[NSFontPanel sharedFontPanel]} */
+    /// `+[NSFontPanel sharedFontPanel]`
     public static NSFontPanel sharedFontPanel() {
         ensureInit();
         MemorySegment p = ObjC.msgSendId(ObjC.cls("NSFontPanel"), ObjC.sel("sharedFontPanel"));
         return wrap(p);
     }
 
-    /** {@code +[NSFontPanel sharedFontPanelExists]} */
+    /// `+[NSFontPanel sharedFontPanelExists]`
     public static boolean sharedFontPanelExists() {
         ensureInit();
         try {
@@ -59,7 +57,7 @@ public final class NSFontPanel extends NSObject {
 
     // ---- font ----
 
-    /** [panel panelConvertFont:] -> NSFont */
+    /// [panel panelConvertFont:] -> NSFont
     public NSFont panelConvertFont(NSFont font) {
         ensureInit();
         try {
@@ -71,7 +69,7 @@ public final class NSFontPanel extends NSObject {
         }
     }
 
-    /** [panel setPanelFont:isMultiple:] */
+    /// [panel setPanelFont:isMultiple:]
     public void setPanelFont(NSFont font, boolean isMultiple) {
         ensureInit();
         try {
@@ -81,7 +79,7 @@ public final class NSFontPanel extends NSObject {
         }
     }
 
-    /** [panel isEnabled] */
+    /// [panel isEnabled]
     public boolean isEnabled() {
         ensureInit();
         try { return (boolean) hBool.invokeExact(peer, ObjC.sel("isEnabled")); } catch (Throwable t) { throw new RuntimeException("isEnabled failed", t); }
@@ -93,27 +91,27 @@ public final class NSFontPanel extends NSObject {
 
     // ---- panel behavior ----
 
-    /** [panel isVisible] */
+    /// [panel isVisible]
     public boolean isVisible() {
         return ObjC.msgSendBool(peer, ObjC.sel("isVisible"));
     }
 
-    /** [panel orderFront:] */
+    /// [panel orderFront:]
     public void orderFront(MemorySegment sender) {
         ObjC.msgSendVoidId(peer, ObjC.sel("orderFront:"), (MemorySegment) (sender == null ? MemorySegment.NULL : sender));
     }
 
-    /** [panel orderOut:] */
+    /// [panel orderOut:]
     public void orderOut(MemorySegment sender) {
         ObjC.msgSendVoidId(peer, ObjC.sel("orderOut:"), (MemorySegment) (sender == null ? MemorySegment.NULL : sender));
     }
 
-    /** [panel makeKeyAndOrderFront:] */
+    /// [panel makeKeyAndOrderFront:]
     public void makeKeyAndOrderFront(MemorySegment sender) {
         ObjC.msgSendVoidId(peer, ObjC.sel("makeKeyAndOrderFront:"), (MemorySegment) (sender == null ? MemorySegment.NULL : sender));
     }
 
-    /** [panel accessoryView] */
+    /// [panel accessoryView]
     public NSView accessoryView() {
         ensureInit();
         try {
@@ -129,7 +127,7 @@ public final class NSFontPanel extends NSObject {
 
     // ---- working with NSFontManager ----
 
-    /** [panel worksWhenModal] */
+    /// [panel worksWhenModal]
     public boolean worksWhenModal() {
         return ObjC.msgSendBool(peer, ObjC.sel("worksWhenModal"));
     }

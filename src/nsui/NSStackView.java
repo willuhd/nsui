@@ -8,39 +8,37 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSStackView — the toolkit's <em>layout manager</em>. Arranged subviews are
- * positioned and sized by AppKit (spacing, alignment, distribution/gravity), so
- * callers never hand-compute frames: they {@link #addArrangedSubview(NSView)} in
- * order and AppKit stacks them along the chosen {@link #setOrientation(long) axis},
- * honouring each subview's intrinsic size.
- *
- * <p>This is AppKit's OWN layout container exposed as a first-class L1 class — NOT
- * a Java layout manager. The layout happens natively on the main thread, so the
- * arranged subviews always land where the run loop puts them and {@link #frame()}
- * reflects the computed result exactly like any other view.
- *
- * <p>Thin, 1:1, stateless wrapper (SWT-style) over a native {@code NSStackView};
- * every method maps to one {@code objc_msgSend} selector.
- *
- * <p><strong>Intrinsic sizes:</strong> an arranged subview's laid-out frame is its
- * intrinsic content size where AppKit knows one (controls like {@link NSButton} and
- * {@link NSTextField} report intrinsic sizes, so a {@code sizeToFit} button or a
- * created text field arrives with the right size). A plain {@link NSView} that reports
- * no intrinsic size keeps the frame it had when added — provided
- * {@link #setTranslatesAutoresizingMaskIntoConstraints(boolean)} is left at its
- * default {@code true} (see below).
- *
- * <p><strong>When {@code translatesAutoresizingMaskIntoConstraints} matters:</strong>
- * in an <em>Auto Layout</em> hierarchy (the standard combo for stack-arranged views)
- * you usually set it to {@code false} so the stack, not the superview's autoresizing
- * mask, drives each arranged subview's size. In <em>this</em> manual-frame world the
- * stack itself is pinned with an explicit {@code setFrame:}, and arranged subviews
- * carry their own frames; leaving the default {@code true} lets the stack honour the
- * frame a plain subview already had. Set it to {@code false} only when you want each
- * arranged view's size to come purely from its intrinsic size / the stack's algorithm
- * and you are inside a constrained layout.
- */
+/// NSStackView — the toolkit's *layout manager*. Arranged subviews are
+/// positioned and sized by AppKit (spacing, alignment, distribution/gravity), so
+/// callers never hand-compute frames: they `addArrangedSubview` in
+/// order and AppKit stacks them along the chosen `axis`,
+/// honouring each subview's intrinsic size.
+///
+/// This is AppKit's OWN layout container exposed as a first-class L1 class — NOT
+/// a Java layout manager. The layout happens natively on the main thread, so the
+/// arranged subviews always land where the run loop puts them and `frame`
+/// reflects the computed result exactly like any other view.
+///
+/// Thin, 1:1, stateless wrapper (SWT-style) over a native `NSStackView`;
+/// every method maps to one `objc_msgSend` selector.
+///
+/// **Intrinsic sizes:** an arranged subview's laid-out frame is its
+/// intrinsic content size where AppKit knows one (controls like `NSButton` and
+/// `NSTextField` report intrinsic sizes, so a `sizeToFit` button or a
+/// created text field arrives with the right size). A plain `NSView` that reports
+/// no intrinsic size keeps the frame it had when added — provided
+/// `setTranslatesAutoresizingMaskIntoConstraints` is left at its
+/// default `true` (see below).
+///
+/// **When `translatesAutoresizingMaskIntoConstraints` matters:**
+/// in an *Auto Layout* hierarchy (the standard combo for stack-arranged views)
+/// you usually set it to `false` so the stack, not the superview's autoresizing
+/// mask, drives each arranged subview's size. In *this* manual-frame world the
+/// stack itself is pinned with an explicit `setFrame:`, and arranged subviews
+/// carry their own frames; leaving the default `true` lets the stack honour the
+/// frame a plain subview already had. Set it to `false` only when you want each
+/// arranged view's size to come purely from its intrinsic size / the stack's algorithm
+/// and you are inside a constrained layout.
 public class NSStackView extends NSView {
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
@@ -66,7 +64,7 @@ public class NSStackView extends NSView {
         initialized = true;
     }
 
-    /** {@code [[NSStackView alloc] initWithFrame:frame]} — a new stack with the given frame. */
+    /// `[[NSStackView alloc] initWithFrame:frame]` — a new stack with the given frame.
     public static NSStackView create(NSRect frame) {
         ensureInit();
         MemorySegment s = ObjC.msgSendId(ObjC.cls("NSStackView"), ObjC.sel("alloc"));
@@ -83,24 +81,24 @@ public class NSStackView extends NSView {
 
     // ---------------------------------------------------------------- arranged subviews
 
-    /** addArrangedSubview: — append a view to the stack (also a subview). */
+    /// addArrangedSubview: — append a view to the stack (also a subview).
     public void addArrangedSubview(NSView subview) {
         ObjC.msgSendVoidId(peer, ObjC.sel("addArrangedSubview:"), subview.peer());
     }
 
-    /** removeArrangedSubview: — take a view back out of the stack's layout (still a subview). */
+    /// removeArrangedSubview: — take a view back out of the stack's layout (still a subview).
     public void removeArrangedSubview(NSView subview) {
         ObjC.msgSendVoidId(peer, ObjC.sel("removeArrangedSubview:"), subview.peer());
     }
 
     // ---------------------------------------------------------------- geometry
 
-    /** setOrientation: — the stacking axis: 0 = horizontal, 1 = vertical (NSUserInterfaceLayoutOrientation). */
+    /// setOrientation: — the stacking axis: 0 = horizontal, 1 = vertical (NSUserInterfaceLayoutOrientation).
     public void setOrientation(long orientation) {
         ObjC.msgSendVoidLong(peer, ObjC.sel("setOrientation:"), orientation);
     }
 
-    /** setSpacing: — the gap, in points, between adjacent arranged subviews (also the gravity-area gap). */
+    /// setSpacing: — the gap, in points, between adjacent arranged subviews (also the gravity-area gap).
     public void setSpacing(double spacing) {
         try {
             hSpacing.invokeExact(peer, ObjC.sel("setSpacing:"), spacing);
@@ -109,21 +107,19 @@ public class NSStackView extends NSView {
         }
     }
 
-    /** setAlignment: — alignment of the arranged views along the non-stacking axis (an NSLayoutAttribute). */
+    /// setAlignment: — alignment of the arranged views along the non-stacking axis (an NSLayoutAttribute).
     public void setAlignment(long alignment) {
         ObjC.msgSendVoidLong(peer, ObjC.sel("setAlignment:"), alignment);
     }
 
-    /** setDistribution: — the horizontal/vertical layout of arranged subviews (an NSStackViewDistribution). */
+    /// setDistribution: — the horizontal/vertical layout of arranged subviews (an NSStackViewDistribution).
     public void setDistribution(long distribution) {
         ObjC.msgSendVoidLong(peer, ObjC.sel("setDistribution:"), distribution);
     }
 
-    /**
-     * setEdgeInsets: — the padding between the stack's bounds and the arranged subviews.
-     * Takes a typed {@link NSEdgeInsets} (four doubles: top, left, bottom, right).
-     * The struct is passed by value (32 bytes, layout-identical to NSRect for ABI).
-     */
+    /// setEdgeInsets: — the padding between the stack's bounds and the arranged subviews.
+    /// Takes a typed `NSEdgeInsets` (four doubles: top, left, bottom, right).
+    /// The struct is passed by value (32 bytes, layout-identical to NSRect for ABI).
     public void setEdgeInsets(NSEdgeInsets insets) {
         try {
             hEdgeInsets.invokeExact(peer, ObjC.sel("setEdgeInsets:"), insets.toSegment());
@@ -132,15 +128,13 @@ public class NSStackView extends NSView {
         }
     }
 
-    /**
-     * setEdgeInsets: — convenience overload parametrized as (top, left, bottom, right).
-     * Delegates to {@link #setEdgeInsets(NSEdgeInsets)}.
-     */
+    /// setEdgeInsets: — convenience overload parametrized as (top, left, bottom, right).
+    /// Delegates to `setEdgeInsets`.
     public void setEdgeInsets(double top, double left, double bottom, double right) {
         setEdgeInsets(new NSEdgeInsets(top, left, bottom, right));
     }
 
-    /** edgeInsets — the current padding (NSEdgeInsets, 32-byte struct return). */
+    /// edgeInsets — the current padding (NSEdgeInsets, 32-byte struct return).
     public NSEdgeInsets edgeInsets() {
         try {
             MemorySegment s = (MemorySegment) hGetInsets.invokeExact(
@@ -152,25 +146,23 @@ public class NSStackView extends NSView {
         }
     }
 
-    /**
-     * setTranslatesAutoresizingMaskIntoConstraints: — whether the stack's arranged subviews
-     * keep the frames implied by their autoresizing masks. The default (true) lets the stack
-     * use the frame a plain subview already had when it can't infer an intrinsic size; set to
-     * false when in a constrained layout where each arranged view's size must come purely from
-     * its intrinsic size / the stack's algorithm. See the class Javadoc for when it matters.
-     */
+    /// setTranslatesAutoresizingMaskIntoConstraints: — whether the stack's arranged subviews
+    /// keep the frames implied by their autoresizing masks. The default (true) lets the stack
+    /// use the frame a plain subview already had when it can't infer an intrinsic size; set to
+    /// false when in a constrained layout where each arranged view's size must come purely from
+    /// its intrinsic size / the stack's algorithm. See the class Javadoc for when it matters.
     public void setTranslatesAutoresizingMaskIntoConstraints(boolean flag) {
         ObjC.msgSendVoidBool(peer, ObjC.sel("setTranslatesAutoresizingMaskIntoConstraints:"), flag);
     }
 
     // ---------------------------------------------------------------- completeness getters
 
-    /** orientation — 0 horizontal, 1 vertical. */
+    /// orientation — 0 horizontal, 1 vertical.
     public long orientation() {
         return ObjC.msgSendLong(peer, ObjC.sel("orientation"));
     }
 
-    /** spacing — gap between arranged subviews. */
+    /// spacing — gap between arranged subviews.
     public double spacing() {
         try {
             return (double) hGetDouble.invokeExact(peer, ObjC.sel("spacing"));
@@ -179,27 +171,27 @@ public class NSStackView extends NSView {
         }
     }
 
-    /** alignment — NSLayoutAttribute. */
+    /// alignment — NSLayoutAttribute.
     public long alignment() {
         return ObjC.msgSendLong(peer, ObjC.sel("alignment"));
     }
 
-    /** distribution — NSStackViewDistribution. */
+    /// distribution — NSStackViewDistribution.
     public long distribution() {
         return ObjC.msgSendLong(peer, ObjC.sel("distribution"));
     }
 
-    /** detachesHiddenViews — whether hidden arranged views are detached. */
+    /// detachesHiddenViews — whether hidden arranged views are detached.
     public boolean detachesHiddenViews() {
         return ObjC.msgSendBool(peer, ObjC.sel("detachesHiddenViews"));
     }
 
-    /** setDetachesHiddenViews:. */
+    /// setDetachesHiddenViews:.
     public void setDetachesHiddenViews(boolean flag) {
         ObjC.msgSendVoidBool(peer, ObjC.sel("setDetachesHiddenViews:"), flag);
     }
 
-    /** arrangedSubviews — the arranged views. */
+    /// arrangedSubviews — the arranged views.
     public java.util.List<NSView> arrangedSubviews() {
         MemorySegment arr = ObjC.msgSendId(peer, ObjC.sel("arrangedSubviews"));
         if (arr == null || arr.address() == 0) return java.util.List.of();
@@ -218,7 +210,7 @@ public class NSStackView extends NSView {
         return java.util.Collections.unmodifiableList(list);
     }
 
-    /** translatesAutoresizingMaskIntoConstraints getter. */
+    /// translatesAutoresizingMaskIntoConstraints getter.
     public boolean translatesAutoresizingMaskIntoConstraints() {
         return ObjC.msgSendBool(peer, ObjC.sel("translatesAutoresizingMaskIntoConstraints"));
     }

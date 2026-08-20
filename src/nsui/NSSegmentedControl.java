@@ -8,17 +8,15 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSSegmentedControl — an AppKit segmented control (a row of adjacent buttons,
- * one selected at a time). Thin, 1:1, stateless wrapper over a native
- * {@code NSSegmentedControl} (SWT-style): every method maps to one
- * {@code objc_msgSend} selector, no cached Java state beyond the peer. It is an
- * {@link NSControl} (an {@link NSView}), so it fits any view hierarchy and
- * supports enable/disable via {@link #setEnabled}.
- *
- * <p>The segment count and per-segment labels must be established before the
- * control draws ({@link #setSegmentCount} then {@link #setLabel} per segment).
- */
+/// NSSegmentedControl — an AppKit segmented control (a row of adjacent buttons,
+/// one selected at a time). Thin, 1:1, stateless wrapper over a native
+/// `NSSegmentedControl` (SWT-style): every method maps to one
+/// `objc_msgSend` selector, no cached Java state beyond the peer. It is an
+/// `NSControl` (an `NSView`), so it fits any view hierarchy and
+/// supports enable/disable via `setEnabled`.
+///
+/// The segment count and per-segment labels must be established before the
+/// control draws (`setSegmentCount` then `setLabel` per segment).
 public final class NSSegmentedControl extends NSControl {
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
@@ -76,7 +74,7 @@ public final class NSSegmentedControl extends NSControl {
         initialized = true;
     }
 
-    /** {@code [[NSSegmentedControl alloc] initWithFrame:frame]} — a new control at the given rect. */
+    /// `[[NSSegmentedControl alloc] initWithFrame:frame]` — a new control at the given rect.
     public static NSSegmentedControl create(NSRect frame) {
         ensureInit();
         MemorySegment s = ObjC.msgSendId(ObjC.cls("NSSegmentedControl"), ObjC.sel("alloc"));
@@ -93,7 +91,7 @@ public final class NSSegmentedControl extends NSControl {
 
     // ---------------------------------------------------------------- instance API
 
-    /** [control setSegmentCount:] — number of segments. */
+    /// [control setSegmentCount:] — number of segments.
     public void setSegmentCount(long count) {
         try {
             hSetCount.invokeExact(peer, ObjC.sel("setSegmentCount:"), count);
@@ -102,12 +100,12 @@ public final class NSSegmentedControl extends NSControl {
         }
     }
 
-    /** [control segmentCount] — number of segments. */
+    /// [control segmentCount] — number of segments.
     public long segmentCount() {
         return ObjC.msgSendLong(peer, ObjC.sel("segmentCount"));
     }
 
-    /** [control setLabel:forSegment:] — the text shown on the given segment (0-based). */
+    /// [control setLabel:forSegment:] — the text shown on the given segment (0-based).
     public void setLabel(String label, long segment) {
         try {
             hSetLabel.invokeExact(peer, ObjC.sel("setLabel:forSegment:"), ObjC.nsstring(label), segment);
@@ -116,7 +114,7 @@ public final class NSSegmentedControl extends NSControl {
         }
     }
 
-    /** [control labelForSegment:] — the label for the segment. */
+    /// [control labelForSegment:] — the label for the segment.
     public String labelForSegment(long segment) {
         try {
             MemorySegment s = (MemorySegment) hLabelFor.invokeExact(peer, ObjC.sel("labelForSegment:"), segment);
@@ -126,7 +124,7 @@ public final class NSSegmentedControl extends NSControl {
         }
     }
 
-    /** [control setImage:forSegment:] — set image for segment (nil clears). */
+    /// [control setImage:forSegment:] — set image for segment (nil clears).
     public void setImage(NSImage image, long segment) {
         try {
             MemorySegment img = (image == null) ? MemorySegment.NULL : image.peer();
@@ -136,7 +134,7 @@ public final class NSSegmentedControl extends NSControl {
         }
     }
 
-    /** [control imageForSegment:] — image for segment (or nil). */
+    /// [control imageForSegment:] — image for segment (or nil).
     public MemorySegment imageForSegment(long segment) {
         try {
             return (MemorySegment) hImageFor.invokeExact(peer, ObjC.sel("imageForSegment:"), segment);
@@ -145,7 +143,7 @@ public final class NSSegmentedControl extends NSControl {
         }
     }
 
-    /** [control setEnabled:forSegment:] — enable/disable a segment. */
+    /// [control setEnabled:forSegment:] — enable/disable a segment.
     public void setEnabledForSegment(boolean enabled, long segment) {
         try {
             hSetEnabled.invokeExact(peer, ObjC.sel("setEnabled:forSegment:"), enabled, segment);
@@ -154,7 +152,7 @@ public final class NSSegmentedControl extends NSControl {
         }
     }
 
-    /** [control isEnabledForSegment:] — whether segment is enabled. */
+    /// [control isEnabledForSegment:] — whether segment is enabled.
     public boolean isEnabledForSegment(long segment) {
         try {
             return (boolean) hIsEnabled.invokeExact(peer, ObjC.sel("isEnabledForSegment:"), segment);
@@ -163,7 +161,7 @@ public final class NSSegmentedControl extends NSControl {
         }
     }
 
-    /** [control setWidth:forSegment:] — set width for segment (0 = auto). */
+    /// [control setWidth:forSegment:] — set width for segment (0 = auto).
     public void setWidthForSegment(double width, long segment) {
         try {
             hSetWidth.invokeExact(peer, ObjC.sel("setWidth:forSegment:"), width, segment);
@@ -172,7 +170,7 @@ public final class NSSegmentedControl extends NSControl {
         }
     }
 
-    /** [control widthForSegment:] — width for segment (0 = auto). */
+    /// [control widthForSegment:] — width for segment (0 = auto).
     public double widthForSegment(long segment) {
         try {
             return (double) hWidthFor.invokeExact(peer, ObjC.sel("widthForSegment:"), segment);
@@ -181,7 +179,7 @@ public final class NSSegmentedControl extends NSControl {
         }
     }
 
-    /** [control setToolTip:forSegment:] — set tooltip for segment. */
+    /// [control setToolTip:forSegment:] — set tooltip for segment.
     public void setToolTipForSegment(String toolTip, long segment) {
         try {
             MemorySegment s = (toolTip == null) ? MemorySegment.NULL : ObjC.nsstring(toolTip);
@@ -191,7 +189,7 @@ public final class NSSegmentedControl extends NSControl {
         }
     }
 
-    /** [control toolTipForSegment:] — tooltip for segment. */
+    /// [control toolTipForSegment:] — tooltip for segment.
     public String toolTipForSegment(long segment) {
         try {
             MemorySegment s = (MemorySegment) hToolTipFor.invokeExact(peer, ObjC.sel("toolTipForSegment:"), segment);
@@ -201,7 +199,7 @@ public final class NSSegmentedControl extends NSControl {
         }
     }
 
-    /** [control setMenu:forSegment:] — set menu for segment. */
+    /// [control setMenu:forSegment:] — set menu for segment.
     public void setMenuForSegment(NSMenu menu, long segment) {
         try {
             MemorySegment m = (menu == null) ? MemorySegment.NULL : menu.peer();
@@ -211,7 +209,7 @@ public final class NSSegmentedControl extends NSControl {
         }
     }
 
-    /** [control menuForSegment:] — menu for segment (or nil). */
+    /// [control menuForSegment:] — menu for segment (or nil).
     public MemorySegment menuForSegment(long segment) {
         try {
             return (MemorySegment) hMenuFor.invokeExact(peer, ObjC.sel("menuForSegment:"), segment);
@@ -220,7 +218,7 @@ public final class NSSegmentedControl extends NSControl {
         }
     }
 
-    /** [control setSelected:forSegment:] — set selected state for segment (trackingMode SelectAny). */
+    /// [control setSelected:forSegment:] — set selected state for segment (trackingMode SelectAny).
     public void setSelectedForSegment(boolean selected, long segment) {
         try {
             hSetSelectedFor.invokeExact(peer, ObjC.sel("setSelected:forSegment:"), selected, segment);
@@ -229,7 +227,7 @@ public final class NSSegmentedControl extends NSControl {
         }
     }
 
-    /** [control isSelectedForSegment:] — selected state for segment. */
+    /// [control isSelectedForSegment:] — selected state for segment.
     public boolean isSelectedForSegment(long segment) {
         try {
             return (boolean) hIsSelectedFor.invokeExact(peer, ObjC.sel("isSelectedForSegment:"), segment);
@@ -238,7 +236,7 @@ public final class NSSegmentedControl extends NSControl {
         }
     }
 
-    /** [control setSelectedSegment:] — select the segment at the given index. */
+    /// [control setSelectedSegment:] — select the segment at the given index.
     public void setSelectedSegment(long index) {
         try {
             hSetSelected.invokeExact(peer, ObjC.sel("setSelectedSegment:"), index);
@@ -247,32 +245,32 @@ public final class NSSegmentedControl extends NSControl {
         }
     }
 
-    /** [control selectedSegment] — index of the selected segment, or -1 if none. */
+    /// [control selectedSegment] — index of the selected segment, or -1 if none.
     public long selectedSegment() {
         return ObjC.msgSendLong(peer, ObjC.sel("selectedSegment"));
     }
 
-    /** [control setSegmentStyle:] — NSSegmentStyle (0=Automatic, 1=Rounded, 2=TexturedRounded, ...). */
+    /// [control setSegmentStyle:] — NSSegmentStyle (0=Automatic, 1=Rounded, 2=TexturedRounded, ...).
     public void setSegmentStyle(long style) {
         ObjC.msgSendVoidLong(peer, ObjC.sel("setSegmentStyle:"), style);
     }
 
-    /** [control segmentStyle] — current segment style. */
+    /// [control segmentStyle] — current segment style.
     public long segmentStyle() {
         return ObjC.msgSendLong(peer, ObjC.sel("segmentStyle"));
     }
 
-    /** [control trackingMode] — NSSegmentSwitchTracking (0=SelectOne,1=SelectAny,2=Momentary...). */
+    /// [control trackingMode] — NSSegmentSwitchTracking (0=SelectOne,1=SelectAny,2=Momentary...).
     public long trackingMode() {
         return ObjC.msgSendLong(peer, ObjC.sel("trackingMode"));
     }
 
-    /** [control setTrackingMode:] — set tracking mode. */
+    /// [control setTrackingMode:] — set tracking mode.
     public void setTrackingMode(long mode) {
         ObjC.msgSendVoidLong(peer, ObjC.sel("setTrackingMode:"), mode);
     }
 
-    /** [control tagForSegment:] — tag for segment. */
+    /// [control tagForSegment:] — tag for segment.
     public long tagForSegment(long segment) {
         try {
             return (long) hTagForSegment.invokeExact(peer, ObjC.sel("tagForSegment:"), segment);
@@ -281,7 +279,7 @@ public final class NSSegmentedControl extends NSControl {
         }
     }
 
-    /** [control setTag:forSegment:] — set tag for segment. */
+    /// [control setTag:forSegment:] — set tag for segment.
     public void setTagForSegment(long tag, long segment) {
         try {
             hSetTag.invokeExact(peer, ObjC.sel("setTag:forSegment:"), tag, segment);
@@ -290,7 +288,7 @@ public final class NSSegmentedControl extends NSControl {
         }
     }
 
-    /** [control showsMenuIndicatorForSegment:] — whether segment shows menu indicator. */
+    /// [control showsMenuIndicatorForSegment:] — whether segment shows menu indicator.
     public boolean showsMenuIndicatorForSegment(long segment) {
         try {
             return (boolean) hShowsMenuIndicator.invokeExact(peer, ObjC.sel("showsMenuIndicatorForSegment:"), segment);
@@ -299,7 +297,7 @@ public final class NSSegmentedControl extends NSControl {
         }
     }
 
-    /** [control setShowsMenuIndicator:forSegment:] — set menu indicator visibility for segment. */
+    /// [control setShowsMenuIndicator:forSegment:] — set menu indicator visibility for segment.
     public void setShowsMenuIndicatorForSegment(boolean flag, long segment) {
         try {
             hSetShowsMenuIndicator.invokeExact(peer, ObjC.sel("setShowsMenuIndicator:forSegment:"), flag, segment);

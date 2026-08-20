@@ -8,10 +8,8 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSAnimationContext — minimal wrapper over AppKit NSAnimationContext.
- * Provides currentContext, duration, and grouping.
- */
+/// NSAnimationContext — minimal wrapper over AppKit NSAnimationContext.
+/// Provides currentContext, duration, and grouping.
 public final class NSAnimationContext extends NSObject {
 
     private static volatile boolean initialized;
@@ -42,7 +40,7 @@ public final class NSAnimationContext extends NSObject {
         initialized = true;
     }
 
-    /** +[NSAnimationContext currentContext] */
+    /// +[NSAnimationContext currentContext]
     public static NSAnimationContext currentContext() {
         ensureInit();
         try {
@@ -53,7 +51,7 @@ public final class NSAnimationContext extends NSObject {
         }
     }
 
-    /** +[NSAnimationContext beginGrouping] */
+    /// +[NSAnimationContext beginGrouping]
     public static void beginGrouping() {
         ensureInit();
         try {
@@ -64,7 +62,7 @@ public final class NSAnimationContext extends NSObject {
         }
     }
 
-    /** +[NSAnimationContext endGrouping] */
+    /// +[NSAnimationContext endGrouping]
     public static void endGrouping() {
         ensureInit();
         try {
@@ -75,7 +73,7 @@ public final class NSAnimationContext extends NSObject {
         }
     }
 
-    /** -duration */
+    /// -duration
     public double duration() {
         ensureInit();
         try {
@@ -85,7 +83,7 @@ public final class NSAnimationContext extends NSObject {
         }
     }
 
-    /** -setDuration: */
+    /// -setDuration:
     public void setDuration(double d) {
         ensureInit();
         try {
@@ -95,7 +93,7 @@ public final class NSAnimationContext extends NSObject {
         }
     }
 
-    /** -completionHandler / setCompletionHandler: — simplified to void/bool helpers if needed */
+    /// -completionHandler / setCompletionHandler: — simplified to void/bool helpers if needed
     public boolean allowsImplicitAnimation() {
         ensureInit();
         try {
@@ -114,7 +112,7 @@ public final class NSAnimationContext extends NSObject {
         }
     }
 
-    /** Run animation group helper: beginGrouping() / setDuration / block / endGrouping */
+    /// Run animation group helper: beginGrouping() / setDuration / block / endGrouping
     public static void runAnimationGroup(java.lang.Runnable changes, double duration) {
         beginGrouping();
         try {

@@ -8,16 +8,14 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSStepper — an AppKit small up/down stepper control. Thin, 1:1, stateless wrapper
- * over a native {@code NSStepper}: every method maps to one {@code objc_msgSend}
- * selector. It is an {@link NSControl} (an {@link NSView}), so it fits any view hierarchy.
- *
- * <p>Value semantics: like {@code NSSlider}, AppKit clamps {@code doubleValue} to
- * {@code [min, max]} and steps by {@code increment}; a value set beyond the range is
- * clamped on read-back. The {@link NSControl#setAction}/{@link NSControl#setTarget}
- * pair lets {@code doubleValue()} retrieve the value after user interaction.
- */
+/// NSStepper — an AppKit small up/down stepper control. Thin, 1:1, stateless wrapper
+/// over a native `NSStepper`: every method maps to one `objc_msgSend`
+/// selector. It is an `NSControl` (an `NSView`), so it fits any view hierarchy.
+///
+/// Value semantics: like `NSSlider`, AppKit clamps `doubleValue` to
+/// `[min, max]` and steps by `increment`; a value set beyond the range is
+/// clamped on read-back. The `setAction`/`setTarget`
+/// pair lets `doubleValue()` retrieve the value after user interaction.
 public final class NSStepper extends NSControl {
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
@@ -39,7 +37,7 @@ public final class NSStepper extends NSControl {
         initialized = true;
     }
 
-    /** {@code [[NSStepper alloc] initWithFrame:frame]} — a new stepper at the given rect. */
+    /// `[[NSStepper alloc] initWithFrame:frame]` — a new stepper at the given rect.
     public static NSStepper create(NSRect frame) {
         ensureInit();
         MemorySegment p = ObjC.msgSendId(ObjC.cls("NSStepper"), ObjC.sel("alloc"));
@@ -56,7 +54,7 @@ public final class NSStepper extends NSControl {
 
     // ---------------------------------------------------------------- instance API
 
-    /** [stepper setMinValue:] — minimum value. */
+    /// [stepper setMinValue:] — minimum value.
     public void setMinValue(double v) {
         try {
             hSetDouble.invokeExact(peer, ObjC.sel("setMinValue:"), v);
@@ -65,7 +63,7 @@ public final class NSStepper extends NSControl {
         }
     }
 
-    /** [stepper minValue] — minimum value. */
+    /// [stepper minValue] — minimum value.
     public double minValue() {
         try {
             return (double) hDouble.invokeExact(peer, ObjC.sel("minValue"));
@@ -74,7 +72,7 @@ public final class NSStepper extends NSControl {
         }
     }
 
-    /** [stepper setMaxValue:] — maximum value. */
+    /// [stepper setMaxValue:] — maximum value.
     public void setMaxValue(double v) {
         try {
             hSetDouble.invokeExact(peer, ObjC.sel("setMaxValue:"), v);
@@ -83,7 +81,7 @@ public final class NSStepper extends NSControl {
         }
     }
 
-    /** [stepper maxValue] — maximum value. */
+    /// [stepper maxValue] — maximum value.
     public double maxValue() {
         try {
             return (double) hDouble.invokeExact(peer, ObjC.sel("maxValue"));
@@ -92,7 +90,7 @@ public final class NSStepper extends NSControl {
         }
     }
 
-    /** [stepper setIncrement:] — the step amount for each click. */
+    /// [stepper setIncrement:] — the step amount for each click.
     public void setIncrement(double v) {
         try {
             hSetDouble.invokeExact(peer, ObjC.sel("setIncrement:"), v);
@@ -101,7 +99,7 @@ public final class NSStepper extends NSControl {
         }
     }
 
-    /** [stepper increment] — step amount. */
+    /// [stepper increment] — step amount.
     public double increment() {
         try {
             return (double) hDouble.invokeExact(peer, ObjC.sel("increment"));
@@ -110,7 +108,7 @@ public final class NSStepper extends NSControl {
         }
     }
 
-    /** [stepper setDoubleValue:] — current value (clamped to [min, max]). */
+    /// [stepper setDoubleValue:] — current value (clamped to [min, max]).
     public void setDoubleValue(double v) {
         try {
             hSetDouble.invokeExact(peer, ObjC.sel("setDoubleValue:"), v);
@@ -119,7 +117,7 @@ public final class NSStepper extends NSControl {
         }
     }
 
-    /** [stepper doubleValue] — current value (read back). */
+    /// [stepper doubleValue] — current value (read back).
     public double doubleValue() {
         try {
             return (double) hDouble.invokeExact(peer, ObjC.sel("doubleValue"));
@@ -128,37 +126,37 @@ public final class NSStepper extends NSControl {
         }
     }
 
-    /** [stepper autorepeat] — whether holding down repeats. */
+    /// [stepper autorepeat] — whether holding down repeats.
     public boolean autorepeat() {
         return ObjC.msgSendBool(peer, ObjC.sel("autorepeat"));
     }
 
-    /** [stepper setAutorepeat:] — set autorepeat. */
+    /// [stepper setAutorepeat:] — set autorepeat.
     public void setAutorepeat(boolean flag) {
         ObjC.msgSendVoidBool(peer, ObjC.sel("setAutorepeat:"), flag);
     }
 
-    /** [stepper valueWraps] — whether wrapping at extremes. */
+    /// [stepper valueWraps] — whether wrapping at extremes.
     public boolean valueWraps() {
         return ObjC.msgSendBool(peer, ObjC.sel("valueWraps"));
     }
 
-    /** [stepper setValueWraps:] — set value wraps. */
+    /// [stepper setValueWraps:] — set value wraps.
     public void setValueWraps(boolean flag) {
         ObjC.msgSendVoidBool(peer, ObjC.sel("setValueWraps:"), flag);
     }
 
-    /** [stepper controlSize] — NSControlSize. */
+    /// [stepper controlSize] — NSControlSize.
     public long controlSize() {
         return ObjC.msgSendLong(peer, ObjC.sel("controlSize"));
     }
 
-    /** [stepper setControlSize:] — set control size. */
+    /// [stepper setControlSize:] — set control size.
     public void setControlSize(long size) {
         ObjC.msgSendVoidLong(peer, ObjC.sel("setControlSize:"), size);
     }
 
-    /** [stepper incrementBy:] — step helper (via increment). */
+    /// [stepper incrementBy:] — step helper (via increment).
     public void incrementBy(double delta) {
         // No direct incrementBy: on NSStepper; implement via setDoubleValue
         setDoubleValue(doubleValue() + delta);

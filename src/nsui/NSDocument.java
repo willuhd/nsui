@@ -8,10 +8,8 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSDocument — minimal wrap over AppKit NSDocument.
- * Thin 1:1, stateless. Only init, windowControllers, addWindowController.
- */
+/// NSDocument — minimal wrap over AppKit NSDocument.
+/// Thin 1:1, stateless. Only init, windowControllers, addWindowController.
 public class NSDocument extends NSObject {
 
     private static volatile boolean initialized;
@@ -34,7 +32,7 @@ public class NSDocument extends NSObject {
         initialized = true;
     }
 
-    /** alloc + init — new document. */
+    /// alloc + init — new document.
     public static NSDocument create() {
         ensureInit();
         MemorySegment p = ObjC.msgSendId(ObjC.cls("NSDocument"), ObjC.sel("alloc"));
@@ -43,7 +41,7 @@ public class NSDocument extends NSObject {
         return new NSDocument(p);
     }
 
-    /** init — instance initializer (also via create). */
+    /// init — instance initializer (also via create).
     public NSDocument init() {
         ensureInit();
         MemorySegment p = ObjC.msgSendId(peer, ObjC.sel("init"));
@@ -51,7 +49,7 @@ public class NSDocument extends NSObject {
         return new NSDocument(p);
     }
 
-    /** windowControllers — NSArray of NSWindowController. */
+    /// windowControllers — NSArray of NSWindowController.
     public NSArray windowControllers() {
         ensureInit();
         try {
@@ -62,7 +60,7 @@ public class NSDocument extends NSObject {
         }
     }
 
-    /** addWindowController: */
+    /// addWindowController:
     public void addWindowController(NSWindowController controller) {
         ensureInit();
         try {
@@ -72,7 +70,7 @@ public class NSDocument extends NSObject {
         }
     }
 
-    /** removeWindowController: */
+    /// removeWindowController:
     public void removeWindowController(NSWindowController controller) {
         ensureInit();
         try {
@@ -82,7 +80,7 @@ public class NSDocument extends NSObject {
         }
     }
 
-    /** displayName — NSString. */
+    /// displayName — NSString.
     public String displayName() {
         ensureInit();
         try {

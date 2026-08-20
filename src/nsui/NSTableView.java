@@ -9,15 +9,13 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSTableView — an AppKit table view driven by a data source. Thin, 1:1,
- * stateless wrapper over the native {@code NSTableView}: each method maps to one
- * {@code objc_msgSend} selector, and the data source / delegate are ordinary
- * {@code DelegateProxy} instances passed as raw ids.
- *
- * <p>Created via {@code [[NSTableView alloc] initWithFrame:]} and typically embedded
- * in an {@link NSScrollView} via {@link NSScrollView#setDocumentView}.
- */
+/// NSTableView — an AppKit table view driven by a data source. Thin, 1:1,
+/// stateless wrapper over the native `NSTableView`: each method maps to one
+/// `objc_msgSend` selector, and the data source / delegate are ordinary
+/// `DelegateProxy` instances passed as raw ids.
+///
+/// Created via `[[NSTableView alloc] initWithFrame:]` and typically embedded
+/// in an `NSScrollView` via `setDocumentView`.
 public class NSTableView extends NSView {
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
@@ -55,7 +53,7 @@ public class NSTableView extends NSView {
         initialized = true;
     }
 
-    /** {@code [[NSTableView alloc] initWithFrame:frame]} — a new table view. */
+    /// `[[NSTableView alloc] initWithFrame:frame]` — a new table view.
     public static NSTableView create(NSRect frame) {
         ensureInit();
         MemorySegment v = ObjC.msgSendId(ObjC.cls("NSTableView"), ObjC.sel("alloc"));
@@ -72,7 +70,7 @@ public class NSTableView extends NSView {
 
     // ---------------------------------------------------------------- instance API
 
-    /** [table addTableColumn:] — append a column. */
+    /// [table addTableColumn:] — append a column.
     public void addTableColumn(NSTableColumn column) {
         try {
             hVoidId.invokeExact(peer, ObjC.sel("addTableColumn:"), column.peer());
@@ -81,7 +79,7 @@ public class NSTableView extends NSView {
         }
     }
 
-    /** [table removeTableColumn:] — remove a column. */
+    /// [table removeTableColumn:] — remove a column.
     public void removeTableColumn(NSTableColumn column) {
         try {
             hVoidId.invokeExact(peer, ObjC.sel("removeTableColumn:"), column.peer());
@@ -90,7 +88,7 @@ public class NSTableView extends NSView {
         }
     }
 
-    /** [table setDataSource:] — the object answering row-count / cell-value queries. */
+    /// [table setDataSource:] — the object answering row-count / cell-value queries.
     public void setDataSource(MemorySegment dataSource) {
         try {
             hVoidId.invokeExact(peer, ObjC.sel("setDataSource:"), dataSource);
@@ -99,7 +97,7 @@ public class NSTableView extends NSView {
         }
     }
 
-    /** [table setDelegate:] — the object notified of table events. */
+    /// [table setDelegate:] — the object notified of table events.
     public void setDelegate(MemorySegment delegate) {
         try {
             hVoidId.invokeExact(peer, ObjC.sel("setDelegate:"), delegate);
@@ -108,7 +106,7 @@ public class NSTableView extends NSView {
         }
     }
 
-    /** [table reloadData] — force the table to re-query its data source. */
+    /// [table reloadData] — force the table to re-query its data source.
     public void reloadData() {
         try {
             hVoid.invokeExact(peer, ObjC.sel("reloadData"));
@@ -117,7 +115,7 @@ public class NSTableView extends NSView {
         }
     }
 
-    /** [table numberOfRows] — the current number of rows the table is displaying. */
+    /// [table numberOfRows] — the current number of rows the table is displaying.
     public long numberOfRows() {
         try {
             return (long) hInt.invokeExact(peer, ObjC.sel("numberOfRows"));
@@ -126,7 +124,7 @@ public class NSTableView extends NSView {
         }
     }
 
-    /** [table numberOfColumns] */
+    /// [table numberOfColumns]
     public long numberOfColumns() {
         try {
             return (long) hInt.invokeExact(peer, ObjC.sel("numberOfColumns"));
@@ -135,7 +133,7 @@ public class NSTableView extends NSView {
         }
     }
 
-    /** [table setUsesAlternatingRowBackgroundColors:] — zebra stripes while drawing. */
+    /// [table setUsesAlternatingRowBackgroundColors:] — zebra stripes while drawing.
     public void setUsesAlternatingRowBackgroundColors(boolean flag) {
         try {
             hVoidBool.invokeExact(peer, ObjC.sel("setUsesAlternatingRowBackgroundColors:"), flag);
@@ -144,7 +142,7 @@ public class NSTableView extends NSView {
         }
     }
 
-    /** [table setAllowsColumnResizing:] — whether the user may drag column widths. */
+    /// [table setAllowsColumnResizing:] — whether the user may drag column widths.
     public void setAllowsColumnResizing(boolean flag) {
         try {
             hVoidBool.invokeExact(peer, ObjC.sel("setAllowsColumnResizing:"), flag);
@@ -153,7 +151,7 @@ public class NSTableView extends NSView {
         }
     }
 
-    /** [table rowHeight] — the height of each row in points. */
+    /// [table rowHeight] — the height of each row in points.
     public double rowHeight() {
         try {
             return (double) hDouble.invokeExact(peer, ObjC.sel("rowHeight"));
@@ -162,7 +160,7 @@ public class NSTableView extends NSView {
         }
     }
 
-    /** [table setRowHeight:] — the height of each row in points. */
+    /// [table setRowHeight:] — the height of each row in points.
     public void setRowHeight(double height) {
         try {
             hVoidDouble.invokeExact(peer, ObjC.sel("setRowHeight:"), height);
@@ -173,27 +171,27 @@ public class NSTableView extends NSView {
 
     // ---- added for completeness ----
 
-    /** [table selectedRow] — selected row index, -1 if none. */
+    /// [table selectedRow] — selected row index, -1 if none.
     public long selectedRow() {
         try { return (long) hInt.invokeExact(peer, ObjC.sel("selectedRow")); } catch (Throwable t) { throw new RuntimeException("selectedRow failed", t); }
     }
 
-    /** [table selectedColumn] — selected column, -1 if none. */
+    /// [table selectedColumn] — selected column, -1 if none.
     public long selectedColumn() {
         try { return (long) hInt.invokeExact(peer, ObjC.sel("selectedColumn")); } catch (Throwable t) { throw new RuntimeException("selectedColumn failed", t); }
     }
 
-    /** [table selectedRowIndexes] — NSIndexSet peer (id). */
+    /// [table selectedRowIndexes] — NSIndexSet peer (id).
     public MemorySegment selectedRowIndexes() {
         try { return (MemorySegment) hId.invokeExact(peer, ObjC.sel("selectedRowIndexes")); } catch (Throwable t) { throw new RuntimeException("selectedRowIndexes failed", t); }
     }
 
-    /** [table selectedColumnIndexes] — NSIndexSet peer. */
+    /// [table selectedColumnIndexes] — NSIndexSet peer.
     public MemorySegment selectedColumnIndexes() {
         try { return (MemorySegment) hId.invokeExact(peer, ObjC.sel("selectedColumnIndexes")); } catch (Throwable t) { throw new RuntimeException("selectedColumnIndexes failed", t); }
     }
 
-    /** [table selectRowIndexes:byExtendingSelection:] */
+    /// [table selectRowIndexes:byExtendingSelection:]
     public void selectRowIndexes(MemorySegment indexes, boolean extend) {
         try {
             MemorySegment arg = (indexes == null || indexes.address() == 0) ? MemorySegment.NULL : indexes;
@@ -201,7 +199,7 @@ public class NSTableView extends NSView {
         } catch (Throwable t) { throw new RuntimeException("selectRowIndexes:byExtendingSelection: failed", t); }
     }
 
-    /** [table selectColumnIndexes:byExtendingSelection:] */
+    /// [table selectColumnIndexes:byExtendingSelection:]
     public void selectColumnIndexes(MemorySegment indexes, boolean extend) {
         try {
             MemorySegment arg = (indexes == null || indexes.address() == 0) ? MemorySegment.NULL : indexes;
@@ -209,17 +207,17 @@ public class NSTableView extends NSView {
         } catch (Throwable t) { throw new RuntimeException("selectColumnIndexes:byExtendingSelection: failed", t); }
     }
 
-    /** [table deselectRow:] */
+    /// [table deselectRow:]
     public void deselectRow(long row) {
         try { hVoidInt.invokeExact(peer, ObjC.sel("deselectRow:"), row); } catch (Throwable t) { throw new RuntimeException("deselectRow: failed", t); }
     }
 
-    /** [table deselectColumn:] */
+    /// [table deselectColumn:]
     public void deselectColumn(long col) {
         try { hVoidInt.invokeExact(peer, ObjC.sel("deselectColumn:"), col); } catch (Throwable t) { throw new RuntimeException("deselectColumn: failed", t); }
     }
 
-    /** [table isRowSelected:] */
+    /// [table isRowSelected:]
     public boolean isRowSelected(long row) {
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.BOOL, Arg.INT));
@@ -227,7 +225,7 @@ public class NSTableView extends NSView {
         } catch (Throwable t) { throw new RuntimeException("isRowSelected: failed", t); }
     }
 
-    /** [table isColumnSelected:] */
+    /// [table isColumnSelected:]
     public boolean isColumnSelected(long col) {
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.BOOL, Arg.INT));
@@ -235,107 +233,107 @@ public class NSTableView extends NSView {
         } catch (Throwable t) { throw new RuntimeException("isColumnSelected: failed", t); }
     }
 
-    /** [table clickedRow] — row clicked last, -1 if none. */
+    /// [table clickedRow] — row clicked last, -1 if none.
     public long clickedRow() {
         try { return (long) hInt.invokeExact(peer, ObjC.sel("clickedRow")); } catch (Throwable t) { throw new RuntimeException("clickedRow failed", t); }
     }
 
-    /** [table clickedColumn] — column clicked last, -1 if none. */
+    /// [table clickedColumn] — column clicked last, -1 if none.
     public long clickedColumn() {
         try { return (long) hInt.invokeExact(peer, ObjC.sel("clickedColumn")); } catch (Throwable t) { throw new RuntimeException("clickedColumn failed", t); }
     }
 
-    /** [table headerView] — NSTableHeaderView peer or null. */
+    /// [table headerView] — NSTableHeaderView peer or null.
     public MemorySegment headerView() {
         try { return (MemorySegment) hId.invokeExact(peer, ObjC.sel("headerView")); } catch (Throwable t) { throw new RuntimeException("headerView failed", t); }
     }
 
-    /** [table setHeaderView:] */
+    /// [table setHeaderView:]
     public void setHeaderView(MemorySegment headerView) {
         try { hVoidId.invokeExact(peer, ObjC.sel("setHeaderView:"), (MemorySegment) ((MemorySegment) (headerView == null ? MemorySegment.NULL : headerView))); } catch (Throwable t) { throw new RuntimeException("setHeaderView: failed", t); }
     }
 
-    /** [table gridStyleMask] — NSTableViewGridLineStyle (bitmask). */
+    /// [table gridStyleMask] — NSTableViewGridLineStyle (bitmask).
     public long gridStyleMask() {
         try { return (long) hInt.invokeExact(peer, ObjC.sel("gridStyleMask")); } catch (Throwable t) { throw new RuntimeException("gridStyleMask failed", t); }
     }
 
-    /** [table setGridStyleMask:] */
+    /// [table setGridStyleMask:]
     public void setGridStyleMask(long mask) {
         try { hVoidInt.invokeExact(peer, ObjC.sel("setGridStyleMask:"), mask); } catch (Throwable t) { throw new RuntimeException("setGridStyleMask: failed", t); }
     }
 
-    /** [table allowsMultipleSelection] */
+    /// [table allowsMultipleSelection]
     public boolean allowsMultipleSelection() {
         return ObjC.msgSendBool(peer, ObjC.sel("allowsMultipleSelection"));
     }
 
-    /** [table setAllowsMultipleSelection:] */
+    /// [table setAllowsMultipleSelection:]
     public void setAllowsMultipleSelection(boolean flag) {
         try { hVoidBool.invokeExact(peer, ObjC.sel("setAllowsMultipleSelection:"), flag); } catch (Throwable t) { throw new RuntimeException("setAllowsMultipleSelection: failed", t); }
     }
 
-    /** [table allowsEmptySelection] */
+    /// [table allowsEmptySelection]
     public boolean allowsEmptySelection() {
         return ObjC.msgSendBool(peer, ObjC.sel("allowsEmptySelection"));
     }
 
-    /** [table setAllowsEmptySelection:] */
+    /// [table setAllowsEmptySelection:]
     public void setAllowsEmptySelection(boolean flag) {
         try { hVoidBool.invokeExact(peer, ObjC.sel("setAllowsEmptySelection:"), flag); } catch (Throwable t) { throw new RuntimeException("setAllowsEmptySelection: failed", t); }
     }
 
-    /** [table allowsColumnSelection] */
+    /// [table allowsColumnSelection]
     public boolean allowsColumnSelection() {
         return ObjC.msgSendBool(peer, ObjC.sel("allowsColumnSelection"));
     }
 
-    /** [table setAllowsColumnSelection:] */
+    /// [table setAllowsColumnSelection:]
     public void setAllowsColumnSelection(boolean flag) {
         try { hVoidBool.invokeExact(peer, ObjC.sel("setAllowsColumnSelection:"), flag); } catch (Throwable t) { throw new RuntimeException("setAllowsColumnSelection: failed", t); }
     }
 
-    /** [table sortDescriptors] — NSArray of NSSortDescriptor peers (id), or null. */
+    /// [table sortDescriptors] — NSArray of NSSortDescriptor peers (id), or null.
     public MemorySegment sortDescriptors() {
         try { return (MemorySegment) hId.invokeExact(peer, ObjC.sel("sortDescriptors")); } catch (Throwable t) { throw new RuntimeException("sortDescriptors failed", t); }
     }
 
-    /** [table setSortDescriptors:] */
+    /// [table setSortDescriptors:]
     public void setSortDescriptors(MemorySegment descriptors) {
         try { hVoidId.invokeExact(peer, ObjC.sel("setSortDescriptors:"), (MemorySegment) ((MemorySegment) (descriptors == null ? MemorySegment.NULL : descriptors))); } catch (Throwable t) { throw new RuntimeException("setSortDescriptors: failed", t); }
     }
 
-    /** [table editedRow] */
+    /// [table editedRow]
     public long editedRow() {
         try { return (long) hInt.invokeExact(peer, ObjC.sel("editedRow")); } catch (Throwable t) { throw new RuntimeException("editedRow failed", t); }
     }
 
-    /** [table editedColumn] */
+    /// [table editedColumn]
     public long editedColumn() {
         try { return (long) hInt.invokeExact(peer, ObjC.sel("editedColumn")); } catch (Throwable t) { throw new RuntimeException("editedColumn failed", t); }
     }
 
-    /** [table editColumn:row:withEvent:select:] — begin editing. */
+    /// [table editColumn:row:withEvent:select:] — begin editing.
     public void editColumn(long column, long row, MemorySegment event, boolean select) {
         try { hEdit.invokeExact(peer, ObjC.sel("editColumn:row:withEvent:select:"), column, row, (MemorySegment) (event == null ? MemorySegment.NULL : event), select); } catch (Throwable t) { throw new RuntimeException("editColumn:row:withEvent:select: failed", t); }
     }
 
-    /** [table scrollRowToVisible:] */
+    /// [table scrollRowToVisible:]
     public void scrollRowToVisible(long row) {
         try { hVoidInt.invokeExact(peer, ObjC.sel("scrollRowToVisible:"), row); } catch (Throwable t) { throw new RuntimeException("scrollRowToVisible: failed", t); }
     }
 
-    /** [table scrollColumnToVisible:] */
+    /// [table scrollColumnToVisible:]
     public void scrollColumnToVisible(long col) {
         try { hVoidInt.invokeExact(peer, ObjC.sel("scrollColumnToVisible:"), col); } catch (Throwable t) { throw new RuntimeException("scrollColumnToVisible: failed", t); }
     }
 
-    /** [table selectAll:] */
+    /// [table selectAll:]
     public void selectAll(MemorySegment sender) {
         try { hVoidId.invokeExact(peer, ObjC.sel("selectAll:"), (MemorySegment) ((MemorySegment) (sender == null ? MemorySegment.NULL : sender))); } catch (Throwable t) { throw new RuntimeException("selectAll: failed", t); }
     }
 
-    /** [table deselectAll:] */
+    /// [table deselectAll:]
     public void deselectAll(MemorySegment sender) {
         try { hVoidId.invokeExact(peer, ObjC.sel("deselectAll:"), (MemorySegment) ((MemorySegment) (sender == null ? MemorySegment.NULL : sender))); } catch (Throwable t) { throw new RuntimeException("deselectAll: failed", t); }
     }

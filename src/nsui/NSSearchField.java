@@ -8,13 +8,11 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSSearchField — an AppKit search-field control. Thin 1:1 wrapper
- * over a native {@code NSSearchField}: every method maps to one
- * {@code objc_msgSend} selector, no cached Java state beyond the peer.
- * Mirrors the native hierarchy: NSSearchField is an NSTextField is an
- * NSControl is an NSView.
- */
+/// NSSearchField — an AppKit search-field control. Thin 1:1 wrapper
+/// over a native `NSSearchField`: every method maps to one
+/// `objc_msgSend` selector, no cached Java state beyond the peer.
+/// Mirrors the native hierarchy: NSSearchField is an NSTextField is an
+/// NSControl is an NSView.
 public class NSSearchField extends NSTextField {
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
@@ -46,7 +44,7 @@ public class NSSearchField extends NSTextField {
         initialized = true;
     }
 
-    /** {@code [[NSSearchField alloc] initWithFrame:frame]} — a new search field at the given rect. */
+    /// `[[NSSearchField alloc] initWithFrame:frame]` — a new search field at the given rect.
     public static NSSearchField create(NSRect frame) {
         ensureInit();
         MemorySegment p = ObjC.msgSendId(ObjC.cls("NSSearchField"), ObjC.sel("alloc"));
@@ -61,7 +59,7 @@ public class NSSearchField extends NSTextField {
         return new NSSearchField(p);
     }
 
-    /** Wrap an existing native NSSearchField id. */
+    /// Wrap an existing native NSSearchField id.
     public static NSSearchField wrap(MemorySegment peer) {
         return (peer == null || peer.address() == 0) ? null : new NSSearchField(peer);
     }
@@ -79,14 +77,14 @@ public class NSSearchField extends NSTextField {
     public void setPlaceholderString(String s) { super.setPlaceholderString(s); }
 
     // ---------------------------------------------------------------- searchMenuTemplate
-    /** [field searchMenuTemplate] — the menu shown on the search-field loupe. */
+    /// [field searchMenuTemplate] — the menu shown on the search-field loupe.
     public MemorySegment searchMenuTemplate() {
         ensureInit();
         try { return (MemorySegment) hId.invokeExact(peer, ObjC.sel("searchMenuTemplate")); }
         catch (Throwable t) { throw new RuntimeException("searchMenuTemplate failed", t); }
     }
 
-    /** [field setSearchMenuTemplate:] — install a menu template (pass NSMenu.peer() or NULL to clear). */
+    /// [field setSearchMenuTemplate:] — install a menu template (pass NSMenu.peer() or NULL to clear).
     public void setSearchMenuTemplate(MemorySegment menu) {
         ensureInit();
         MemorySegment m = ((MemorySegment) (menu == null ? MemorySegment.NULL : menu));
@@ -94,26 +92,26 @@ public class NSSearchField extends NSTextField {
         catch (Throwable t) { throw new RuntimeException("setSearchMenuTemplate: failed", t); }
     }
 
-    /** Typed overload accepting NSMenu. */
+    /// Typed overload accepting NSMenu.
     public void setSearchMenuTemplate(NSMenu menu) {
         setSearchMenuTemplate((MemorySegment) (menu == null ? MemorySegment.NULL : menu.peer()));
     }
 
-    /** Convenience getter returning NSMenu wrapper (null if nil). */
+    /// Convenience getter returning NSMenu wrapper (null if nil).
     public NSMenu searchMenuTemplateAsMenu() {
         MemorySegment m = searchMenuTemplate();
         return NSMenu.wrap(m);
     }
 
     // ---------------------------------------------------------------- sendsSearchStringImmediately
-    /** [field sendsSearchStringImmediately] — whether the action fires on each keystroke. */
+    /// [field sendsSearchStringImmediately] — whether the action fires on each keystroke.
     public boolean sendsSearchStringImmediately() {
         ensureInit();
         try { return (boolean) hBool.invokeExact(peer, ObjC.sel("sendsSearchStringImmediately")); }
         catch (Throwable t) { throw new RuntimeException("sendsSearchStringImmediately failed", t); }
     }
 
-    /** [field setSendsSearchStringImmediately:] */
+    /// [field setSendsSearchStringImmediately:]
     public void setSendsSearchStringImmediately(boolean flag) {
         ensureInit();
         try { hVoidBool.invokeExact(peer, ObjC.sel("setSendsSearchStringImmediately:"), flag); }
@@ -121,14 +119,14 @@ public class NSSearchField extends NSTextField {
     }
 
     // ---------------------------------------------------------------- sendsWholeSearchString
-    /** [field sendsWholeSearchString] — whether the whole string is sent vs incremental. */
+    /// [field sendsWholeSearchString] — whether the whole string is sent vs incremental.
     public boolean sendsWholeSearchString() {
         ensureInit();
         try { return (boolean) hBool.invokeExact(peer, ObjC.sel("sendsWholeSearchString")); }
         catch (Throwable t) { throw new RuntimeException("sendsWholeSearchString failed", t); }
     }
 
-    /** [field setSendsWholeSearchString:] */
+    /// [field setSendsWholeSearchString:]
     public void setSendsWholeSearchString(boolean flag) {
         ensureInit();
         try { hVoidBool.invokeExact(peer, ObjC.sel("setSendsWholeSearchString:"), flag); }
@@ -136,14 +134,14 @@ public class NSSearchField extends NSTextField {
     }
 
     // ---------------------------------------------------------------- maximumRecents
-    /** [field maximumRecents] */
+    /// [field maximumRecents]
     public long maximumRecents() {
         ensureInit();
         try { return (long) hLong.invokeExact(peer, ObjC.sel("maximumRecents")); }
         catch (Throwable t) { throw new RuntimeException("maximumRecents failed", t); }
     }
 
-    /** [field setMaximumRecents:] */
+    /// [field setMaximumRecents:]
     public void setMaximumRecents(long n) {
         ensureInit();
         try { hVoidLong.invokeExact(peer, ObjC.sel("setMaximumRecents:"), n); }
@@ -151,14 +149,14 @@ public class NSSearchField extends NSTextField {
     }
 
     // ---------------------------------------------------------------- recentSearches (NSArray)
-    /** [field recentSearches] — NSArray of NSString, returned as raw id. */
+    /// [field recentSearches] — NSArray of NSString, returned as raw id.
     public MemorySegment recentSearches() {
         ensureInit();
         try { return (MemorySegment) hId.invokeExact(peer, ObjC.sel("recentSearches")); }
         catch (Throwable t) { throw new RuntimeException("recentSearches failed", t); }
     }
 
-    /** [field setRecentSearches:] */
+    /// [field setRecentSearches:]
     public void setRecentSearches(MemorySegment array) {
         ensureInit();
         MemorySegment a = ((MemorySegment) (array == null ? MemorySegment.NULL : array));
@@ -167,7 +165,7 @@ public class NSSearchField extends NSTextField {
     }
 
     // ---------------------------------------------------------------- recentsAutosaveName
-    /** [field recentsAutosaveName] — autosave name for recents (NSString -> Java String). */
+    /// [field recentsAutosaveName] — autosave name for recents (NSString -> Java String).
     public String recentsAutosaveName() {
         ensureInit();
         try {
@@ -176,7 +174,7 @@ public class NSSearchField extends NSTextField {
         } catch (Throwable t) { throw new RuntimeException("recentsAutosaveName failed", t); }
     }
 
-    /** [field setRecentsAutosaveName:] */
+    /// [field setRecentsAutosaveName:]
     public void setRecentsAutosaveName(String name) {
         ensureInit();
         MemorySegment s = (name == null ? MemorySegment.NULL : ObjC.nsstring(name));
@@ -185,7 +183,7 @@ public class NSSearchField extends NSTextField {
     }
 
     // ---------------------------------------------------------------- cancelButtonCell / searchButtonCell
-    /** [field cancelButtonCell] — the cancel (clear) button cell (NSButtonCell) via the field's cell. */
+    /// [field cancelButtonCell] — the cancel (clear) button cell (NSButtonCell) via the field's cell.
     public MemorySegment cancelButtonCell() {
         ensureInit();
         MemorySegment c = cell();
@@ -194,7 +192,7 @@ public class NSSearchField extends NSTextField {
         catch (Throwable t) { throw new RuntimeException("cancelButtonCell failed", t); }
     }
 
-    /** [field searchButtonCell] — the search (magnifying glass) button cell via the field's cell. */
+    /// [field searchButtonCell] — the search (magnifying glass) button cell via the field's cell.
     public MemorySegment searchButtonCell() {
         ensureInit();
         MemorySegment c = cell();
@@ -204,14 +202,14 @@ public class NSSearchField extends NSTextField {
     }
 
     // ---------------------------------------------------------------- centersPlaceholder
-    /** [field centersPlaceholder] — whether placeholder is centered (10.11+). */
+    /// [field centersPlaceholder] — whether placeholder is centered (10.11+).
     public boolean centersPlaceholder() {
         ensureInit();
         try { return (boolean) hBool.invokeExact(peer, ObjC.sel("centersPlaceholder")); }
         catch (Throwable t) { throw new RuntimeException("centersPlaceholder failed", t); }
     }
 
-    /** [field setCentersPlaceholder:] */
+    /// [field setCentersPlaceholder:]
     public void setCentersPlaceholder(boolean flag) {
         ensureInit();
         try { hVoidBool.invokeExact(peer, ObjC.sel("setCentersPlaceholder:"), flag); }
@@ -219,7 +217,7 @@ public class NSSearchField extends NSTextField {
     }
 
     // ---------------------------------------------------------------- searchFieldCell convenience (if needed)
-    /** [field searchFieldCell] — underlying NSSearchFieldCell if needed. */
+    /// [field searchFieldCell] — underlying NSSearchFieldCell if needed.
     public MemorySegment searchFieldCell() {
         // NSSearchField's cell is its NSSearchFieldCell; reuse NSControl.cell()
         return cell();

@@ -7,9 +7,7 @@ import nsui.objc.ObjC;
 import nsui.objc.Sig;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSDraggingSession — minimal wrapper over native {@code NSDraggingSession}.
- */
+/// NSDraggingSession — minimal wrapper over native `NSDraggingSession`.
 public final class NSDraggingSession extends NSObject {
 
     private static volatile boolean initialized;
@@ -37,7 +35,7 @@ public final class NSDraggingSession extends NSObject {
         initialized = true;
     }
 
-    /** draggingPasteboard */
+    /// draggingPasteboard
     public NSPasteboard draggingPasteboard() {
         ensureInit();
         try {
@@ -46,21 +44,21 @@ public final class NSDraggingSession extends NSObject {
         } catch (Throwable t) { throw new RuntimeException("draggingPasteboard failed", t); }
     }
 
-    /** draggingSequenceNumber */
+    /// draggingSequenceNumber
     public long draggingSequenceNumber() {
         ensureInit();
         try { return (long) hDraggingSequenceNumber.invokeExact(peer, ObjC.sel("draggingSequenceNumber")); }
         catch (Throwable t) { throw new RuntimeException("draggingSequenceNumber failed", t); }
     }
 
-    /** sourceOperationMask */
+    /// sourceOperationMask
     public long sourceOperationMask() {
         ensureInit();
         try { return (long) hSourceOperationMask.invokeExact(peer, ObjC.sel("sourceOperationMask")); }
         catch (Throwable t) { throw new RuntimeException("sourceOperationMask failed", t); }
     }
 
-    /** draggingLocation — location in screen coordinates (if available). */
+    /// draggingLocation — location in screen coordinates (if available).
     public NSPoint draggingLocation() {
         ensureInit();
         if (hDraggingLocation == null) return NSPoint.ZERO;
@@ -70,7 +68,7 @@ public final class NSDraggingSession extends NSObject {
         } catch (Throwable t) { return NSPoint.ZERO; }
     }
 
-    /** draggingFormation — minimal. */
+    /// draggingFormation — minimal.
     public long draggingFormation() {
         ensureInit();
         try {
@@ -79,7 +77,7 @@ public final class NSDraggingSession extends NSObject {
         } catch (Throwable t) { return 0; }
     }
 
-    /** animatesToStartingPositionsOnCancelOrFail */
+    /// animatesToStartingPositionsOnCancelOrFail
     public boolean animatesToStartingPositionsOnCancelOrFail() {
         ensureInit();
         try {

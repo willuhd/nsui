@@ -8,16 +8,14 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSLevelIndicator — an AppKit level/rating indicator control. Thin, 1:1, stateless
- * wrapper over a native {@code NSLevelIndicator}: every method maps to one
- * {@code objc_msgSend} selector. It is an {@link NSControl} (an {@link NSView}), so it
- * fits any view hierarchy.
- *
- * <p>Style 0 is {@code NSLevelIndicatorStyleRelevancy}; other styles include
- * {@code NSLevelIndicatorStyleContinuousCapacity} and
- * {@code NSLevelIndicatorStyleDiscreteCapacity}.
- */
+/// NSLevelIndicator — an AppKit level/rating indicator control. Thin, 1:1, stateless
+/// wrapper over a native `NSLevelIndicator`: every method maps to one
+/// `objc_msgSend` selector. It is an `NSControl` (an `NSView`), so it
+/// fits any view hierarchy.
+///
+/// Style 0 is `NSLevelIndicatorStyleRelevancy`; other styles include
+/// `NSLevelIndicatorStyleContinuousCapacity` and
+/// `NSLevelIndicatorStyleDiscreteCapacity`.
 public final class NSLevelIndicator extends NSControl {
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
@@ -41,7 +39,7 @@ public final class NSLevelIndicator extends NSControl {
         initialized = true;
     }
 
-    /** {@code [[NSLevelIndicator alloc] initWithFrame:frame]} — a new indicator at the given rect. */
+    /// `[[NSLevelIndicator alloc] initWithFrame:frame]` — a new indicator at the given rect.
     public static NSLevelIndicator create(NSRect frame) {
         ensureInit();
         MemorySegment p = ObjC.msgSendId(ObjC.cls("NSLevelIndicator"), ObjC.sel("alloc"));
@@ -58,7 +56,7 @@ public final class NSLevelIndicator extends NSControl {
 
     // ---------------------------------------------------------------- instance API
 
-    /** [indicator setLevelIndicatorStyle:] — NSLevelIndicatorStyle (0 = Relevancy). */
+    /// [indicator setLevelIndicatorStyle:] — NSLevelIndicatorStyle (0 = Relevancy).
     public void setLevelIndicatorStyle(long style) {
         try {
             hSetStyle.invokeExact(peer, ObjC.sel("setLevelIndicatorStyle:"), style);
@@ -67,12 +65,12 @@ public final class NSLevelIndicator extends NSControl {
         }
     }
 
-    /** [indicator levelIndicatorStyle] — current style. */
+    /// [indicator levelIndicatorStyle] — current style.
     public long levelIndicatorStyle() {
         return ObjC.msgSendLong(peer, ObjC.sel("levelIndicatorStyle"));
     }
 
-    /** [indicator setMinValue:] — minimum value. */
+    /// [indicator setMinValue:] — minimum value.
     public void setMinValue(double v) {
         try {
             hSetDouble.invokeExact(peer, ObjC.sel("setMinValue:"), v);
@@ -81,7 +79,7 @@ public final class NSLevelIndicator extends NSControl {
         }
     }
 
-    /** [indicator minValue] — minimum. */
+    /// [indicator minValue] — minimum.
     public double minValue() {
         try {
             return (double) hDouble.invokeExact(peer, ObjC.sel("minValue"));
@@ -90,7 +88,7 @@ public final class NSLevelIndicator extends NSControl {
         }
     }
 
-    /** [indicator setMaxValue:] — maximum value. */
+    /// [indicator setMaxValue:] — maximum value.
     public void setMaxValue(double v) {
         try {
             hSetDouble.invokeExact(peer, ObjC.sel("setMaxValue:"), v);
@@ -99,7 +97,7 @@ public final class NSLevelIndicator extends NSControl {
         }
     }
 
-    /** [indicator maxValue] — maximum. */
+    /// [indicator maxValue] — maximum.
     public double maxValue() {
         try {
             return (double) hDouble.invokeExact(peer, ObjC.sel("maxValue"));
@@ -108,7 +106,7 @@ public final class NSLevelIndicator extends NSControl {
         }
     }
 
-    /** [indicator setDoubleValue:] — current level (clamped to [min, max]). */
+    /// [indicator setDoubleValue:] — current level (clamped to [min, max]).
     public void setDoubleValue(double v) {
         try {
             hSetDouble.invokeExact(peer, ObjC.sel("setDoubleValue:"), v);
@@ -117,7 +115,7 @@ public final class NSLevelIndicator extends NSControl {
         }
     }
 
-    /** [indicator doubleValue] — the current level (read back). */
+    /// [indicator doubleValue] — the current level (read back).
     public double doubleValue() {
         try {
             return (double) hDouble.invokeExact(peer, ObjC.sel("doubleValue"));
@@ -128,7 +126,7 @@ public final class NSLevelIndicator extends NSControl {
 
     // ---- new completeness APIs ----
 
-    /** [indicator setWarningValue:] — threshold for warning state. */
+    /// [indicator setWarningValue:] — threshold for warning state.
     public void setWarningValue(double v) {
         try {
             hSetDouble.invokeExact(peer, ObjC.sel("setWarningValue:"), v);
@@ -137,7 +135,7 @@ public final class NSLevelIndicator extends NSControl {
         }
     }
 
-    /** [indicator warningValue] — warning threshold. */
+    /// [indicator warningValue] — warning threshold.
     public double warningValue() {
         try {
             return (double) hDouble.invokeExact(peer, ObjC.sel("warningValue"));
@@ -146,7 +144,7 @@ public final class NSLevelIndicator extends NSControl {
         }
     }
 
-    /** [indicator setCriticalValue:] — threshold for critical state. */
+    /// [indicator setCriticalValue:] — threshold for critical state.
     public void setCriticalValue(double v) {
         try {
             hSetDouble.invokeExact(peer, ObjC.sel("setCriticalValue:"), v);
@@ -155,7 +153,7 @@ public final class NSLevelIndicator extends NSControl {
         }
     }
 
-    /** [indicator criticalValue] — critical threshold. */
+    /// [indicator criticalValue] — critical threshold.
     public double criticalValue() {
         try {
             return (double) hDouble.invokeExact(peer, ObjC.sel("criticalValue"));
@@ -164,77 +162,77 @@ public final class NSLevelIndicator extends NSControl {
         }
     }
 
-    /** [indicator numberOfTickMarks] — tick mark count (0 = none). */
+    /// [indicator numberOfTickMarks] — tick mark count (0 = none).
     public long numberOfTickMarks() {
         return ObjC.msgSendLong(peer, ObjC.sel("numberOfTickMarks"));
     }
 
-    /** [indicator setNumberOfTickMarks:] — set tick count. */
+    /// [indicator setNumberOfTickMarks:] — set tick count.
     public void setNumberOfTickMarks(long n) {
         ObjC.msgSendVoidLong(peer, ObjC.sel("setNumberOfTickMarks:"), n);
     }
 
-    /** [indicator numberOfMajorTickMarks] — major tick count. */
+    /// [indicator numberOfMajorTickMarks] — major tick count.
     public long numberOfMajorTickMarks() {
         return ObjC.msgSendLong(peer, ObjC.sel("numberOfMajorTickMarks"));
     }
 
-    /** [indicator setNumberOfMajorTickMarks:] — set major tick count. */
+    /// [indicator setNumberOfMajorTickMarks:] — set major tick count.
     public void setNumberOfMajorTickMarks(long n) {
         ObjC.msgSendVoidLong(peer, ObjC.sel("setNumberOfMajorTickMarks:"), n);
     }
 
-    /** [indicator tickMarkPosition] — NSTickMarkPosition (0=Below,1=Above). */
+    /// [indicator tickMarkPosition] — NSTickMarkPosition (0=Below,1=Above).
     public long tickMarkPosition() {
         return ObjC.msgSendLong(peer, ObjC.sel("tickMarkPosition"));
     }
 
-    /** [indicator setTickMarkPosition:] — set position. */
+    /// [indicator setTickMarkPosition:] — set position.
     public void setTickMarkPosition(long pos) {
         ObjC.msgSendVoidLong(peer, ObjC.sel("setTickMarkPosition:"), pos);
     }
 
-    /** [indicator isEditable] — whether user can edit. */
+    /// [indicator isEditable] — whether user can edit.
     public boolean isEditable() {
         return ObjC.msgSendBool(peer, ObjC.sel("isEditable"));
     }
 
-    /** [indicator setEditable:] — set editable. */
+    /// [indicator setEditable:] — set editable.
     public void setEditable(boolean flag) {
         ObjC.msgSendVoidBool(peer, ObjC.sel("setEditable:"), flag);
     }
 
-    /** [indicator fillColor] — normal-state fill color (or nil). */
+    /// [indicator fillColor] — normal-state fill color (or nil).
     public NSColor fillColor() {
         MemorySegment c = ObjC.msgSendId(peer, ObjC.sel("fillColor"));
         return NSColor.wrap(c);
     }
 
-    /** [indicator setFillColor:] — set fill color (nil resets to default). */
+    /// [indicator setFillColor:] — set fill color (nil resets to default).
     public void setFillColor(NSColor color) {
         MemorySegment p = (color == null) ? MemorySegment.NULL : color.peer();
         ObjC.msgSendVoidId(peer, ObjC.sel("setFillColor:"), p);
     }
 
-    /** [indicator warningFillColor] — warning-state fill color. */
+    /// [indicator warningFillColor] — warning-state fill color.
     public NSColor warningFillColor() {
         MemorySegment c = ObjC.msgSendId(peer, ObjC.sel("warningFillColor"));
         return NSColor.wrap(c);
     }
 
-    /** [indicator setWarningFillColor:] — set warning fill color. */
+    /// [indicator setWarningFillColor:] — set warning fill color.
     public void setWarningFillColor(NSColor color) {
         MemorySegment p = (color == null) ? MemorySegment.NULL : color.peer();
         ObjC.msgSendVoidId(peer, ObjC.sel("setWarningFillColor:"), p);
     }
 
-    /** [indicator criticalFillColor] — critical-state fill color. */
+    /// [indicator criticalFillColor] — critical-state fill color.
     public NSColor criticalFillColor() {
         MemorySegment c = ObjC.msgSendId(peer, ObjC.sel("criticalFillColor"));
         return NSColor.wrap(c);
     }
 
-    /** [indicator setCriticalFillColor:] — set critical fill color. */
+    /// [indicator setCriticalFillColor:] — set critical fill color.
     public void setCriticalFillColor(NSColor color) {
         MemorySegment p = (color == null) ? MemorySegment.NULL : color.peer();
         ObjC.msgSendVoidId(peer, ObjC.sel("setCriticalFillColor:"), p);

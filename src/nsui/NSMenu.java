@@ -18,6 +18,7 @@ public final class NSMenu extends NSObject {
     private static MethodHandle hVoidIdInt; // (id, SEL, id, long) -> void [insertItem:atIndex:]
     private static MethodHandle hIntId;     // (id, SEL, id) -> long [indexOfItem:]
     private static MethodHandle hSize;      // (SegmentAllocator,id,SEL)-> NSSize [size]
+    private static MethodHandle hPopUp; // (id, SEL, id, point, id) -> bool [popUpMenuPositioningItem:atLocation:inView:]
 
     private NSMenu(MemorySegment peer) {
         super(peer);
@@ -30,6 +31,7 @@ public final class NSMenu extends NSObject {
         hVoidIdInt = ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.INT));
         hIntId = ObjC.handle(Sig.of(Ret.INT, Arg.ID));
         hSize = ObjC.handle(Sig.of(Ret.SIZE));
+        hPopUp = ObjC.handle(Sig.of(Ret.BOOL, Arg.ID, Arg.POINT, Arg.ID));
         initialized = true;
     }
 
@@ -214,11 +216,11 @@ public final class NSMenu extends NSObject {
 
     // ---- popUp / visible ----
     public boolean popUpMenuPositioningItem(NSMenuItem item, NSPoint loc, NSView view) {
+        ensureInit();
         try {
             MemorySegment itemPeer = (item == null) ? MemorySegment.NULL : item.peer();
             MemorySegment viewPeer = (view == null) ? MemorySegment.NULL : view.peer();
-            return (boolean) ObjC.handle(Sig.of(Ret.BOOL, Arg.ID, Arg.POINT, Arg.ID))
-                    .invokeExact(peer, ObjC.sel("popUpMenuPositioningItem:atLocation:inView:"), itemPeer, loc.toSegment(), viewPeer);
+            return (boolean) hPopUp.invokeExact(peer, ObjC.sel("popUpMenuPositioningItem:atLocation:inView:"), itemPeer, loc.toSegment(), viewPeer);
         } catch (Throwable t) {
             throw new RuntimeException("popUpMenuPositioningItem:atLocation:inView: failed", t);
         }

@@ -179,6 +179,7 @@ public final class Sig {
         of(Ret.VOID, Arg.DOUBLE, Arg.DOUBLE),           // setDoubleValue: / generic double,double
         of(Ret.VOID, Arg.FLOAT, Arg.FLOAT),             // setPeriodicDelay:interval: (float, float) -> void
         of(Ret.BOOL, Arg.ID, Arg.POINT, Arg.ID),        // popUpMenuPositioningItem:atLocation:inView: (id, point, id) -> bool
+        of(Ret.VOID, Arg.INT, Arg.INT),                 // setTag:forSegment: (long, long) -> void
         of(Ret.SIZE, Arg.ID, Arg.SIZE),                  // windowWillResize:toSize: (id, size) -> size
         // Auto Layout
         of(Ret.ID, Arg.ID, Arg.INT, Arg.INT, Arg.ID, Arg.INT, Arg.DOUBLE, Arg.DOUBLE), // constraintWithItem:attribute:relatedBy:toItem:attribute:multiplier:constant:

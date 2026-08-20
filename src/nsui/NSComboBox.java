@@ -176,6 +176,11 @@ public final class NSComboBox extends NSControl {
         ObjC.msgSendVoidBool(peer, ObjC.sel("setEditable:"), flag);
     }
 
+    /** [combo isEditable] — whether the user can type a free-form value. */
+    public boolean isEditable() {
+        return ObjC.msgSendBool(peer, ObjC.sel("isEditable"));
+    }
+
     /** [combo numberOfItems] — number of items in the list. */
     public long numberOfItems() {
         return ObjC.msgSendLong(peer, ObjC.sel("numberOfItems"));

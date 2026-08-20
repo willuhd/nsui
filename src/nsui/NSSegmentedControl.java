@@ -40,6 +40,10 @@ public final class NSSegmentedControl extends NSControl {
     private static MethodHandle hMenuFor;      // (id, SEL, long) -> id
     private static MethodHandle hSetSelectedFor; // (id, SEL, bool, long) -> void [setSelected:forSegment:]
     private static MethodHandle hIsSelectedFor; // (id, SEL, long) -> bool [isSelectedForSegment:]
+    private static MethodHandle hTagForSegment; // (id, SEL, long) -> long [tagForSegment:]
+    private static MethodHandle hSetTag; // (id, SEL, long, long) -> void [setTag:forSegment:]
+    private static MethodHandle hShowsMenuIndicator; // (id, SEL, long) -> bool [showsMenuIndicatorForSegment:]
+    private static MethodHandle hSetShowsMenuIndicator; // (id, SEL, bool, long) -> void [setShowsMenuIndicator:forSegment:]
 
     private NSSegmentedControl(MemorySegment peer) {
         super(peer);
@@ -65,6 +69,10 @@ public final class NSSegmentedControl extends NSControl {
         hMenuFor = ObjC.handle(Sig.of(Ret.ID, Arg.INT));
         hSetSelectedFor = ObjC.handle(Sig.of(Ret.VOID, Arg.BOOL, Arg.INT));
         hIsSelectedFor = ObjC.handle(Sig.of(Ret.BOOL, Arg.INT));
+        hTagForSegment = ObjC.handle(Sig.of(Ret.INT, Arg.INT));
+        hSetTag = ObjC.handle(Sig.of(Ret.VOID, Arg.INT, Arg.INT));
+        hShowsMenuIndicator = ObjC.handle(Sig.of(Ret.BOOL, Arg.INT));
+        hSetShowsMenuIndicator = ObjC.handle(Sig.of(Ret.VOID, Arg.BOOL, Arg.INT));
         initialized = true;
     }
 
@@ -262,6 +270,42 @@ public final class NSSegmentedControl extends NSControl {
     /** [control setTrackingMode:] — set tracking mode. */
     public void setTrackingMode(long mode) {
         ObjC.msgSendVoidLong(peer, ObjC.sel("setTrackingMode:"), mode);
+    }
+
+    /** [control tagForSegment:] — tag for segment. */
+    public long tagForSegment(long segment) {
+        try {
+            return (long) hTagForSegment.invokeExact(peer, ObjC.sel("tagForSegment:"), segment);
+        } catch (Throwable t) {
+            throw new RuntimeException("tagForSegment: failed", t);
+        }
+    }
+
+    /** [control setTag:forSegment:] — set tag for segment. */
+    public void setTagForSegment(long tag, long segment) {
+        try {
+            hSetTag.invokeExact(peer, ObjC.sel("setTag:forSegment:"), tag, segment);
+        } catch (Throwable t) {
+            throw new RuntimeException("setTag:forSegment: failed", t);
+        }
+    }
+
+    /** [control showsMenuIndicatorForSegment:] — whether segment shows menu indicator. */
+    public boolean showsMenuIndicatorForSegment(long segment) {
+        try {
+            return (boolean) hShowsMenuIndicator.invokeExact(peer, ObjC.sel("showsMenuIndicatorForSegment:"), segment);
+        } catch (Throwable t) {
+            throw new RuntimeException("showsMenuIndicatorForSegment: failed", t);
+        }
+    }
+
+    /** [control setShowsMenuIndicator:forSegment:] — set menu indicator visibility for segment. */
+    public void setShowsMenuIndicatorForSegment(boolean flag, long segment) {
+        try {
+            hSetShowsMenuIndicator.invokeExact(peer, ObjC.sel("setShowsMenuIndicator:forSegment:"), flag, segment);
+        } catch (Throwable t) {
+            throw new RuntimeException("setShowsMenuIndicator:forSegment: failed", t);
+        }
     }
 
 }

@@ -12,13 +12,8 @@ import static nsui.objc.Sig.Ret;
 /// Provides openURL, iconForFile, runningApplications.
 public final class NSWorkspace extends NSObject {
 
-    private static volatile boolean initialized;
-    private static MethodHandle hShared;   // (id, SEL) -> id  [sharedWorkspace]
-    private static MethodHandle hOpenURL;  // (id, SEL, id) -> bool  [openURL:]
-    private static MethodHandle hIconFile; // (id, SEL, id) -> id   [iconForFile:]
-    private static MethodHandle hIconType; // (id, SEL, id) -> id   [iconForFileType:]
-    private static MethodHandle hRunning;  // (id, SEL) -> id  [runningApplications]
-    private static MethodHandle hOpenFile; // (id, SEL, id) -> bool [openFile:]
+            private record Handles(MethodHandle hShared, MethodHandle hOpenURL, MethodHandle hIconFile) {}
+    private static volatile Handles handles;
 
     private NSWorkspace(MemorySegment peer) {
         super(peer);
@@ -29,22 +24,16 @@ public final class NSWorkspace extends NSObject {
         return (peer == null || peer.address() == 0) ? null : new NSWorkspace(peer);
     }
 
-    private static synchronized void ensureInit() {
-        if (initialized) return;
-        hShared = ObjC.handle(Sig.of(Ret.ID));
-        hOpenURL = ObjC.handle(Sig.of(Ret.BOOL, Arg.ID));
-        hIconFile = ObjC.handle(Sig.of(Ret.ID, Arg.ID));
-        hIconType = ObjC.handle(Sig.of(Ret.ID, Arg.ID));
-        hRunning = ObjC.handle(Sig.of(Ret.ID));
-        hOpenFile = ObjC.handle(Sig.of(Ret.BOOL, Arg.ID));
-        initialized = true;
+        private static synchronized void ensureInit() {
+        if (handles != null) return;
+        handles = new Handles(ObjC.handle(Sig.of(Ret.ID)), ObjC.handle(Sig.of(Ret.BOOL, Arg.ID)), ObjC.handle(Sig.of(Ret.ID, Arg.ID)));
     }
 
     /// [NSWorkspace sharedWorkspace]
     public static NSWorkspace sharedWorkspace() {
         ensureInit();
         try {
-            MemorySegment p = (MemorySegment) hShared.invokeExact(ObjC.cls("NSWorkspace"), ObjC.sel("sharedWorkspace"));
+            MemorySegment p = (MemorySegment) handles.hShared().invokeExact(ObjC.cls("NSWorkspace"), ObjC.sel("sharedWorkspace"));
             if (p == null || p.address() == 0) throw new IllegalStateException("sharedWorkspace returned nil");
             return new NSWorkspace(p);
         } catch (Throwable t) {
@@ -62,7 +51,7 @@ public final class NSWorkspace extends NSObject {
             url = ObjC.msgSendIdId(ObjC.cls("NSURL"), ObjC.sel("fileURLWithPath:"), ObjC.nsstring(urlString));
         }
         try {
-            return (boolean) hOpenURL.invokeExact(peer, ObjC.sel("openURL:"), url);
+            return (boolean) handles.hOpenURL().invokeExact(peer, ObjC.sel("openURL:"), url);
         } catch (Throwable t) {
             throw new RuntimeException("openURL: failed", t);
         }
@@ -73,7 +62,7 @@ public final class NSWorkspace extends NSObject {
         ensureInit();
         try {
             MemorySegment u = (url == null ? MemorySegment.NULL : url);
-            return (boolean) hOpenURL.invokeExact(peer, ObjC.sel("openURL:"), u);
+            return (boolean) handles.hOpenURL().invokeExact(peer, ObjC.sel("openURL:"), u);
         } catch (Throwable t) {
             throw new RuntimeException("openURL: failed", t);
         }
@@ -83,7 +72,7 @@ public final class NSWorkspace extends NSObject {
     public NSImage iconForFile(String fullPath) {
         ensureInit();
         try {
-            MemorySegment img = (MemorySegment) hIconFile.invokeExact(peer, ObjC.sel("iconForFile:"), ObjC.nsstring(fullPath));
+            MemorySegment img = (MemorySegment) handles.hIconFile().invokeExact(peer, ObjC.sel("iconForFile:"), ObjC.nsstring(fullPath));
             return NSImage.wrap(img);
         } catch (Throwable t) {
             throw new RuntimeException("iconForFile: failed", t);
@@ -94,7 +83,7 @@ public final class NSWorkspace extends NSObject {
     public NSImage iconForFileType(String fileType) {
         ensureInit();
         try {
-            MemorySegment img = (MemorySegment) hIconType.invokeExact(peer, ObjC.sel("iconForFileType:"), ObjC.nsstring(fileType));
+            MemorySegment img = (MemorySegment) handles.hIconFile().invokeExact(peer, ObjC.sel("iconForFileType:"), ObjC.nsstring(fileType));
             return NSImage.wrap(img);
         } catch (Throwable t) {
             throw new RuntimeException("iconForFileType: failed", t);
@@ -105,7 +94,7 @@ public final class NSWorkspace extends NSObject {
     public NSArray runningApplications() {
         ensureInit();
         try {
-            MemorySegment arr = (MemorySegment) hRunning.invokeExact(peer, ObjC.sel("runningApplications"));
+            MemorySegment arr = (MemorySegment) handles.hShared().invokeExact(peer, ObjC.sel("runningApplications"));
             return NSArray.wrap(arr);
         } catch (Throwable t) {
             throw new RuntimeException("runningApplications failed", t);
@@ -116,7 +105,7 @@ public final class NSWorkspace extends NSObject {
     public boolean openFile(String fullPath) {
         ensureInit();
         try {
-            return (boolean) hOpenFile.invokeExact(peer, ObjC.sel("openFile:"), ObjC.nsstring(fullPath));
+            return (boolean) handles.hOpenURL().invokeExact(peer, ObjC.sel("openFile:"), ObjC.nsstring(fullPath));
         } catch (Throwable t) {
             throw new RuntimeException("openFile: failed", t);
         }

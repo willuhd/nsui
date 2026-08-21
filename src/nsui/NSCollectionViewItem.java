@@ -19,12 +19,8 @@ import static nsui.objc.Sig.Ret;
 public final class NSCollectionViewItem extends NSObject {
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
-    private static volatile boolean initialized;
-    private static MethodHandle hInit;       // (id, SEL) -> id [init]
-    private static MethodHandle hInitNib;    // (id, SEL, id, id) -> id [initWithNibName:bundle:]
-    private static MethodHandle hSetRep;     // (id, SEL, id) -> void [setRepresentedObject:]
-    private static MethodHandle hGetId;      // (id, SEL) -> id [view/representedObject]
-    private static MethodHandle hSetView;    // (id, SEL, id) -> void [setView:]
+            private record Handles(MethodHandle hInit, MethodHandle hInitNib, MethodHandle hSetRep) {}
+    private static volatile Handles handles;
 
     private NSCollectionViewItem(MemorySegment peer) {
         super(peer);
@@ -36,14 +32,9 @@ public final class NSCollectionViewItem extends NSObject {
         return (peer == null || peer.address() == 0) ? null : new NSCollectionViewItem(peer);
     }
 
-    private static synchronized void ensureInit() {
-        if (initialized) return;
-        hInit = ObjC.handle(Sig.of(Ret.ID));
-        hInitNib = ObjC.handle(Sig.of(Ret.ID, Arg.ID, Arg.ID));
-        hSetRep = ObjC.handle(Sig.of(Ret.VOID, Arg.ID));
-        hGetId = ObjC.handle(Sig.of(Ret.ID));
-        hSetView = ObjC.handle(Sig.of(Ret.VOID, Arg.ID));
-        initialized = true;
+        private static synchronized void ensureInit() {
+        if (handles != null) return;
+        handles = new Handles(ObjC.handle(Sig.of(Ret.ID)), ObjC.handle(Sig.of(Ret.ID, Arg.ID, Arg.ID)), ObjC.handle(Sig.of(Ret.VOID, Arg.ID)));
     }
 
     /// `[[NSCollectionViewItem alloc] init]` — minimal item with no nib.
@@ -51,7 +42,7 @@ public final class NSCollectionViewItem extends NSObject {
         ensureInit();
         MemorySegment p = ObjC.msgSendId(ObjC.cls("NSCollectionViewItem"), ObjC.sel("alloc"));
         try {
-            p = (MemorySegment) hInit.invokeExact(p, ObjC.sel("init"));
+            p = (MemorySegment) handles.hInit().invokeExact(p, ObjC.sel("init"));
         } catch (Throwable t) {
             throw new RuntimeException("init failed for NSCollectionViewItem", t);
         }
@@ -66,7 +57,7 @@ public final class NSCollectionViewItem extends NSObject {
         MemorySegment nib = nibName == null ? MemorySegment.NULL : ObjC.nsstring(nibName);
         try {
             MemorySegment b = (bundle == null || bundle.address() == 0) ? MemorySegment.NULL : bundle;
-            p = (MemorySegment) hInitNib.invokeExact(p, ObjC.sel("initWithNibName:bundle:"), nib, (MemorySegment) b);
+            p = (MemorySegment) handles.hInitNib().invokeExact(p, ObjC.sel("initWithNibName:bundle:"), nib, (MemorySegment) b);
         } catch (Throwable t) {
             throw new RuntimeException("initWithNibName:bundle: failed for NSCollectionViewItem", t);
         }
@@ -79,7 +70,7 @@ public final class NSCollectionViewItem extends NSObject {
     /// [item view] — the item's view (NSView peer or nil).
     public NSView view() {
         try {
-            MemorySegment v = (MemorySegment) hGetId.invokeExact(peer, ObjC.sel("view"));
+            MemorySegment v = (MemorySegment) handles.hInit().invokeExact(peer, ObjC.sel("view"));
             return NSView.wrap(v);
         } catch (Throwable t) {
             throw new RuntimeException("view failed", t);
@@ -90,7 +81,7 @@ public final class NSCollectionViewItem extends NSObject {
     public void setView(NSView view) {
         try {
             MemorySegment v = (view == null || view.peer() == null || view.peer().address() == 0) ? MemorySegment.NULL : view.peer();
-            hSetView.invokeExact(peer, ObjC.sel("setView:"), (MemorySegment) v);
+            handles.hSetRep().invokeExact(peer, ObjC.sel("setView:"), (MemorySegment) v);
         } catch (Throwable t) {
             throw new RuntimeException("setView: failed", t);
         }
@@ -99,7 +90,7 @@ public final class NSCollectionViewItem extends NSObject {
     /// [item representedObject] — the model object for this item (id).
     public MemorySegment representedObject() {
         try {
-            return (MemorySegment) hGetId.invokeExact(peer, ObjC.sel("representedObject"));
+            return (MemorySegment) handles.hInit().invokeExact(peer, ObjC.sel("representedObject"));
         } catch (Throwable t) {
             throw new RuntimeException("representedObject failed", t);
         }
@@ -109,7 +100,7 @@ public final class NSCollectionViewItem extends NSObject {
     public void setRepresentedObject(MemorySegment object) {
         try {
             MemorySegment o = (object == null || object.address() == 0) ? MemorySegment.NULL : object;
-            hSetRep.invokeExact(peer, ObjC.sel("setRepresentedObject:"), (MemorySegment) o);
+            handles.hSetRep().invokeExact(peer, ObjC.sel("setRepresentedObject:"), (MemorySegment) o);
         } catch (Throwable t) {
             throw new RuntimeException("setRepresentedObject: failed", t);
         }

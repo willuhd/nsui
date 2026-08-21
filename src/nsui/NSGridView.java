@@ -12,15 +12,8 @@ import static nsui.objc.Sig.Ret;
 /// Thin 1:1 grid layout view; rows/columns managed via view hierarchy.
 public final class NSGridView extends NSView {
 
-    private static volatile boolean initialized;
-    private static MethodHandle hInitFrame;   // (id, SEL, NSRect) -> id
-    private static MethodHandle hGridInit;    // (id, SEL, long, long) -> id [gridViewWithNumberOfColumns:rows:]
-    private static MethodHandle hVoidId;      // (id, SEL, id) -> void
-    private static MethodHandle hId;          // (id, SEL) -> id
-    private static MethodHandle hInt;         // (id, SEL) -> long
-    private static MethodHandle hVoidInt;     // (id, SEL, long) -> void
-    private static MethodHandle hGetDouble;   // (id, SEL) -> double
-    private static MethodHandle hSetDouble;   // (id, SEL, double) -> void
+            private record Handles(MethodHandle hInitFrame, MethodHandle hGridInit, MethodHandle hVoidId, MethodHandle hId, MethodHandle hInt, MethodHandle hVoidInt, MethodHandle hGetDouble, MethodHandle hSetDouble) {}
+    private static volatile Handles handles;
 
     private NSGridView(MemorySegment peer) {
         super(peer);
@@ -31,17 +24,18 @@ public final class NSGridView extends NSView {
         return (peer == null || peer.address() == 0) ? null : new NSGridView(peer);
     }
 
-    private static synchronized void ensureInit() {
-        if (initialized) return;
-        hInitFrame = ObjC.handle(Sig.of(Ret.ID, Arg.RECT));
-        hGridInit = ObjC.handle(Sig.of(Ret.ID, Arg.INT, Arg.INT));
-        hVoidId = ObjC.handle(Sig.of(Ret.VOID, Arg.ID));
-        hId = ObjC.handle(Sig.of(Ret.ID));
-        hInt = ObjC.handle(Sig.of(Ret.INT));
-        hVoidInt = ObjC.handle(Sig.of(Ret.VOID, Arg.INT));
-        hGetDouble = ObjC.handle(Sig.of(Ret.DOUBLE));
-        hSetDouble = ObjC.handle(Sig.of(Ret.VOID, Arg.DOUBLE));
-        initialized = true;
+        private static synchronized void ensureInit() {
+        if (handles != null) return;
+        handles = new Handles(
+                ObjC.handle(Sig.of(Ret.ID, Arg.RECT)),
+                ObjC.handle(Sig.of(Ret.ID, Arg.INT, Arg.INT)),
+                ObjC.handle(Sig.of(Ret.VOID, Arg.ID)),
+                ObjC.handle(Sig.of(Ret.ID)),
+                ObjC.handle(Sig.of(Ret.INT)),
+                ObjC.handle(Sig.of(Ret.VOID, Arg.INT)),
+                ObjC.handle(Sig.of(Ret.DOUBLE)),
+                ObjC.handle(Sig.of(Ret.VOID, Arg.DOUBLE))
+        );
     }
 
     /// [[NSGridView alloc] initWithFrame:]
@@ -49,7 +43,7 @@ public final class NSGridView extends NSView {
         ensureInit();
         MemorySegment p = ObjC.msgSendId(ObjC.cls("NSGridView"), ObjC.sel("alloc"));
         try {
-            p = (MemorySegment) hInitFrame.invokeExact(p, ObjC.sel("initWithFrame:"), frame.toSegment());
+            p = (MemorySegment) handles.hInitFrame().invokeExact(p, ObjC.sel("initWithFrame:"), frame.toSegment());
         } catch (Throwable t) {
             throw new RuntimeException("initWithFrame: failed for NSGridView", t);
         }
@@ -61,7 +55,7 @@ public final class NSGridView extends NSView {
     public static NSGridView gridViewWithNumberOfColumnsRows(long cols, long rows) {
         ensureInit();
         try {
-            MemorySegment p = (MemorySegment) hGridInit.invokeExact(ObjC.cls("NSGridView"), ObjC.sel("gridViewWithNumberOfColumns:rows:"), cols, rows);
+            MemorySegment p = (MemorySegment) handles.hGridInit().invokeExact(ObjC.cls("NSGridView"), ObjC.sel("gridViewWithNumberOfColumns:rows:"), cols, rows);
             if (p == null || p.address() == 0) throw new IllegalStateException("gridViewWithNumberOfColumns:rows: returned nil");
             return new NSGridView(p);
         } catch (Throwable t) {
@@ -73,7 +67,7 @@ public final class NSGridView extends NSView {
     public long numberOfColumns() {
         ensureInit();
         try {
-            return (long) hInt.invokeExact(peer, ObjC.sel("numberOfColumns"));
+            return (long) handles.hInt().invokeExact(peer, ObjC.sel("numberOfColumns"));
         } catch (Throwable t) {
             throw new RuntimeException("numberOfColumns failed", t);
         }
@@ -83,7 +77,7 @@ public final class NSGridView extends NSView {
     public long numberOfRows() {
         ensureInit();
         try {
-            return (long) hInt.invokeExact(peer, ObjC.sel("numberOfRows"));
+            return (long) handles.hInt().invokeExact(peer, ObjC.sel("numberOfRows"));
         } catch (Throwable t) {
             throw new RuntimeException("numberOfRows failed", t);
         }
@@ -141,7 +135,7 @@ public final class NSGridView extends NSView {
     public double rowSpacing() {
         ensureInit();
         try {
-            return (double) hGetDouble.invokeExact(peer, ObjC.sel("rowSpacing"));
+            return (double) handles.hGetDouble().invokeExact(peer, ObjC.sel("rowSpacing"));
         } catch (Throwable t) {
             throw new RuntimeException("rowSpacing failed", t);
         }
@@ -151,7 +145,7 @@ public final class NSGridView extends NSView {
     public void setRowSpacing(double v) {
         ensureInit();
         try {
-            hSetDouble.invokeExact(peer, ObjC.sel("setRowSpacing:"), v);
+            handles.hSetDouble().invokeExact(peer, ObjC.sel("setRowSpacing:"), v);
         } catch (Throwable t) {
             throw new RuntimeException("setRowSpacing: failed", t);
         }
@@ -161,7 +155,7 @@ public final class NSGridView extends NSView {
     public double columnSpacing() {
         ensureInit();
         try {
-            return (double) hGetDouble.invokeExact(peer, ObjC.sel("columnSpacing"));
+            return (double) handles.hGetDouble().invokeExact(peer, ObjC.sel("columnSpacing"));
         } catch (Throwable t) {
             throw new RuntimeException("columnSpacing failed", t);
         }
@@ -171,7 +165,7 @@ public final class NSGridView extends NSView {
     public void setColumnSpacing(double v) {
         ensureInit();
         try {
-            hSetDouble.invokeExact(peer, ObjC.sel("setColumnSpacing:"), v);
+            handles.hSetDouble().invokeExact(peer, ObjC.sel("setColumnSpacing:"), v);
         } catch (Throwable t) {
             throw new RuntimeException("setColumnSpacing: failed", t);
         }

@@ -11,9 +11,8 @@ import static nsui.objc.Sig.Ret;
 /// NSPrintInfo — minimal wrapper over native `NSPrintInfo`.
 public final class NSPrintInfo extends NSObject {
 
-    private static volatile boolean initialized;
-    private static MethodHandle hPaperSize; // (id, SEL) -> size
-    private static MethodHandle hSetPaperSize; // (id, SEL, size) -> void
+            private record Handles(MethodHandle hPaperSize, MethodHandle hSetPaperSize) {}
+    private static volatile Handles handles;
 
     private NSPrintInfo(MemorySegment peer) {
         super(peer);
@@ -49,18 +48,16 @@ public final class NSPrintInfo extends NSObject {
         return wrap(peer);
     }
 
-    private static synchronized void ensureInit() {
-        if (initialized) return;
-        hPaperSize = ObjC.handle(Sig.of(Ret.SIZE));
-        hSetPaperSize = ObjC.handle(Sig.of(Ret.VOID, Arg.SIZE));
-        initialized = true;
+        private static synchronized void ensureInit() {
+        if (handles != null) return;
+        handles = new Handles(ObjC.handle(Sig.of(Ret.SIZE)), ObjC.handle(Sig.of(Ret.VOID, Arg.SIZE)));
     }
 
     /// paperSize
     public NSSize paperSize() {
         ensureInit();
         try {
-            MemorySegment seg = (MemorySegment) hPaperSize.invokeExact((java.lang.foreign.SegmentAllocator) java.lang.foreign.Arena.global(), peer, ObjC.sel("paperSize"));
+            MemorySegment seg = (MemorySegment) handles.hPaperSize().invokeExact((java.lang.foreign.SegmentAllocator) java.lang.foreign.Arena.global(), peer, ObjC.sel("paperSize"));
             return NSSize.fromSegment(seg);
         } catch (Throwable t) { throw new RuntimeException("paperSize failed", t); }
     }
@@ -69,7 +66,7 @@ public final class NSPrintInfo extends NSObject {
     public void setPaperSize(NSSize size) {
         ensureInit();
         if (size == null) return;
-        try { hSetPaperSize.invokeExact(peer, ObjC.sel("setPaperSize:"), size.toSegment()); }
+        try { handles.hSetPaperSize().invokeExact(peer, ObjC.sel("setPaperSize:"), size.toSegment()); }
         catch (Throwable t) { throw new RuntimeException("setPaperSize: failed", t); }
     }
 
@@ -109,5 +106,14 @@ public final class NSPrintInfo extends NSObject {
             MemorySegment s = (MemorySegment) h.invokeExact(peer, ObjC.sel("jobDisposition"));
             return ObjC.toString(s);
         } catch (Throwable t) { return null; }
+    }
+
+    /// setJobDisposition:
+    public void setJobDisposition(String disposition) {
+        ensureInit();
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.ID));
+            h.invokeExact(peer, ObjC.sel("setJobDisposition:"), disposition == null ? MemorySegment.NULL : ObjC.nsstring(disposition));
+        } catch (Throwable t) { throw new RuntimeException("setJobDisposition: failed", t); }
     }
 }

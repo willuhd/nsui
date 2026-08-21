@@ -96,6 +96,16 @@ public class NSTextStorage extends NSMutableAttributedString {
         }
     }
 
+    /// [storage delegate] getter alias.
+    public MemorySegment delegate() {
+        return delegateSegment();
+    }
+
+    /// Typed delegate id (MemorySegment) alias for symmetry.
+    public MemorySegment delegateId() {
+        return delegateSegment();
+    }
+
     /// [storage setDelegate:] — raw id.
     public void setDelegate(MemorySegment delegate) {
         ensureInit();

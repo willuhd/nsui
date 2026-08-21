@@ -410,6 +410,16 @@ public final class ObjC {
         }
     }
 
+    /// Helper for nullable peers: returns `MemorySegment.NULL` for null or nil (address 0).
+    public static MemorySegment nullable(MemorySegment seg) {
+        return (seg == null || seg.address() == 0) ? MemorySegment.NULL : seg;
+    }
+
+    /// Helper for nullable NSObject peers.
+    public static MemorySegment nullablePeer(nsui.NSObject obj) {
+        return obj == null ? MemorySegment.NULL : nullable(obj.peer());
+    }
+
     private static RuntimeException fail(Throwable t) {
         return new RuntimeException("native call failed", t);
     }

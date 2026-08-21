@@ -80,6 +80,17 @@ public final class NSApplication extends NSObject {
         ObjC.msgSendVoidId(peer, ObjC.sel("setDelegate:"), delegate.peer());
     }
 
+    /// [application delegate] — the app delegate (id, may be nil).
+    public MemorySegment delegate() {
+        return ObjC.msgSendId(peer, ObjC.sel("delegate"));
+    }
+
+    /// Typed delegate wrapper.
+    public NSObject delegateObject() {
+        MemorySegment d = ObjC.msgSendId(peer, ObjC.sel("delegate"));
+        return NSObject.wrap(d);
+    }
+
     public void setMainMenu(NSMenu menu) {
         ObjC.msgSendVoidId(peer, ObjC.sel("setMainMenu:"), menu.peer());
     }

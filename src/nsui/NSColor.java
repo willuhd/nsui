@@ -16,16 +16,8 @@ import static nsui.objc.Sig.Ret;
 public final class NSColor extends NSObject {
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
-    private static volatile boolean initialized;
-    private static MethodHandle hCreate;  // (id, SEL, double, double, double, double) -> id
-    private static MethodHandle hClassColor; // (id, SEL) -> id  for class colors like redColor
-    private static MethodHandle hPattern; // (id, SEL, id) -> id [colorWithPatternImage:]
-    private static MethodHandle hCatalog; // (id, SEL, id, id) -> id [colorWithCatalogName:colorName:]
-    private static MethodHandle hAlpha;   // (id, SEL) -> double [alphaComponent]
-    private static MethodHandle hWithAlpha; // (id, SEL, double) -> id [colorWithAlphaComponent:]
-    private static MethodHandle hBlended; // (id, SEL, double, id) -> id [blendedColorWithFraction:ofColor:]
-    private static MethodHandle hCatalogName; // (id, SEL) -> id [catalogNameComponent]
-    private static MethodHandle hColorName;   // (id, SEL) -> id [colorNameComponent]
+    private record Handles(MethodHandle hCreate, MethodHandle hClassColor, MethodHandle hPattern, MethodHandle hCatalog, MethodHandle hAlpha, MethodHandle hWithAlpha, MethodHandle hBlended, MethodHandle hCatalogName, MethodHandle hColorName) {}
+    private static volatile Handles H;
 
     private NSColor(MemorySegment peer) {
         super(peer);
@@ -33,17 +25,17 @@ public final class NSColor extends NSObject {
     }
 
     private static synchronized void ensureInit() {
-        if (initialized) return;
-        hCreate = ObjC.handle(Sig.of(Ret.ID, Arg.DOUBLE, Arg.DOUBLE, Arg.DOUBLE, Arg.DOUBLE));
-        hClassColor = ObjC.handle(Sig.of(Ret.ID));
-        hPattern = ObjC.handle(Sig.of(Ret.ID, Arg.ID));
-        hCatalog = ObjC.handle(Sig.of(Ret.ID, Arg.ID, Arg.ID));
-        hAlpha = ObjC.handle(Sig.of(Ret.DOUBLE));
-        hWithAlpha = ObjC.handle(Sig.of(Ret.ID, Arg.DOUBLE));
-        hBlended = ObjC.handle(Sig.of(Ret.ID, Arg.DOUBLE, Arg.ID));
-        hCatalogName = ObjC.handle(Sig.of(Ret.ID));
-        hColorName = ObjC.handle(Sig.of(Ret.ID));
-        initialized = true;
+        if (H != null) return;
+        H = new Handles(
+                ObjC.handle(Sig.of(Ret.ID, Arg.DOUBLE, Arg.DOUBLE, Arg.DOUBLE, Arg.DOUBLE)),
+                ObjC.handle(Sig.of(Ret.ID)),
+                ObjC.handle(Sig.of(Ret.ID, Arg.ID)),
+                ObjC.handle(Sig.of(Ret.ID, Arg.ID, Arg.ID)),
+                ObjC.handle(Sig.of(Ret.DOUBLE)),
+                ObjC.handle(Sig.of(Ret.ID, Arg.DOUBLE)),
+                ObjC.handle(Sig.of(Ret.ID, Arg.DOUBLE, Arg.ID)),
+                ObjC.handle(Sig.of(Ret.ID)),
+                ObjC.handle(Sig.of(Ret.ID)));
     }
 
     /// Wrap a native NSColor id as an NSColor (null for nil). Enables typed bridging from controls that return NSColor.
@@ -56,7 +48,7 @@ public final class NSColor extends NSObject {
         ensureInit();
         MemorySegment color;
         try {
-            color = (MemorySegment) hCreate.invokeExact(
+            color = (MemorySegment) H.hCreate().invokeExact(
                     ObjC.cls("NSColor"), ObjC.sel("colorWithSRGBRed:green:blue:alpha:"), r, g, b, a);
         } catch (Throwable t) {
             throw new RuntimeException("colorWithSRGBRed:green:blue:alpha: failed", t);
@@ -69,7 +61,7 @@ public final class NSColor extends NSObject {
     private static NSColor classColor(String sel) {
         ensureInit();
         try {
-            MemorySegment c = (MemorySegment) hClassColor.invokeExact(ObjC.cls("NSColor"), ObjC.sel(sel));
+            MemorySegment c = (MemorySegment) H.hClassColor().invokeExact(ObjC.cls("NSColor"), ObjC.sel(sel));
             return new NSColor(c);
         } catch (Throwable t) {
             throw new RuntimeException(sel + " failed", t);
@@ -123,7 +115,7 @@ public final class NSColor extends NSObject {
     public static NSColor colorWithPatternImage(NSImage image) {
         ensureInit();
         try {
-            MemorySegment c = (MemorySegment) hPattern.invokeExact(ObjC.cls("NSColor"), ObjC.sel("colorWithPatternImage:"), image.peer());
+            MemorySegment c = (MemorySegment) H.hPattern().invokeExact(ObjC.cls("NSColor"), ObjC.sel("colorWithPatternImage:"), image.peer());
             return new NSColor(c);
         } catch (Throwable t) {
             throw new RuntimeException("colorWithPatternImage: failed", t);
@@ -134,7 +126,7 @@ public final class NSColor extends NSObject {
     public static NSColor colorWithCatalogName(String catalog, String colorName) {
         ensureInit();
         try {
-            MemorySegment c = (MemorySegment) hCatalog.invokeExact(ObjC.cls("NSColor"), ObjC.sel("colorWithCatalogName:colorName:"), ObjC.nsstring(catalog), ObjC.nsstring(colorName));
+            MemorySegment c = (MemorySegment) H.hCatalog().invokeExact(ObjC.cls("NSColor"), ObjC.sel("colorWithCatalogName:colorName:"), ObjC.nsstring(catalog), ObjC.nsstring(colorName));
             return (c == null || c.address() == 0) ? null : new NSColor(c);
         } catch (Throwable t) {
             throw new RuntimeException("colorWithCatalogName:colorName: failed", t);
@@ -161,7 +153,7 @@ public final class NSColor extends NSObject {
     /// [color alphaComponent] — alpha in 0..1.
     public double alphaComponent() {
         try {
-            return (double) hAlpha.invokeExact(peer, ObjC.sel("alphaComponent"));
+            return (double) H.hAlpha().invokeExact(peer, ObjC.sel("alphaComponent"));
         } catch (Throwable t) {
             throw new RuntimeException("alphaComponent failed", t);
         }
@@ -170,7 +162,7 @@ public final class NSColor extends NSObject {
     /// [color colorWithAlphaComponent:] — same color with different alpha.
     public NSColor colorWithAlphaComponent(double alpha) {
         try {
-            MemorySegment c = (MemorySegment) hWithAlpha.invokeExact(peer, ObjC.sel("colorWithAlphaComponent:"), alpha);
+            MemorySegment c = (MemorySegment) H.hWithAlpha().invokeExact(peer, ObjC.sel("colorWithAlphaComponent:"), alpha);
             return new NSColor(c);
         } catch (Throwable t) {
             throw new RuntimeException("colorWithAlphaComponent: failed", t);
@@ -180,7 +172,7 @@ public final class NSColor extends NSObject {
     /// [color blendedColorWithFraction:ofColor:] — blend with another color.
     public NSColor blendedColorWithFraction(double fraction, NSColor other) {
         try {
-            MemorySegment c = (MemorySegment) hBlended.invokeExact(peer, ObjC.sel("blendedColorWithFraction:ofColor:"), fraction, other.peer());
+            MemorySegment c = (MemorySegment) H.hBlended().invokeExact(peer, ObjC.sel("blendedColorWithFraction:ofColor:"), fraction, other.peer());
             return (c == null || c.address() == 0) ? null : new NSColor(c);
         } catch (Throwable t) {
             throw new RuntimeException("blendedColorWithFraction:ofColor: failed", t);
@@ -190,7 +182,7 @@ public final class NSColor extends NSObject {
     /// [color catalogNameComponent] — catalog name, or null for non-catalog colors.
     public String catalogNameComponent() {
         try {
-            MemorySegment s = (MemorySegment) hCatalogName.invokeExact(peer, ObjC.sel("catalogNameComponent"));
+            MemorySegment s = (MemorySegment) H.hCatalogName().invokeExact(peer, ObjC.sel("catalogNameComponent"));
             return ObjC.toString(s);
         } catch (Throwable t) {
             throw new RuntimeException("catalogNameComponent failed", t);
@@ -200,7 +192,7 @@ public final class NSColor extends NSObject {
     /// [color colorNameComponent] — color name within its catalog, or null.
     public String colorNameComponent() {
         try {
-            MemorySegment s = (MemorySegment) hColorName.invokeExact(peer, ObjC.sel("colorNameComponent"));
+            MemorySegment s = (MemorySegment) H.hColorName().invokeExact(peer, ObjC.sel("colorNameComponent"));
             return ObjC.toString(s);
         } catch (Throwable t) {
             throw new RuntimeException("colorNameComponent failed", t);

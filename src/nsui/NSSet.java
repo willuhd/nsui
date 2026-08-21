@@ -12,12 +12,8 @@ import static nsui.objc.Sig.Ret;
 /// Thin, stateless: every method maps to one `objc_msgSend`.
 public class NSSet extends NSObject {
 
-    private static volatile boolean initialized;
-    private static MethodHandle hCount;          // (id, SEL) -> long
-    private static MethodHandle hContains;       // (id, SEL, id) -> bool
-    private static MethodHandle hMember;         // (id, SEL, id) -> id
-    private static MethodHandle hAnyObject;      // (id, SEL) -> id
-    private static MethodHandle hAllObjects;     // (id, SEL) -> id
+            private record Handles(MethodHandle hCount, MethodHandle hContains, MethodHandle hMember, MethodHandle hAnyObject) {}
+    private static volatile Handles handles;
 
     protected NSSet(MemorySegment peer) {
         super(peer);
@@ -62,20 +58,20 @@ public class NSSet extends NSObject {
         return wrap(s);
     }
 
-    private static synchronized void ensureInit() {
-        if (initialized) return;
-        hCount = ObjC.handle(Sig.of(Ret.INT));
-        hContains = ObjC.handle(Sig.of(Ret.BOOL, Arg.ID));
-        hMember = ObjC.handle(Sig.of(Ret.ID, Arg.ID));
-        hAnyObject = ObjC.handle(Sig.of(Ret.ID));
-        hAllObjects = ObjC.handle(Sig.of(Ret.ID));
-        initialized = true;
+        private static synchronized void ensureInit() {
+        if (handles != null) return;
+        handles = new Handles(
+                ObjC.handle(Sig.of(Ret.INT)),
+                ObjC.handle(Sig.of(Ret.BOOL, Arg.ID)),
+                ObjC.handle(Sig.of(Ret.ID, Arg.ID)),
+                ObjC.handle(Sig.of(Ret.ID))
+        );
     }
 
     /// count
     public long count() {
         ensureInit();
-        try { return (long) hCount.invokeExact(peer, ObjC.sel("count")); }
+        try { return (long) handles.hCount().invokeExact(peer, ObjC.sel("count")); }
         catch (Throwable t) { throw new RuntimeException("NSSet count failed", t); }
     }
 
@@ -85,14 +81,14 @@ public class NSSet extends NSObject {
     public boolean containsObject(NSObject object) {
         ensureInit();
         if (object == null) return false;
-        try { return (boolean) hContains.invokeExact(peer, ObjC.sel("containsObject:"), object.peer()); }
+        try { return (boolean) handles.hContains().invokeExact(peer, ObjC.sel("containsObject:"), object.peer()); }
         catch (Throwable t) { throw new RuntimeException("containsObject: failed", t); }
     }
 
     public boolean containsObject(MemorySegment object) {
         ensureInit();
         if (object == null || object.address() == 0) return false;
-        try { return (boolean) hContains.invokeExact(peer, ObjC.sel("containsObject:"), object); }
+        try { return (boolean) handles.hContains().invokeExact(peer, ObjC.sel("containsObject:"), object); }
         catch (Throwable t) { throw new RuntimeException("containsObject: failed", t); }
     }
 
@@ -101,7 +97,7 @@ public class NSSet extends NSObject {
         ensureInit();
         if (object == null || object.address() == 0) return null;
         try {
-            MemorySegment r = (MemorySegment) hMember.invokeExact(peer, ObjC.sel("member:"), object);
+            MemorySegment r = (MemorySegment) handles.hMember().invokeExact(peer, ObjC.sel("member:"), object);
             return (r == null || r.address() == 0) ? null : r;
         } catch (Throwable t) { throw new RuntimeException("member: failed", t); }
     }
@@ -115,7 +111,7 @@ public class NSSet extends NSObject {
     public MemorySegment anyObject() {
         ensureInit();
         try {
-            MemorySegment r = (MemorySegment) hAnyObject.invokeExact(peer, ObjC.sel("anyObject"));
+            MemorySegment r = (MemorySegment) handles.hAnyObject().invokeExact(peer, ObjC.sel("anyObject"));
             return (r == null || r.address() == 0) ? null : r;
         } catch (Throwable t) { throw new RuntimeException("anyObject failed", t); }
     }
@@ -124,7 +120,7 @@ public class NSSet extends NSObject {
     public NSArray allObjects() {
         ensureInit();
         try {
-            MemorySegment r = (MemorySegment) hAllObjects.invokeExact(peer, ObjC.sel("allObjects"));
+            MemorySegment r = (MemorySegment) handles.hAnyObject().invokeExact(peer, ObjC.sel("allObjects"));
             return NSArray.wrap(r);
         } catch (Throwable t) { throw new RuntimeException("allObjects failed", t); }
     }

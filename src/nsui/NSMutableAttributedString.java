@@ -14,13 +14,8 @@ import static nsui.objc.Sig.Ret;
 /// Follows FFM pattern: no reflection, cached handles, ensureInit.
 public class NSMutableAttributedString extends NSAttributedString {
 
-    private static volatile boolean mutableInitialized;
-    private static MethodHandle hInitString;       // (id, SEL, id) -> id
-    private static MethodHandle hInitStringAttrs;  // (id, SEL, id, id) -> id
-    private static MethodHandle hAddAttr;          // (id, SEL, id, id, NSRange) -> void
-    private static MethodHandle hAppend;           // (id, SEL, id) -> void  appendAttributedString:
-    private static MethodHandle hSetAttr;          // (id, SEL, id, NSRange) -> void
-    private static MethodHandle hRemoveAttr;       // (id, SEL, id, NSRange) -> void
+    private record Handles(MethodHandle hInitString, MethodHandle hInitStringAttrs, MethodHandle hAddAttr, MethodHandle hAppend, MethodHandle hSetAttr) {}
+    private static volatile Handles handles;
 
     protected NSMutableAttributedString(MemorySegment peer) {
         super(peer);
@@ -32,14 +27,14 @@ public class NSMutableAttributedString extends NSAttributedString {
     }
 
     private static synchronized void ensureMutInit() {
-        if (mutableInitialized) return;
-        hInitString = ObjC.handle(Sig.of(Ret.ID, Arg.ID));
-        hInitStringAttrs = ObjC.handle(Sig.of(Ret.ID, Arg.ID, Arg.ID));
-        hAddAttr = ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.ID, Arg.RANGE));
-        hAppend = ObjC.handle(Sig.of(Ret.VOID, Arg.ID));
-        hRemoveAttr = ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.RANGE));
-        hSetAttr = ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.RANGE));
-        mutableInitialized = true;
+        if (handles != null) return;
+        handles = new Handles(
+                ObjC.handle(Sig.of(Ret.ID, Arg.ID)),
+                ObjC.handle(Sig.of(Ret.ID, Arg.ID, Arg.ID)),
+                ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.ID, Arg.RANGE)),
+                ObjC.handle(Sig.of(Ret.VOID, Arg.ID)),
+                ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.RANGE))
+        );
     }
 
     /// `[[NSMutableAttributedString alloc] initWithString:string]`
@@ -47,7 +42,7 @@ public class NSMutableAttributedString extends NSAttributedString {
         ensureMutInit();
         MemorySegment alloc = ObjC.msgSendId(ObjC.cls("NSMutableAttributedString"), ObjC.sel("alloc"));
         try {
-            MemorySegment p = (MemorySegment) hInitString.invokeExact(alloc, ObjC.sel("initWithString:"), ObjC.nsstring(s));
+            MemorySegment p = (MemorySegment) handles.hInitString().invokeExact(alloc, ObjC.sel("initWithString:"), ObjC.nsstring(s));
             if (p.address() == 0) throw new IllegalStateException("NSMutableAttributedString initWithString: returned nil");
             return new NSMutableAttributedString(p);
         } catch (Throwable t) {
@@ -61,7 +56,7 @@ public class NSMutableAttributedString extends NSAttributedString {
         MemorySegment alloc = ObjC.msgSendId(ObjC.cls("NSMutableAttributedString"), ObjC.sel("alloc"));
         try {
             MemorySegment attrs = (MemorySegment) (attributes == null ? MemorySegment.NULL : attributes);
-            MemorySegment p = (MemorySegment) hInitStringAttrs.invokeExact(alloc, ObjC.sel("initWithString:attributes:"), ObjC.nsstring(s), attrs);
+            MemorySegment p = (MemorySegment) handles.hInitStringAttrs().invokeExact(alloc, ObjC.sel("initWithString:attributes:"), ObjC.nsstring(s), attrs);
             if (p.address() == 0) throw new IllegalStateException("NSMutableAttributedString initWithString:attributes: returned nil");
             return new NSMutableAttributedString(p);
         } catch (Throwable t) {
@@ -73,7 +68,7 @@ public class NSMutableAttributedString extends NSAttributedString {
     public void append(NSAttributedString other) {
         ensureMutInit();
         try {
-            hAppend.invokeExact(peer, ObjC.sel("appendAttributedString:"), (MemorySegment) ((MemorySegment) (other == null ? MemorySegment.NULL : other.peer())));
+            handles.hAppend().invokeExact(peer, ObjC.sel("appendAttributedString:"), (MemorySegment) ((MemorySegment) (other == null ? MemorySegment.NULL : other.peer())));
         } catch (Throwable t) {
             throw new RuntimeException("appendAttributedString: failed", t);
         }
@@ -95,7 +90,7 @@ public class NSMutableAttributedString extends NSAttributedString {
         ensureMutInit();
         try {
             MemorySegment v = (MemorySegment) (value == null ? MemorySegment.NULL : value);
-            hAddAttr.invokeExact(peer, ObjC.sel("addAttribute:value:range:"), ObjC.nsstring(name), v, range.toSegment());
+            handles.hAddAttr().invokeExact(peer, ObjC.sel("addAttribute:value:range:"), ObjC.nsstring(name), v, range.toSegment());
         } catch (Throwable t) {
             throw new RuntimeException("addAttribute:value:range: failed", t);
         }
@@ -122,7 +117,7 @@ public class NSMutableAttributedString extends NSAttributedString {
     public void removeAttribute(String name, NSRange range) {
         ensureMutInit();
         try {
-            hRemoveAttr.invokeExact(peer, ObjC.sel("removeAttribute:range:"), ObjC.nsstring(name), range.toSegment());
+            handles.hSetAttr().invokeExact(peer, ObjC.sel("removeAttribute:range:"), ObjC.nsstring(name), range.toSegment());
         } catch (Throwable t) {
             throw new RuntimeException("removeAttribute:range: failed", t);
         }
@@ -133,7 +128,7 @@ public class NSMutableAttributedString extends NSAttributedString {
         ensureMutInit();
         try {
             MemorySegment arg = (attrsDict == null || attrsDict.address() == 0) ? MemorySegment.NULL : attrsDict;
-            hSetAttr.invokeExact(peer, ObjC.sel("setAttributes:range:"), (MemorySegment) arg, range.toSegment());
+            handles.hSetAttr().invokeExact(peer, ObjC.sel("setAttributes:range:"), (MemorySegment) arg, range.toSegment());
         } catch (Throwable t) {
             throw new RuntimeException("setAttributes:range: failed", t);
         }

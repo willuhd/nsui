@@ -11,8 +11,8 @@ import static nsui.objc.Sig.Ret;
 /// NSPrintPanel — minimal wrapper over native `NSPrintPanel`.
 public final class NSPrintPanel extends NSObject {
 
-    private static volatile boolean initialized;
-    private static MethodHandle hRunModal; // (id, SEL) -> long
+            private record Handles(MethodHandle hRunModal) {}
+    private static volatile Handles handles;
 
     private NSPrintPanel(MemorySegment peer) {
         super(peer);
@@ -30,16 +30,15 @@ public final class NSPrintPanel extends NSObject {
         return wrap(s);
     }
 
-    private static synchronized void ensureInit() {
-        if (initialized) return;
-        hRunModal = ObjC.handle(Sig.of(Ret.INT));
-        initialized = true;
+        private static synchronized void ensureInit() {
+        if (handles != null) return;
+        handles = new Handles(ObjC.handle(Sig.of(Ret.INT)));
     }
 
     /// runModal — returns NSApplication.ModalResponse.
     public long runModal() {
         ensureInit();
-        try { return (long) hRunModal.invokeExact(peer, ObjC.sel("runModal")); }
+        try { return (long) handles.hRunModal().invokeExact(peer, ObjC.sel("runModal")); }
         catch (Throwable t) { throw new RuntimeException("runModal failed", t); }
     }
 

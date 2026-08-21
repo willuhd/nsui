@@ -12,10 +12,8 @@ import static nsui.objc.Sig.Ret;
 /// Thin 1:1, stateless.
 public final class NSWindowController extends NSObject {
 
-    private static volatile boolean initialized;
-    private static MethodHandle hInitWindow; // (id, SEL, id) -> id
-    private static MethodHandle hId;         // (id, SEL) -> id
-    private static MethodHandle hVoidId;     // (id, SEL, id) -> void
+            private record Handles(MethodHandle hInitWindow, MethodHandle hId, MethodHandle hVoidId) {}
+    private static volatile Handles handles;
 
     private NSWindowController(MemorySegment peer) {
         super(peer);
@@ -26,12 +24,9 @@ public final class NSWindowController extends NSObject {
         return (peer == null || peer.address() == 0) ? null : new NSWindowController(peer);
     }
 
-    private static synchronized void ensureInit() {
-        if (initialized) return;
-        hInitWindow = ObjC.handle(Sig.of(Ret.ID, Arg.ID));
-        hId = ObjC.handle(Sig.of(Ret.ID));
-        hVoidId = ObjC.handle(Sig.of(Ret.VOID, Arg.ID));
-        initialized = true;
+        private static synchronized void ensureInit() {
+        if (handles != null) return;
+        handles = new Handles(ObjC.handle(Sig.of(Ret.ID, Arg.ID)), ObjC.handle(Sig.of(Ret.ID)), ObjC.handle(Sig.of(Ret.VOID, Arg.ID)));
     }
 
     /// alloc + init — empty controller.
@@ -48,7 +43,7 @@ public final class NSWindowController extends NSObject {
         ensureInit();
         MemorySegment p = ObjC.msgSendId(ObjC.cls("NSWindowController"), ObjC.sel("alloc"));
         try {
-            p = (MemorySegment) hInitWindow.invokeExact(p, ObjC.sel("initWithWindow:"), (MemorySegment) (window == null ? MemorySegment.NULL : window.peer()));
+            p = (MemorySegment) handles.hInitWindow().invokeExact(p, ObjC.sel("initWithWindow:"), (MemorySegment) (window == null ? MemorySegment.NULL : window.peer()));
         } catch (Throwable t) {
             throw new RuntimeException("initWithWindow: failed", t);
         }
@@ -60,7 +55,7 @@ public final class NSWindowController extends NSObject {
     public NSWindow window() {
         ensureInit();
         try {
-            MemorySegment w = (MemorySegment) hId.invokeExact(peer, ObjC.sel("window"));
+            MemorySegment w = (MemorySegment) handles.hId().invokeExact(peer, ObjC.sel("window"));
             return NSWindow.wrap(w);
         } catch (Throwable t) {
             throw new RuntimeException("window failed", t);
@@ -71,7 +66,7 @@ public final class NSWindowController extends NSObject {
     public void setWindow(NSWindow window) {
         ensureInit();
         try {
-            hVoidId.invokeExact(peer, ObjC.sel("setWindow:"), (MemorySegment) (window == null ? MemorySegment.NULL : window.peer()));
+            handles.hVoidId().invokeExact(peer, ObjC.sel("setWindow:"), (MemorySegment) (window == null ? MemorySegment.NULL : window.peer()));
         } catch (Throwable t) {
             throw new RuntimeException("setWindow: failed", t);
         }
@@ -81,7 +76,7 @@ public final class NSWindowController extends NSObject {
     public void showWindow(NSObject sender) {
         ensureInit();
         try {
-            hVoidId.invokeExact(peer, ObjC.sel("showWindow:"), (MemorySegment) (sender == null ? MemorySegment.NULL : sender.peer()));
+            handles.hVoidId().invokeExact(peer, ObjC.sel("showWindow:"), (MemorySegment) (sender == null ? MemorySegment.NULL : sender.peer()));
         } catch (Throwable t) {
             throw new RuntimeException("showWindow: failed", t);
         }
@@ -96,7 +91,7 @@ public final class NSWindowController extends NSObject {
     public void setDocument(NSDocument document) {
         ensureInit();
         try {
-            hVoidId.invokeExact(peer, ObjC.sel("setDocument:"), (MemorySegment) (document == null ? MemorySegment.NULL : document.peer()));
+            handles.hVoidId().invokeExact(peer, ObjC.sel("setDocument:"), (MemorySegment) (document == null ? MemorySegment.NULL : document.peer()));
         } catch (Throwable t) {
             throw new RuntimeException("setDocument: failed", t);
         }
@@ -106,7 +101,7 @@ public final class NSWindowController extends NSObject {
     public MemorySegment documentPeer() {
         ensureInit();
         try {
-            return (MemorySegment) hId.invokeExact(peer, ObjC.sel("document"));
+            return (MemorySegment) handles.hId().invokeExact(peer, ObjC.sel("document"));
         } catch (Throwable t) {
             throw new RuntimeException("document failed", t);
         }

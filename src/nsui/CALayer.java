@@ -17,13 +17,8 @@ import static nsui.objc.Sig.Ret;
 /// AppKit/CoreGraphics dependencies, but we ensure QuartzCore explicitly if needed.
 public final class CALayer extends NSObject {
 
-    private static volatile boolean initialized;
-    private static MethodHandle hGetDouble; // (id, SEL) -> double
-    private static MethodHandle hSetDouble; // (id, SEL, double) -> void
-    private static MethodHandle hGetFloat;  // (id, SEL) -> float
-    private static MethodHandle hSetFloat;  // (id, SEL, float) -> void
-    private static MethodHandle hGetId;     // (id, SEL) -> id
-    private static MethodHandle hSetId;     // (id, SEL, id) -> void
+            private record Handles(MethodHandle hGetDouble, MethodHandle hSetDouble, MethodHandle hGetFloat, MethodHandle hSetFloat, MethodHandle hGetId, MethodHandle hSetId) {}
+    private static volatile Handles handles;
 
     private CALayer(MemorySegment peer) {
         super(peer);
@@ -34,17 +29,18 @@ public final class CALayer extends NSObject {
         return (peer == null || peer.address() == 0) ? null : new CALayer(peer);
     }
 
-    private static synchronized void ensureInit() {
-        if (initialized) return;
+        private static synchronized void ensureInit() {
+        if (handles != null) return;
         // Ensure QuartzCore is loaded so CALayer class is visible
         try { ObjC.ensureFramework("QuartzCore"); } catch (Throwable ignored) {}
-        hGetDouble = ObjC.handle(Sig.of(Ret.DOUBLE));
-        hSetDouble = ObjC.handle(Sig.of(Ret.VOID, Arg.DOUBLE));
-        hGetFloat = ObjC.handle(Sig.of(Ret.FLOAT));
-        hSetFloat = ObjC.handle(Sig.of(Ret.VOID, Arg.FLOAT));
-        hGetId = ObjC.handle(Sig.of(Ret.ID));
-        hSetId = ObjC.handle(Sig.of(Ret.VOID, Arg.ID));
-        initialized = true;
+        handles = new Handles(
+                ObjC.handle(Sig.of(Ret.DOUBLE)),
+                ObjC.handle(Sig.of(Ret.VOID, Arg.DOUBLE)),
+                ObjC.handle(Sig.of(Ret.FLOAT)),
+                ObjC.handle(Sig.of(Ret.VOID, Arg.FLOAT)),
+                ObjC.handle(Sig.of(Ret.ID)),
+                ObjC.handle(Sig.of(Ret.VOID, Arg.ID))
+        );
     }
 
     /// `[[CALayer alloc] init]`
@@ -60,7 +56,7 @@ public final class CALayer extends NSObject {
     public double cornerRadius() {
         ensureInit();
         try {
-            return (double) hGetDouble.invokeExact(peer, ObjC.sel("cornerRadius"));
+            return (double) handles.hGetDouble().invokeExact(peer, ObjC.sel("cornerRadius"));
         } catch (Throwable t) {
             throw new RuntimeException("cornerRadius failed", t);
         }
@@ -70,7 +66,7 @@ public final class CALayer extends NSObject {
     public void setCornerRadius(double radius) {
         ensureInit();
         try {
-            hSetDouble.invokeExact(peer, ObjC.sel("setCornerRadius:"), radius);
+            handles.hSetDouble().invokeExact(peer, ObjC.sel("setCornerRadius:"), radius);
         } catch (Throwable t) {
             throw new RuntimeException("setCornerRadius: failed", t);
         }
@@ -80,7 +76,7 @@ public final class CALayer extends NSObject {
     public double borderWidth() {
         ensureInit();
         try {
-            return (double) hGetDouble.invokeExact(peer, ObjC.sel("borderWidth"));
+            return (double) handles.hGetDouble().invokeExact(peer, ObjC.sel("borderWidth"));
         } catch (Throwable t) {
             throw new RuntimeException("borderWidth failed", t);
         }
@@ -90,7 +86,7 @@ public final class CALayer extends NSObject {
     public void setBorderWidth(double width) {
         ensureInit();
         try {
-            hSetDouble.invokeExact(peer, ObjC.sel("setBorderWidth:"), width);
+            handles.hSetDouble().invokeExact(peer, ObjC.sel("setBorderWidth:"), width);
         } catch (Throwable t) {
             throw new RuntimeException("setBorderWidth: failed", t);
         }
@@ -100,7 +96,7 @@ public final class CALayer extends NSObject {
     public MemorySegment borderColor() {
         ensureInit();
         try {
-            return (MemorySegment) hGetId.invokeExact(peer, ObjC.sel("borderColor"));
+            return (MemorySegment) handles.hGetId().invokeExact(peer, ObjC.sel("borderColor"));
         } catch (Throwable t) {
             throw new RuntimeException("borderColor failed", t);
         }
@@ -111,7 +107,7 @@ public final class CALayer extends NSObject {
         ensureInit();
         try {
             MemorySegment c = (cgColor == null || cgColor.address() == 0) ? MemorySegment.NULL : cgColor;
-            hSetId.invokeExact(peer, ObjC.sel("setBorderColor:"), c);
+            handles.hSetId().invokeExact(peer, ObjC.sel("setBorderColor:"), c);
         } catch (Throwable t) {
             throw new RuntimeException("setBorderColor: failed", t);
         }
@@ -131,7 +127,7 @@ public final class CALayer extends NSObject {
     public MemorySegment backgroundColor() {
         ensureInit();
         try {
-            return (MemorySegment) hGetId.invokeExact(peer, ObjC.sel("backgroundColor"));
+            return (MemorySegment) handles.hGetId().invokeExact(peer, ObjC.sel("backgroundColor"));
         } catch (Throwable t) {
             throw new RuntimeException("backgroundColor failed", t);
         }
@@ -142,7 +138,7 @@ public final class CALayer extends NSObject {
         ensureInit();
         try {
             MemorySegment c = (cgColor == null || cgColor.address() == 0) ? MemorySegment.NULL : cgColor;
-            hSetId.invokeExact(peer, ObjC.sel("setBackgroundColor:"), c);
+            handles.hSetId().invokeExact(peer, ObjC.sel("setBackgroundColor:"), c);
         } catch (Throwable t) {
             throw new RuntimeException("setBackgroundColor: failed", t);
         }
@@ -174,7 +170,7 @@ public final class CALayer extends NSObject {
     public double opacity() {
         ensureInit();
         try {
-            return (double) (float) hGetFloat.invokeExact(peer, ObjC.sel("opacity"));
+            return (double) (float) handles.hGetFloat().invokeExact(peer, ObjC.sel("opacity"));
         } catch (Throwable t) {
             throw new RuntimeException("opacity failed", t);
         }
@@ -184,7 +180,7 @@ public final class CALayer extends NSObject {
     public void setOpacity(float o) {
         ensureInit();
         try {
-            hSetFloat.invokeExact(peer, ObjC.sel("setOpacity:"), o);
+            handles.hSetFloat().invokeExact(peer, ObjC.sel("setOpacity:"), o);
         } catch (Throwable t) {
             throw new RuntimeException("setOpacity: failed", t);
         }
@@ -200,7 +196,8 @@ public final class CALayer extends NSObject {
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.ID));
             MemorySegment k = key == null ? MemorySegment.NULL : ObjC.nsstring(key);
-            h.invokeExact(peer, ObjC.sel("addAnimation:forKey:"), anim == null ? MemorySegment.NULL : anim.peer(), k);
+            MemorySegment animSeg = anim == null ? MemorySegment.NULL : anim.peer();
+            h.invokeExact(peer, ObjC.sel("addAnimation:forKey:"), (MemorySegment) animSeg, (MemorySegment) k);
         } catch (Throwable t) { throw new RuntimeException("addAnimation:forKey: failed", t); }
     }
 
@@ -209,7 +206,9 @@ public final class CALayer extends NSObject {
         ensureInit();
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.ID));
-            h.invokeExact(peer, ObjC.sel("addAnimation:forKey:"), animPeer == null ? MemorySegment.NULL : animPeer, key == null ? MemorySegment.NULL : ObjC.nsstring(key));
+            MemorySegment a = animPeer == null ? MemorySegment.NULL : animPeer;
+            MemorySegment k = key == null ? MemorySegment.NULL : ObjC.nsstring(key);
+            h.invokeExact(peer, ObjC.sel("addAnimation:forKey:"), (MemorySegment) a, (MemorySegment) k);
         } catch (Throwable t) { throw new RuntimeException("addAnimation:forKey: failed", t); }
     }
 
@@ -218,7 +217,8 @@ public final class CALayer extends NSObject {
         ensureInit();
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.ID));
-            h.invokeExact(peer, ObjC.sel("removeAnimationForKey:"), key == null ? MemorySegment.NULL : ObjC.nsstring(key));
+            MemorySegment k = key == null ? MemorySegment.NULL : ObjC.nsstring(key);
+            h.invokeExact(peer, ObjC.sel("removeAnimationForKey:"), (MemorySegment) k);
         } catch (Throwable t) { throw new RuntimeException("removeAnimationForKey: failed", t); }
     }
 

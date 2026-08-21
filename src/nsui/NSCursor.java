@@ -11,10 +11,8 @@ import static nsui.objc.Sig.Ret;
 /// Provides standard cursors and push/pop/set.
 public final class NSCursor extends NSObject {
 
-    private static volatile boolean initialized;
-    private static MethodHandle hCursor; // (id, SEL) -> id  class cursor getters
-    private static MethodHandle hVoid;   // (id, SEL) -> void [set/push/pop]
-    private static MethodHandle hBool;   // (id, SEL) -> bool
+            private record Handles(MethodHandle hCursor, MethodHandle hVoid, MethodHandle hBool) {}
+    private static volatile Handles handles;
 
     private NSCursor(MemorySegment peer) {
         super(peer);
@@ -25,18 +23,15 @@ public final class NSCursor extends NSObject {
         return (peer == null || peer.address() == 0) ? null : new NSCursor(peer);
     }
 
-    private static synchronized void ensureInit() {
-        if (initialized) return;
-        hCursor = ObjC.handle(Sig.of(Ret.ID));
-        hVoid = ObjC.handle(Sig.of(Ret.VOID));
-        hBool = ObjC.handle(Sig.of(Ret.BOOL));
-        initialized = true;
+        private static synchronized void ensureInit() {
+        if (handles != null) return;
+        handles = new Handles(ObjC.handle(Sig.of(Ret.ID)), ObjC.handle(Sig.of(Ret.VOID)), ObjC.handle(Sig.of(Ret.BOOL)));
     }
 
     private static NSCursor cursorWithSel(String sel) {
         ensureInit();
         try {
-            MemorySegment p = (MemorySegment) hCursor.invokeExact(ObjC.cls("NSCursor"), ObjC.sel(sel));
+            MemorySegment p = (MemorySegment) handles.hCursor().invokeExact(ObjC.cls("NSCursor"), ObjC.sel(sel));
             return wrap(p);
         } catch (Throwable t) {
             throw new RuntimeException(sel + " failed", t);
@@ -62,7 +57,7 @@ public final class NSCursor extends NSObject {
     public void set() {
         ensureInit();
         try {
-            hVoid.invokeExact(peer, ObjC.sel("set"));
+            handles.hVoid().invokeExact(peer, ObjC.sel("set"));
         } catch (Throwable t) {
             throw new RuntimeException("set failed", t);
         }
@@ -72,7 +67,7 @@ public final class NSCursor extends NSObject {
     public void push() {
         ensureInit();
         try {
-            hVoid.invokeExact(peer, ObjC.sel("push"));
+            handles.hVoid().invokeExact(peer, ObjC.sel("push"));
         } catch (Throwable t) {
             throw new RuntimeException("push failed", t);
         }
@@ -82,7 +77,7 @@ public final class NSCursor extends NSObject {
     public void pop() {
         ensureInit();
         try {
-            hVoid.invokeExact(peer, ObjC.sel("pop"));
+            handles.hVoid().invokeExact(peer, ObjC.sel("pop"));
         } catch (Throwable t) {
             // fallback to class pop
             try {
@@ -109,7 +104,7 @@ public final class NSCursor extends NSObject {
     public boolean isSetOnMouseEntered() {
         ensureInit();
         try {
-            return (boolean) hBool.invokeExact(peer, ObjC.sel("isSetOnMouseEntered"));
+            return (boolean) handles.hBool().invokeExact(peer, ObjC.sel("isSetOnMouseEntered"));
         } catch (Throwable t) {
             throw new RuntimeException("isSetOnMouseEntered failed", t);
         }
@@ -124,7 +119,7 @@ public final class NSCursor extends NSObject {
     public NSImage image() {
         ensureInit();
         try {
-            MemorySegment img = (MemorySegment) hCursor.invokeExact(peer, ObjC.sel("image"));
+            MemorySegment img = (MemorySegment) handles.hCursor().invokeExact(peer, ObjC.sel("image"));
             return NSImage.wrap(img);
         } catch (Throwable t) {
             throw new RuntimeException("image failed", t);

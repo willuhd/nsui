@@ -14,8 +14,8 @@ import static nsui.objc.Sig.Ret;
 /// Follows FFM pattern: no reflection, cached handles, ensureInit.
 public class NSParagraphStyle extends NSObject {
 
-    private static volatile boolean initialized;
-    private static MethodHandle hGetLong;   // (id, SEL) -> long
+            private record Handles(MethodHandle hGetLong) {}
+    private static volatile Handles handles;
 
     protected NSParagraphStyle(MemorySegment peer) {
         super(peer);
@@ -26,10 +26,9 @@ public class NSParagraphStyle extends NSObject {
         return (peer == null || peer.address() == 0) ? null : new NSParagraphStyle(peer);
     }
 
-    private static synchronized void ensureInit() {
-        if (initialized) return;
-        hGetLong = ObjC.handle(Sig.of(Ret.INT));
-        initialized = true;
+        private static synchronized void ensureInit() {
+        if (handles != null) return;
+        handles = new Handles(ObjC.handle(Sig.of(Ret.INT)));
     }
 
     /// [NSParagraphStyle defaultParagraphStyle]
@@ -43,7 +42,7 @@ public class NSParagraphStyle extends NSObject {
     public long alignment() {
         ensureInit();
         try {
-            return (long) hGetLong.invokeExact(peer, ObjC.sel("alignment"));
+            return (long) handles.hGetLong().invokeExact(peer, ObjC.sel("alignment"));
         } catch (Throwable t) {
             throw new RuntimeException("alignment failed", t);
         }
@@ -53,7 +52,7 @@ public class NSParagraphStyle extends NSObject {
     public long lineBreakMode() {
         ensureInit();
         try {
-            return (long) hGetLong.invokeExact(peer, ObjC.sel("lineBreakMode"));
+            return (long) handles.hGetLong().invokeExact(peer, ObjC.sel("lineBreakMode"));
         } catch (Throwable t) {
             throw new RuntimeException("lineBreakMode failed", t);
         }

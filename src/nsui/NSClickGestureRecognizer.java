@@ -18,12 +18,8 @@ import static nsui.objc.Sig.Ret;
 public final class NSClickGestureRecognizer extends NSGestureRecognizer {
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
-    private static volatile boolean initialized;
-    private static MethodHandle hInitTargetAction; // (id, SEL, id, id) -> id [initWithTarget:action:]
-    private static MethodHandle hButtonMask;       // (id, SEL) -> long [buttonMask]
-    private static MethodHandle hSetButtonMask;    // (id, SEL, long) -> void [setButtonMask:]
-    private static MethodHandle hClicksRequired;   // (id, SEL) -> long [numberOfClicksRequired]
-    private static MethodHandle hSetClicksRequired;// (id, SEL, long) -> void
+            private record Handles(MethodHandle hInitTargetAction, MethodHandle hButtonMask, MethodHandle hSetButtonMask) {}
+    private static volatile Handles handles;
 
     private NSClickGestureRecognizer(MemorySegment peer) {
         super(peer);
@@ -35,15 +31,10 @@ public final class NSClickGestureRecognizer extends NSGestureRecognizer {
         return (peer == null || peer.address() == 0) ? null : new NSClickGestureRecognizer(peer);
     }
 
-    private static synchronized void ensureClickInit() {
-        if (initialized) return;
+        private static synchronized void ensureClickInit() {
+        if (handles != null) return;
         NSGestureRecognizer.ensureInit();
-        hInitTargetAction = ObjC.handle(Sig.of(Ret.ID, Arg.ID, Arg.ID));
-        hButtonMask = ObjC.handle(Sig.of(Ret.INT));
-        hSetButtonMask = ObjC.handle(Sig.of(Ret.VOID, Arg.INT));
-        hClicksRequired = ObjC.handle(Sig.of(Ret.INT));
-        hSetClicksRequired = ObjC.handle(Sig.of(Ret.VOID, Arg.INT));
-        initialized = true;
+        handles = new Handles(ObjC.handle(Sig.of(Ret.ID, Arg.ID, Arg.ID)), ObjC.handle(Sig.of(Ret.INT)), ObjC.handle(Sig.of(Ret.VOID, Arg.INT)));
     }
 
     /// `[[NSClickGestureRecognizer alloc] initWithTarget:action:]` — a new click recognizer.
@@ -52,7 +43,7 @@ public final class NSClickGestureRecognizer extends NSGestureRecognizer {
         MemorySegment p = ObjC.msgSendId(ObjC.cls("NSClickGestureRecognizer"), ObjC.sel("alloc"));
         MemorySegment sel = actionSelector == null ? MemorySegment.NULL : ObjC.sel(actionSelector);
         try {
-            p = (MemorySegment) hInitTargetAction.invokeExact(p, ObjC.sel("initWithTarget:action:"), (MemorySegment) (target == null ? MemorySegment.NULL : target), sel);
+            p = (MemorySegment) handles.hInitTargetAction().invokeExact(p, ObjC.sel("initWithTarget:action:"), (MemorySegment) (target == null ? MemorySegment.NULL : target), sel);
         } catch (Throwable t) {
             throw new RuntimeException("initWithTarget:action: failed for NSClickGestureRecognizer", t);
         }
@@ -65,7 +56,7 @@ public final class NSClickGestureRecognizer extends NSGestureRecognizer {
     /// [recognizer buttonMask] — NSEventButtonMask (NSInteger).
     public long buttonMask() {
         try {
-            return (long) hButtonMask.invokeExact(peer, ObjC.sel("buttonMask"));
+            return (long) handles.hButtonMask().invokeExact(peer, ObjC.sel("buttonMask"));
         } catch (Throwable t) {
             throw new RuntimeException("buttonMask failed", t);
         }
@@ -74,7 +65,7 @@ public final class NSClickGestureRecognizer extends NSGestureRecognizer {
     /// [recognizer setButtonMask:]
     public void setButtonMask(long mask) {
         try {
-            hSetButtonMask.invokeExact(peer, ObjC.sel("setButtonMask:"), mask);
+            handles.hSetButtonMask().invokeExact(peer, ObjC.sel("setButtonMask:"), mask);
         } catch (Throwable t) {
             throw new RuntimeException("setButtonMask: failed", t);
         }
@@ -83,7 +74,7 @@ public final class NSClickGestureRecognizer extends NSGestureRecognizer {
     /// [recognizer numberOfClicksRequired]
     public long numberOfClicksRequired() {
         try {
-            return (long) hClicksRequired.invokeExact(peer, ObjC.sel("numberOfClicksRequired"));
+            return (long) handles.hButtonMask().invokeExact(peer, ObjC.sel("numberOfClicksRequired"));
         } catch (Throwable t) {
             throw new RuntimeException("numberOfClicksRequired failed", t);
         }
@@ -91,7 +82,7 @@ public final class NSClickGestureRecognizer extends NSGestureRecognizer {
 
     public void setNumberOfClicksRequired(long n) {
         try {
-            hSetClicksRequired.invokeExact(peer, ObjC.sel("setNumberOfClicksRequired:"), n);
+            handles.hSetButtonMask().invokeExact(peer, ObjC.sel("setNumberOfClicksRequired:"), n);
         } catch (Throwable t) {
             throw new RuntimeException("setNumberOfClicksRequired: failed", t);
         }

@@ -13,15 +13,8 @@ import static nsui.objc.Sig.Ret;
 /// and `NSTextContainer`. Thin 1:1 wrapper over native `NSLayoutManager`.
 public final class NSLayoutManager extends NSObject {
 
-    private static volatile boolean initialized;
-    private static MethodHandle hInit;          // (id, SEL) -> id  init
-    private static MethodHandle hAddContainer;  // (id, SEL, id) -> void
-    private static MethodHandle hSetStorage;    // (id, SEL, id) -> void
-    private static MethodHandle hGetId;         // (id, SEL) -> id
-    private static MethodHandle hVoidId;        // (id, SEL, id) -> void
-    private static MethodHandle hRangeId;       // (id, SEL, id) -> range
-    private static MethodHandle hInt;           // (id, SEL) -> long
-    private static MethodHandle hVoidRange;     // (id, SEL, NSRange) -> void  scrollRangeToVisible etc
+            private record Handles(MethodHandle hInit, MethodHandle hAddContainer, MethodHandle hRangeId, MethodHandle hInt, MethodHandle hVoidRange) {}
+    private static volatile Handles handles;
 
     private NSLayoutManager(MemorySegment peer) {
         super(peer);
@@ -32,17 +25,15 @@ public final class NSLayoutManager extends NSObject {
         return (peer == null || peer.address() == 0) ? null : new NSLayoutManager(peer);
     }
 
-    private static synchronized void ensureInit() {
-        if (initialized) return;
-        hInit = ObjC.handle(Sig.of(Ret.ID));
-        hAddContainer = ObjC.handle(Sig.of(Ret.VOID, Arg.ID));
-        hSetStorage = ObjC.handle(Sig.of(Ret.VOID, Arg.ID));
-        hGetId = ObjC.handle(Sig.of(Ret.ID));
-        hVoidId = ObjC.handle(Sig.of(Ret.VOID, Arg.ID));
-        hRangeId = ObjC.handle(Sig.of(Ret.RANGE, Arg.ID));
-        hInt = ObjC.handle(Sig.of(Ret.INT));
-        hVoidRange = ObjC.handle(Sig.of(Ret.VOID, Arg.RANGE));
-        initialized = true;
+        private static synchronized void ensureInit() {
+        if (handles != null) return;
+        handles = new Handles(
+                ObjC.handle(Sig.of(Ret.ID)),
+                ObjC.handle(Sig.of(Ret.VOID, Arg.ID)),
+                ObjC.handle(Sig.of(Ret.RANGE, Arg.ID)),
+                ObjC.handle(Sig.of(Ret.INT)),
+                ObjC.handle(Sig.of(Ret.VOID, Arg.RANGE))
+        );
     }
 
     /// `[[NSLayoutManager alloc] init]`
@@ -50,7 +41,7 @@ public final class NSLayoutManager extends NSObject {
         ensureInit();
         MemorySegment alloc = ObjC.msgSendId(ObjC.cls("NSLayoutManager"), ObjC.sel("alloc"));
         try {
-            MemorySegment p = (MemorySegment) hInit.invokeExact(alloc, ObjC.sel("init"));
+            MemorySegment p = (MemorySegment) handles.hInit().invokeExact(alloc, ObjC.sel("init"));
             if (p == null || p.address() == 0) throw new IllegalStateException("NSLayoutManager init returned nil");
             return new NSLayoutManager(p);
         } catch (Throwable t) {
@@ -64,7 +55,7 @@ public final class NSLayoutManager extends NSObject {
     public NSTextStorage textStorage() {
         ensureInit();
         try {
-            MemorySegment p = (MemorySegment) hGetId.invokeExact(peer, ObjC.sel("textStorage"));
+            MemorySegment p = (MemorySegment) handles.hInit().invokeExact(peer, ObjC.sel("textStorage"));
             return NSTextStorage.wrap(p);
         } catch (Throwable t) {
             throw new RuntimeException("textStorage failed", t);
@@ -75,7 +66,7 @@ public final class NSLayoutManager extends NSObject {
     public void setTextStorage(NSTextStorage storage) {
         ensureInit();
         try {
-            hSetStorage.invokeExact(peer, ObjC.sel("setTextStorage:"), (MemorySegment) (storage == null ? MemorySegment.NULL : storage.peer()));
+            handles.hAddContainer().invokeExact(peer, ObjC.sel("setTextStorage:"), (MemorySegment) (storage == null ? MemorySegment.NULL : storage.peer()));
         } catch (Throwable t) {
             throw new RuntimeException("setTextStorage: failed", t);
         }
@@ -92,7 +83,7 @@ public final class NSLayoutManager extends NSObject {
     public void addTextContainer(NSTextContainer container) {
         ensureInit();
         try {
-            hAddContainer.invokeExact(peer, ObjC.sel("addTextContainer:"), (MemorySegment) (container == null ? MemorySegment.NULL : container.peer()));
+            handles.hAddContainer().invokeExact(peer, ObjC.sel("addTextContainer:"), (MemorySegment) (container == null ? MemorySegment.NULL : container.peer()));
         } catch (Throwable t) {
             throw new RuntimeException("addTextContainer: failed", t);
         }
@@ -142,7 +133,7 @@ public final class NSLayoutManager extends NSObject {
     public void ensureLayoutForTextContainer(NSTextContainer container) {
         ensureInit();
         try {
-            hVoidId.invokeExact(peer, ObjC.sel("ensureLayoutForTextContainer:"), (MemorySegment) (container == null ? MemorySegment.NULL : container.peer()));
+            handles.hAddContainer().invokeExact(peer, ObjC.sel("ensureLayoutForTextContainer:"), (MemorySegment) (container == null ? MemorySegment.NULL : container.peer()));
         } catch (Throwable t) {
             throw new RuntimeException("ensureLayoutForTextContainer: failed", t);
         }
@@ -152,7 +143,7 @@ public final class NSLayoutManager extends NSObject {
     public NSRange glyphRangeForTextContainer(NSTextContainer container) {
         ensureInit();
         try {
-            MemorySegment seg = (MemorySegment) hRangeId.invokeExact(peer, ObjC.sel("glyphRangeForTextContainer:"), (MemorySegment) (container == null ? MemorySegment.NULL : container.peer()));
+            MemorySegment seg = (MemorySegment) handles.hRangeId().invokeExact(peer, ObjC.sel("glyphRangeForTextContainer:"), (MemorySegment) (container == null ? MemorySegment.NULL : container.peer()));
             return NSRange.fromSegment(seg);
         } catch (Throwable t) {
             throw new RuntimeException("glyphRangeForTextContainer: failed", t);
@@ -163,7 +154,7 @@ public final class NSLayoutManager extends NSObject {
     public long numberOfGlyphs() {
         ensureInit();
         try {
-            return (long) hInt.invokeExact(peer, ObjC.sel("numberOfGlyphs"));
+            return (long) handles.hInt().invokeExact(peer, ObjC.sel("numberOfGlyphs"));
         } catch (Throwable t) {
             throw new RuntimeException("numberOfGlyphs failed", t);
         }
@@ -192,7 +183,7 @@ public final class NSLayoutManager extends NSObject {
     /// [layoutManager invalidateLayoutForCharacterRange:actualCharacterRange:] simplified untyped
     public void invalidateDisplayForCharacterRange(NSRange range) {
         try {
-            hVoidRange.invokeExact(peer, ObjC.sel("invalidateDisplayForCharacterRange:"), range.toSegment());
+            handles.hVoidRange().invokeExact(peer, ObjC.sel("invalidateDisplayForCharacterRange:"), range.toSegment());
         } catch (Throwable t) {
             throw new RuntimeException("invalidateDisplayForCharacterRange: failed", t);
         }

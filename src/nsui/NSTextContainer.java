@@ -13,16 +13,8 @@ import static nsui.objc.Sig.Ret;
 /// Thin 1:1 wrapper over native `NSTextContainer`.
 public final class NSTextContainer extends NSObject {
 
-    private static volatile boolean initialized;
-    private static MethodHandle hInitSize;   // (id, SEL, NSSize) -> id  initWithContainerSize:
-    private static MethodHandle hInit;       // (id, SEL) -> id  init
-    private static MethodHandle hGetSize;    // (id, SEL) -> NSSize
-    private static MethodHandle hSetSize;    // (id, SEL, NSSize) -> void
-    private static MethodHandle hGetDouble;  // (id, SEL) -> double
-    private static MethodHandle hSetDouble;  // (id, SEL, double) -> void
-    private static MethodHandle hGetBool;    // (id, SEL) -> bool
-    private static MethodHandle hSetBool;    // (id, SEL, bool) -> void
-    private static MethodHandle hGetId;      // (id, SEL) -> id
+    private record Handles(MethodHandle hInitSize, MethodHandle hInit, MethodHandle hGetSize, MethodHandle hSetSize, MethodHandle hGetDouble, MethodHandle hSetDouble, MethodHandle hGetBool, MethodHandle hSetBool) {}
+    private static volatile Handles handles;
 
     private NSTextContainer(MemorySegment peer) {
         super(peer);
@@ -34,23 +26,21 @@ public final class NSTextContainer extends NSObject {
     }
 
     private static synchronized void ensureInit() {
-        if (initialized) return;
+        if (handles != null) return;
         // initWithContainerSize: is (ID,SIZE) which is not directly in vocab, but we resolve via handle;
         // if shape missing, handle will throw at call time — fallback path uses init+setContainerSize.
-        try {
-            hInitSize = ObjC.handle(Sig.of(Ret.ID, Arg.SIZE));
-        } catch (Throwable t) {
-            hInitSize = null;
-        }
-        hInit = ObjC.handle(Sig.of(Ret.ID));
-        hGetSize = ObjC.handle(Sig.of(Ret.SIZE));
-        hSetSize = ObjC.handle(Sig.of(Ret.VOID, Arg.SIZE));
-        hGetDouble = ObjC.handle(Sig.of(Ret.DOUBLE));
-        hSetDouble = ObjC.handle(Sig.of(Ret.VOID, Arg.DOUBLE));
-        hGetBool = ObjC.handle(Sig.of(Ret.BOOL));
-        hSetBool = ObjC.handle(Sig.of(Ret.VOID, Arg.BOOL));
-        hGetId = ObjC.handle(Sig.of(Ret.ID));
-        initialized = true;
+        MethodHandle tmp_hInitSize = null;
+        try { tmp_hInitSize = ObjC.handle(Sig.of(Ret.ID, Arg.SIZE)); } catch (Exception ignored) { tmp_hInitSize = null; }
+        handles = new Handles(
+                tmp_hInitSize,
+                ObjC.handle(Sig.of(Ret.ID)),
+                ObjC.handle(Sig.of(Ret.SIZE)),
+                ObjC.handle(Sig.of(Ret.VOID, Arg.SIZE)),
+                ObjC.handle(Sig.of(Ret.DOUBLE)),
+                ObjC.handle(Sig.of(Ret.VOID, Arg.DOUBLE)),
+                ObjC.handle(Sig.of(Ret.BOOL)),
+                ObjC.handle(Sig.of(Ret.VOID, Arg.BOOL))
+        );
     }
 
     /// `[[NSTextContainer alloc] init]` — default sized container.
@@ -58,7 +48,7 @@ public final class NSTextContainer extends NSObject {
         ensureInit();
         MemorySegment alloc = ObjC.msgSendId(ObjC.cls("NSTextContainer"), ObjC.sel("alloc"));
         try {
-            MemorySegment p = (MemorySegment) hInit.invokeExact(alloc, ObjC.sel("init"));
+            MemorySegment p = (MemorySegment) handles.hInit().invokeExact(alloc, ObjC.sel("init"));
             if (p == null || p.address() == 0) throw new IllegalStateException("NSTextContainer init returned nil");
             return new NSTextContainer(p);
         } catch (Throwable t) {
@@ -70,9 +60,9 @@ public final class NSTextContainer extends NSObject {
     public static NSTextContainer create(NSSize size) {
         ensureInit();
         MemorySegment alloc = ObjC.msgSendId(ObjC.cls("NSTextContainer"), ObjC.sel("alloc"));
-        if (hInitSize != null) {
+        if (handles.hInitSize() != null) {
             try {
-                MemorySegment p = (MemorySegment) hInitSize.invokeExact(alloc, ObjC.sel("initWithContainerSize:"), size.toSegment());
+                MemorySegment p = (MemorySegment) handles.hInitSize().invokeExact(alloc, ObjC.sel("initWithContainerSize:"), size.toSegment());
                 if (p != null && p.address() != 0) return new NSTextContainer(p);
             } catch (Throwable t) {
                 // fall through to init+set
@@ -80,7 +70,7 @@ public final class NSTextContainer extends NSObject {
         }
         // Fallback: init then setContainerSize:
         try {
-            MemorySegment p = (MemorySegment) hInit.invokeExact(alloc, ObjC.sel("init"));
+            MemorySegment p = (MemorySegment) handles.hInit().invokeExact(alloc, ObjC.sel("init"));
             if (p == null || p.address() == 0) throw new IllegalStateException("NSTextContainer init returned nil");
             NSTextContainer c = new NSTextContainer(p);
             c.setContainerSize(size);
@@ -101,7 +91,7 @@ public final class NSTextContainer extends NSObject {
     public NSSize containerSize() {
         ensureInit();
         try {
-            MemorySegment s = (MemorySegment) hGetSize.invokeExact((java.lang.foreign.SegmentAllocator) Arena.global(), peer, ObjC.sel("containerSize"));
+            MemorySegment s = (MemorySegment) handles.hGetSize().invokeExact((java.lang.foreign.SegmentAllocator) Arena.global(), peer, ObjC.sel("containerSize"));
             return NSSize.fromSegment(s);
         } catch (Throwable t) {
             throw new RuntimeException("containerSize failed", t);
@@ -112,7 +102,7 @@ public final class NSTextContainer extends NSObject {
     public void setContainerSize(NSSize size) {
         ensureInit();
         try {
-            hSetSize.invokeExact(peer, ObjC.sel("setContainerSize:"), size.toSegment());
+            handles.hSetSize().invokeExact(peer, ObjC.sel("setContainerSize:"), size.toSegment());
         } catch (Throwable t) {
             throw new RuntimeException("setContainerSize: failed", t);
         }
@@ -123,21 +113,21 @@ public final class NSTextContainer extends NSObject {
     /// [container widthTracksTextView]
     public boolean widthTracksTextView() {
         ensureInit();
-        try { return (boolean) hGetBool.invokeExact(peer, ObjC.sel("widthTracksTextView")); } catch (Throwable t) { throw new RuntimeException("widthTracksTextView failed", t); }
+        try { return (boolean) handles.hGetBool().invokeExact(peer, ObjC.sel("widthTracksTextView")); } catch (Throwable t) { throw new RuntimeException("widthTracksTextView failed", t); }
     }
     public void setWidthTracksTextView(boolean flag) {
         ensureInit();
-        try { hSetBool.invokeExact(peer, ObjC.sel("setWidthTracksTextView:"), flag); } catch (Throwable t) { throw new RuntimeException("setWidthTracksTextView: failed", t); }
+        try { handles.hSetBool().invokeExact(peer, ObjC.sel("setWidthTracksTextView:"), flag); } catch (Throwable t) { throw new RuntimeException("setWidthTracksTextView: failed", t); }
     }
 
     /// [container heightTracksTextView]
     public boolean heightTracksTextView() {
         ensureInit();
-        try { return (boolean) hGetBool.invokeExact(peer, ObjC.sel("heightTracksTextView")); } catch (Throwable t) { throw new RuntimeException("heightTracksTextView failed", t); }
+        try { return (boolean) handles.hGetBool().invokeExact(peer, ObjC.sel("heightTracksTextView")); } catch (Throwable t) { throw new RuntimeException("heightTracksTextView failed", t); }
     }
     public void setHeightTracksTextView(boolean flag) {
         ensureInit();
-        try { hSetBool.invokeExact(peer, ObjC.sel("setHeightTracksTextView:"), flag); } catch (Throwable t) { throw new RuntimeException("setHeightTracksTextView: failed", t); }
+        try { handles.hSetBool().invokeExact(peer, ObjC.sel("setHeightTracksTextView:"), flag); } catch (Throwable t) { throw new RuntimeException("setHeightTracksTextView: failed", t); }
     }
 
     // ---- padding ----
@@ -145,11 +135,11 @@ public final class NSTextContainer extends NSObject {
     /// [container lineFragmentPadding] -> double
     public double lineFragmentPadding() {
         ensureInit();
-        try { return (double) hGetDouble.invokeExact(peer, ObjC.sel("lineFragmentPadding")); } catch (Throwable t) { throw new RuntimeException("lineFragmentPadding failed", t); }
+        try { return (double) handles.hGetDouble().invokeExact(peer, ObjC.sel("lineFragmentPadding")); } catch (Throwable t) { throw new RuntimeException("lineFragmentPadding failed", t); }
     }
     public void setLineFragmentPadding(double pad) {
         ensureInit();
-        try { hSetDouble.invokeExact(peer, ObjC.sel("setLineFragmentPadding:"), pad); } catch (Throwable t) { throw new RuntimeException("setLineFragmentPadding: failed", t); }
+        try { handles.hSetDouble().invokeExact(peer, ObjC.sel("setLineFragmentPadding:"), pad); } catch (Throwable t) { throw new RuntimeException("setLineFragmentPadding: failed", t); }
     }
 
     // ---- layoutManager ----
@@ -158,7 +148,7 @@ public final class NSTextContainer extends NSObject {
     public NSLayoutManager layoutManager() {
         ensureInit();
         try {
-            MemorySegment p = (MemorySegment) hGetId.invokeExact(peer, ObjC.sel("layoutManager"));
+            MemorySegment p = (MemorySegment) handles.hInit().invokeExact(peer, ObjC.sel("layoutManager"));
             return NSLayoutManager.wrap(p);
         } catch (Throwable t) {
             throw new RuntimeException("layoutManager failed", t);
@@ -174,10 +164,21 @@ public final class NSTextContainer extends NSObject {
     public NSTextView textView() {
         ensureInit();
         try {
-            MemorySegment p = (MemorySegment) hGetId.invokeExact(peer, ObjC.sel("textView"));
+            MemorySegment p = (MemorySegment) handles.hInit().invokeExact(peer, ObjC.sel("textView"));
             return NSTextView.wrap(p);
         } catch (Throwable t) {
             throw new RuntimeException("textView failed", t);
+        }
+    }
+
+    /// [container setTextView:]
+    public void setTextView(NSTextView tv) {
+        ensureInit();
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.ID));
+            h.invokeExact(peer, ObjC.sel("setTextView:"), (MemorySegment) (tv == null ? MemorySegment.NULL : tv.peer()));
+        } catch (Throwable t) {
+            throw new RuntimeException("setTextView: failed", t);
         }
     }
 

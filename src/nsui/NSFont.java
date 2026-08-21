@@ -14,14 +14,8 @@ import static nsui.objc.Sig.Ret;
 public final class NSFont extends NSObject {
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
-    private static volatile boolean initialized;
-    private static MethodHandle hFontWithName;  // (id, SEL, id, double) -> id
-    private static MethodHandle hFontWithDescriptor; // (id, SEL, id, double) -> id
-    private static MethodHandle hSystemWeight;  // (id, SEL, double, double) -> id
-    private static MethodHandle hDouble;        // (id, SEL) -> double
-    private static MethodHandle hId;            // (id, SEL) -> id
-    private static MethodHandle hBool;          // (id, SEL) -> bool
-    private static MethodHandle hInt;           // (id, SEL) -> long
+    private record Handles(MethodHandle hFontWithName, MethodHandle hFontWithDescriptor, MethodHandle hSystemWeight, MethodHandle hDouble, MethodHandle hId, MethodHandle hBool, MethodHandle hInt) {}
+    private static volatile Handles H;
 
     private NSFont(MemorySegment peer) {
         super(peer);
@@ -33,22 +27,22 @@ public final class NSFont extends NSObject {
     }
 
     private static synchronized void ensureInit() {
-        if (initialized) return;
-        hFontWithName = ObjC.handle(Sig.of(Ret.ID, Arg.ID, Arg.DOUBLE));
-        hFontWithDescriptor = ObjC.handle(Sig.of(Ret.ID, Arg.ID, Arg.DOUBLE));
-        hSystemWeight = ObjC.handle(Sig.of(Ret.ID, Arg.DOUBLE, Arg.DOUBLE));
-        hDouble       = ObjC.handle(Sig.of(Ret.DOUBLE));
-        hId           = ObjC.handle(Sig.of(Ret.ID));
-        hBool         = ObjC.handle(Sig.of(Ret.BOOL));
-        hInt          = ObjC.handle(Sig.of(Ret.INT));
-        initialized = true;
+        if (H != null) return;
+        H = new Handles(
+                ObjC.handle(Sig.of(Ret.ID, Arg.ID, Arg.DOUBLE)),
+                ObjC.handle(Sig.of(Ret.ID, Arg.ID, Arg.DOUBLE)),
+                ObjC.handle(Sig.of(Ret.ID, Arg.DOUBLE, Arg.DOUBLE)),
+                ObjC.handle(Sig.of(Ret.DOUBLE)),
+                ObjC.handle(Sig.of(Ret.ID)),
+                ObjC.handle(Sig.of(Ret.BOOL)),
+                ObjC.handle(Sig.of(Ret.INT)));
     }
 
     /// [+[NSFont fontWithName:size:]] — the named font at a point size.
     public static NSFont fontWithName(String name, double size) {
         ensureInit();
         try {
-            MemorySegment f = (MemorySegment) hFontWithName.invokeExact(
+            MemorySegment f = (MemorySegment) H.hFontWithName().invokeExact(
                     ObjC.cls("NSFont"), ObjC.sel("fontWithName:size:"), ObjC.nsstring(name), size);
             if (f == null || f.address() == 0) return null;
             return new NSFont(f);
@@ -71,7 +65,7 @@ public final class NSFont extends NSObject {
     public static NSFont systemFontOfSizeWeight(double size, double weight) {
         ensureInit();
         try {
-            MemorySegment f = (MemorySegment) hSystemWeight.invokeExact(
+            MemorySegment f = (MemorySegment) H.hSystemWeight().invokeExact(
                     ObjC.cls("NSFont"), ObjC.sel("systemFontOfSize:weight:"), size, weight);
             if (f == null || f.address() == 0) return null;
             return new NSFont(f);
@@ -84,7 +78,7 @@ public final class NSFont extends NSObject {
     public static NSFont monospacedSystemFontOfSizeWeight(double size, double weight) {
         ensureInit();
         try {
-            MemorySegment f = (MemorySegment) hSystemWeight.invokeExact(
+            MemorySegment f = (MemorySegment) H.hSystemWeight().invokeExact(
                     ObjC.cls("NSFont"), ObjC.sel("monospacedSystemFontOfSize:weight:"), size, weight);
             if (f == null || f.address() == 0) return null;
             return new NSFont(f);
@@ -107,7 +101,7 @@ public final class NSFont extends NSObject {
     public static NSFont fontWithDescriptor(MemorySegment descriptor, double size) {
         ensureInit();
         try {
-            MemorySegment f = (MemorySegment) hFontWithDescriptor.invokeExact(
+            MemorySegment f = (MemorySegment) H.hFontWithDescriptor().invokeExact(
                     ObjC.cls("NSFont"), ObjC.sel("fontWithDescriptor:size:"), descriptor, size);
             if (f == null || f.address() == 0) return null;
             return new NSFont(f);
@@ -122,7 +116,7 @@ public final class NSFont extends NSObject {
         try {
             MemorySegment cls = ObjC.cls("NSFont");
             // class property systemFontSize is (id,SEL)->double via handle
-            return (double) hDouble.invokeExact(cls, ObjC.sel("systemFontSize"));
+            return (double) H.hDouble().invokeExact(cls, ObjC.sel("systemFontSize"));
         } catch (Throwable t) {
             throw new RuntimeException("systemFontSize failed", t);
         }
@@ -132,7 +126,7 @@ public final class NSFont extends NSObject {
     public static double smallSystemFontSize() {
         ensureInit();
         try {
-            return (double) hDouble.invokeExact(ObjC.cls("NSFont"), ObjC.sel("smallSystemFontSize"));
+            return (double) H.hDouble().invokeExact(ObjC.cls("NSFont"), ObjC.sel("smallSystemFontSize"));
         } catch (Throwable t) {
             throw new RuntimeException("smallSystemFontSize failed", t);
         }
@@ -151,7 +145,7 @@ public final class NSFont extends NSObject {
     /// [font displayName] — human-readable name.
     public String displayName() {
         try {
-            MemorySegment s = (MemorySegment) hId.invokeExact(peer, ObjC.sel("displayName"));
+            MemorySegment s = (MemorySegment) H.hId().invokeExact(peer, ObjC.sel("displayName"));
             return ObjC.toString(s);
         } catch (Throwable t) {
             throw new RuntimeException("displayName failed", t);
@@ -161,7 +155,7 @@ public final class NSFont extends NSObject {
     /// [font familyName] — family name.
     public String familyName() {
         try {
-            MemorySegment s = (MemorySegment) hId.invokeExact(peer, ObjC.sel("familyName"));
+            MemorySegment s = (MemorySegment) H.hId().invokeExact(peer, ObjC.sel("familyName"));
             return ObjC.toString(s);
         } catch (Throwable t) {
             throw new RuntimeException("familyName failed", t);
@@ -171,7 +165,7 @@ public final class NSFont extends NSObject {
     /// [font pointSize] — the font's size in points.
     public double pointSize() {
         try {
-            return (double) hDouble.invokeExact(peer, ObjC.sel("pointSize"));
+            return (double) H.hDouble().invokeExact(peer, ObjC.sel("pointSize"));
         } catch (Throwable t) {
             throw new RuntimeException("pointSize failed", t);
         }
@@ -179,44 +173,44 @@ public final class NSFont extends NSObject {
 
     /// [font ascender]
     public double ascender() {
-        try { return (double) hDouble.invokeExact(peer, ObjC.sel("ascender")); } catch (Throwable t) { throw new RuntimeException("ascender failed", t); }
+        try { return (double) H.hDouble().invokeExact(peer, ObjC.sel("ascender")); } catch (Throwable t) { throw new RuntimeException("ascender failed", t); }
     }
 
     /// [font descender]
     public double descender() {
-        try { return (double) hDouble.invokeExact(peer, ObjC.sel("descender")); } catch (Throwable t) { throw new RuntimeException("descender failed", t); }
+        try { return (double) H.hDouble().invokeExact(peer, ObjC.sel("descender")); } catch (Throwable t) { throw new RuntimeException("descender failed", t); }
     }
 
     /// [font capHeight]
     public double capHeight() {
-        try { return (double) hDouble.invokeExact(peer, ObjC.sel("capHeight")); } catch (Throwable t) { throw new RuntimeException("capHeight failed", t); }
+        try { return (double) H.hDouble().invokeExact(peer, ObjC.sel("capHeight")); } catch (Throwable t) { throw new RuntimeException("capHeight failed", t); }
     }
 
     /// [font xHeight]
     public double xHeight() {
-        try { return (double) hDouble.invokeExact(peer, ObjC.sel("xHeight")); } catch (Throwable t) { throw new RuntimeException("xHeight failed", t); }
+        try { return (double) H.hDouble().invokeExact(peer, ObjC.sel("xHeight")); } catch (Throwable t) { throw new RuntimeException("xHeight failed", t); }
     }
 
     /// [font isFixedPitch]
     public boolean isFixedPitch() {
-        try { return (boolean) hBool.invokeExact(peer, ObjC.sel("isFixedPitch")); } catch (Throwable t) { throw new RuntimeException("isFixedPitch failed", t); }
+        try { return (boolean) H.hBool().invokeExact(peer, ObjC.sel("isFixedPitch")); } catch (Throwable t) { throw new RuntimeException("isFixedPitch failed", t); }
     }
 
     /// [font fontDescriptor] — raw NSFontDescriptor peer.
     public MemorySegment fontDescriptor() {
-        try { return (MemorySegment) hId.invokeExact(peer, ObjC.sel("fontDescriptor")); } catch (Throwable t) { throw new RuntimeException("fontDescriptor failed", t); }
+        try { return (MemorySegment) H.hId().invokeExact(peer, ObjC.sel("fontDescriptor")); } catch (Throwable t) { throw new RuntimeException("fontDescriptor failed", t); }
     }
 
     /// [fontDescriptor symbolicTraits] — bitmask (NSFontDescriptorSymbolicTraits).
     public long symbolicTraits() {
         MemorySegment desc = fontDescriptor();
         if (desc == null || desc.address() == 0) return 0;
-        try { return (long) hInt.invokeExact(desc, ObjC.sel("symbolicTraits")); } catch (Throwable t) { throw new RuntimeException("symbolicTraits failed", t); }
+        try { return (long) H.hInt().invokeExact(desc, ObjC.sel("symbolicTraits")); } catch (Throwable t) { throw new RuntimeException("symbolicTraits failed", t); }
     }
 
     /// [font textTransform] — NSAffineTransform peer or null.
     public MemorySegment textTransform() {
-        try { return (MemorySegment) hId.invokeExact(peer, ObjC.sel("textTransform")); } catch (Throwable t) { throw new RuntimeException("textTransform failed", t); }
+        try { return (MemorySegment) H.hId().invokeExact(peer, ObjC.sel("textTransform")); } catch (Throwable t) { throw new RuntimeException("textTransform failed", t); }
     }
 
     /// [font boundingRectForFont] — NSRect

@@ -12,11 +12,8 @@ import static nsui.objc.Sig.Ret;
 /// Provides wrap/create and numeric accessors.
 public final class NSNumber extends NSValue {
 
-    private static volatile boolean initNum;
-    private static MethodHandle hIntValue;    // (id, SEL) -> long
-    private static MethodHandle hDoubleValue; // (id, SEL) -> double
-    private static MethodHandle hBoolValue;   // (id, SEL) -> bool
-    private static MethodHandle hFloatValue;  // (id, SEL) -> float
+            private record Handles(MethodHandle hIntValue, MethodHandle hDoubleValue, MethodHandle hBoolValue, MethodHandle hFloatValue) {}
+    private static volatile Handles handles;
 
     private NSNumber(MemorySegment peer) { super(peer); }
 
@@ -24,13 +21,14 @@ public final class NSNumber extends NSValue {
         return (peer == null || peer.address() == 0) ? null : new NSNumber(peer);
     }
 
-    private static synchronized void ensureNumInit() {
-        if (initNum) return;
-        hIntValue = ObjC.handle(Sig.of(Ret.INT));
-        hDoubleValue = ObjC.handle(Sig.of(Ret.DOUBLE));
-        hBoolValue = ObjC.handle(Sig.of(Ret.BOOL));
-        hFloatValue = ObjC.handle(Sig.of(Ret.FLOAT));
-        initNum = true;
+        private static synchronized void ensureNumInit() {
+        if (handles != null) return;
+        handles = new Handles(
+                ObjC.handle(Sig.of(Ret.INT)),
+                ObjC.handle(Sig.of(Ret.DOUBLE)),
+                ObjC.handle(Sig.of(Ret.BOOL)),
+                ObjC.handle(Sig.of(Ret.FLOAT))
+        );
     }
 
     /// numberWithInt:
@@ -89,14 +87,14 @@ public final class NSNumber extends NSValue {
     /// intValue
     public long intValue() {
         ensureNumInit();
-        try { return (long) hIntValue.invokeExact(peer, ObjC.sel("intValue")); }
+        try { return (long) handles.hIntValue().invokeExact(peer, ObjC.sel("intValue")); }
         catch (Throwable t) { throw new RuntimeException("intValue failed", t); }
     }
 
     /// integerValue
     public long integerValue() {
         ensureNumInit();
-        try { return (long) hIntValue.invokeExact(peer, ObjC.sel("integerValue")); }
+        try { return (long) handles.hIntValue().invokeExact(peer, ObjC.sel("integerValue")); }
         catch (Throwable t) { throw new RuntimeException("integerValue failed", t); }
     }
 
@@ -112,21 +110,21 @@ public final class NSNumber extends NSValue {
     /// doubleValue
     public double doubleValue() {
         ensureNumInit();
-        try { return (double) hDoubleValue.invokeExact(peer, ObjC.sel("doubleValue")); }
+        try { return (double) handles.hDoubleValue().invokeExact(peer, ObjC.sel("doubleValue")); }
         catch (Throwable t) { throw new RuntimeException("doubleValue failed", t); }
     }
 
     /// boolValue
     public boolean boolValue() {
         ensureNumInit();
-        try { return (boolean) hBoolValue.invokeExact(peer, ObjC.sel("boolValue")); }
+        try { return (boolean) handles.hBoolValue().invokeExact(peer, ObjC.sel("boolValue")); }
         catch (Throwable t) { throw new RuntimeException("boolValue failed", t); }
     }
 
     /// floatValue
     public float floatValue() {
         ensureNumInit();
-        try { return (float) hFloatValue.invokeExact(peer, ObjC.sel("floatValue")); }
+        try { return (float) handles.hFloatValue().invokeExact(peer, ObjC.sel("floatValue")); }
         catch (Throwable t) { throw new RuntimeException("floatValue failed", t); }
     }
 

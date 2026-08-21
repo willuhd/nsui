@@ -12,12 +12,8 @@ import static nsui.objc.Sig.Ret;
 /// Thin 1:1, stateless.
 public class NSTouchBarItem extends NSObject {
 
-    private static volatile boolean initialized;
-    private static MethodHandle hInitId;   // (id, SEL, id) -> id
-    private static MethodHandle hId;       // (id, SEL) -> id
-    private static MethodHandle hVoidId;   // (id, SEL, id) -> void
-    private static MethodHandle hBool;     // (id, SEL) -> bool
-    private static MethodHandle hVoidBool; // (id, SEL, bool) -> void
+            private record Handles(MethodHandle hInitId, MethodHandle hId, MethodHandle hVoidId, MethodHandle hBool, MethodHandle hVoidBool) {}
+    private static volatile Handles handles;
 
     protected NSTouchBarItem(MemorySegment peer) {
         super(peer);
@@ -28,14 +24,15 @@ public class NSTouchBarItem extends NSObject {
         return (peer == null || peer.address() == 0) ? null : new NSTouchBarItem(peer);
     }
 
-    private static synchronized void ensureInit() {
-        if (initialized) return;
-        hInitId = ObjC.handle(Sig.of(Ret.ID, Arg.ID));
-        hId = ObjC.handle(Sig.of(Ret.ID));
-        hVoidId = ObjC.handle(Sig.of(Ret.VOID, Arg.ID));
-        hBool = ObjC.handle(Sig.of(Ret.BOOL));
-        hVoidBool = ObjC.handle(Sig.of(Ret.VOID, Arg.BOOL));
-        initialized = true;
+        private static synchronized void ensureInit() {
+        if (handles != null) return;
+        handles = new Handles(
+                ObjC.handle(Sig.of(Ret.ID, Arg.ID)),
+                ObjC.handle(Sig.of(Ret.ID)),
+                ObjC.handle(Sig.of(Ret.VOID, Arg.ID)),
+                ObjC.handle(Sig.of(Ret.BOOL)),
+                ObjC.handle(Sig.of(Ret.VOID, Arg.BOOL))
+        );
     }
 
     /// alloc + initWithIdentifier: — create item with identifier.
@@ -43,7 +40,7 @@ public class NSTouchBarItem extends NSObject {
         ensureInit();
         MemorySegment p = ObjC.msgSendId(ObjC.cls("NSTouchBarItem"), ObjC.sel("alloc"));
         try {
-            p = (MemorySegment) hInitId.invokeExact(p, ObjC.sel("initWithIdentifier:"), ObjC.nsstring(identifier));
+            p = (MemorySegment) handles.hInitId().invokeExact(p, ObjC.sel("initWithIdentifier:"), ObjC.nsstring(identifier));
         } catch (Throwable t) {
             throw new RuntimeException("initWithIdentifier: failed for NSTouchBarItem", t);
         }
@@ -55,7 +52,7 @@ public class NSTouchBarItem extends NSObject {
     public String identifier() {
         ensureInit();
         try {
-            MemorySegment s = (MemorySegment) hId.invokeExact(peer, ObjC.sel("identifier"));
+            MemorySegment s = (MemorySegment) handles.hId().invokeExact(peer, ObjC.sel("identifier"));
             return ObjC.toString(s);
         } catch (Throwable t) {
             throw new RuntimeException("identifier failed", t);
@@ -81,7 +78,7 @@ public class NSTouchBarItem extends NSObject {
             MethodHandle hResp = ObjC.handle(Sig.of(Ret.BOOL, Arg.ID));
             boolean resp = (boolean) hResp.invokeExact(peer, ObjC.sel("respondsToSelector:"), sel);
             if (!resp) return false;
-            return (boolean) hBool.invokeExact(peer, sel);
+            return (boolean) handles.hBool().invokeExact(peer, sel);
         } catch (Throwable t) { return false; }
     }
 
@@ -92,7 +89,7 @@ public class NSTouchBarItem extends NSObject {
             MethodHandle hResp = ObjC.handle(Sig.of(Ret.BOOL, Arg.ID));
             boolean resp = (boolean) hResp.invokeExact(peer, ObjC.sel("respondsToSelector:"), sel);
             if (!resp) return;
-            hVoidBool.invokeExact(peer, sel, flag);
+            handles.hVoidBool().invokeExact(peer, sel, flag);
         } catch (Throwable t) { /* no-op if absent */ }
     }
 
@@ -104,7 +101,7 @@ public class NSTouchBarItem extends NSObject {
             MethodHandle hResp = ObjC.handle(Sig.of(Ret.BOOL, Arg.ID));
             boolean resp = (boolean) hResp.invokeExact(peer, ObjC.sel("respondsToSelector:"), sel);
             if (!resp) return null;
-            MemorySegment v = (MemorySegment) hId.invokeExact(peer, sel);
+            MemorySegment v = (MemorySegment) handles.hId().invokeExact(peer, sel);
             return NSView.wrap(v);
         } catch (Throwable t) { return null; }
     }
@@ -116,7 +113,7 @@ public class NSTouchBarItem extends NSObject {
             MethodHandle hResp = ObjC.handle(Sig.of(Ret.BOOL, Arg.ID));
             boolean resp = (boolean) hResp.invokeExact(peer, ObjC.sel("respondsToSelector:"), sel);
             if (!resp) return;
-            hVoidId.invokeExact(peer, sel, (MemorySegment) (view == null ? MemorySegment.NULL : view.peer()));
+            handles.hVoidId().invokeExact(peer, sel, (MemorySegment) (view == null ? MemorySegment.NULL : view.peer()));
         } catch (Throwable t) { /* no-op if absent */ }
     }
 }

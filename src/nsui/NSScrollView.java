@@ -118,6 +118,16 @@ public final class NSScrollView extends NSView {
         return NSView.wrap(v);
     }
 
+    /// [scroll setContentView:] — set the clip view.
+    public void setContentView(NSView view) {
+        ensureInit();
+        try {
+            hVoidId.invokeExact(peer, ObjC.sel("setContentView:"), (MemorySegment) (view == null ? MemorySegment.NULL : view.peer()));
+        } catch (Throwable t) {
+            throw new RuntimeException("setContentView: failed", t);
+        }
+    }
+
     /// [scroll backgroundColor].
     public NSColor backgroundColor() {
         MemorySegment c = ObjC.msgSendId(peer, ObjC.sel("backgroundColor"));

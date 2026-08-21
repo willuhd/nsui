@@ -12,18 +12,8 @@ import static nsui.objc.Sig.Ret;
 /// Thin 1:1 wrapper; every method maps to one objc_msgSend selector.
 public final class NSPopover extends NSObject {
 
-    private static volatile boolean initialized;
-    private static MethodHandle hSetContentSize; // (id, SEL, NSSize) -> void
-    private static MethodHandle hGetContentSize; // (SegmentAllocator, id, SEL) -> NSSize
-    private static MethodHandle hShow;           // (id, SEL, NSRect, id, long) -> void
-    private static MethodHandle hGetBool;        // (id, SEL) -> bool
-    private static MethodHandle hSetBool;        // (id, SEL, bool) -> void
-    private static MethodHandle hGetInt;         // (id, SEL) -> long
-    private static MethodHandle hSetInt;         // (id, SEL, long) -> void
-    private static MethodHandle hSetId;          // (id, SEL, id) -> void
-    private static MethodHandle hGetId;          // (id, SEL) -> id
-    private static MethodHandle hGetDouble;      // (id, SEL) -> double
-    private static MethodHandle hSetDouble;      // (id, SEL, double) -> void
+            private record Handles(MethodHandle hSetContentSize, MethodHandle hGetContentSize, MethodHandle hShow, MethodHandle hGetBool, MethodHandle hSetBool, MethodHandle hGetInt, MethodHandle hSetInt, MethodHandle hSetId, MethodHandle hGetId, MethodHandle hGetDouble, MethodHandle hSetDouble) {}
+    private static volatile Handles handles;
 
 
     private NSPopover(MemorySegment peer) {
@@ -31,20 +21,21 @@ public final class NSPopover extends NSObject {
         ensureInit();
     }
 
-    private static synchronized void ensureInit() {
-        if (initialized) return;
-        hSetContentSize = ObjC.handle(Sig.of(Ret.VOID, Arg.SIZE));
-        hGetContentSize = ObjC.handle(Sig.of(Ret.SIZE));
-        hShow = ObjC.handle(Sig.of(Ret.VOID, Arg.RECT, Arg.ID, Arg.INT));
-        hGetBool = ObjC.handle(Sig.of(Ret.BOOL));
-        hSetBool = ObjC.handle(Sig.of(Ret.VOID, Arg.BOOL));
-        hGetInt = ObjC.handle(Sig.of(Ret.INT));
-        hSetInt = ObjC.handle(Sig.of(Ret.VOID, Arg.INT));
-        hSetId = ObjC.handle(Sig.of(Ret.VOID, Arg.ID));
-        hGetId = ObjC.handle(Sig.of(Ret.ID));
-        hGetDouble = ObjC.handle(Sig.of(Ret.DOUBLE));
-        hSetDouble = ObjC.handle(Sig.of(Ret.VOID, Arg.DOUBLE));
-        initialized = true;
+        private static synchronized void ensureInit() {
+        if (handles != null) return;
+        handles = new Handles(
+                ObjC.handle(Sig.of(Ret.VOID, Arg.SIZE)),
+                ObjC.handle(Sig.of(Ret.SIZE)),
+                ObjC.handle(Sig.of(Ret.VOID, Arg.RECT, Arg.ID, Arg.INT)),
+                ObjC.handle(Sig.of(Ret.BOOL)),
+                ObjC.handle(Sig.of(Ret.VOID, Arg.BOOL)),
+                ObjC.handle(Sig.of(Ret.INT)),
+                ObjC.handle(Sig.of(Ret.VOID, Arg.INT)),
+                ObjC.handle(Sig.of(Ret.VOID, Arg.ID)),
+                ObjC.handle(Sig.of(Ret.ID)),
+                ObjC.handle(Sig.of(Ret.DOUBLE)),
+                ObjC.handle(Sig.of(Ret.VOID, Arg.DOUBLE))
+        );
     }
 
     public static NSPopover wrap(MemorySegment peer) {
@@ -67,7 +58,7 @@ public final class NSPopover extends NSObject {
         ensureInit();
         try {
             MemorySegment p = (vc == null ? MemorySegment.NULL : vc.peer());
-            hSetId.invokeExact(peer, ObjC.sel("setContentViewController:"), p);
+            handles.hSetId().invokeExact(peer, ObjC.sel("setContentViewController:"), p);
         } catch (Throwable t) {
             throw new RuntimeException("setContentViewController: failed", t);
         }
@@ -77,7 +68,7 @@ public final class NSPopover extends NSObject {
     public NSViewController contentViewController() {
         ensureInit();
         try {
-            MemorySegment v = (MemorySegment) hGetId.invokeExact(peer, ObjC.sel("contentViewController"));
+            MemorySegment v = (MemorySegment) handles.hGetId().invokeExact(peer, ObjC.sel("contentViewController"));
             return NSViewController.wrap(v);
         } catch (Throwable t) {
             throw new RuntimeException("contentViewController failed", t);
@@ -97,7 +88,7 @@ public final class NSPopover extends NSObject {
     public void setContentSize(NSSize size) {
         ensureInit();
         try {
-            hSetContentSize.invokeExact(peer, ObjC.sel("setContentSize:"), size.toSegment());
+            handles.hSetContentSize().invokeExact(peer, ObjC.sel("setContentSize:"), size.toSegment());
         } catch (Throwable t) {
             throw new RuntimeException("setContentSize: failed", t);
         }
@@ -107,7 +98,7 @@ public final class NSPopover extends NSObject {
     public NSSize contentSize() {
         ensureInit();
         try {
-            MemorySegment s = (MemorySegment) hGetContentSize.invokeExact((java.lang.foreign.SegmentAllocator) java.lang.foreign.Arena.global(), peer, ObjC.sel("contentSize"));
+            MemorySegment s = (MemorySegment) handles.hGetContentSize().invokeExact((java.lang.foreign.SegmentAllocator) java.lang.foreign.Arena.global(), peer, ObjC.sel("contentSize"));
             return NSSize.fromSegment(s);
         } catch (Throwable t) {
             throw new RuntimeException("contentSize failed", t);
@@ -122,7 +113,7 @@ public final class NSPopover extends NSObject {
         ensureInit();
         try {
             MemorySegment vp = (view == null ? MemorySegment.NULL : view.peer());
-            hShow.invokeExact(peer, ObjC.sel("showRelativeToRect:ofView:preferredEdge:"), rect.toSegment(), vp, edge);
+            handles.hShow().invokeExact(peer, ObjC.sel("showRelativeToRect:ofView:preferredEdge:"), rect.toSegment(), vp, edge);
         } catch (Throwable t) {
             throw new RuntimeException("showRelativeToRect:ofView:preferredEdge: failed", t);
         }
@@ -174,7 +165,7 @@ public final class NSPopover extends NSObject {
         if (sender instanceof NSObject n) s = n.peer();
         else if (sender instanceof MemorySegment ms) s = ms;
         try {
-            hSetId.invokeExact(peer, ObjC.sel("performClose:"), s);
+            handles.hSetId().invokeExact(peer, ObjC.sel("performClose:"), s);
         } catch (Throwable t) {
             throw new RuntimeException("performClose: failed", t);
         }
@@ -184,7 +175,7 @@ public final class NSPopover extends NSObject {
         ensureInit();
         try {
             MemorySegment p = (sender == null ? MemorySegment.NULL : sender.peer());
-            hSetId.invokeExact(peer, ObjC.sel("performClose:"), p);
+            handles.hSetId().invokeExact(peer, ObjC.sel("performClose:"), p);
         } catch (Throwable t) {
             throw new RuntimeException("performClose: failed", t);
         }
@@ -196,7 +187,7 @@ public final class NSPopover extends NSObject {
     public boolean isShown() {
         ensureInit();
         try {
-            return (boolean) hGetBool.invokeExact(peer, ObjC.sel("isShown"));
+            return (boolean) handles.hGetBool().invokeExact(peer, ObjC.sel("isShown"));
         } catch (Throwable t) {
             throw new RuntimeException("isShown failed", t);
         }
@@ -208,7 +199,7 @@ public final class NSPopover extends NSObject {
     public boolean animates() {
         ensureInit();
         try {
-            return (boolean) hGetBool.invokeExact(peer, ObjC.sel("animates"));
+            return (boolean) handles.hGetBool().invokeExact(peer, ObjC.sel("animates"));
         } catch (Throwable t) {
             throw new RuntimeException("animates failed", t);
         }
@@ -218,7 +209,7 @@ public final class NSPopover extends NSObject {
     public void setAnimates(boolean flag) {
         ensureInit();
         try {
-            hSetBool.invokeExact(peer, ObjC.sel("setAnimates:"), flag);
+            handles.hSetBool().invokeExact(peer, ObjC.sel("setAnimates:"), flag);
         } catch (Throwable t) {
             throw new RuntimeException("setAnimates: failed", t);
         }
@@ -230,7 +221,7 @@ public final class NSPopover extends NSObject {
     public long behavior() {
         ensureInit();
         try {
-            return (long) hGetInt.invokeExact(peer, ObjC.sel("behavior"));
+            return (long) handles.hGetInt().invokeExact(peer, ObjC.sel("behavior"));
         } catch (Throwable t) {
             throw new RuntimeException("behavior failed", t);
         }
@@ -240,7 +231,7 @@ public final class NSPopover extends NSObject {
     public void setBehavior(long behavior) {
         ensureInit();
         try {
-            hSetInt.invokeExact(peer, ObjC.sel("setBehavior:"), behavior);
+            handles.hSetInt().invokeExact(peer, ObjC.sel("setBehavior:"), behavior);
         } catch (Throwable t) {
             throw new RuntimeException("setBehavior: failed", t);
         }
@@ -252,7 +243,7 @@ public final class NSPopover extends NSObject {
     public MemorySegment appearancePeer() {
         ensureInit();
         try {
-            return (MemorySegment) hGetId.invokeExact(peer, ObjC.sel("appearance"));
+            return (MemorySegment) handles.hGetId().invokeExact(peer, ObjC.sel("appearance"));
         } catch (Throwable t) {
             throw new RuntimeException("appearance failed", t);
         }
@@ -268,7 +259,7 @@ public final class NSPopover extends NSObject {
         ensureInit();
         try {
             MemorySegment p = (appearance == null || appearance.address() == 0) ? MemorySegment.NULL : appearance;
-            hSetId.invokeExact(peer, ObjC.sel("setAppearance:"), p);
+            handles.hSetId().invokeExact(peer, ObjC.sel("setAppearance:"), p);
         } catch (Throwable t) {
             throw new RuntimeException("setAppearance: failed", t);
         }

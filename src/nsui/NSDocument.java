@@ -12,9 +12,8 @@ import static nsui.objc.Sig.Ret;
 /// Thin 1:1, stateless. Only init, windowControllers, addWindowController.
 public class NSDocument extends NSObject {
 
-    private static volatile boolean initialized;
-    private static MethodHandle hId;       // (id, SEL) -> id
-    private static MethodHandle hVoidId;   // (id, SEL, id) -> void
+            private record Handles(MethodHandle hId, MethodHandle hVoidId) {}
+    private static volatile Handles handles;
 
     protected NSDocument(MemorySegment peer) {
         super(peer);
@@ -25,11 +24,9 @@ public class NSDocument extends NSObject {
         return (peer == null || peer.address() == 0) ? null : new NSDocument(peer);
     }
 
-    private static synchronized void ensureInit() {
-        if (initialized) return;
-        hId = ObjC.handle(Sig.of(Ret.ID));
-        hVoidId = ObjC.handle(Sig.of(Ret.VOID, Arg.ID));
-        initialized = true;
+        private static synchronized void ensureInit() {
+        if (handles != null) return;
+        handles = new Handles(ObjC.handle(Sig.of(Ret.ID)), ObjC.handle(Sig.of(Ret.VOID, Arg.ID)));
     }
 
     /// alloc + init — new document.
@@ -53,7 +50,7 @@ public class NSDocument extends NSObject {
     public NSArray windowControllers() {
         ensureInit();
         try {
-            MemorySegment arr = (MemorySegment) hId.invokeExact(peer, ObjC.sel("windowControllers"));
+            MemorySegment arr = (MemorySegment) handles.hId().invokeExact(peer, ObjC.sel("windowControllers"));
             return NSArray.wrap(arr);
         } catch (Throwable t) {
             throw new RuntimeException("windowControllers failed", t);
@@ -64,7 +61,7 @@ public class NSDocument extends NSObject {
     public void addWindowController(NSWindowController controller) {
         ensureInit();
         try {
-            hVoidId.invokeExact(peer, ObjC.sel("addWindowController:"), (MemorySegment) (controller == null ? MemorySegment.NULL : controller.peer()));
+            handles.hVoidId().invokeExact(peer, ObjC.sel("addWindowController:"), (MemorySegment) (controller == null ? MemorySegment.NULL : controller.peer()));
         } catch (Throwable t) {
             throw new RuntimeException("addWindowController: failed", t);
         }
@@ -74,7 +71,7 @@ public class NSDocument extends NSObject {
     public void removeWindowController(NSWindowController controller) {
         ensureInit();
         try {
-            hVoidId.invokeExact(peer, ObjC.sel("removeWindowController:"), (MemorySegment) (controller == null ? MemorySegment.NULL : controller.peer()));
+            handles.hVoidId().invokeExact(peer, ObjC.sel("removeWindowController:"), (MemorySegment) (controller == null ? MemorySegment.NULL : controller.peer()));
         } catch (Throwable t) {
             throw new RuntimeException("removeWindowController: failed", t);
         }
@@ -84,10 +81,20 @@ public class NSDocument extends NSObject {
     public String displayName() {
         ensureInit();
         try {
-            MemorySegment s = (MemorySegment) hId.invokeExact(peer, ObjC.sel("displayName"));
+            MemorySegment s = (MemorySegment) handles.hId().invokeExact(peer, ObjC.sel("displayName"));
             return ObjC.toString(s);
         } catch (Throwable t) {
             throw new RuntimeException("displayName failed", t);
+        }
+    }
+
+    /// setDisplayName: — set the display name.
+    public void setDisplayName(String name) {
+        ensureInit();
+        try {
+            handles.hVoidId().invokeExact(peer, ObjC.sel("setDisplayName:"), ObjC.nsstring(name));
+        } catch (Throwable t) {
+            throw new RuntimeException("setDisplayName: failed", t);
         }
     }
 }

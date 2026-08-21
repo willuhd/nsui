@@ -15,13 +15,8 @@ import static nsui.objc.Sig.Ret;
 /// visibility, length, and target/action via DelegateProxy.
 public final class NSStatusItem extends NSObject {
 
-    private static volatile boolean initialized;
-    private static MethodHandle hId;       // (id,SEL)->id [button / menu / statusBar]
-    private static MethodHandle hDouble;   // (id,SEL)->double [length]
-    private static MethodHandle hSetDouble;// (id,SEL,double)->void [setLength:]
-    private static MethodHandle hBool;     // (id,SEL)->bool [isVisible / visible]
-    private static MethodHandle hSetBool;  // (id,SEL,bool)->void
-    private static MethodHandle hSetId;    // (id,SEL,id)->void [setMenu:]
+            private record Handles(MethodHandle hId, MethodHandle hDouble, MethodHandle hSetDouble, MethodHandle hBool, MethodHandle hSetBool, MethodHandle hSetId) {}
+    private static volatile Handles handles;
 
     // NSStatusItemBehavior constants (AppKit)
     public static final long BEHAVIOR_DEFAULT          = 0L;
@@ -35,15 +30,16 @@ public final class NSStatusItem extends NSObject {
         ensureInit();
     }
 
-    private static synchronized void ensureInit() {
-        if (initialized) return;
-        hId = ObjC.handle(Sig.of(Ret.ID));
-        hDouble = ObjC.handle(Sig.of(Ret.DOUBLE));
-        hSetDouble = ObjC.handle(Sig.of(Ret.VOID, Arg.DOUBLE));
-        hBool = ObjC.handle(Sig.of(Ret.BOOL));
-        hSetBool = ObjC.handle(Sig.of(Ret.VOID, Arg.BOOL));
-        hSetId = ObjC.handle(Sig.of(Ret.VOID, Arg.ID));
-        initialized = true;
+        private static synchronized void ensureInit() {
+        if (handles != null) return;
+        handles = new Handles(
+                ObjC.handle(Sig.of(Ret.ID)),
+                ObjC.handle(Sig.of(Ret.DOUBLE)),
+                ObjC.handle(Sig.of(Ret.VOID, Arg.DOUBLE)),
+                ObjC.handle(Sig.of(Ret.BOOL)),
+                ObjC.handle(Sig.of(Ret.VOID, Arg.BOOL)),
+                ObjC.handle(Sig.of(Ret.VOID, Arg.ID))
+        );
     }
 
     public static NSStatusItem wrap(MemorySegment peer) {
@@ -55,7 +51,7 @@ public final class NSStatusItem extends NSObject {
     public NSButton button() {
         ensureInit();
         try {
-            MemorySegment p = (MemorySegment) hId.invokeExact(peer, ObjC.sel("button"));
+            MemorySegment p = (MemorySegment) handles.hId().invokeExact(peer, ObjC.sel("button"));
             return NSButton.wrap(p);
         } catch (Throwable t) { throw new RuntimeException("button failed", t); }
     }
@@ -202,33 +198,33 @@ public final class NSStatusItem extends NSObject {
     public NSMenu menu() {
         ensureInit();
         try {
-            MemorySegment p = (MemorySegment) hId.invokeExact(peer, ObjC.sel("menu"));
+            MemorySegment p = (MemorySegment) handles.hId().invokeExact(peer, ObjC.sel("menu"));
             return NSMenu.wrap(p);
         } catch (Throwable t) { throw new RuntimeException("menu failed", t); }
     }
     public void setMenu(NSMenu menu) {
         ensureInit();
-        try { hSetId.invokeExact(peer, ObjC.sel("setMenu:"), (MemorySegment) ((MemorySegment) (menu == null ? MemorySegment.NULL : menu.peer()))); } catch (Throwable t) { throw new RuntimeException("setMenu: failed", t); }
+        try { handles.hSetId().invokeExact(peer, ObjC.sel("setMenu:"), (MemorySegment) ((MemorySegment) (menu == null ? MemorySegment.NULL : menu.peer()))); } catch (Throwable t) { throw new RuntimeException("setMenu: failed", t); }
     }
 
     // ---- length ----
     public double length() {
         ensureInit();
-        try { return (double) hDouble.invokeExact(peer, ObjC.sel("length")); } catch (Throwable t) { throw new RuntimeException("length failed", t); }
+        try { return (double) handles.hDouble().invokeExact(peer, ObjC.sel("length")); } catch (Throwable t) { throw new RuntimeException("length failed", t); }
     }
     public void setLength(double len) {
         ensureInit();
-        try { hSetDouble.invokeExact(peer, ObjC.sel("setLength:"), len); } catch (Throwable t) { throw new RuntimeException("setLength: failed", t); }
+        try { handles.hSetDouble().invokeExact(peer, ObjC.sel("setLength:"), len); } catch (Throwable t) { throw new RuntimeException("setLength: failed", t); }
     }
 
     // ---- visible ----
     public boolean isVisible() {
         ensureInit();
-        try { return (boolean) hBool.invokeExact(peer, ObjC.sel("isVisible")); } catch (Throwable t) { throw new RuntimeException("isVisible failed", t); }
+        try { return (boolean) handles.hBool().invokeExact(peer, ObjC.sel("isVisible")); } catch (Throwable t) { throw new RuntimeException("isVisible failed", t); }
     }
     public void setVisible(boolean flag) {
         ensureInit();
-        try { hSetBool.invokeExact(peer, ObjC.sel("setVisible:"), flag); } catch (Throwable t) { throw new RuntimeException("setVisible: failed", t); }
+        try { handles.hSetBool().invokeExact(peer, ObjC.sel("setVisible:"), flag); } catch (Throwable t) { throw new RuntimeException("setVisible: failed", t); }
     }
     // alias visible for completeness
     public boolean visible() { return isVisible(); }
@@ -237,7 +233,7 @@ public final class NSStatusItem extends NSObject {
     public NSStatusBar statusBar() {
         ensureInit();
         try {
-            MemorySegment p = (MemorySegment) hId.invokeExact(peer, ObjC.sel("statusBar"));
+            MemorySegment p = (MemorySegment) handles.hId().invokeExact(peer, ObjC.sel("statusBar"));
             return NSStatusBar.wrap(p);
         } catch (Throwable t) { throw new RuntimeException("statusBar failed", t); }
     }
@@ -255,7 +251,7 @@ public final class NSStatusItem extends NSObject {
     public String autosaveName() {
         ensureInit();
         try {
-            MemorySegment s = (MemorySegment) hId.invokeExact(peer, ObjC.sel("autosaveName"));
+            MemorySegment s = (MemorySegment) handles.hId().invokeExact(peer, ObjC.sel("autosaveName"));
             return ObjC.toString(s);
         } catch (Throwable t) { throw new RuntimeException("autosaveName failed", t); }
     }

@@ -13,12 +13,8 @@ import static nsui.objc.Sig.Ret;
 /// Works for both NSDictionary and NSMutableDictionary.
 public final class NSDictionary extends NSObject {
 
-    private static volatile boolean initialized;
-    private static MethodHandle hCount;          // (id, SEL) -> long [count]
-    private static MethodHandle hObjectForKey;   // (id, SEL, id) -> id [objectForKey:]
-    private static MethodHandle hSetObjectForKey;// (id, SEL, id, id) -> void [setObject:forKey:] (NSMutableDictionary)
-    private static MethodHandle hRemoveObject;   // (id, SEL, id) -> void [removeObjectForKey:]
-    private static MethodHandle hAllKeys;        // (id, SEL) -> id [allKeys]
+            private record Handles(MethodHandle hCount, MethodHandle hObjectForKey, MethodHandle hSetObjectForKey, MethodHandle hRemoveObject, MethodHandle hAllKeys) {}
+    private static volatile Handles handles;
 
     private NSDictionary(MemorySegment peer) {
         super(peer);
@@ -44,21 +40,22 @@ public final class NSDictionary extends NSObject {
         return wrap(d);
     }
 
-    private static synchronized void ensureInit() {
-        if (initialized) return;
-        hCount = ObjC.handle(Sig.of(Ret.INT));
-        hObjectForKey = ObjC.handle(Sig.of(Ret.ID, Arg.ID));
-        hSetObjectForKey = ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.ID));
-        hRemoveObject = ObjC.handle(Sig.of(Ret.VOID, Arg.ID));
-        hAllKeys = ObjC.handle(Sig.of(Ret.ID));
-        initialized = true;
+        private static synchronized void ensureInit() {
+        if (handles != null) return;
+        handles = new Handles(
+                ObjC.handle(Sig.of(Ret.INT)),
+                ObjC.handle(Sig.of(Ret.ID, Arg.ID)),
+                ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.ID)),
+                ObjC.handle(Sig.of(Ret.VOID, Arg.ID)),
+                ObjC.handle(Sig.of(Ret.ID))
+        );
     }
 
     /// count — number of key/value pairs.
     public long count() {
         ensureInit();
         try {
-            return (long) hCount.invokeExact(peer, ObjC.sel("count"));
+            return (long) handles.hCount().invokeExact(peer, ObjC.sel("count"));
         } catch (Throwable t) {
             throw new RuntimeException("NSDictionary count failed", t);
         }
@@ -71,7 +68,7 @@ public final class NSDictionary extends NSObject {
         ensureInit();
         if (key == null || key.address() == 0) return null;
         try {
-            MemorySegment v = (MemorySegment) hObjectForKey.invokeExact(peer, ObjC.sel("objectForKey:"), key);
+            MemorySegment v = (MemorySegment) handles.hObjectForKey().invokeExact(peer, ObjC.sel("objectForKey:"), key);
             return (v == null || v.address() == 0) ? null : v;
         } catch (Throwable t) {
             throw new RuntimeException("objectForKey: failed", t);
@@ -95,7 +92,7 @@ public final class NSDictionary extends NSObject {
         if (object == null || object.address() == 0) throw new IllegalArgumentException("setObject: null");
         if (key == null || key.address() == 0) throw new IllegalArgumentException("forKey: null");
         try {
-            hSetObjectForKey.invokeExact(peer, ObjC.sel("setObject:forKey:"), object, key);
+            handles.hSetObjectForKey().invokeExact(peer, ObjC.sel("setObject:forKey:"), object, key);
         } catch (Throwable t) {
             throw new RuntimeException("setObject:forKey: failed", t);
         }
@@ -112,7 +109,7 @@ public final class NSDictionary extends NSObject {
         ensureInit();
         if (key == null || key.address() == 0) return;
         try {
-            hRemoveObject.invokeExact(peer, ObjC.sel("removeObjectForKey:"), key);
+            handles.hRemoveObject().invokeExact(peer, ObjC.sel("removeObjectForKey:"), key);
         } catch (Throwable t) {
             throw new RuntimeException("removeObjectForKey: failed", t);
         }
@@ -122,7 +119,7 @@ public final class NSDictionary extends NSObject {
     public NSArray allKeys() {
         ensureInit();
         try {
-            MemorySegment arr = (MemorySegment) hAllKeys.invokeExact(peer, ObjC.sel("allKeys"));
+            MemorySegment arr = (MemorySegment) handles.hAllKeys().invokeExact(peer, ObjC.sel("allKeys"));
             return NSArray.wrap(arr);
         } catch (Throwable t) {
             throw new RuntimeException("allKeys failed", t);

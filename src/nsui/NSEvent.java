@@ -14,24 +14,22 @@ import static nsui.objc.Sig.Ret;
 public final class NSEvent extends NSObject {
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
-    private static volatile boolean initialized;
-    private static MethodHandle hLocation;  // (id, SEL) -> NSPoint (POINT is a GROUP return -> leading SegmentAllocator)
-    private static MethodHandle hTilt;      // (id, SEL) -> NSPoint
-    private static MethodHandle hDouble;    // (id, SEL) -> double
-    private static MethodHandle hBool;      // (id, SEL) -> bool
+            private record Handles(MethodHandle hLocation, MethodHandle hDouble, MethodHandle hBool, MethodHandle hCharsByModifiers) {}
+    private static volatile Handles handles;
 
     NSEvent(MemorySegment peer) {
         super(peer);
         ensureInit();
     }
 
-    private static synchronized void ensureInit() {
-        if (initialized) return;
-        hLocation = ObjC.handle(Sig.of(Ret.POINT));
-        hTilt = ObjC.handle(Sig.of(Ret.POINT));
-        hDouble   = ObjC.handle(Sig.of(Ret.DOUBLE));
-        hBool     = ObjC.handle(Sig.of(Ret.BOOL));
-        initialized = true;
+        private static synchronized void ensureInit() {
+        if (handles != null) return;
+        handles = new Handles(
+                ObjC.handle(Sig.of(Ret.POINT)),
+                ObjC.handle(Sig.of(Ret.DOUBLE)),
+                ObjC.handle(Sig.of(Ret.BOOL)),
+                ObjC.handle(Sig.of(Sig.Ret.ID, Sig.Arg.INT))
+        );
     }
 
     /// NSEventType (NSUInteger). 1=leftMouseDown 2=leftMouseUp 10=keyDown 11=keyUp.
@@ -70,7 +68,7 @@ public final class NSEvent extends NSObject {
     /// carries an implicit leading SegmentAllocator for the struct it returns.
     public NSPoint locationInWindow() {
         try {
-            MemorySegment seg = (MemorySegment) hLocation.invokeExact((SegmentAllocator) Arena.global(), peer, ObjC.sel("locationInWindow"));
+            MemorySegment seg = (MemorySegment) handles.hLocation().invokeExact((SegmentAllocator) Arena.global(), peer, ObjC.sel("locationInWindow"));
             return NSPoint.fromSegment(seg);
         } catch (Throwable t) {
             throw new RuntimeException("locationInWindow failed", t);
@@ -103,7 +101,7 @@ public final class NSEvent extends NSObject {
     /// [event timestamp] — system time of the event in seconds.
     public double timestamp() {
         try {
-            return (double) hDouble.invokeExact(peer, ObjC.sel("timestamp"));
+            return (double) handles.hDouble().invokeExact(peer, ObjC.sel("timestamp"));
         } catch (Throwable t) {
             throw new RuntimeException("timestamp failed", t);
         }
@@ -125,7 +123,7 @@ public final class NSEvent extends NSObject {
     /// [event isARepeat] — true if key is auto-repeat. Key events only — guarded.
     public boolean isARepeat() {
         requireKeyEvent("isARepeat");
-        try { return (boolean) hBool.invokeExact(peer, ObjC.sel("isARepeat")); } catch (Throwable t) { throw new RuntimeException("isARepeat failed", t); }
+        try { return (boolean) handles.hBool().invokeExact(peer, ObjC.sel("isARepeat")); } catch (Throwable t) { throw new RuntimeException("isARepeat failed", t); }
     }
 
     // ---- additional accessors (80% completeness) ----
@@ -144,37 +142,37 @@ public final class NSEvent extends NSObject {
 
     /// [event pressure] — float but returned as double via handle.
     public double pressure() {
-        try { return (double) hDouble.invokeExact(peer, ObjC.sel("pressure")); } catch (Throwable t) { throw new RuntimeException("pressure failed", t); }
+        try { return (double) handles.hDouble().invokeExact(peer, ObjC.sel("pressure")); } catch (Throwable t) { throw new RuntimeException("pressure failed", t); }
     }
 
     /// [event deltaX]
     public double deltaX() {
-        try { return (double) hDouble.invokeExact(peer, ObjC.sel("deltaX")); } catch (Throwable t) { throw new RuntimeException("deltaX failed", t); }
+        try { return (double) handles.hDouble().invokeExact(peer, ObjC.sel("deltaX")); } catch (Throwable t) { throw new RuntimeException("deltaX failed", t); }
     }
 
     /// [event deltaY]
     public double deltaY() {
-        try { return (double) hDouble.invokeExact(peer, ObjC.sel("deltaY")); } catch (Throwable t) { throw new RuntimeException("deltaY failed", t); }
+        try { return (double) handles.hDouble().invokeExact(peer, ObjC.sel("deltaY")); } catch (Throwable t) { throw new RuntimeException("deltaY failed", t); }
     }
 
     /// [event deltaZ]
     public double deltaZ() {
-        try { return (double) hDouble.invokeExact(peer, ObjC.sel("deltaZ")); } catch (Throwable t) { throw new RuntimeException("deltaZ failed", t); }
+        try { return (double) handles.hDouble().invokeExact(peer, ObjC.sel("deltaZ")); } catch (Throwable t) { throw new RuntimeException("deltaZ failed", t); }
     }
 
     /// [event scrollingDeltaX]
     public double scrollingDeltaX() {
-        try { return (double) hDouble.invokeExact(peer, ObjC.sel("scrollingDeltaX")); } catch (Throwable t) { throw new RuntimeException("scrollingDeltaX failed", t); }
+        try { return (double) handles.hDouble().invokeExact(peer, ObjC.sel("scrollingDeltaX")); } catch (Throwable t) { throw new RuntimeException("scrollingDeltaX failed", t); }
     }
 
     /// [event scrollingDeltaY]
     public double scrollingDeltaY() {
-        try { return (double) hDouble.invokeExact(peer, ObjC.sel("scrollingDeltaY")); } catch (Throwable t) { throw new RuntimeException("scrollingDeltaY failed", t); }
+        try { return (double) handles.hDouble().invokeExact(peer, ObjC.sel("scrollingDeltaY")); } catch (Throwable t) { throw new RuntimeException("scrollingDeltaY failed", t); }
     }
 
     /// [event hasPreciseScrollingDeltas]
     public boolean hasPreciseScrollingDeltas() {
-        try { return (boolean) hBool.invokeExact(peer, ObjC.sel("hasPreciseScrollingDeltas")); } catch (Throwable t) { throw new RuntimeException("hasPreciseScrollingDeltas failed", t); }
+        try { return (boolean) handles.hBool().invokeExact(peer, ObjC.sel("hasPreciseScrollingDeltas")); } catch (Throwable t) { throw new RuntimeException("hasPreciseScrollingDeltas failed", t); }
     }
 
     /// [event momentumPhase]
@@ -185,7 +183,7 @@ public final class NSEvent extends NSObject {
 
     /// [event isDirectionInvertedFromDevice]
     public boolean isDirectionInvertedFromDevice() {
-        try { return (boolean) hBool.invokeExact(peer, ObjC.sel("isDirectionInvertedFromDevice")); } catch (Throwable t) { throw new RuntimeException("isDirectionInvertedFromDevice failed", t); }
+        try { return (boolean) handles.hBool().invokeExact(peer, ObjC.sel("isDirectionInvertedFromDevice")); } catch (Throwable t) { throw new RuntimeException("isDirectionInvertedFromDevice failed", t); }
     }
 
     /// [event trackingNumber]
@@ -193,7 +191,7 @@ public final class NSEvent extends NSObject {
 
     /// [event magnification]
     public double magnification() {
-        try { return (double) hDouble.invokeExact(peer, ObjC.sel("magnification")); } catch (Throwable t) { throw new RuntimeException("magnification failed", t); }
+        try { return (double) handles.hDouble().invokeExact(peer, ObjC.sel("magnification")); } catch (Throwable t) { throw new RuntimeException("magnification failed", t); }
     }
 
     /// [event deviceID] — NSUInteger
@@ -201,7 +199,7 @@ public final class NSEvent extends NSObject {
 
     /// [event rotation] — float degrees
     public double rotation() {
-        try { return (double) hDouble.invokeExact(peer, ObjC.sel("rotation")); } catch (Throwable t) { throw new RuntimeException("rotation failed", t); }
+        try { return (double) handles.hDouble().invokeExact(peer, ObjC.sel("rotation")); } catch (Throwable t) { throw new RuntimeException("rotation failed", t); }
     }
 
     /// [event absoluteX]
@@ -217,14 +215,14 @@ public final class NSEvent extends NSObject {
     /// [event tilt] — NSPoint {x,y} tilt
     public NSPoint tilt() {
         try {
-            MemorySegment seg = (MemorySegment) hTilt.invokeExact((SegmentAllocator) Arena.global(), peer, ObjC.sel("tilt"));
+            MemorySegment seg = (MemorySegment) handles.hLocation().invokeExact((SegmentAllocator) Arena.global(), peer, ObjC.sel("tilt"));
             return NSPoint.fromSegment(seg);
         } catch (Throwable t) { throw new RuntimeException("tilt failed", t); }
     }
 
     /// [event tangentialPressure]
     public double tangentialPressure() {
-        try { return (double) hDouble.invokeExact(peer, ObjC.sel("tangentialPressure")); } catch (Throwable t) { throw new RuntimeException("tangentialPressure failed", t); }
+        try { return (double) handles.hDouble().invokeExact(peer, ObjC.sel("tangentialPressure")); } catch (Throwable t) { throw new RuntimeException("tangentialPressure failed", t); }
     }
 
     /// [event stage] — pressure stage
@@ -232,7 +230,7 @@ public final class NSEvent extends NSObject {
 
     /// [event stageTransition]
     public double stageTransition() {
-        try { return (double) hDouble.invokeExact(peer, ObjC.sel("stageTransition")); } catch (Throwable t) { throw new RuntimeException("stageTransition failed", t); }
+        try { return (double) handles.hDouble().invokeExact(peer, ObjC.sel("stageTransition")); } catch (Throwable t) { throw new RuntimeException("stageTransition failed", t); }
     }
 
     /// [event associatedEventsMask]
@@ -248,8 +246,7 @@ public final class NSEvent extends NSObject {
     public String charactersByApplyingModifiers(long modifiers) {
         requireKeyEvent("charactersByApplyingModifiers:");
         try {
-            var h = ObjC.handle(Sig.of(Sig.Ret.ID, Sig.Arg.INT));
-            MemorySegment s = (MemorySegment) h.invokeExact(peer, ObjC.sel("charactersByApplyingModifiers:"), modifiers);
+            MemorySegment s = (MemorySegment) handles.hCharsByModifiers().invokeExact(peer, ObjC.sel("charactersByApplyingModifiers:"), modifiers);
             return ObjC.toString(s);
         } catch (Throwable t) { throw new RuntimeException("charactersByApplyingModifiers: failed", t); }
     }
@@ -257,7 +254,7 @@ public final class NSEvent extends NSObject {
     /// [NSEvent mouseLocation] — class property NSPoint
     public static NSPoint mouseLocation() {
         try {
-            MemorySegment seg = (MemorySegment) ObjC.handle(Sig.of(Ret.POINT)).invokeExact((SegmentAllocator) Arena.global(), ObjC.cls("NSEvent"), ObjC.sel("mouseLocation"));
+            MemorySegment seg = (MemorySegment) handles.hLocation().invokeExact((SegmentAllocator) Arena.global(), ObjC.cls("NSEvent"), ObjC.sel("mouseLocation"));
             return NSPoint.fromSegment(seg);
         } catch (Throwable t) { throw new RuntimeException("mouseLocation failed", t); }
     }
@@ -274,16 +271,16 @@ public final class NSEvent extends NSObject {
 
     /// [NSEvent doubleClickInterval]
     public static double doubleClickInterval() {
-        try { return (double) ObjC.handle(Sig.of(Ret.DOUBLE)).invokeExact(ObjC.cls("NSEvent"), ObjC.sel("doubleClickInterval")); } catch (Throwable t) { throw new RuntimeException("doubleClickInterval failed", t); }
+        try { return (double) handles.hDouble().invokeExact(ObjC.cls("NSEvent"), ObjC.sel("doubleClickInterval")); } catch (Throwable t) { throw new RuntimeException("doubleClickInterval failed", t); }
     }
 
     /// [NSEvent keyRepeatDelay]
     public static double keyRepeatDelay() {
-        try { return (double) ObjC.handle(Sig.of(Ret.DOUBLE)).invokeExact(ObjC.cls("NSEvent"), ObjC.sel("keyRepeatDelay")); } catch (Throwable t) { throw new RuntimeException("keyRepeatDelay failed", t); }
+        try { return (double) handles.hDouble().invokeExact(ObjC.cls("NSEvent"), ObjC.sel("keyRepeatDelay")); } catch (Throwable t) { throw new RuntimeException("keyRepeatDelay failed", t); }
     }
 
     /// [NSEvent keyRepeatInterval]
     public static double keyRepeatInterval() {
-        try { return (double) ObjC.handle(Sig.of(Ret.DOUBLE)).invokeExact(ObjC.cls("NSEvent"), ObjC.sel("keyRepeatInterval")); } catch (Throwable t) { throw new RuntimeException("keyRepeatInterval failed", t); }
+        try { return (double) handles.hDouble().invokeExact(ObjC.cls("NSEvent"), ObjC.sel("keyRepeatInterval")); } catch (Throwable t) { throw new RuntimeException("keyRepeatInterval failed", t); }
     }
 }

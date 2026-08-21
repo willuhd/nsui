@@ -16,12 +16,8 @@ import static nsui.objc.Sig.Ret;
 public class NSControl extends NSView {
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
-    private static volatile boolean initialized;
-    private static MethodHandle hSendActionOn;  // (id, SEL, long) -> long
-    private static MethodHandle hSizeThatFits;  // (SegmentAllocator, id, SEL, NSSize) -> NSSize
-    private static MethodHandle hDouble;        // (id, SEL) -> double
-    private static MethodHandle hSetDouble;     // (id, SEL, double) -> void
-    private static MethodHandle hSendActionTo;  // (id, SEL, id, id) -> bool
+    private record Handles(MethodHandle hSendActionOn, MethodHandle hSizeThatFits, MethodHandle hDouble, MethodHandle hSetDouble, MethodHandle hSendActionTo) {}
+    private static volatile Handles H;
 
     protected NSControl(MemorySegment peer) {
         super(peer);
@@ -29,13 +25,13 @@ public class NSControl extends NSView {
     }
 
     private static synchronized void ensureInit() {
-        if (initialized) return;
-        hSendActionOn = ObjC.handle(Sig.of(Ret.INT, Arg.INT));
-        hSizeThatFits = ObjC.handle(Sig.of(Ret.SIZE, Arg.SIZE));
-        hDouble = ObjC.handle(Sig.of(Ret.DOUBLE));
-        hSetDouble = ObjC.handle(Sig.of(Ret.VOID, Arg.DOUBLE));
-        hSendActionTo = ObjC.handle(Sig.of(Ret.BOOL, Arg.ID, Arg.ID));
-        initialized = true;
+        if (H != null) return;
+        H = new Handles(
+                ObjC.handle(Sig.of(Ret.INT, Arg.INT)),
+                ObjC.handle(Sig.of(Ret.SIZE, Arg.SIZE)),
+                ObjC.handle(Sig.of(Ret.DOUBLE)),
+                ObjC.handle(Sig.of(Ret.VOID, Arg.DOUBLE)),
+                ObjC.handle(Sig.of(Ret.BOOL, Arg.ID, Arg.ID)));
     }
 
     // ---- existing API (kept) ----
@@ -54,9 +50,19 @@ public class NSControl extends NSView {
         ObjC.msgSendVoidId(peer, ObjC.sel("setTarget:"), target);
     }
 
+    /// [control target] — the action target (id).
+    public MemorySegment target() {
+        return ObjC.msgSendId(peer, ObjC.sel("target"));
+    }
+
     /// setAction: — the selector sent to the target on activation.
     public void setAction(String actionSelector) {
         ObjC.msgSendVoidId(peer, ObjC.sel("setAction:"), ObjC.sel(actionSelector));
+    }
+
+    /// [control action] — the action selector (SEL).
+    public MemorySegment action() {
+        return ObjC.msgSendId(peer, ObjC.sel("action"));
     }
 
     // ---- tag ----
@@ -155,27 +161,27 @@ public class NSControl extends NSView {
     public float floatValue() {
         ensureInit();
         try {
-            return (float) (double) hDouble.invokeExact(peer, ObjC.sel("floatValue"));
+            return (float) (double) H.hDouble().invokeExact(peer, ObjC.sel("floatValue"));
         } catch (Throwable t) { throw new RuntimeException("floatValue failed", t); }
     }
     public void setFloatValue(float v) {
         ensureInit();
-        try { hSetDouble.invokeExact(peer, ObjC.sel("setFloatValue:"), (double) v); } catch (Throwable t) { throw new RuntimeException("setFloatValue: failed", t); }
+        try { H.hSetDouble().invokeExact(peer, ObjC.sel("setFloatValue:"), (double) v); } catch (Throwable t) { throw new RuntimeException("setFloatValue: failed", t); }
     }
     public double doubleValue() {
         ensureInit();
-        try { return (double) hDouble.invokeExact(peer, ObjC.sel("doubleValue")); } catch (Throwable t) { throw new RuntimeException("doubleValue failed", t); }
+        try { return (double) H.hDouble().invokeExact(peer, ObjC.sel("doubleValue")); } catch (Throwable t) { throw new RuntimeException("doubleValue failed", t); }
     }
     public void setDoubleValue(double v) {
         ensureInit();
-        try { hSetDouble.invokeExact(peer, ObjC.sel("setDoubleValue:"), v); } catch (Throwable t) { throw new RuntimeException("setDoubleValue: failed", t); }
+        try { H.hSetDouble().invokeExact(peer, ObjC.sel("setDoubleValue:"), v); } catch (Throwable t) { throw new RuntimeException("setDoubleValue: failed", t); }
     }
 
     // ---- sizeThatFits / sizeToFit ----
     public NSSize sizeThatFits(NSSize size) {
         ensureInit();
         try {
-            MemorySegment seg = (MemorySegment) hSizeThatFits.invokeExact((SegmentAllocator) Arena.global(), peer, ObjC.sel("sizeThatFits:"), size.toSegment());
+            MemorySegment seg = (MemorySegment) H.hSizeThatFits().invokeExact((SegmentAllocator) Arena.global(), peer, ObjC.sel("sizeThatFits:"), size.toSegment());
             return NSSize.fromSegment(seg);
         } catch (Throwable t) { throw new RuntimeException("sizeThatFits: failed", t); }
     }
@@ -186,11 +192,11 @@ public class NSControl extends NSView {
     // ---- sendActionOn / sendAction:to: ----
     public long sendActionOn(long mask) {
         ensureInit();
-        try { return (long) hSendActionOn.invokeExact(peer, ObjC.sel("sendActionOn:"), mask); } catch (Throwable t) { throw new RuntimeException("sendActionOn: failed", t); }
+        try { return (long) H.hSendActionOn().invokeExact(peer, ObjC.sel("sendActionOn:"), mask); } catch (Throwable t) { throw new RuntimeException("sendActionOn: failed", t); }
     }
     public boolean sendAction(MemorySegment action, MemorySegment target) {
         ensureInit();
-        try { return (boolean) hSendActionTo.invokeExact(peer, ObjC.sel("sendAction:to:"), action, target); } catch (Throwable t) { throw new RuntimeException("sendAction:to: failed", t); }
+        try { return (boolean) H.hSendActionTo().invokeExact(peer, ObjC.sel("sendAction:to:"), action, target); } catch (Throwable t) { throw new RuntimeException("sendAction:to: failed", t); }
     }
 
     // ---- take*ValueFrom: ----

@@ -19,15 +19,8 @@ import static nsui.objc.Sig.Ret;
 public final class NSCollectionView extends NSView {
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
-    private static volatile boolean initialized;
-    private static MethodHandle hInitFrame;    // (id, SEL, NSRect) -> id [initWithFrame:]
-    private static MethodHandle hSetDataSource;// (id, SEL, id) -> void [setDataSource:]
-    private static MethodHandle hSetDelegate;  // (id, SEL, id) -> void [setDelegate:]
-    private static MethodHandle hReloadData;   // (id, SEL) -> void      [reloadData]
-    private static MethodHandle hSetItemProto; // (id, SEL, id) -> void  [setItemPrototype:]
-    private static MethodHandle hGetId;        // (id, SEL) -> id        [itemPrototype/dataSource/delegate]
-    private static MethodHandle hSetSelectable;// (id, SEL, bool)-> void [setSelectable:]
-    private static MethodHandle hSetAllowsMultiple;// (id, SEL, bool)-> void
+            private record Handles(MethodHandle hInitFrame, MethodHandle hSetDataSource, MethodHandle hReloadData, MethodHandle hGetId, MethodHandle hSetSelectable) {}
+    private static volatile Handles handles;
 
     private NSCollectionView(MemorySegment peer) {
         super(peer);
@@ -39,17 +32,15 @@ public final class NSCollectionView extends NSView {
         return (peer == null || peer.address() == 0) ? null : new NSCollectionView(peer);
     }
 
-    private static synchronized void ensureInit() {
-        if (initialized) return;
-        hInitFrame = ObjC.handle(Sig.of(Ret.ID, Arg.RECT));
-        hSetDataSource = ObjC.handle(Sig.of(Ret.VOID, Arg.ID));
-        hSetDelegate = ObjC.handle(Sig.of(Ret.VOID, Arg.ID));
-        hReloadData = ObjC.handle(Sig.of(Ret.VOID));
-        hSetItemProto = ObjC.handle(Sig.of(Ret.VOID, Arg.ID));
-        hGetId = ObjC.handle(Sig.of(Ret.ID));
-        hSetSelectable = ObjC.handle(Sig.of(Ret.VOID, Arg.BOOL));
-        hSetAllowsMultiple = ObjC.handle(Sig.of(Ret.VOID, Arg.BOOL));
-        initialized = true;
+        private static synchronized void ensureInit() {
+        if (handles != null) return;
+        handles = new Handles(
+                ObjC.handle(Sig.of(Ret.ID, Arg.RECT)),
+                ObjC.handle(Sig.of(Ret.VOID, Arg.ID)),
+                ObjC.handle(Sig.of(Ret.VOID)),
+                ObjC.handle(Sig.of(Ret.ID)),
+                ObjC.handle(Sig.of(Ret.VOID, Arg.BOOL))
+        );
     }
 
     /// `[[NSCollectionView alloc] initWithFrame:frame]` — a new collection view.
@@ -57,7 +48,7 @@ public final class NSCollectionView extends NSView {
         ensureInit();
         MemorySegment p = ObjC.msgSendId(ObjC.cls("NSCollectionView"), ObjC.sel("alloc"));
         try {
-            p = (MemorySegment) hInitFrame.invokeExact(p, ObjC.sel("initWithFrame:"), frame.toSegment());
+            p = (MemorySegment) handles.hInitFrame().invokeExact(p, ObjC.sel("initWithFrame:"), frame.toSegment());
         } catch (Throwable t) {
             throw new RuntimeException("initWithFrame: failed for NSCollectionView", t);
         }
@@ -71,7 +62,7 @@ public final class NSCollectionView extends NSView {
     public void setDataSource(MemorySegment dataSource) {
         try {
             MemorySegment arg = (dataSource == null || dataSource.address() == 0) ? MemorySegment.NULL : dataSource;
-            hSetDataSource.invokeExact(peer, ObjC.sel("setDataSource:"), (MemorySegment) arg);
+            handles.hSetDataSource().invokeExact(peer, ObjC.sel("setDataSource:"), (MemorySegment) arg);
         } catch (Throwable t) {
             throw new RuntimeException("setDataSource: failed", t);
         }
@@ -80,7 +71,7 @@ public final class NSCollectionView extends NSView {
     /// [view dataSource] — id or nil.
     public MemorySegment dataSource() {
         try {
-            return (MemorySegment) hGetId.invokeExact(peer, ObjC.sel("dataSource"));
+            return (MemorySegment) handles.hGetId().invokeExact(peer, ObjC.sel("dataSource"));
         } catch (Throwable t) {
             throw new RuntimeException("dataSource failed", t);
         }
@@ -90,7 +81,7 @@ public final class NSCollectionView extends NSView {
     public void setDelegate(MemorySegment delegate) {
         try {
             MemorySegment arg = (delegate == null || delegate.address() == 0) ? MemorySegment.NULL : delegate;
-            hSetDelegate.invokeExact(peer, ObjC.sel("setDelegate:"), (MemorySegment) arg);
+            handles.hSetDataSource().invokeExact(peer, ObjC.sel("setDelegate:"), (MemorySegment) arg);
         } catch (Throwable t) {
             throw new RuntimeException("setDelegate: failed", t);
         }
@@ -99,7 +90,7 @@ public final class NSCollectionView extends NSView {
     /// [view delegate]
     public MemorySegment delegate() {
         try {
-            return (MemorySegment) hGetId.invokeExact(peer, ObjC.sel("delegate"));
+            return (MemorySegment) handles.hGetId().invokeExact(peer, ObjC.sel("delegate"));
         } catch (Throwable t) {
             throw new RuntimeException("delegate failed", t);
         }
@@ -108,7 +99,7 @@ public final class NSCollectionView extends NSView {
     /// [view reloadData] — re-query dataSource.
     public void reloadData() {
         try {
-            hReloadData.invokeExact(peer, ObjC.sel("reloadData"));
+            handles.hReloadData().invokeExact(peer, ObjC.sel("reloadData"));
         } catch (Throwable t) {
             throw new RuntimeException("reloadData failed", t);
         }
@@ -117,7 +108,7 @@ public final class NSCollectionView extends NSView {
     /// [view itemPrototype] — NSCollectionViewItem peer or nil.
     public MemorySegment itemPrototype() {
         try {
-            return (MemorySegment) hGetId.invokeExact(peer, ObjC.sel("itemPrototype"));
+            return (MemorySegment) handles.hGetId().invokeExact(peer, ObjC.sel("itemPrototype"));
         } catch (Throwable t) {
             throw new RuntimeException("itemPrototype failed", t);
         }
@@ -127,7 +118,7 @@ public final class NSCollectionView extends NSView {
     public void setItemPrototype(MemorySegment prototype) {
         try {
             MemorySegment arg = (prototype == null || prototype.address() == 0) ? MemorySegment.NULL : prototype;
-            hSetItemProto.invokeExact(peer, ObjC.sel("setItemPrototype:"), (MemorySegment) arg);
+            handles.hSetDataSource().invokeExact(peer, ObjC.sel("setItemPrototype:"), (MemorySegment) arg);
         } catch (Throwable t) {
             throw new RuntimeException("setItemPrototype: failed", t);
         }
@@ -147,7 +138,7 @@ public final class NSCollectionView extends NSView {
     /// [view setSelectable:]
     public void setSelectable(boolean flag) {
         try {
-            hSetSelectable.invokeExact(peer, ObjC.sel("setSelectable:"), flag);
+            handles.hSetSelectable().invokeExact(peer, ObjC.sel("setSelectable:"), flag);
         } catch (Throwable t) {
             throw new RuntimeException("setSelectable: failed", t);
         }
@@ -161,7 +152,7 @@ public final class NSCollectionView extends NSView {
     /// [view setAllowsMultipleSelection:]
     public void setAllowsMultipleSelection(boolean flag) {
         try {
-            hSetAllowsMultiple.invokeExact(peer, ObjC.sel("setAllowsMultipleSelection:"), flag);
+            handles.hSetSelectable().invokeExact(peer, ObjC.sel("setAllowsMultipleSelection:"), flag);
         } catch (Throwable t) {
             throw new RuntimeException("setAllowsMultipleSelection: failed", t);
         }
@@ -170,7 +161,7 @@ public final class NSCollectionView extends NSView {
     /// [view selectionIndexes] — NSIndexSet peer.
     public MemorySegment selectionIndexes() {
         try {
-            return (MemorySegment) hGetId.invokeExact(peer, ObjC.sel("selectionIndexes"));
+            return (MemorySegment) handles.hGetId().invokeExact(peer, ObjC.sel("selectionIndexes"));
         } catch (Throwable t) {
             throw new RuntimeException("selectionIndexes failed", t);
         }
@@ -180,7 +171,7 @@ public final class NSCollectionView extends NSView {
     public void setSelectionIndexes(MemorySegment indexes) {
         try {
             MemorySegment arg = (indexes == null || indexes.address() == 0) ? MemorySegment.NULL : indexes;
-            hSetDataSource.invokeExact(peer, ObjC.sel("setSelectionIndexes:"), (MemorySegment) arg);
+            handles.hSetDataSource().invokeExact(peer, ObjC.sel("setSelectionIndexes:"), (MemorySegment) arg);
         } catch (Throwable t) {
             throw new RuntimeException("setSelectionIndexes: failed", t);
         }
@@ -189,7 +180,7 @@ public final class NSCollectionView extends NSView {
     /// [view content] — NSArray of represented objects.
     public MemorySegment content() {
         try {
-            return (MemorySegment) hGetId.invokeExact(peer, ObjC.sel("content"));
+            return (MemorySegment) handles.hGetId().invokeExact(peer, ObjC.sel("content"));
         } catch (Throwable t) {
             throw new RuntimeException("content failed", t);
         }
@@ -199,7 +190,7 @@ public final class NSCollectionView extends NSView {
     public void setContent(MemorySegment content) {
         try {
             MemorySegment arg = (content == null || content.address() == 0) ? MemorySegment.NULL : content;
-            hSetDataSource.invokeExact(peer, ObjC.sel("setContent:"), (MemorySegment) arg);
+            handles.hSetDataSource().invokeExact(peer, ObjC.sel("setContent:"), (MemorySegment) arg);
         } catch (Throwable t) {
             throw new RuntimeException("setContent: failed", t);
         }

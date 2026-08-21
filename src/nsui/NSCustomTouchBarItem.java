@@ -21,10 +21,8 @@ import static nsui.objc.Sig.Ret;
 /// `touchBar:makeItemForIdentifier:` delegate.
 public class NSCustomTouchBarItem extends NSTouchBarItem {
 
-    private static volatile boolean initialized;
-    private static MethodHandle hInitId; // (id, SEL, id) -> id   [initWithIdentifier:]
-    private static MethodHandle hId;     // (id, SEL) -> id
-    private static MethodHandle hVoidId; // (id, SEL, id) -> void
+            private record Handles(MethodHandle hInitId, MethodHandle hId, MethodHandle hVoidId) {}
+    private static volatile Handles handles;
 
     protected NSCustomTouchBarItem(MemorySegment peer) {
         super(peer);
@@ -35,12 +33,9 @@ public class NSCustomTouchBarItem extends NSTouchBarItem {
         return (peer == null || peer.address() == 0) ? null : new NSCustomTouchBarItem(peer);
     }
 
-    private static synchronized void ensureInit() {
-        if (initialized) return;
-        hInitId = ObjC.handle(Sig.of(Ret.ID, Arg.ID));
-        hId = ObjC.handle(Sig.of(Ret.ID));
-        hVoidId = ObjC.handle(Sig.of(Ret.VOID, Arg.ID));
-        initialized = true;
+        private static synchronized void ensureInit() {
+        if (handles != null) return;
+        handles = new Handles(ObjC.handle(Sig.of(Ret.ID, Arg.ID)), ObjC.handle(Sig.of(Ret.ID)), ObjC.handle(Sig.of(Ret.VOID, Arg.ID)));
     }
 
     /// alloc + initWithIdentifier: — create custom item with identifier.
@@ -48,7 +43,7 @@ public class NSCustomTouchBarItem extends NSTouchBarItem {
         ensureInit();
         MemorySegment p = ObjC.msgSendId(ObjC.cls("NSCustomTouchBarItem"), ObjC.sel("alloc"));
         try {
-            p = (MemorySegment) hInitId.invokeExact(p, ObjC.sel("initWithIdentifier:"), ObjC.nsstring(identifier));
+            p = (MemorySegment) handles.hInitId().invokeExact(p, ObjC.sel("initWithIdentifier:"), ObjC.nsstring(identifier));
         } catch (Throwable t) {
             throw new RuntimeException("initWithIdentifier: failed for NSCustomTouchBarItem", t);
         }
@@ -62,7 +57,7 @@ public class NSCustomTouchBarItem extends NSTouchBarItem {
         MemorySegment p = ObjC.msgSendId(ObjC.cls("NSCustomTouchBarItem"), ObjC.sel("alloc"));
         try {
             MemorySegment arg = (identifier == null || identifier.address() == 0) ? MemorySegment.NULL : identifier;
-            p = (MemorySegment) hInitId.invokeExact(p, ObjC.sel("initWithIdentifier:"), arg);
+            p = (MemorySegment) handles.hInitId().invokeExact(p, ObjC.sel("initWithIdentifier:"), arg);
         } catch (Throwable t) {
             throw new RuntimeException("initWithIdentifier: failed for NSCustomTouchBarItem", t);
         }
@@ -79,7 +74,7 @@ public class NSCustomTouchBarItem extends NSTouchBarItem {
             MethodHandle hResp = ObjC.handle(Sig.of(Ret.BOOL, Arg.ID));
             boolean resp = (boolean) hResp.invokeExact(peer, ObjC.sel("respondsToSelector:"), sel);
             if (!resp) return null;
-            MemorySegment v = (MemorySegment) hId.invokeExact(peer, sel);
+            MemorySegment v = (MemorySegment) handles.hId().invokeExact(peer, sel);
             return NSView.wrap(v);
         } catch (Throwable t) { return null; }
     }
@@ -91,7 +86,7 @@ public class NSCustomTouchBarItem extends NSTouchBarItem {
             MethodHandle hResp = ObjC.handle(Sig.of(Ret.BOOL, Arg.ID));
             boolean resp = (boolean) hResp.invokeExact(peer, ObjC.sel("respondsToSelector:"), sel);
             if (!resp) return;
-            hVoidId.invokeExact(peer, sel, (MemorySegment) (view == null ? MemorySegment.NULL : view.peer()));
+            handles.hVoidId().invokeExact(peer, sel, (MemorySegment) (view == null ? MemorySegment.NULL : view.peer()));
         } catch (Throwable t) { /* no-op if absent */ }
     }
 
@@ -99,7 +94,7 @@ public class NSCustomTouchBarItem extends NSTouchBarItem {
     public String customizationLabel() {
         ensureInit();
         try {
-            MemorySegment s = (MemorySegment) hId.invokeExact(peer, ObjC.sel("customizationLabel"));
+            MemorySegment s = (MemorySegment) handles.hId().invokeExact(peer, ObjC.sel("customizationLabel"));
             return ObjC.toString(s);
         } catch (Throwable t) {
             throw new RuntimeException("customizationLabel failed", t);
@@ -111,7 +106,7 @@ public class NSCustomTouchBarItem extends NSTouchBarItem {
         ensureInit();
         try {
             MemorySegment s = label == null ? MemorySegment.NULL : ObjC.nsstring(label);
-            hVoidId.invokeExact(peer, ObjC.sel("setCustomizationLabel:"), s);
+            handles.hVoidId().invokeExact(peer, ObjC.sel("setCustomizationLabel:"), s);
         } catch (Throwable t) {
             throw new RuntimeException("setCustomizationLabel: failed", t);
         }
@@ -122,7 +117,7 @@ public class NSCustomTouchBarItem extends NSTouchBarItem {
         ensureInit();
         try {
             MemorySegment s = (label == null || label.address() == 0) ? MemorySegment.NULL : label;
-            hVoidId.invokeExact(peer, ObjC.sel("setCustomizationLabel:"), s);
+            handles.hVoidId().invokeExact(peer, ObjC.sel("setCustomizationLabel:"), s);
         } catch (Throwable t) {
             throw new RuntimeException("setCustomizationLabel: failed", t);
         }

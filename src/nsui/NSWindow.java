@@ -54,15 +54,8 @@ import static nsui.objc.Sig.Ret;
 public final class NSWindow extends NSObject {
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
-    private static volatile boolean initialized;
-    private static MethodHandle hSetFrameDisplay;  // (id, SEL, NSRect, bool) -> void
-    private static MethodHandle hSetFrameOrigin;   // (id, SEL, NSPoint) -> void
-    private static MethodHandle hSetContentSize;   // (id, SEL, NSSize) -> void
-    private static MethodHandle hStdWinButton;     // (id, SEL, long) -> id — standardWindowButton:
-    private static MethodHandle hGetDouble;        // (id, SEL) -> double
-    private static MethodHandle hSetDouble;        // (id, SEL, double) -> void
-    private static MethodHandle hGetSize;          // (id, SEL) -> NSSize
-    private static MethodHandle hSetSize;          // (id, SEL, NSSize) -> void
+    private record Handles(MethodHandle hSetFrameDisplay, MethodHandle hSetFrameOrigin, MethodHandle hSetContentSize, MethodHandle hStdWinButton, MethodHandle hGetDouble, MethodHandle hSetDouble, MethodHandle hGetSize, MethodHandle hSetSize) {}
+    private static volatile Handles H;
 
     private NSWindow(MemorySegment peer) {
         super(peer);
@@ -74,16 +67,16 @@ public final class NSWindow extends NSObject {
     }
 
     private static synchronized void ensureInit() {
-        if (initialized) return;
-        hSetFrameDisplay = ObjC.handle(Sig.of(Ret.VOID, Arg.RECT, Arg.BOOL));
-        hSetFrameOrigin = ObjC.handle(Sig.of(Ret.VOID, Arg.POINT));
-        hSetContentSize = ObjC.handle(Sig.of(Ret.VOID, Arg.SIZE));
-        hStdWinButton = ObjC.handle(Sig.of(Ret.ID, Arg.INT)); // standardWindowButton: — already in the vocabulary
-        hGetDouble = ObjC.handle(Sig.of(Ret.DOUBLE));
-        hSetDouble = ObjC.handle(Sig.of(Ret.VOID, Arg.DOUBLE));
-        hGetSize = ObjC.handle(Sig.of(Ret.SIZE));
-        hSetSize = ObjC.handle(Sig.of(Ret.VOID, Arg.SIZE));
-        initialized = true;
+        if (H != null) return;
+        H = new Handles(
+                ObjC.handle(Sig.of(Ret.VOID, Arg.RECT, Arg.BOOL)),
+                ObjC.handle(Sig.of(Ret.VOID, Arg.POINT)),
+                ObjC.handle(Sig.of(Ret.VOID, Arg.SIZE)),
+                ObjC.handle(Sig.of(Ret.ID, Arg.INT)),
+                ObjC.handle(Sig.of(Ret.DOUBLE)),
+                ObjC.handle(Sig.of(Ret.VOID, Arg.DOUBLE)),
+                ObjC.handle(Sig.of(Ret.SIZE)),
+                ObjC.handle(Sig.of(Ret.VOID, Arg.SIZE)));
     }
 
     /// alloc + initWithContentRect:styleMask:backing:defer:.
@@ -120,6 +113,11 @@ public final class NSWindow extends NSObject {
         ObjC.msgSendVoidBool(peer, ObjC.sel("setReleasedWhenClosed:"), flag);
     }
 
+    /// [window isReleasedWhenClosed]
+    public boolean isReleasedWhenClosed() {
+        return ObjC.msgSendBool(peer, ObjC.sel("isReleasedWhenClosed"));
+    }
+
     /// setContentView: replaces the window's root content view.
     public void setContentView(NSView view) {
         ObjC.msgSendVoidId(peer, ObjC.sel("setContentView:"), view.peer());
@@ -127,6 +125,16 @@ public final class NSWindow extends NSObject {
 
     public void setDelegate(NSObject delegate) {
         ObjC.msgSendVoidId(peer, ObjC.sel("setDelegate:"), delegate.peer());
+    }
+
+    /// [window delegate]
+    public MemorySegment delegate() {
+        return ObjC.msgSendId(peer, ObjC.sel("delegate"));
+    }
+
+    /// Typed delegate.
+    public NSObject delegateObject() {
+        return NSObject.wrap(ObjC.msgSendId(peer, ObjC.sel("delegate")));
     }
 
     /// Struct-returning message: frame (objc_msgSend_stret on x86_64).
@@ -148,7 +156,7 @@ public final class NSWindow extends NSObject {
     /// setFrame:display: — resize/reposition (and optionally redraw immediately).
     public void setFrameDisplay(NSRect frame, boolean display) {
         try {
-            hSetFrameDisplay.invokeExact(peer, ObjC.sel("setFrame:display:"), frame.toSegment(), display);
+            H.hSetFrameDisplay().invokeExact(peer, ObjC.sel("setFrame:display:"), frame.toSegment(), display);
         } catch (Throwable t) {
             throw new RuntimeException("setFrame:display: failed", t);
         }
@@ -157,7 +165,7 @@ public final class NSWindow extends NSObject {
     /// setFrameOrigin: — move the window (fires windowDidMove:).
     public void setFrameOrigin(NSPoint origin) {
         try {
-            hSetFrameOrigin.invokeExact(peer, ObjC.sel("setFrameOrigin:"), origin.toSegment());
+            H.hSetFrameOrigin().invokeExact(peer, ObjC.sel("setFrameOrigin:"), origin.toSegment());
         } catch (Throwable t) {
             throw new RuntimeException("setFrameOrigin: failed", t);
         }
@@ -166,7 +174,7 @@ public final class NSWindow extends NSObject {
     /// setContentSize: — the content area's size.
     public void setContentSize(NSSize size) {
         try {
-            hSetContentSize.invokeExact(peer, ObjC.sel("setContentSize:"), size.toSegment());
+            H.hSetContentSize().invokeExact(peer, ObjC.sel("setContentSize:"), size.toSegment());
         } catch (Throwable t) {
             throw new RuntimeException("setContentSize: failed", t);
         }
@@ -255,7 +263,7 @@ public final class NSWindow extends NSObject {
     /// that, so the `(ID,INT,BOOL)` vocabulary line is currently unused by our code.
     public NSObject standardWindowButton(long windowButton) {
         try {
-            MemorySegment btn = (MemorySegment) hStdWinButton.invokeExact(peer,
+            MemorySegment btn = (MemorySegment) H.hStdWinButton().invokeExact(peer,
                     ObjC.sel("standardWindowButton:"), windowButton);
             return NSObject.wrap(btn);
         } catch (Throwable t) {
@@ -374,7 +382,7 @@ public final class NSWindow extends NSObject {
     /// [window alphaValue] — 0.0 to 1.0.
     public double alphaValue() {
         try {
-            return (double) hGetDouble.invokeExact(peer, ObjC.sel("alphaValue"));
+            return (double) H.hGetDouble().invokeExact(peer, ObjC.sel("alphaValue"));
         } catch (Throwable t) {
             throw new RuntimeException("alphaValue failed", t);
         }
@@ -383,7 +391,7 @@ public final class NSWindow extends NSObject {
     /// [window setAlphaValue:].
     public void setAlphaValue(double alpha) {
         try {
-            hSetDouble.invokeExact(peer, ObjC.sel("setAlphaValue:"), alpha);
+            H.hSetDouble().invokeExact(peer, ObjC.sel("setAlphaValue:"), alpha);
         } catch (Throwable t) {
             throw new RuntimeException("setAlphaValue: failed", t);
         }
@@ -392,7 +400,7 @@ public final class NSWindow extends NSObject {
     /// [window minSize] — NSSize.
     public NSSize minSize() {
         try {
-            MemorySegment s = (MemorySegment) hGetSize.invokeExact((java.lang.foreign.SegmentAllocator) java.lang.foreign.Arena.global(), peer, ObjC.sel("minSize"));
+            MemorySegment s = (MemorySegment) H.hGetSize().invokeExact((java.lang.foreign.SegmentAllocator) java.lang.foreign.Arena.global(), peer, ObjC.sel("minSize"));
             return NSSize.fromSegment(s);
         } catch (Throwable t) {
             throw new RuntimeException("minSize failed", t);
@@ -402,7 +410,7 @@ public final class NSWindow extends NSObject {
     /// [window setMinSize:].
     public void setMinSize(NSSize size) {
         try {
-            hSetSize.invokeExact(peer, ObjC.sel("setMinSize:"), size.toSegment());
+            H.hSetSize().invokeExact(peer, ObjC.sel("setMinSize:"), size.toSegment());
         } catch (Throwable t) {
             throw new RuntimeException("setMinSize: failed", t);
         }
@@ -411,7 +419,7 @@ public final class NSWindow extends NSObject {
     /// [window maxSize] — NSSize.
     public NSSize maxSize() {
         try {
-            MemorySegment s = (MemorySegment) hGetSize.invokeExact((java.lang.foreign.SegmentAllocator) java.lang.foreign.Arena.global(), peer, ObjC.sel("maxSize"));
+            MemorySegment s = (MemorySegment) H.hGetSize().invokeExact((java.lang.foreign.SegmentAllocator) java.lang.foreign.Arena.global(), peer, ObjC.sel("maxSize"));
             return NSSize.fromSegment(s);
         } catch (Throwable t) {
             throw new RuntimeException("maxSize failed", t);
@@ -421,7 +429,7 @@ public final class NSWindow extends NSObject {
     /// [window setMaxSize:].
     public void setMaxSize(NSSize size) {
         try {
-            hSetSize.invokeExact(peer, ObjC.sel("setMaxSize:"), size.toSegment());
+            H.hSetSize().invokeExact(peer, ObjC.sel("setMaxSize:"), size.toSegment());
         } catch (Throwable t) {
             throw new RuntimeException("setMaxSize: failed", t);
         }
@@ -558,4 +566,13 @@ public final class NSWindow extends NSObject {
     public void orderOut(NSObject sender) {
         ObjC.msgSendVoidId(peer, ObjC.sel("orderOut:"), sender == null ? MemorySegment.NULL : sender.peer());
     }
+
+    // ---- additional readonly completeness ----
+    public boolean isZoomed() { return ObjC.msgSendBool(peer, ObjC.sel("isZoomed")); }
+    public boolean isMiniaturized() { return ObjC.msgSendBool(peer, ObjC.sel("isMiniaturized")); }
+    public boolean canBecomeKeyWindow() { return ObjC.msgSendBool(peer, ObjC.sel("canBecomeKeyWindow")); }
+    public boolean canBecomeMainWindow() { return ObjC.msgSendBool(peer, ObjC.sel("canBecomeMainWindow")); }
+    public boolean worksWhenModal() { return ObjC.msgSendBool(peer, ObjC.sel("worksWhenModal")); }
+    public MemorySegment screen() { return ObjC.msgSendId(peer, ObjC.sel("screen")); }
+    public boolean hasDynamicDepthLimit() { return ObjC.msgSendBool(peer, ObjC.sel("hasDynamicDepthLimit")); }
 }

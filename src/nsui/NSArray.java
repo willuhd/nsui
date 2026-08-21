@@ -13,11 +13,8 @@ import static nsui.objc.Sig.Ret;
 /// Works for both NSArray and NSMutableArray (the latter adds mutating selectors).
 public final class NSArray extends NSObject {
 
-    private static volatile boolean initialized;
-    private static MethodHandle hCount;        // (id, SEL) -> long [count]
-    private static MethodHandle hObjectAt;     // (id, SEL, long) -> id [objectAtIndex:]
-    private static MethodHandle hAddObject;    // (id, SEL, id) -> void [addObject:] (NSMutableArray)
-    private static MethodHandle hLastObject;   // (id, SEL) -> id [lastObject]
+            private record Handles(MethodHandle hCount, MethodHandle hObjectAt, MethodHandle hAddObject, MethodHandle hLastObject) {}
+    private static volatile Handles handles;
 
     private NSArray(MemorySegment peer) {
         super(peer);
@@ -43,20 +40,21 @@ public final class NSArray extends NSObject {
         return wrap(arr);
     }
 
-    private static synchronized void ensureInit() {
-        if (initialized) return;
-        hCount = ObjC.handle(Sig.of(Ret.INT));
-        hObjectAt = ObjC.handle(Sig.of(Ret.ID, Arg.INT));
-        hAddObject = ObjC.handle(Sig.of(Ret.VOID, Arg.ID));
-        hLastObject = ObjC.handle(Sig.of(Ret.ID));
-        initialized = true;
+        private static synchronized void ensureInit() {
+        if (handles != null) return;
+        handles = new Handles(
+                ObjC.handle(Sig.of(Ret.INT)),
+                ObjC.handle(Sig.of(Ret.ID, Arg.INT)),
+                ObjC.handle(Sig.of(Ret.VOID, Arg.ID)),
+                ObjC.handle(Sig.of(Ret.ID))
+        );
     }
 
     /// count — number of elements.
     public long count() {
         ensureInit();
         try {
-            return (long) hCount.invokeExact(peer, ObjC.sel("count"));
+            return (long) handles.hCount().invokeExact(peer, ObjC.sel("count"));
         } catch (Throwable t) {
             throw new RuntimeException("NSArray count failed", t);
         }
@@ -69,7 +67,7 @@ public final class NSArray extends NSObject {
     public MemorySegment objectAtIndex(long index) {
         ensureInit();
         try {
-            MemorySegment obj = (MemorySegment) hObjectAt.invokeExact(peer, ObjC.sel("objectAtIndex:"), index);
+            MemorySegment obj = (MemorySegment) handles.hObjectAt().invokeExact(peer, ObjC.sel("objectAtIndex:"), index);
             return (obj == null || obj.address() == 0) ? null : obj;
         } catch (Throwable t) {
             throw new RuntimeException("objectAtIndex: failed", t);
@@ -92,7 +90,7 @@ public final class NSArray extends NSObject {
     public MemorySegment lastObject() {
         ensureInit();
         try {
-            MemorySegment obj = (MemorySegment) hLastObject.invokeExact(peer, ObjC.sel("lastObject"));
+            MemorySegment obj = (MemorySegment) handles.hLastObject().invokeExact(peer, ObjC.sel("lastObject"));
             return (obj == null || obj.address() == 0) ? null : obj;
         } catch (Throwable t) {
             throw new RuntimeException("lastObject failed", t);
@@ -104,7 +102,7 @@ public final class NSArray extends NSObject {
         ensureInit();
         if (object == null) throw new IllegalArgumentException("addObject: null");
         try {
-            hAddObject.invokeExact(peer, ObjC.sel("addObject:"), object.peer());
+            handles.hAddObject().invokeExact(peer, ObjC.sel("addObject:"), object.peer());
         } catch (Throwable t) {
             throw new RuntimeException("addObject: failed", t);
         }
@@ -115,7 +113,7 @@ public final class NSArray extends NSObject {
         ensureInit();
         if (object == null || object.address() == 0) throw new IllegalArgumentException("addObject: null");
         try {
-            hAddObject.invokeExact(peer, ObjC.sel("addObject:"), object);
+            handles.hAddObject().invokeExact(peer, ObjC.sel("addObject:"), object);
         } catch (Throwable t) {
             throw new RuntimeException("addObject: failed", t);
         }

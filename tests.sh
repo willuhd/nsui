@@ -41,7 +41,8 @@ for t in AutoreleaseTest ExceptionsTest DispatchTest NSViewTest \
          SelectionWidgetsTest TableViewTest SmallWidgetsTest \
          NSRangeEdgeInsetsTest NSStringArrayTest PanelMenuToolbarTest CollectionOutlinePathTest \
          AttributedLayerTest GestureTest MenuBarStatusTest TouchBarWindowDocTest PopoverTest TouchBarMenuTest DockSheetTest FullCoverageTest \
-         ResponderEventTest ScreenPanelTest TouchBarItemsTest CoreAnimStressTest; do
+         ResponderEventTest ScreenPanelTest TouchBarItemsTest CoreAnimStressTest \
+         ImageRepExportTest PrintOperationTest; do
     echo "== $t"
     set +e
     # use safe copies if available, otherwise fallback to out/

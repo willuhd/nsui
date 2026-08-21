@@ -42,17 +42,10 @@ public class NSLayoutAnchor extends NSObject {
         hGreaterThanOrEqualToAnchor = ObjC.handle(Sig.of(Ret.ID, Arg.ID));
         hLessThanOrEqualToAnchor = ObjC.handle(Sig.of(Ret.ID, Arg.ID));
         hEqualToConstant = ObjC.handle(Sig.of(Ret.ID, Arg.DOUBLE));
-        // multiplier variants: try to resolve, fall back to generic escape if vocab missing
-        try {
-            hEqualToAnchorMultiplier = ObjC.handle(Sig.of(Ret.ID, Arg.ID, Arg.DOUBLE));
-        } catch (Exception e) {
-            hEqualToAnchorMultiplier = hEqualToAnchorConstant;
-        }
-        try {
-            hEqualToAnchorMultiplierConstant = ObjC.handle(Sig.of(Ret.ID, Arg.ID, Arg.DOUBLE, Arg.DOUBLE));
-        } catch (Exception e) {
-            hEqualToAnchorMultiplierConstant = null;
-        }
+        // multiplier variants — vocabulary is the single source of truth, fail loudly if missing
+        // Ret.ID, Arg.ID, Arg.DOUBLE is fontWithName:size: shape; Ret.ID, Arg.ID, Arg.DOUBLE, Arg.DOUBLE is constraintWithItem:... shape
+        hEqualToAnchorMultiplier = ObjC.handle(Sig.of(Ret.ID, Arg.ID, Arg.DOUBLE));
+        hEqualToAnchorMultiplierConstant = ObjC.handle(Sig.of(Ret.ID, Arg.ID, Arg.DOUBLE, Arg.DOUBLE));
         initialized = true;
     }
 
@@ -151,18 +144,15 @@ public class NSLayoutAnchor extends NSObject {
         }
     }
 
-    /// Dimension: constraintEqualToAnchor:multiplier:constant: (3-arg)
+    /// Dimension: constraintEqualToAnchor:multiplier:constant: (3-arg) — now uses vocabulary directly, no silent fallback
     public NSLayoutConstraint constraintEqualToAnchorWithMultiplier(NSLayoutAnchor anchor, double multiplier, double constant) {
         ensureInit();
-        if (hEqualToAnchorMultiplierConstant != null) {
-            try {
-                MemorySegment c = (MemorySegment) hEqualToAnchorMultiplierConstant.invokeExact(peer, ObjC.sel("constraintEqualToAnchor:multiplier:constant:"), anchor.peer(), multiplier, constant);
-                return NSLayoutConstraint.wrap(c);
-            } catch (Throwable t) {
-                throw new RuntimeException("constraintEqualToAnchor:multiplier:constant: failed", t);
-            }
+        try {
+            MemorySegment c = (MemorySegment) hEqualToAnchorMultiplierConstant.invokeExact(peer, ObjC.sel("constraintEqualToAnchor:multiplier:constant:"), anchor.peer(), multiplier, constant);
+            return NSLayoutConstraint.wrap(c);
+        } catch (Throwable t) {
+            throw new RuntimeException("constraintEqualToAnchor:multiplier:constant: failed", t);
         }
-        return constraintEqualToAnchor(anchor, constant);
     }
 
     /// Dimension: constraintEqualToAnchor:multiplier: (single multiplier)

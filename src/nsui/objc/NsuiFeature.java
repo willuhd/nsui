@@ -75,6 +75,12 @@ public final class NsuiFeature implements Feature {
                             MethodType.methodType(void.class, MemorySegment.class, MemorySegment.class)),
                     NsuiForeign.deallocUpcall());
             upcalls++;
+            // NSSwitch: fallback map cleanup on dealloc
+            RuntimeForeignAccess.registerForDirectUpcall(
+                    MethodHandles.lookup().findStatic(nsui.NSSwitch.class, "deallocImpl",
+                            MethodType.methodType(void.class, MemorySegment.class, MemorySegment.class)),
+                    NsuiForeign.deallocUpcall());
+            upcalls++;
             // Dispatch: the block body behind every dispatch_async-on-main
             RuntimeForeignAccess.registerForDirectUpcall(
                     MethodHandles.lookup().findStatic(Dispatch.class, "runBody",
@@ -140,6 +146,16 @@ public final class NsuiFeature implements Feature {
                     MethodHandles.lookup().findStatic(DelegateProxy.class, "dispatchIdId",
                             MethodType.methodType(MemorySegment.class, MemorySegment.class, MemorySegment.class, MemorySegment.class, MemorySegment.class)),
                     NsuiForeign.delegateIdIdUpcall());
+            upcalls++;
+            // ThemeObserver — CoreFoundation dark-mode upcall
+            for (FunctionDescriptor d : NsuiForeign.THEME) {
+                RuntimeForeignAccess.registerForDowncall(d);
+            }
+            System.out.println("[NsuiFeature] theme downcalls registered (" + NsuiForeign.THEME.size() + ")");
+            RuntimeForeignAccess.registerForDirectUpcall(
+                    MethodHandles.lookup().findStatic(ThemeObserver.class, "staticThemeChangedCallback",
+                            MethodType.methodType(void.class, MemorySegment.class, MemorySegment.class, MemorySegment.class, MemorySegment.class, MemorySegment.class)),
+                    NsuiForeign.themeUpcall());
             upcalls++;
             System.out.println("[NsuiFeature] direct upcalls registered (" + upcalls + ")");
         } catch (ReflectiveOperationException e) {

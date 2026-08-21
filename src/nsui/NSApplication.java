@@ -181,4 +181,7 @@ public final class NSApplication extends NSObject {
     public boolean isFullKeyboardAccessEnabled() {
         return ObjC.msgSendBool(peer, ObjC.sel("isFullKeyboardAccessEnabled"));
     }
+
+    public NSAppearance effectiveAppearance() { return NSAppearance.wrap(ObjC.msgSendId(peer, ObjC.sel("effectiveAppearance"))); }
+    public void setAppearance(NSAppearance ap) { ObjC.msgSendVoidId(peer, ObjC.sel("setAppearance:"), ap==null?MemorySegment.NULL:ap.peer()); }
 }

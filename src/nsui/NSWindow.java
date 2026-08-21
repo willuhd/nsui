@@ -180,6 +180,88 @@ public final class NSWindow extends NSObject {
         }
     }
 
+    // ---------------------------------------------------------------- nested enums — verified against local SDK headers
+    // SDK: $(xcrun --show-sdk-path)/System/Library/Frameworks/AppKit.framework/Headers/NSWindow.h
+    //   NSWindowStyleMask (NS_OPTIONS): grep -A 15 "typedef NS_OPTIONS.*NSWindowStyleMask"
+    // Docs: https://developer.apple.com/documentation/appkit/nswindow/stylemask
+    // Docs: https://developer.apple.com/documentation/appkit/nswindowtitlevisibility
+    // Docs: https://developer.apple.com/documentation/appkit/nswindow/level
+    // Docs: https://developer.apple.com/documentation/appkit/nswindow/backingtype (NSGraphics.h)
+    // Docs: https://developer.apple.com/documentation/appkit/nswindow/tabbingmode
+
+    /// `NSWindowStyleMask` — bitmask compositional style. Values from `NSWindow.h`.
+    /// Source: `NSWindow.h` `typedef NS_OPTIONS(NSUInteger, NSWindowStyleMask)` (SDK MacOSX.sdk)
+    /// and https://developer.apple.com/documentation/appkit/nswindow/stylemask
+    public enum StyleMask {
+        borderless(0),
+        titled(1L << 0),
+        closable(1L << 1),
+        miniaturizable(1L << 2),
+        resizable(1L << 3),
+        utilityWindow(1L << 4),
+        docModalWindow(1L << 6),
+        nonactivatingPanel(1L << 7),
+        texturedBackground(1L << 8), // deprecated 10.2-11.0
+        unifiedTitleAndToolbar(1L << 12),
+        hudWindow(1L << 13),
+        fullScreen(1L << 14),
+        fullSizeContentView(1L << 15);
+        public final long value;
+        StyleMask(long v) { this.value = v; }
+        public static long mask(StyleMask... m) { long r = 0; for (var x : m) r |= x.value; return r; }
+        public static StyleMask fromValue(long v) { for (var e : values()) if (e.value == v) return e; return null; }
+    }
+
+    /// `NSWindowTitleVisibility` — `NSWindowTitleVisible`=0, `NSWindowTitleHidden`=1.
+    /// Source: `NSWindow.h` `typedef NS_ENUM(NSInteger, NSWindowTitleVisibility)` and https://developer.apple.com/documentation/appkit/nswindowtitlevisibility
+    public enum TitleVisibility {
+        visible(0), hidden(1);
+        public final long value;
+        TitleVisibility(long v) { this.value = v; }
+        public static TitleVisibility fromValue(long v) { for (var e : values()) if (e.value == v) return e; return null; }
+    }
+
+    /// `NSWindowLevel` — window stacking levels. Values are `kCGWindowLevel` constants.
+    /// Source: `CGWindowLevel.h` (`kCGNormalWindowLevel`=0, `kCGFloatingWindowLevel`=3, `kCGModalPanelWindowLevel`=8, etc.)
+    /// and https://developer.apple.com/documentation/appkit/nswindow/level
+    public enum WindowLevel {
+        normal(0),
+        floating(3),
+        submenu(3), // kCGTornOffMenuWindowLevel == 3
+        tornOffMenu(3),
+        mainMenu(24),
+        status(25),
+        modalPanel(8),
+        popUpMenu(101),
+        screenSaver(1000),
+        dock(20),
+        utility(19),
+        dragging(500),
+        overlay(102),
+        help(200);
+        public final long value;
+        WindowLevel(long v) { this.value = v; }
+        public static WindowLevel fromValue(long v) { for (var e : values()) if (e.value == v) return e; return null; }
+    }
+
+    /// `NSBackingStoreType` — `NSBackingStoreRetained`=0, `Nonretained`=1, `Buffered`=2.
+    /// Source: `NSGraphics.h` `typedef NS_ENUM(NSUInteger, NSBackingStoreType)` and https://developer.apple.com/documentation/appkit/nsbackingstoretype
+    public enum BackingStoreType {
+        retained(0), nonretained(1), buffered(2);
+        public final long value;
+        BackingStoreType(long v) { this.value = v; }
+        public static BackingStoreType fromValue(long v) { for (var e : values()) if (e.value == v) return e; return null; }
+    }
+
+    /// `NSWindowTabbingMode` — 0=Automatic, 1=Preferred, 2=Disallowed.
+    /// Source: `NSWindow.h` `typedef NS_ENUM(NSInteger, NSWindowTabbingMode)`
+    public enum TabbingMode {
+        automatic(0), preferred(1), disallowed(2);
+        public final long value;
+        TabbingMode(long v) { this.value = v; }
+        public static TabbingMode fromValue(long v) { for (var e : values()) if (e.value == v) return e; return null; }
+    }
+
     // ---------------------------------------------------------------- window "style"
 
     /// [window styleMask] — the compositional style bit-field (see class Javadoc for bits).
@@ -190,6 +272,16 @@ public final class NSWindow extends NSObject {
     /// [window setStyleMask:] — replace the style bit-field (see class Javadoc for bits).
     public void setStyleMask(long mask) {
         ObjC.msgSendVoidLong(peer, ObjC.sel("setStyleMask:"), mask);
+    }
+    /// Typed overload: `setStyleMask(StyleMask...)` — composes bitmask via `StyleMask.mask`.
+    public void setStyleMask(StyleMask... masks) { setStyleMask(StyleMask.mask(masks)); }
+    /// Convenience: `create` overload accepting `StyleMask` varargs and `BackingStoreType` enum.
+    public static NSWindow create(NSRect contentRect, StyleMask[] styleMasks, BackingStoreType backing, boolean defer) {
+        return create(contentRect, StyleMask.mask(styleMasks), backing.value, defer);
+    }
+    /// Convenience: `create` overload with enum backing.
+    public static NSWindow create(NSRect contentRect, long styleMask, BackingStoreType backing, boolean defer) {
+        return create(contentRect, styleMask, backing.value, defer);
     }
 
     /// [window setTitlebarAppearsTransparent:] — modern translucent title bar.
@@ -207,16 +299,22 @@ public final class NSWindow extends NSObject {
     public void setTitleVisibility(long visibility) {
         ObjC.msgSendVoidLong(peer, ObjC.sel("setTitleVisibility:"), visibility);
     }
+    /// Typed overload.
+    public void setTitleVisibility(TitleVisibility v) { setTitleVisibility(v.value); }
 
     /// [window setLevel:] — e.g. `NSFloatingWindowLevel`=3, `NSModalPanelWindowLevel`=8.
     public void setLevel(long level) {
         ObjC.msgSendVoidLong(peer, ObjC.sel("setLevel:"), level);
     }
+    /// Typed overload.
+    public void setLevel(WindowLevel lvl) { setLevel(lvl.value); }
 
     /// [window level].
     public long level() {
         return ObjC.msgSendLong(peer, ObjC.sel("level"));
     }
+    /// Typed getter — maps raw level to `WindowLevel` enum where known.
+    public WindowLevel levelEnum() { return WindowLevel.fromValue(level()); }
 
     /// [window setCollectionBehavior:] — e.g. `NSWindowCollectionBehaviorCanJoinAllSpaces`.
     public void setCollectionBehavior(long behavior) {
@@ -296,6 +394,8 @@ public final class NSWindow extends NSObject {
     public long titleVisibility() {
         return ObjC.msgSendLong(peer, ObjC.sel("titleVisibility"));
     }
+    /// Typed getter.
+    public TitleVisibility titleVisibilityEnum() { return TitleVisibility.fromValue(titleVisibility()); }
 
     /// [window collectionBehavior] — NSWindowCollectionBehavior bit-field.
     public long collectionBehavior() {
@@ -342,11 +442,15 @@ public final class NSWindow extends NSObject {
     public long tabbingMode() {
         return ObjC.msgSendLong(peer, ObjC.sel("tabbingMode"));
     }
+    /// Typed getter.
+    public TabbingMode tabbingModeEnum() { return TabbingMode.fromValue(tabbingMode()); }
 
     /// [window setTabbingMode:].
     public void setTabbingMode(long mode) {
         ObjC.msgSendVoidLong(peer, ObjC.sel("setTabbingMode:"), mode);
     }
+    /// Typed overload.
+    public void setTabbingMode(TabbingMode mode) { setTabbingMode(mode.value); }
 
     /// [window backgroundColor] — may be nil.
     public NSColor backgroundColor() {

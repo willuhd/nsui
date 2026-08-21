@@ -179,7 +179,7 @@ public final class NSSegmentedControl extends NSControl {
         }
     }
 
-    /// [control setToolTip:forSegment:] — set tooltip for segment.
+    /// [control setToolTip:forSegment:] — set toolTip for segment.
     public void setToolTipForSegment(String toolTip, long segment) {
         try {
             MemorySegment s = (toolTip == null) ? MemorySegment.NULL : ObjC.nsstring(toolTip);
@@ -189,7 +189,7 @@ public final class NSSegmentedControl extends NSControl {
         }
     }
 
-    /// [control toolTipForSegment:] — tooltip for segment.
+    /// [control toolTipForSegment:] — toolTip for segment.
     public String toolTipForSegment(long segment) {
         try {
             MemorySegment s = (MemorySegment) hToolTipFor.invokeExact(peer, ObjC.sel("toolTipForSegment:"), segment);
@@ -250,25 +250,55 @@ public final class NSSegmentedControl extends NSControl {
         return ObjC.msgSendLong(peer, ObjC.sel("selectedSegment"));
     }
 
+    // ---------------------------------------------------------------- nested enums — verified against local SDK headers
+    // SDK: $(xcrun --show-sdk-path)/System/Library/Frameworks/AppKit.framework/Headers/NSSegmentedControl.h
+    //   NSSegmentSwitchTracking: SelectOne 0, SelectAny 1, Momentary 2, MomentaryAccelerator 3
+    //   NSSegmentStyle: Automatic 0, Rounded 1, RoundRect 3, TexturedSquare 4, SmallSquare 6, Separated 8, etc.
+    // Docs: https://developer.apple.com/documentation/appkit/nssegmentedcontrol/trackingmode
+
+    /// `NSSegmentSwitchTracking` — 0=SelectOne, 1=SelectAny, 2=Momentary, 3=MomentaryAccelerator.
+    public enum TrackingMode {
+        selectOne(0), selectAny(1), momentary(2), momentaryAccelerator(3);
+        public final long value;
+        TrackingMode(long v) { this.value = v; }
+        public static TrackingMode fromValue(long v) { for (var e : values()) if (e.value == v) return e; return null; }
+    }
+
+    /// `NSSegmentStyle` — values from `NSSegmentedControl.h`.
+    public enum SegmentStyle {
+        automatic(0), rounded(1), texturedRounded(2), roundRect(3), texturedSquare(4), capsule(5), smallSquare(6), separated(8);
+        public final long value;
+        SegmentStyle(long v) { this.value = v; }
+        public static SegmentStyle fromValue(long v) { for (var e : values()) if (e.value == v) return e; return null; }
+    }
+
     /// [control setSegmentStyle:] — NSSegmentStyle (0=Automatic, 1=Rounded, 2=TexturedRounded, ...).
     public void setSegmentStyle(long style) {
         ObjC.msgSendVoidLong(peer, ObjC.sel("setSegmentStyle:"), style);
     }
+    /// Typed overload.
+    public void setSegmentStyle(SegmentStyle s) { setSegmentStyle(s.value); }
 
     /// [control segmentStyle] — current segment style.
     public long segmentStyle() {
         return ObjC.msgSendLong(peer, ObjC.sel("segmentStyle"));
     }
+    /// Typed getter.
+    public SegmentStyle segmentStyleEnum() { return SegmentStyle.fromValue(segmentStyle()); }
 
     /// [control trackingMode] — NSSegmentSwitchTracking (0=SelectOne,1=SelectAny,2=Momentary...).
     public long trackingMode() {
         return ObjC.msgSendLong(peer, ObjC.sel("trackingMode"));
     }
+    /// Typed getter.
+    public TrackingMode trackingModeEnum() { return TrackingMode.fromValue(trackingMode()); }
 
     /// [control setTrackingMode:] — set tracking mode.
     public void setTrackingMode(long mode) {
         ObjC.msgSendVoidLong(peer, ObjC.sel("setTrackingMode:"), mode);
     }
+    /// Typed overload.
+    public void setTrackingMode(TrackingMode m) { setTrackingMode(m.value); }
 
     /// [control tagForSegment:] — tag for segment.
     public long tagForSegment(long segment) {

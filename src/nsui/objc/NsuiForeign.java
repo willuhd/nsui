@@ -145,6 +145,32 @@ public final class NsuiForeign {
     /// CGEventPost(tap, event) -> void  (kCGHIDEventTap = 0)
     public static FunctionDescriptor cgEventPost() { return FunctionDescriptor.ofVoid(INT, PTR); }
 
+    // --------------------------------------------- ThemeObserver (CoreFoundation)
+
+    /// CFStringCreateWithCString overload for ThemeObserver (same descriptor, separate entry)
+    // already defined above as cfStringCreateWithCString() — reuse it
+
+    /// CFRelease(CFTypeRef) -> void
+    public static FunctionDescriptor cfRelease() { return FunctionDescriptor.ofVoid(PTR); }
+    /// CFPreferencesCopyAppValue(CFStringRef, CFStringRef) -> CFPropertyListRef
+    public static FunctionDescriptor cfPreferencesCopyAppValue() { return FunctionDescriptor.of(PTR, PTR, PTR); }
+    /// CFStringCompare(CFStringRef, CFStringRef, CFStringCompareFlags) -> CFComparisonResult
+    public static FunctionDescriptor cfStringCompare() { return FunctionDescriptor.of(LONG, PTR, PTR, LONG); }
+    /// CFNotificationCenterGetDistributedCenter(void) -> CFNotificationCenterRef
+    public static FunctionDescriptor cfNotificationCenterGetDistributedCenter() { return FunctionDescriptor.of(PTR); }
+    /// CFNotificationCenterGetDarwinNotifyCenter(void) -> CFNotificationCenterRef
+    public static FunctionDescriptor cfNotificationCenterGetDarwinNotifyCenter() { return FunctionDescriptor.of(PTR); }
+    /// CFNotificationCenterAddObserver(CFNotificationCenterRef, void*, CFNotificationCallback, CFStringRef, void*, CFNotificationSuspensionBehavior) -> void
+    public static FunctionDescriptor cfNotificationCenterAddObserver() { return FunctionDescriptor.ofVoid(PTR, PTR, PTR, PTR, PTR, LONG); }
+    /// CFNotificationCenterRemoveObserver(CFNotificationCenterRef, void*, CFStringRef, void*) -> void
+    public static FunctionDescriptor cfNotificationCenterRemoveObserver() { return FunctionDescriptor.ofVoid(PTR, PTR, PTR, PTR); }
+    /// CFGetTypeID(CFTypeRef) -> CFTypeID
+    public static FunctionDescriptor cfGetTypeID() { return FunctionDescriptor.of(LONG, PTR); }
+    /// CFStringGetTypeID(void) -> CFTypeID
+    public static FunctionDescriptor cfStringGetTypeID() { return FunctionDescriptor.of(LONG); }
+    /// Theme upcall: void(*)(CFNotificationCenterRef, void*, CFStringRef, void*, CFDictionaryRef)
+    public static FunctionDescriptor themeUpcall() { return FunctionDescriptor.ofVoid(PTR, PTR, PTR, PTR, PTR); }
+
     // --------------------------------------------- registration lists (build time)
 
     /// libobjc + dlopen downcalls (registered by NsuiFeature — no tracing agent).
@@ -185,4 +211,11 @@ public final class NsuiForeign {
             drawRectUpcall(), deallocUpcall(), blockVoidUpcall(), setExceptionPreprocessor(),
             methodSignatureUpcall(), delegateIntUpcall(), delegateIdIdIntUpcall(),
             delegateWindowWillResize(), delegateIdIdUpcall());
+
+    /// ThemeObserver (CoreFoundation) — downcalls for dark-mode observation.
+    public static final List<FunctionDescriptor> THEME = List.of(
+            cfStringCreateWithCString(), cfRelease(), cfPreferencesCopyAppValue(), cfStringCompare(),
+            cfNotificationCenterGetDistributedCenter(), cfNotificationCenterGetDarwinNotifyCenter(),
+            cfNotificationCenterAddObserver(), cfNotificationCenterRemoveObserver(),
+            cfGetTypeID(), cfStringGetTypeID());
 }

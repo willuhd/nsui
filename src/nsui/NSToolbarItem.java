@@ -3,6 +3,8 @@ package nsui;
 import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodHandle;
 
+import java.util.concurrent.ConcurrentHashMap;
+
 import nsui.objc.ObjC;
 import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
@@ -14,7 +16,7 @@ import static nsui.objc.Sig.Ret;
 /// ensureInit, ObjC.handle(Sig.of...), invokeExact, static create/wrap.
 ///
 /// Created via `[[NSToolbarItem alloc] initWithItemIdentifier:]`.
-public final class NSToolbarItem extends NSObject {
+public final class NSToolbarItem extends NSObject implements NSUserInterfaceItemIdentification {
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
             private record Handles(MethodHandle hInitIdentifier, MethodHandle hSetLabel, MethodHandle hSetEnabled, MethodHandle hSetTag, MethodHandle hSetMinSize) {}
@@ -261,6 +263,49 @@ public final class NSToolbarItem extends NSObject {
             handles.hSetTag().invokeExact(peer, ObjC.sel("setVisibilityPriority:"), p);
         } catch (Throwable t) {
             throw new RuntimeException("setVisibilityPriority: failed", t);
+        }
+    }
+
+    // ---- NSUserInterfaceItemIdentification (identifier / setIdentifier:) ----
+    // Fallback map for runtimes where NSToolbarItem doesn't implement identifier (itemIdentifier is readonly)
+    private static final ConcurrentHashMap<Long, String> identifierFallback = new ConcurrentHashMap<>();
+
+    /// [item identifier] — NSUserInterfaceItemIdentifier (NSString).
+    /// Tries native `identifier` first (guarded by respondsToSelector:); falls back to per-peer map or `itemIdentifier`.
+    @Override
+    public String identifier() {
+        String fallback = identifierFallback.get(peer.address());
+        if (fallback != null) return fallback;
+        try {
+            boolean responds = (boolean) ObjC.handle(Sig.of(Ret.BOOL, Arg.ID)).invokeExact(peer, ObjC.sel("respondsToSelector:"), ObjC.sel("identifier"));
+            if (responds) {
+                MemorySegment seg = ObjC.msgSendId(peer, ObjC.sel("identifier"));
+                String nativeVal = ObjC.toString(seg);
+                if (nativeVal != null) return nativeVal;
+            }
+        } catch (Throwable ignored) {
+            // fall through to itemIdentifier
+        }
+        try {
+            String itemId = itemIdentifier();
+            if (itemId != null) return itemId;
+        } catch (Throwable ignored) {}
+        return fallback;
+    }
+
+    /// [item setIdentifier:] — NSUserInterfaceItemIdentifier.
+    /// Stores in fallback map and best-effort native setIdentifier: (guarded by respondsToSelector:).
+    @Override
+    public void setIdentifier(String id) {
+        if (id == null) identifierFallback.remove(peer.address());
+        else identifierFallback.put(peer.address(), id);
+        try {
+            boolean responds = (boolean) ObjC.handle(Sig.of(Ret.BOOL, Arg.ID)).invokeExact(peer, ObjC.sel("respondsToSelector:"), ObjC.sel("setIdentifier:"));
+            if (responds) {
+                ObjC.msgSendVoidId(peer, ObjC.sel("setIdentifier:"), id == null ? java.lang.foreign.MemorySegment.NULL : ObjC.nsstring(id));
+            }
+        } catch (Throwable ignored) {
+            // fallback map retains value
         }
     }
 }

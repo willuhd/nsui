@@ -65,12 +65,49 @@ public final class NSVisualEffectView extends NSView {
         return new NSVisualEffectView(v);
     }
 
+    // ---------------------------------------------------------------- nested enums — verified against local SDK headers
+    // SDK: $(xcrun --show-sdk-path)/System/Library/Frameworks/AppKit.framework/Headers/NSVisualEffectView.h
+    //   NSVisualEffectMaterial / BlendingMode / State
+    // Docs: https://developer.apple.com/documentation/appkit/nsvisualeffectmaterial
+    // Docs: https://developer.apple.com/documentation/appkit/nsvisualeffectblendingmode
+    // Docs: https://developer.apple.com/documentation/appkit/nsvisualeffectstate
+
+    /// `NSVisualEffectMaterial` — `NSInteger` enum. Values from `NSVisualEffectView.h`.
+    /// Header: `typedef NS_ENUM(NSInteger, NSVisualEffectMaterial)` — appearanceBased 0 (deprecated), light 1, dark 2, titlebar 3, selection 4, menu 5, popover 6, sidebar 7, mediumLight 8, ultraDark 9, headerView 10, sheet 11, windowBackground 12, hudWindow 13, fullScreenUI 15, toolTip 17, contentBackground 18, underWindowBackground 21, underPageBackground 22, etc.
+    public enum Material {
+        appearanceBased(0), light(1), dark(2), titlebar(3), selection(4), menu(5), popover(6), sidebar(7),
+        mediumLight(8), ultraDark(9), headerView(10), sheet(11), windowBackground(12), hudWindow(13),
+        fullScreenUi(15), toolTip(17), contentBackground(18), underWindowBackground(21), underPageBackground(22);
+        public final long value;
+        Material(long v) { this.value = v; }
+        public static Material fromValue(long v) { for (var e : values()) if (e.value == v) return e; return null; }
+    }
+
+    /// `NSVisualEffectBlendingMode` — 0=behindWindow, 1=withinWindow.
+    public enum BlendingMode {
+        behindWindow(0), withinWindow(1);
+        public final long value;
+        BlendingMode(long v) { this.value = v; }
+        public static BlendingMode fromValue(long v) { for (var e : values()) if (e.value == v) return e; return null; }
+    }
+
+    /// `NSVisualEffectState` — 0=followsWindowActiveState, 1=active, 2=inactive.
+    /// Header order: FollowsWindowActiveState (0), Active (1), Inactive (2).
+    public enum State {
+        followsWindowActiveState(0), active(1), inactive(2);
+        public final long value;
+        State(long v) { this.value = v; }
+        public static State fromValue(long v) { for (var e : values()) if (e.value == v) return e; return null; }
+    }
+
     // ---------------------------------------------------------------- instance API
 
     /// [view material] — `NSVisualEffectMaterial` (NSInteger).
     public long material() {
         return ObjC.msgSendLong(peer, ObjC.sel("material"));
     }
+    /// Typed getter.
+    public Material materialEnum() { return Material.fromValue(material()); }
 
     /// [view setMaterial:] — `NSVisualEffectMaterial`.
     public void setMaterial(long material) {
@@ -80,11 +117,15 @@ public final class NSVisualEffectView extends NSView {
             throw new RuntimeException("setMaterial: failed", t);
         }
     }
+    /// Typed overload.
+    public void setMaterial(Material m) { setMaterial(m.value); }
 
     /// [view blendingMode] — `NSVisualEffectBlendingMode` (NSInteger).
     public long blendingMode() {
         return ObjC.msgSendLong(peer, ObjC.sel("blendingMode"));
     }
+    /// Typed getter.
+    public BlendingMode blendingModeEnum() { return BlendingMode.fromValue(blendingMode()); }
 
     /// [view setBlendingMode:] — `NSVisualEffectBlendingMode`.
     public void setBlendingMode(long mode) {
@@ -94,11 +135,15 @@ public final class NSVisualEffectView extends NSView {
             throw new RuntimeException("setBlendingMode: failed", t);
         }
     }
+    /// Typed overload.
+    public void setBlendingMode(BlendingMode m) { setBlendingMode(m.value); }
 
     /// [view state] — `NSVisualEffectState` (NSInteger).
     public long state() {
         return ObjC.msgSendLong(peer, ObjC.sel("state"));
     }
+    /// Typed getter.
+    public State stateEnum() { return State.fromValue(state()); }
 
     /// [view setState:] — `NSVisualEffectState`.
     public void setState(long state) {
@@ -108,6 +153,8 @@ public final class NSVisualEffectView extends NSView {
             throw new RuntimeException("setState: failed", t);
         }
     }
+    /// Typed overload.
+    public void setState(State s) { setState(s.value); }
 
     /// [view isEmphasized] — whether the material is emphasized.
     public boolean isEmphasized() {

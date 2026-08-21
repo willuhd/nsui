@@ -81,6 +81,28 @@ public final class NSBox extends NSView {
         }
     }
 
+    // ---------------------------------------------------------------- nested enums — verified against local SDK headers
+    // SDK: $(xcrun --show-sdk-path)/System/Library/Frameworks/AppKit.framework/Headers/NSBox.h + NSCell.h
+    //   NSBoxType: Primary 0, Separator 2, Custom 4
+    //   NSTitlePosition: NoTitle 0, AboveTop 1, AtTop 2, BelowTop 3, AboveBottom 4, AtBottom 5, BelowBottom 6
+    // Docs: https://developer.apple.com/documentation/appkit/nsboxtype
+
+    /// `NSBoxType` — Primary 0, Separator 2, Custom 4. From `NSBox.h`.
+    public enum BoxType {
+        primary(0), separator(2), custom(4);
+        public final long value;
+        BoxType(long v) { this.value = v; }
+        public static BoxType fromValue(long v) { for (var e : values()) if (e.value == v) return e; return null; }
+    }
+
+    /// `NSTitlePosition` — NoTitle 0, AboveTop 1, AtTop 2, BelowTop 3, AboveBottom 4, AtBottom 5, BelowBottom 6. From `NSCell.h`.
+    public enum TitlePosition {
+        noTitle(0), aboveTop(1), atTop(2), belowTop(3), aboveBottom(4), atBottom(5), belowBottom(6);
+        public final long value;
+        TitlePosition(long v) { this.value = v; }
+        public static TitlePosition fromValue(long v) { for (var e : values()) if (e.value == v) return e; return null; }
+    }
+
     /// [box setBoxType:] — NSBoxType (0 = NSBoxPrimary).
     public void setBoxType(long type) {
         try {
@@ -89,6 +111,8 @@ public final class NSBox extends NSView {
             throw new RuntimeException("setBoxType: failed", t);
         }
     }
+    /// Typed overload.
+    public void setBoxType(BoxType t) { setBoxType(t.value); }
 
     /// [box setBorderType:] — NSBorderType (0 = NSNoBorder).
     public void setBorderType(long type) {
@@ -107,6 +131,8 @@ public final class NSBox extends NSView {
             throw new RuntimeException("setTitlePosition: failed", t);
         }
     }
+    /// Typed overload.
+    public void setTitlePosition(TitlePosition p) { setTitlePosition(p.value); }
 
     // ---------------------------------------------------------------- completeness
 
@@ -114,6 +140,8 @@ public final class NSBox extends NSView {
     public long boxType() {
         return ObjC.msgSendLong(peer, ObjC.sel("boxType"));
     }
+    /// Typed getter.
+    public BoxType boxTypeEnum() { return BoxType.fromValue(boxType()); }
 
     /// [box borderType].
     public long borderType() {
@@ -124,6 +152,8 @@ public final class NSBox extends NSView {
     public long titlePosition() {
         return ObjC.msgSendLong(peer, ObjC.sel("titlePosition"));
     }
+    /// Typed getter.
+    public TitlePosition titlePositionEnum() { return TitlePosition.fromValue(titlePosition()); }
 
     /// [box contentView] — the box's content view.
     public NSView contentView() {

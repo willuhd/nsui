@@ -132,7 +132,7 @@ public final class Sig {
         // (id, SEL, id) -> T
         of(Ret.VOID, Arg.ID), of(Ret.ID, Arg.ID), of(Ret.BOOL, Arg.ID), of(Ret.INT, Arg.ID),
         // (id, SEL, id, id) -> T
-        of(Ret.VOID, Arg.ID, Arg.ID), of(Ret.ID, Arg.ID, Arg.ID), of(Ret.BOOL, Arg.ID, Arg.ID),
+        of(Ret.VOID, Arg.ID, Arg.ID), of(Ret.ID, Arg.ID, Arg.ID), of(Ret.BOOL, Arg.ID, Arg.ID), of(Ret.INT, Arg.ID, Arg.ID),
         // (id, SEL, id, id, id) -> T
         of(Ret.ID, Arg.ID, Arg.ID, Arg.ID),
         // scalars and mixed

@@ -61,11 +61,36 @@ public final class NSToolbar extends NSObject {
         return ObjC.toString(ObjC.msgSendId(peer, ObjC.sel("identifier")));
     }
 
+    // ---------------------------------------------------------------- nested enums — verified against local SDK headers
+    // SDK: $(xcrun --show-sdk-path)/System/Library/Frameworks/AppKit.framework/Headers/NSToolbar.h
+    //   NSToolbarDisplayMode: Default 0, IconAndLabel 1, IconOnly 2, LabelOnly 3
+    //   NSToolbarSizeMode: Default 0, Regular 1, Small 2 (deprecated)
+    // Docs: https://developer.apple.com/documentation/appkit/nstoolbar/displaymode
+    // Docs: https://developer.apple.com/documentation/appkit/nstoolbar/sizemode
+
+    /// `NSToolbarDisplayMode` — 0=Default, 1=IconAndLabel, 2=IconOnly, 3=LabelOnly.
+    public enum DisplayMode {
+        defaultMode(0), iconAndLabel(1), iconOnly(2), labelOnly(3);
+        public final long value;
+        DisplayMode(long v) { this.value = v; }
+        public static DisplayMode fromValue(long v) { for (var e : values()) if (e.value == v) return e; return null; }
+    }
+
+    /// `NSToolbarSizeMode` — 0=Default, 1=Regular, 2=Small (deprecated, ignored).
+    public enum SizeMode {
+        defaultMode(0), regular(1), small(2);
+        public final long value;
+        SizeMode(long v) { this.value = v; }
+        public static SizeMode fromValue(long v) { for (var e : values()) if (e.value == v) return e; return null; }
+    }
+
     // ---- displayMode ----
     /// [toolbar displayMode] — NSToolbarDisplayMode (0=default, 1=iconAndLabel, 2=iconOnly, 3=labelOnly).
     public long displayMode() {
         return ObjC.msgSendLong(peer, ObjC.sel("displayMode"));
     }
+    /// Typed getter.
+    public DisplayMode displayModeEnum() { return DisplayMode.fromValue(displayMode()); }
 
     /// [toolbar setDisplayMode:] — NSToolbarDisplayMode.
     public void setDisplayMode(long mode) {
@@ -75,6 +100,18 @@ public final class NSToolbar extends NSObject {
             throw new RuntimeException("setDisplayMode: failed", t);
         }
     }
+    /// Typed overload.
+    public void setDisplayMode(DisplayMode m) { setDisplayMode(m.value); }
+
+    // ---- sizeMode (deprecated but present) ----
+    /// [toolbar sizeMode] — NSToolbarSizeMode.
+    public long sizeMode() { return ObjC.msgSendLong(peer, ObjC.sel("sizeMode")); }
+    /// Typed getter.
+    public SizeMode sizeModeEnum() { return SizeMode.fromValue(sizeMode()); }
+    /// [toolbar setSizeMode:] — NSToolbarSizeMode.
+    public void setSizeMode(long mode) { ObjC.msgSendVoidLong(peer, ObjC.sel("setSizeMode:"), mode); }
+    /// Typed overload.
+    public void setSizeMode(SizeMode m) { setSizeMode(m.value); }
 
     // ---- allowsUserCustomization ----
     /// [toolbar allowsUserCustomization].

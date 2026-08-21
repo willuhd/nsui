@@ -2,9 +2,12 @@ package nsui;
 
 import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 
 import java.util.concurrent.ConcurrentHashMap;
 
+import nsui.objc.NsuiForeign;
 import nsui.objc.ObjC;
 import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
@@ -33,6 +36,10 @@ public final class NSSwitch extends NSControl {
     // We keep the last mixed request so state() can round-trip -1 when allowed.
     private static final ConcurrentHashMap<Long, Long> stateFallback = new ConcurrentHashMap<>();
 
+    // runtime subclass + dealloc hook to evict fallback maps (mirrors NSView/DRAWABLES)
+    private static MemorySegment switchClass;
+    private static MemorySegment deallocStub;
+
     private NSSwitch(MemorySegment peer) {
         super(peer);
         ensureInit();
@@ -42,13 +49,36 @@ public final class NSSwitch extends NSControl {
         if (initialized) return;
         hInitFrame = ObjC.handle(Sig.of(Ret.ID, Arg.RECT));
         hResponds = ObjC.handle(Sig.of(Ret.BOOL, Arg.ID));
+        // create NSUISwitchImpl subclass of NSSwitch with dealloc override that cleans fallback maps
+        try {
+            MethodHandle deallocTarget = MethodHandles.lookup().findStatic(NSSwitch.class, "deallocImpl",
+                    MethodType.methodType(void.class, MemorySegment.class, MemorySegment.class));
+            deallocStub = ObjC.upcall(deallocTarget, NsuiForeign.deallocUpcall());
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException("cannot bind NSSwitch dealloc target", e);
+        }
+        switchClass = ObjC.makeClass("NSSwitch", "NSUISwitchImpl");
+        if (!ObjC.addMethod(switchClass, "dealloc", deallocStub, "v@:")) {
+            throw new RuntimeException("class_addMethod dealloc failed for NSUISwitchImpl");
+        }
         initialized = true;
+    }
+
+    /// FFM upcall target: `-(void)dealloc` — evict fallback maps, then chain `[super dealloc]`.
+    /// Public for NsuiFeature native-image registration.
+    public static void deallocImpl(MemorySegment self, MemorySegment sel) {
+        mixedFallback.remove(self.address());
+        stateFallback.remove(self.address());
+        MemorySegment superClass = ObjC.classGetSuperclass(switchClass);
+        if (superClass == null || superClass.address() == 0) return;
+        MemorySegment superStruct = ObjC.superStruct(self, superClass);
+        ObjC.msgSendSuperVoid(superStruct, sel);
     }
 
     /// `[[NSSwitch alloc] initWithFrame:frame]` — a new switch at the given rect.
     public static NSSwitch create(NSRect frame) {
         ensureInit();
-        MemorySegment s = ObjC.msgSendId(ObjC.cls("NSSwitch"), ObjC.sel("alloc"));
+        MemorySegment s = ObjC.msgSendId(switchClass, ObjC.sel("alloc"));
         try {
             s = (MemorySegment) hInitFrame.invokeExact(s, ObjC.sel("initWithFrame:"), frame.toSegment());
         } catch (Throwable t) {

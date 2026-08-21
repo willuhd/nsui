@@ -23,7 +23,7 @@ import static nsui.objc.Sig.Ret;
 /// Top-level bar items should remain text-only; menu-list items may carry icons via this helper
 /// `attachMenuItemIcon` or directly via NSMenuItem.setImage.
 ///
-/// Help search note: AppKit auto-inserts fn+F fullscreen at the bottom of View/Help and a
+/// Help search note: AppKit auto-inserts fn+F fullScreen at the bottom of View/Help and a
 /// Help searchbar. For demos, use a custom centered search field in a non-Help menu (Edit/View)
 /// via `setView` with `insertGallerySearchFieldItem`.
 public final class NSMenu extends NSObject {

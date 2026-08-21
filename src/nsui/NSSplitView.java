@@ -87,6 +87,19 @@ public final class NSSplitView extends NSView {
 
     // ---------------------------------------------------------------- dividerStyle
 
+    // ---------------------------------------------------------------- nested enum — verified against local SDK headers
+    // SDK: $(xcrun --show-sdk-path)/System/Library/Frameworks/AppKit.framework/Headers/NSSplitView.h
+    //   NSSplitViewDividerStyle: Thick 1, Thin 2, PaneSplitter 3
+    // Docs: https://developer.apple.com/documentation/appkit/nssplitview/dividerstyle
+
+    /// `NSSplitViewDividerStyle` — 1=Thick, 2=Thin, 3=PaneSplitter. From `NSSplitView.h`.
+    public enum DividerStyle {
+        thick(1), thin(2), paneSplitter(3);
+        public final long value;
+        DividerStyle(long v) { this.value = v; }
+        public static DividerStyle fromValue(long v) { for (var e : values()) if (e.value == v) return e; return null; }
+    }
+
     /// [splitView dividerStyle] — `NSSplitViewDividerStyle` (NSInteger).
     public long dividerStyle() {
         ensureInit();
@@ -96,6 +109,8 @@ public final class NSSplitView extends NSView {
             throw new RuntimeException("dividerStyle failed", t);
         }
     }
+    /// Typed getter.
+    public DividerStyle dividerStyleEnum() { return DividerStyle.fromValue(dividerStyle()); }
 
     /// [splitView setDividerStyle:] — `NSSplitViewDividerStyle`.
     public void setDividerStyle(long style) {
@@ -106,6 +121,8 @@ public final class NSSplitView extends NSView {
             throw new RuntimeException("setDividerStyle: failed", t);
         }
     }
+    /// Typed overload.
+    public void setDividerStyle(DividerStyle s) { setDividerStyle(s.value); }
 
     // ---------------------------------------------------------------- arranged subview mimic
 

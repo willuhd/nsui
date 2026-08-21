@@ -281,4 +281,41 @@ public final class NSImage extends NSObject {
             throw new RuntimeException("setAccessibilityDescription: failed", t);
         }
     }
+
+    // ---------------------------------------------------------------- encoded export
+
+    /// One-call PNG export: `TIFFRepresentation` → `NSBitmapImageRep` →
+    /// `representationUsingType:properties:` (`fileTypePNG`). Returns null when
+    /// the image has no representable bitmap content or encoding fails.
+    /// Round trip (file → image → PNG bytes → file):
+    ///
+    /// ```
+    /// NSImage img = NSImage.imageWithContentsOfFile("/tmp/in.png");
+    /// NSData png = img.pngData();               // bytes start 0x89 'P' 'N' 'G'
+    /// png.writeToFile("/tmp/out.png", true);    // leaves the process as a .png
+    /// ```
+    public NSData pngData() {
+        NSBitmapImageRep rep = bitmapRep();
+        return rep == null ? null : rep.pngData();
+    }
+
+    /// One-call JPEG export with `compression` in 0.0–1.0 (mapped through the
+    /// `NSImageCompressionFactor` property). Returns null when the image has no
+    /// representable bitmap content or encoding fails.
+    /// Round trip (image → JPEG bytes → file):
+    ///
+    /// ```
+    /// NSImage img = NSImage.imageWithSystemSymbolName("folder");
+    /// NSData jpg = img.jpegData(0.9f);          // bytes start 0xFF 0xD8
+    /// jpg.writeToFile("/tmp/out.jpg", true);
+    /// ```
+    public NSData jpegData(float compression) {
+        NSBitmapImageRep rep = bitmapRep();
+        return rep == null ? null : rep.jpegData(compression);
+    }
+
+    /// Shared TIFF → bitmap-rep decode step behind `pngData`/`jpegData`.
+    private NSBitmapImageRep bitmapRep() {
+        return NSBitmapImageRep.create(TIFFRepresentation());
+    }
 }

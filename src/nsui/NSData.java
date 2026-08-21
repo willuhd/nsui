@@ -139,4 +139,36 @@ public class NSData extends NSObject {
             return wrap(s);
         } catch (Throwable t) { throw new RuntimeException("subdataWithRange: failed", t); }
     }
+
+    /// `[data writeToFile:path atomically:flag]` — write the receiver's bytes to
+    /// `path` (optionally via an auxiliary file so an interrupted write cannot
+    /// corrupt the destination). Returns whether the write succeeded.
+    ///
+    /// Synthetic instances created by `dataWithBytes` keep their payload on the
+    /// Java side; for those the cached bytes are first rebuilt into a real native
+    /// `NSData` (`dataWithBytes:length:`) so the native selector still performs
+    /// the write. Returns false for a null/empty path.
+    public boolean writeToFile(String path, boolean atomically) {
+        ensureInit();
+        if (path == null || path.isEmpty()) return false;
+        MemorySegment target = peer;
+        byte[] cached = STORE.get(peer.address());
+        if (cached != null) {
+            // Rebuild a real native NSData from the Java-side cache.
+            MemorySegment buf = Arena.global().allocate(Math.max(1, cached.length));
+            if (cached.length > 0) {
+                MemorySegment.copy(cached, 0, buf, ValueLayout.JAVA_BYTE, 0, cached.length);
+            }
+            try {
+                MethodHandle hBytes = ObjC.handle(Sig.of(Ret.ID, Sig.Arg.ID, Sig.Arg.INT));
+                target = (MemorySegment) hBytes.invokeExact(
+                        ObjC.cls("NSData"), ObjC.sel("dataWithBytes:length:"), buf, (long) cached.length);
+            } catch (Throwable t) { throw new RuntimeException("dataWithBytes:length: failed", t); }
+        }
+        if (target == null || target.address() == 0) return false;
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.BOOL, Sig.Arg.ID, Sig.Arg.BOOL));
+            return (boolean) h.invokeExact(target, ObjC.sel("writeToFile:atomically:"), ObjC.nsstring(path), atomically);
+        } catch (Throwable t) { throw new RuntimeException("writeToFile:atomically: failed", t); }
+    }
 }

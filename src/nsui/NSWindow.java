@@ -51,13 +51,18 @@ import static nsui.objc.Sig.Ret;
 ///
 /// NOTE: NSWindow has NO bare `setFrame:` — that is an NSView selector;
 /// windows use `setFrame:display:` and `setFrameOrigin:`.
-public final class NSWindow extends NSObject {
+///
+/// NSWindow extends NSResponder — mirroring AppKit, where NSWindow IS an
+/// NSResponder and terminates the view-side responder chain — so windows gain
+/// `nextResponder`/`setNextResponder`, the event pass-throughs, and
+/// `touchBar()`/`setTouchBar` from one shared implementation.
+public class NSWindow extends NSResponder {
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
     private record Handles(MethodHandle hSetFrameDisplay, MethodHandle hSetFrameOrigin, MethodHandle hSetContentSize, MethodHandle hStdWinButton, MethodHandle hGetDouble, MethodHandle hSetDouble, MethodHandle hGetSize, MethodHandle hSetSize) {}
     private static volatile Handles H;
 
-    private NSWindow(MemorySegment peer) {
+    protected NSWindow(MemorySegment peer) {
         super(peer);
         ensureInit();
     }
@@ -679,4 +684,48 @@ public final class NSWindow extends NSObject {
     public boolean worksWhenModal() { return ObjC.msgSendBool(peer, ObjC.sel("worksWhenModal")); }
     public MemorySegment screen() { return ObjC.msgSendId(peer, ObjC.sel("screen")); }
     public boolean hasDynamicDepthLimit() { return ObjC.msgSendBool(peer, ObjC.sel("hasDynamicDepthLimit")); }
+
+    // ---------------------------------------------------------------- responder chain (NSWindow is an NSResponder)
+
+    /// makeFirstResponder: — install `responder` as the window's first
+    /// responder. The native selector returns a BOOL ("accepted?") that this
+    /// void wrapper discards; check `firstResponder()` afterwards if acceptance
+    /// matters. Views created via `NSView.create` accept only while a key
+    /// listener is registered (`NSView.setKeyListener`).
+    public void makeFirstResponder(NSView responder) {
+        ObjC.msgSendVoidId(peer, ObjC.sel("makeFirstResponder:"),
+                (MemorySegment)(responder == null ? MemorySegment.NULL : responder.peer()));
+    }
+
+    /// firstResponder — the window's current first responder, wrapped as an
+    /// NSResponder. This is often the window itself when no view has key focus.
+    public NSResponder firstResponder() {
+        return NSResponder.wrap(ObjC.msgSendId(peer, ObjC.sel("firstResponder")));
+    }
+
+    /// setAcceptsMouseMovedEvents: — whether the window's views receive
+    /// mouseMoved events. Off by default (they cost a message per pixel of
+    /// cursor travel); turn on for hover UI, together with
+    /// `NSView.enableMouseTracking` on the views that want the callbacks.
+    public void setAcceptsMouseMovedEvents(boolean flag) {
+        ObjC.msgSendVoidBool(peer, ObjC.sel("setAcceptsMouseMovedEvents:"), flag);
+    }
+
+    /// acceptsMouseMovedEvents — whether mouse-moved events are delivered.
+    public boolean acceptsMouseMovedEvents() {
+        return ObjC.msgSendBool(peer, ObjC.sel("acceptsMouseMovedEvents"));
+    }
+
+    /// setInitialFirstResponder: — the view that becomes first responder when
+    /// the window is shown (the `initialFirstResponder` outlet).
+    public void initialFirstResponder(NSView view) {
+        ObjC.msgSendVoidId(peer, ObjC.sel("setInitialFirstResponder:"),
+                (MemorySegment)(view == null ? MemorySegment.NULL : view.peer()));
+    }
+
+    /// initialFirstResponder — the view set to take first-responder status when
+    /// the window is shown (null if none was set).
+    public NSView initialFirstResponder() {
+        return NSView.wrap(ObjC.msgSendId(peer, ObjC.sel("initialFirstResponder")));
+    }
 }

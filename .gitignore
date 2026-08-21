@@ -2,6 +2,8 @@ out/
 .DS_Store
 *.class
 *.bundle
+hs_err*.log
+replay_pid*.log
 # Demos / Main — library is package nsui; demos live outside git
 *Demo.java
 Main.java

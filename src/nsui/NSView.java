@@ -13,18 +13,23 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/// NSView — a drawable view. Extends NSObject; the drawing is handed off to a
-/// Java `Drawable` via a runtime-created ObjC subclass of NSView whose
-/// `drawRect:` is an FFM upcall stub into Java.
+/// NSView — a drawable view and a link in the responder chain. Extends
+/// NSResponder; the drawing is handed off to a Java `Drawable` via a
+/// runtime-created ObjC subclass of NSView whose `drawRect:` is an FFM upcall
+/// stub into Java.
 ///
 /// Dispatch is keyed by the native peer address: `create` registers the
 /// `Drawable`, and the upcall target looks it up when AppKit asks the view
-/// to draw on the main thread. The subclass also overrides `dealloc` to
-/// unregister the drawable, so the registry can never grow stale or leak.
+/// to draw on the main thread. The same subclass also carries the input-event
+/// overrides (`mouseDown:`, `keyDown:`, ...) as upcall stubs; they route into
+/// the Java `MouseListener` / `KeyListener` registered for the view's peer
+/// address, and hand unhandled events to the next responder so AppKit's
+/// responder chain keeps flowing. `dealloc` unregisters everything, so no
+/// registry can grow stale or leak.
 ///
-/// Upcall targets (`drawRectImpl`, `deallocImpl`) are static and
-/// capture-free — they are registered for native-image in NsuiFeature.
-public class NSView extends NSObject {
+/// Upcall targets (`drawRectImpl`, `deallocImpl`, the event impls) are static
+/// and capture-free — they are registered for native-image in NsuiFeature.
+public class NSView extends NSResponder {
 
     /// Java-side drawing callback, invoked from AppKit's drawRect: on the main thread.
     ///
@@ -45,10 +50,50 @@ public class NSView extends NSObject {
     /// Drawable registry, keyed by peer address (the view's id).
     private static final ConcurrentHashMap<Long, Drawable> DRAWABLES = new ConcurrentHashMap<>();
 
+    // ---- input-event registries, keyed by peer address (the view's id) ----
+    private static final ConcurrentHashMap<Long, MouseListener> MOUSE_LISTENERS = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<Long, KeyListener> KEY_LISTENERS = new ConcurrentHashMap<>();
+    /// Peer addresses that already installed a tracking area via `enableMouseTracking`
+    /// — a dedup guard so a repeated call cannot double-deliver mouseMoved/entered/exited.
+    private static final java.util.Set<Long> TRACKING_VIEWS = ConcurrentHashMap.newKeySet();
+
     // ---- runtime ObjC class + upcall stubs, created ONCE lazily (NEVER in a static initializer) ----
     private static MemorySegment drawableClass;
     private static MemorySegment drawRectStub;
     private static MemorySegment deallocStub;
+
+    /// The input-event upcall stubs installed on the ObjC subclass. Built once,
+    /// lazily, beside `drawRectStub` (never in a static initializer).
+    private record EventStubs(MemorySegment mouseDown, MemorySegment mouseDragged, MemorySegment mouseUp,
+                              MemorySegment mouseMoved, MemorySegment mouseEntered, MemorySegment mouseExited,
+                              MemorySegment keyDown, MemorySegment keyUp, MemorySegment flagsChanged,
+                              MemorySegment performKeyEquivalent, MemorySegment acceptsFirstResponder) {}
+    private static volatile EventStubs eventStubs;
+
+    // ---- NSTrackingArea option bits (NSTrackingArea.h). Defined here because
+    // NSTrackingArea.java ships no option constants; values from the macOS SDK header. ----
+
+    /// NSTrackingMouseEnteredAndExited (0x01) — deliver mouseEntered/mouseExited.
+    public static final long trackingMouseEnteredAndExited = 1L << 0;
+    /// NSTrackingMouseMoved (0x02) — deliver mouseMoved while the cursor is inside.
+    public static final long trackingMouseMoved = 1L << 1;
+    /// NSTrackingCursorUpdate (0x04) — deliver cursorUpdate.
+    public static final long trackingCursorUpdate = 1L << 2;
+    /// NSTrackingActiveWhenFirstResponder (0x10) — track only while owner is first responder.
+    public static final long trackingActiveWhenFirstResponder = 1L << 4;
+    /// NSTrackingActiveInKeyWindow (0x20) — track whenever the window is key.
+    public static final long trackingActiveInKeyWindow = 1L << 5;
+    /// NSTrackingActiveInActiveApp (0x40) — track whenever the app is active.
+    public static final long trackingActiveInActiveApp = 1L << 6;
+    /// NSTrackingActiveAlways (0x80) — track regardless of activation state.
+    public static final long trackingActiveAlways = 1L << 7;
+    /// NSTrackingAssumeInside (0x100) — treat the cursor as inside until an enter/exit says otherwise.
+    public static final long trackingAssumeInside = 1L << 8;
+    /// NSTrackingInVisibleRect (0x200) — track the visible rect instead of the area's rect,
+    /// so the tracked region follows resizes and scrolling automatically.
+    public static final long trackingInVisibleRect = 1L << 9;
+    /// NSTrackingEnabledDuringMouseDrag (0x400) — keep tracking while a drag is in progress.
+    public static final long trackingEnabledDuringMouseDrag = 1L << 10;
 
     // ---- resolved once per process (rule: resolve-once, invokeExact on hot paths) ----
     private record Handles(MethodHandle hInitFrame, MethodHandle hSetFrame, MethodHandle hNeedsRect, MethodHandle hAutoMask, MethodHandle hBacking, MethodHandle hConvBacking, MethodHandle hGetDouble, MethodHandle hSetDouble, MethodHandle hGetSize, MethodHandle hSetSize, MethodHandle hObjectAtIndex, MethodHandle hSetBounds, MethodHandle hRegisterForDraggedTypes, MethodHandle hBeginDraggingSession) {}
@@ -87,6 +132,12 @@ public class NSView extends NSObject {
             MethodHandle deallocTarget = MethodHandles.lookup().findStatic(NSView.class, "deallocImpl",
                     MethodType.methodType(void.class, MemorySegment.class, MemorySegment.class));
             deallocStub = ObjC.upcall(deallocTarget, NsuiForeign.deallocUpcall());
+            // input-event stubs — same lazy block as drawRectStub (never a static initializer)
+            eventStubs = new EventStubs(
+                    voidEventStub("mouseDownImpl"), voidEventStub("mouseDraggedImpl"), voidEventStub("mouseUpImpl"),
+                    voidEventStub("mouseMovedImpl"), voidEventStub("mouseEnteredImpl"), voidEventStub("mouseExitedImpl"),
+                    voidEventStub("keyDownImpl"), voidEventStub("keyUpImpl"), voidEventStub("flagsChangedImpl"),
+                    boolEventStub("performKeyEquivalentImpl"), boolResponderStub("acceptsFirstResponderImpl"));
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException("cannot bind NSView upcall targets", e);
         }
@@ -95,6 +146,24 @@ public class NSView extends NSObject {
         }
         if (!ObjC.addMethod(drawableClass, "dealloc", deallocStub, "v@:")) {
             throw new RuntimeException("class_addMethod dealloc failed");
+        }
+        EventStubs s = eventStubs;
+        if (!ObjC.addMethod(drawableClass, "mouseDown:", s.mouseDown(), "v@:@")
+                || !ObjC.addMethod(drawableClass, "mouseDragged:", s.mouseDragged(), "v@:@")
+                || !ObjC.addMethod(drawableClass, "mouseUp:", s.mouseUp(), "v@:@")
+                || !ObjC.addMethod(drawableClass, "mouseMoved:", s.mouseMoved(), "v@:@")
+                || !ObjC.addMethod(drawableClass, "mouseEntered:", s.mouseEntered(), "v@:@")
+                || !ObjC.addMethod(drawableClass, "mouseExited:", s.mouseExited(), "v@:@")
+                || !ObjC.addMethod(drawableClass, "keyDown:", s.keyDown(), "v@:@")
+                || !ObjC.addMethod(drawableClass, "keyUp:", s.keyUp(), "v@:@")
+                || !ObjC.addMethod(drawableClass, "flagsChanged:", s.flagsChanged(), "v@:@")) {
+            throw new RuntimeException("class_addMethod event override failed");
+        }
+        if (!ObjC.addMethod(drawableClass, "performKeyEquivalent:", s.performKeyEquivalent(), "B@:@")) {
+            throw new RuntimeException("class_addMethod performKeyEquivalent: failed");
+        }
+        if (!ObjC.addMethod(drawableClass, "acceptsFirstResponder", s.acceptsFirstResponder(), "B@:")) {
+            throw new RuntimeException("class_addMethod acceptsFirstResponder failed");
         }
         H = new Handles(
                 ObjC.handle(Sig.of(Ret.ID, Arg.RECT)),
@@ -113,6 +182,26 @@ public class NSView extends NSObject {
                 ObjC.handle(Sig.of(Ret.ID, Arg.ID, Arg.ID, Arg.ID)));
     }
 
+    // ---- upcall-stub builders (called only from the lazy ensureInit, never class-init) ----
+
+    private static MemorySegment voidEventStub(String target) throws ReflectiveOperationException {
+        MethodHandle mh = MethodHandles.lookup().findStatic(NSView.class, target,
+                MethodType.methodType(void.class, MemorySegment.class, MemorySegment.class, MemorySegment.class));
+        return ObjC.upcall(mh, NsuiForeign.eventVoidUpcall());
+    }
+
+    private static MemorySegment boolEventStub(String target) throws ReflectiveOperationException {
+        MethodHandle mh = MethodHandles.lookup().findStatic(NSView.class, target,
+                MethodType.methodType(boolean.class, MemorySegment.class, MemorySegment.class, MemorySegment.class));
+        return ObjC.upcall(mh, NsuiForeign.eventBoolUpcall());
+    }
+
+    private static MemorySegment boolResponderStub(String target) throws ReflectiveOperationException {
+        MethodHandle mh = MethodHandles.lookup().findStatic(NSView.class, target,
+                MethodType.methodType(boolean.class, MemorySegment.class, MemorySegment.class));
+        return ObjC.upcall(mh, NsuiForeign.responderBoolUpcall());
+    }
+
     /// FFM upcall target: `-(void)drawRect:(NSRect)dirtyRect` — called by AppKit on the main thread.
     public static void drawRectImpl(MemorySegment self, MemorySegment sel, MemorySegment rect) {
         Drawable d = DRAWABLES.get(self.address());
@@ -129,11 +218,16 @@ public class NSView extends NSObject {
         }
     }
 
-    /// FFM upcall target: `-(void)dealloc` — unregister the drawable, then chain
-    /// to `[super dealloc]` via objc_msgSendSuper so the native object is released.
+    /// FFM upcall target: `-(void)dealloc` — unregister the drawable and any
+    /// event listeners / tracking-area bookkeeping, then chain to
+    /// `[super dealloc]` via objc_msgSendSuper so the native object is released.
     /// Public because NsuiFeature (nsui.objc) resolves it at build time.
     public static void deallocImpl(MemorySegment self, MemorySegment sel) {
-        DRAWABLES.remove(self.address());
+        long addr = self.address();
+        DRAWABLES.remove(addr);
+        MOUSE_LISTENERS.remove(addr);
+        KEY_LISTENERS.remove(addr);
+        TRACKING_VIEWS.remove(addr);
         MemorySegment superStruct = ObjC.superStruct(self, ObjC.classGetSuperclass(drawableClass));
         ObjC.msgSendSuperVoid(superStruct, sel);
     }
@@ -141,6 +235,209 @@ public class NSView extends NSObject {
     /// Number of live drawables (diagnostics/tests: must return to 0 after views are released).
     public static int drawableCount() {
         return DRAWABLES.size();
+    }
+
+    // ---------------------------------------------------------------- responder chain & input events
+
+    /// Java-side mouse callback surface for views created with `NSView.create`.
+    /// All methods are default-no-op; override only the events you care about.
+    /// Callbacks arrive on the main thread. Delivery of `onMouseMoved` additionally
+    /// requires `enableMouseTracking` on the view AND
+    /// `NSWindow.setAcceptsMouseMovedEvents(true)` on its window;
+    /// `onMouseEntered`/`onMouseExited` need only `enableMouseTracking`.
+    public interface MouseListener {
+        /// Mouse button went down inside the view.
+        default void onMouseDown(NSView v, NSEvent e) {}
+        /// Mouse button came up (after a down in this view).
+        default void onMouseUp(NSView v, NSEvent e) {}
+        /// Mouse moved with a button held down.
+        default void onMouseDragged(NSView v, NSEvent e) {}
+        /// Mouse moved inside the tracked region (no button).
+        default void onMouseMoved(NSView v, NSEvent e) {}
+        /// Cursor entered the tracked region (tracking area required).
+        default void onMouseEntered(NSView v, NSEvent e) {}
+        /// Cursor left the tracked region (tracking area required).
+        default void onMouseExited(NSView v, NSEvent e) {}
+    }
+
+    /// Java-side keyboard callback surface for views created with `NSView.create`.
+    /// Return true to mark the event HANDLED — AppKit stops routing it. Return
+    /// false to let the upcall target hand the event to the next responder,
+    /// continuing the responder chain toward the window. A key listener also
+    /// flips the view's `acceptsFirstResponder` to true so it can actually
+    /// receive keys.
+    public interface KeyListener {
+        /// Key pressed. Return true if handled (stops the chain).
+        default boolean onKeyDown(NSView v, NSEvent e) { return false; }
+        /// Key released. Return true if handled (stops the chain).
+        default boolean onKeyUp(NSView v, NSEvent e) { return false; }
+        /// Modifier flags changed. Return true if handled (stops the chain).
+        default boolean onFlagsChanged(NSView v, NSEvent e) { return false; }
+    }
+
+    /// Register the mouse callback surface for this view (null unregisters).
+    /// Only views created via `NSView.create` carry the Java-implemented event
+    /// overrides — native controls (NSButton etc.) dispatch their own events.
+    public void setMouseListener(MouseListener listener) {
+        ensureInit();
+        if (listener == null) MOUSE_LISTENERS.remove(peer.address());
+        else MOUSE_LISTENERS.put(peer.address(), listener);
+    }
+
+    /// Register the keyboard callback surface for this view (null unregisters).
+    /// While a key listener is registered the view reports
+    /// `acceptsFirstResponder == true`, letting it take key focus.
+    public void setKeyListener(KeyListener listener) {
+        ensureInit();
+        if (listener == null) KEY_LISTENERS.remove(peer.address());
+        else KEY_LISTENERS.put(peer.address(), listener);
+    }
+
+    /// Total live mouse + key listeners across all views (diagnostics/tests:
+    /// must return to its baseline after register/unregister cycles).
+    public static int listenerCount() {
+        return MOUSE_LISTENERS.size() + KEY_LISTENERS.size();
+    }
+
+    /// enableMouseTracking — install an NSTrackingArea over this view so
+    /// `onMouseEntered`/`onMouseExited`/`onMouseMoved` callbacks can fire.
+    ///
+    /// Options: `trackingMouseEnteredAndExited | trackingMouseMoved |
+    /// trackingActiveAlways | trackingInVisibleRect`. The `trackingInVisibleRect`
+    /// bit makes the tracked region follow the view's visible rect automatically,
+    /// so window resizes and scrolling keep tracking correct without rebuilding
+    /// the area. Idempotent per view: a second call is a no-op (AppKit would
+    /// otherwise deliver duplicate events, one per installed area). Mouse-moved
+    /// delivery still requires the owning window to enable
+    /// `setAcceptsMouseMovedEvents(true)`.
+    public void enableMouseTracking() {
+        ensureInit();
+        if (!TRACKING_VIEWS.add(peer.address())) return;
+        long options = trackingMouseEnteredAndExited | trackingMouseMoved
+                | trackingActiveAlways | trackingInVisibleRect;
+        NSTrackingArea area = NSTrackingArea.create(bounds(), options, this);
+        ObjC.msgSendVoidId(peer, ObjC.sel("addTrackingArea:"), area.peer());
+    }
+
+    // ---- FFM upcall targets: input-event overrides on the ObjC subclass ----
+    // All are public, static and capture-free so NsuiFeature can register them
+    // for native-image. Contract: no registered listener -> hand the event to
+    // the next responder (the documented NSResponder default); key listeners
+    // returning false do the same, true stops the chain.
+    // NOTE: deliberately NOT `[super event:]` — objc_msgSendSuper would need a
+    // descriptor carrying the event argument, and dropping that arg makes the
+    // callee read an uninitialized register as the event (observed live as an
+    // ObjC runtime abort). Forwarding to nextResponder is the same chain
+    // semantics without the ABI hazard.
+
+    private static NSView selfView(MemorySegment self) {
+        return new NSView(self);
+    }
+
+    private static NSEvent eventOrNil(MemorySegment eventSeg) {
+        return (eventSeg == null || eventSeg.address() == 0) ? null : new NSEvent(eventSeg);
+    }
+
+    /// Continue the responder chain for an unhandled event selector: deliver
+    /// `sel(event)` to the view's next responder. Plain msgSend on the NEXT
+    /// object — never a re-send on `self`, which would recurse into this
+    /// override. A nil next responder ends the chain silently.
+    private static void forwardChain(MemorySegment self, MemorySegment sel, MemorySegment eventSeg) {
+        MemorySegment next = ObjC.msgSendId(self, ObjC.sel("nextResponder"));
+        if (next == null || next.address() == 0) return;
+        ObjC.msgSendVoidId(next, sel,
+                (MemorySegment)(eventSeg == null ? MemorySegment.NULL : eventSeg));
+    }
+
+    /// FFM upcall target: `-(void)mouseDown:(NSEvent *)event`.
+    public static void mouseDownImpl(MemorySegment self, MemorySegment sel, MemorySegment eventSeg) {
+        MouseListener l = MOUSE_LISTENERS.get(self.address());
+        NSEvent e = l == null ? null : eventOrNil(eventSeg);
+        if (l == null || e == null) { forwardChain(self, sel, eventSeg); return; }
+        l.onMouseDown(selfView(self), e);
+    }
+
+    /// FFM upcall target: `-(void)mouseDragged:(NSEvent *)event`.
+    public static void mouseDraggedImpl(MemorySegment self, MemorySegment sel, MemorySegment eventSeg) {
+        MouseListener l = MOUSE_LISTENERS.get(self.address());
+        NSEvent e = l == null ? null : eventOrNil(eventSeg);
+        if (l == null || e == null) { forwardChain(self, sel, eventSeg); return; }
+        l.onMouseDragged(selfView(self), e);
+    }
+
+    /// FFM upcall target: `-(void)mouseUp:(NSEvent *)event`.
+    public static void mouseUpImpl(MemorySegment self, MemorySegment sel, MemorySegment eventSeg) {
+        MouseListener l = MOUSE_LISTENERS.get(self.address());
+        NSEvent e = l == null ? null : eventOrNil(eventSeg);
+        if (l == null || e == null) { forwardChain(self, sel, eventSeg); return; }
+        l.onMouseUp(selfView(self), e);
+    }
+
+    /// FFM upcall target: `-(void)mouseMoved:(NSEvent *)event`.
+    public static void mouseMovedImpl(MemorySegment self, MemorySegment sel, MemorySegment eventSeg) {
+        MouseListener l = MOUSE_LISTENERS.get(self.address());
+        NSEvent e = l == null ? null : eventOrNil(eventSeg);
+        if (l == null || e == null) { forwardChain(self, sel, eventSeg); return; }
+        l.onMouseMoved(selfView(self), e);
+    }
+
+    /// FFM upcall target: `-(void)mouseEntered:(NSEvent *)event`.
+    public static void mouseEnteredImpl(MemorySegment self, MemorySegment sel, MemorySegment eventSeg) {
+        MouseListener l = MOUSE_LISTENERS.get(self.address());
+        NSEvent e = l == null ? null : eventOrNil(eventSeg);
+        if (l == null || e == null) { forwardChain(self, sel, eventSeg); return; }
+        l.onMouseEntered(selfView(self), e);
+    }
+
+    /// FFM upcall target: `-(void)mouseExited:(NSEvent *)event`.
+    public static void mouseExitedImpl(MemorySegment self, MemorySegment sel, MemorySegment eventSeg) {
+        MouseListener l = MOUSE_LISTENERS.get(self.address());
+        NSEvent e = l == null ? null : eventOrNil(eventSeg);
+        if (l == null || e == null) { forwardChain(self, sel, eventSeg); return; }
+        l.onMouseExited(selfView(self), e);
+    }
+
+    /// FFM upcall target: `-(void)keyDown:(NSEvent *)event`. A key listener
+    /// returning true consumes the event; false hands the event to the next
+    /// responder, continuing the responder chain.
+    public static void keyDownImpl(MemorySegment self, MemorySegment sel, MemorySegment eventSeg) {
+        KeyListener l = KEY_LISTENERS.get(self.address());
+        NSEvent e = l == null ? null : eventOrNil(eventSeg);
+        if (l != null && e != null && l.onKeyDown(selfView(self), e)) return;
+        forwardChain(self, sel, eventSeg);
+    }
+
+    /// FFM upcall target: `-(void)keyUp:(NSEvent *)event`.
+    public static void keyUpImpl(MemorySegment self, MemorySegment sel, MemorySegment eventSeg) {
+        KeyListener l = KEY_LISTENERS.get(self.address());
+        NSEvent e = l == null ? null : eventOrNil(eventSeg);
+        if (l != null && e != null && l.onKeyUp(selfView(self), e)) return;
+        forwardChain(self, sel, eventSeg);
+    }
+
+    /// FFM upcall target: `-(void)flagsChanged:(NSEvent *)event`.
+    public static void flagsChangedImpl(MemorySegment self, MemorySegment sel, MemorySegment eventSeg) {
+        KeyListener l = KEY_LISTENERS.get(self.address());
+        NSEvent e = l == null ? null : eventOrNil(eventSeg);
+        if (l != null && e != null && l.onFlagsChanged(selfView(self), e)) return;
+        forwardChain(self, sel, eventSeg);
+    }
+
+    /// FFM upcall target: `-(BOOL)performKeyEquivalent:(NSEvent *)event`.
+    /// Always passes the event to the next responder and reports false
+    /// ("not handled") so key equivalents continue down the responder chain and
+    /// still arrive as `keyDown:` — there is deliberately no Java hook here yet.
+    public static boolean performKeyEquivalentImpl(MemorySegment self, MemorySegment sel, MemorySegment eventSeg) {
+        forwardChain(self, sel, eventSeg);
+        return false;
+    }
+
+    /// FFM upcall target: `-(BOOL)acceptsFirstResponder`. True exactly when a
+    /// key listener is registered for this view: a view that wants keys must be
+    /// able to take first-responder status, while pure drawing views must not
+    /// steal focus from controls.
+    public static boolean acceptsFirstResponderImpl(MemorySegment self, MemorySegment sel) {
+        return KEY_LISTENERS.containsKey(self.address());
     }
 
     // ---------------------------------------------------------------- instance API

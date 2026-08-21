@@ -90,6 +90,14 @@ public final class NsuiForeign {
     public static FunctionDescriptor classGetSuperclass() { return FunctionDescriptor.of(PTR, PTR); }
     /// objc_msgSendSuper(struct objc_super*, SEL) -> void  ([super ...] dispatch)
     public static FunctionDescriptor msgSendSuperVoid() { return FunctionDescriptor.ofVoid(PTR, PTR); }
+    /// objc_msgSendSuper(struct objc_super*, SEL, id) -> void — [super ...] dispatch
+    /// of a one-id-argument selector (e.g. mouseDown:/keyDown:). The forwarded
+    /// argument MUST be part of the descriptor: without it the callee reads a
+    /// garbage register as the event and crashes ("unknown class").
+    public static FunctionDescriptor msgSendSuperVoidId() { return FunctionDescriptor.ofVoid(PTR, PTR, PTR); }
+    /// objc_msgSendSuper(struct objc_super*, SEL, id) -> BOOL — [super ...] dispatch
+    /// of a one-id-argument boolean selector (e.g. performKeyEquivalent:).
+    public static FunctionDescriptor msgSendSuperBoolId() { return FunctionDescriptor.of(BOOL, PTR, PTR, PTR); }
     /// -(void)drawRect:(NSRect) — upcall shape for a Java-implemented NSView.drawRect:
     public static FunctionDescriptor drawRectUpcall() { return FunctionDescriptor.ofVoid(PTR, PTR, NS_RECT); }
     /// -(void)dealloc — upcall shape for a Java-implemented NSView.dealloc
@@ -108,6 +116,16 @@ public final class NsuiForeign {
     public static FunctionDescriptor delegateIdIdUpcall() { return FunctionDescriptor.of(PTR, PTR, PTR, PTR, PTR); }
     /// -(id)applicationDockMenu:(id) — Dock menu delegate (id return, id arg)
     public static FunctionDescriptor delegateDockMenu() { return FunctionDescriptor.of(PTR, PTR, PTR, PTR); }
+
+    // ------------------------------------------- NSView input-event upcalls (responder chain)
+
+    /// -(void)mouseDown:(id) / keyDown:(id) / flagsChanged:(id) / ... — NSView
+    /// event pass-through upcall shape (void return, one id arg beyond self/_cmd)
+    public static FunctionDescriptor eventVoidUpcall() { return FunctionDescriptor.ofVoid(PTR, PTR, PTR); }
+    /// -(BOOL)performKeyEquivalent:(id) — key-equivalent upcall shape (boolean return, one id arg)
+    public static FunctionDescriptor eventBoolUpcall() { return FunctionDescriptor.of(BOOL, PTR, PTR, PTR); }
+    /// -(BOOL)acceptsFirstResponder — responder predicate upcall shape (boolean return, no args beyond self/_cmd)
+    public static FunctionDescriptor responderBoolUpcall() { return FunctionDescriptor.of(BOOL, PTR, PTR); }
 
     // --------------------------------------------- CoreText (text rendering shim)
 
@@ -176,7 +194,7 @@ public final class NsuiForeign {
     /// libobjc + dlopen downcalls (registered by NsuiFeature — no tracing agent).
     public static final List<FunctionDescriptor> RUNTIME = List.of(
             dlopen(), objcGetClass(), selRegisterName(), allocateClassPair(), registerClassPair(), addMethod(),
-            classGetSuperclass(), msgSendSuperVoid());
+            classGetSuperclass(), msgSendSuperVoid(), msgSendSuperVoidId(), msgSendSuperBoolId());
 
     /// CoreGraphics/CoreFoundation downcalls (window-server verification + synthetic events).
     public static final List<FunctionDescriptor> CORE = List.of(
@@ -210,7 +228,8 @@ public final class NsuiForeign {
             delegateShouldTerminate(), delegateWindowWillClose(),
             drawRectUpcall(), deallocUpcall(), blockVoidUpcall(), setExceptionPreprocessor(),
             methodSignatureUpcall(), delegateIntUpcall(), delegateIdIdIntUpcall(),
-            delegateWindowWillResize(), delegateIdIdUpcall());
+            delegateWindowWillResize(), delegateIdIdUpcall(),
+            eventVoidUpcall(), eventBoolUpcall(), responderBoolUpcall());
 
     /// ThemeObserver (CoreFoundation) — downcalls for dark-mode observation.
     public static final List<FunctionDescriptor> THEME = List.of(

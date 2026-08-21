@@ -199,4 +199,11 @@ public final class NSBezierPath extends NSObject {
     public void setLineJoinStyle(long style) {
         ObjC.msgSendVoidLong(peer, ObjC.sel("setLineJoinStyle:"), style);
     }
+
+    /// -CGPath — the CoreGraphics CGPath backing this bezier path (raw pointer,
+    /// owned by the path; do not release). Enables CAShapeLayer.setPath(NSBezierPath).
+    public MemorySegment cgPath() {
+        ensureInit();
+        return ObjC.msgSendId(peer, ObjC.sel("CGPath"));
+    }
 }

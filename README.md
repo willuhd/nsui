@@ -1,6 +1,6 @@
 # nsui
 
-Pure Java bindings for AppKit using the FFM API. No external libraries (no AWT/Swing, SWT, JNI/JNA, JavaFX, etc). Builds on GraalVM native-image with no tracing agent required. JDK 25. 
+Pure Java bindings for AppKit (along with Cocoa, CoreAnimation, and utils) using the FFM API. No external libraries (no AWT/Swing, SWT, JNI/JNA, JavaFX, etc). Builds on GraalVM native-image with no tracing agent required. JDK 25. 
 
 ### Overview
 
@@ -28,7 +28,7 @@ java -XstartOnFirstThread --enable-native-access=ALL-UNNAMED -cp out/classes Mai
 
 ### Native image
 
-The closed-world build must know all foreign signatures at build time. This project registers them via a feature (`NsuiFeature`).
+The native build must know all foreign signatures at build time. This project registers them via a feature (`NsuiFeature`).
 
 ```bash
 native-image --features=nsui.objc.NsuiFeature \
@@ -50,6 +50,6 @@ If a signature is missing, the build succeeds but the binary fails at runtime wi
 
 ### Project status
 
-Library package is `nsui`. Coverage includes core AppKit classes, controls, menus, status items, popovers, and QuartzCore layers. In development (currently at 112 `NS.*` classes, 2 Core Animation classes).
+Library package is `nsui`. Coverage includes core AppKit classes, controls, menus, status items, popovers, and QuartzCore layers. In development (currently at 112 NS classes, 2 Core Animation classes).
 
-More support expected in the near future, with the goal of having full `NS.*` coverage and Metal integration.
+More support expected in the near future, with the goal of having full `NS.*` coverage and potential Metal integration.

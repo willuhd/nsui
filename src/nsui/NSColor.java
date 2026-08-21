@@ -220,4 +220,10 @@ public final class NSColor extends NSObject {
     public String description() {
         return ObjC.toString(ObjC.msgSendId(peer, ObjC.sel("description")));
     }
+
+    /// [color CGColor] — the CoreGraphics CGColor backing this color (raw pointer,
+    /// autoreleased; suitable for CALayer/CAShapeLayer color properties).
+    public MemorySegment cgColor() {
+        return ObjC.msgSendId(peer, ObjC.sel("CGColor"));
+    }
 }

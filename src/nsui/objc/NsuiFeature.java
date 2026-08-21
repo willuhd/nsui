@@ -157,10 +157,40 @@ public final class NsuiFeature implements Feature {
                             MethodType.methodType(void.class, MemorySegment.class, MemorySegment.class, MemorySegment.class, MemorySegment.class, MemorySegment.class)),
                     NsuiForeign.themeUpcall());
             upcalls++;
+            // NSView input events: mouse/key pass-throughs ("v@:@"), key
+            // equivalent ("B@:@"), first-responder predicate ("B@:")
+            upcalls += registerUpcall(nsui.NSView.class, "mouseDownImpl", NSViewEventVoid, NsuiForeign.eventVoidUpcall());
+            upcalls += registerUpcall(nsui.NSView.class, "mouseDraggedImpl", NSViewEventVoid, NsuiForeign.eventVoidUpcall());
+            upcalls += registerUpcall(nsui.NSView.class, "mouseUpImpl", NSViewEventVoid, NsuiForeign.eventVoidUpcall());
+            upcalls += registerUpcall(nsui.NSView.class, "mouseMovedImpl", NSViewEventVoid, NsuiForeign.eventVoidUpcall());
+            upcalls += registerUpcall(nsui.NSView.class, "mouseEnteredImpl", NSViewEventVoid, NsuiForeign.eventVoidUpcall());
+            upcalls += registerUpcall(nsui.NSView.class, "mouseExitedImpl", NSViewEventVoid, NsuiForeign.eventVoidUpcall());
+            upcalls += registerUpcall(nsui.NSView.class, "keyDownImpl", NSViewEventVoid, NsuiForeign.eventVoidUpcall());
+            upcalls += registerUpcall(nsui.NSView.class, "keyUpImpl", NSViewEventVoid, NsuiForeign.eventVoidUpcall());
+            upcalls += registerUpcall(nsui.NSView.class, "flagsChangedImpl", NSViewEventVoid, NsuiForeign.eventVoidUpcall());
+            upcalls += registerUpcall(nsui.NSView.class, "performKeyEquivalentImpl", NSViewEventBool, NsuiForeign.eventBoolUpcall());
+            upcalls += registerUpcall(nsui.NSView.class, "acceptsFirstResponderImpl", ResponderBool, NsuiForeign.responderBoolUpcall());
             System.out.println("[NsuiFeature] direct upcalls registered (" + upcalls + ")");
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException("cannot register direct upcall target", e);
         }
         System.out.println("[NsuiFeature] duringSetup done");
+    }
+
+    // ---- shapes for the NSView event/responder upcall targets ----
+    private static final MethodType NSViewEventVoid =
+            MethodType.methodType(void.class, MemorySegment.class, MemorySegment.class, MemorySegment.class);
+    private static final MethodType NSViewEventBool =
+            MethodType.methodType(boolean.class, MemorySegment.class, MemorySegment.class, MemorySegment.class);
+    private static final MethodType ResponderBool =
+            MethodType.methodType(boolean.class, MemorySegment.class, MemorySegment.class);
+
+    /// Register one Java-implemented upcall target (build time only) — the same
+    /// findStatic + registerForDirectUpcall pairing used for drawRectImpl above.
+    private static int registerUpcall(Class<?> owner, String method, MethodType type,
+                                      FunctionDescriptor descriptor) throws ReflectiveOperationException {
+        RuntimeForeignAccess.registerForDirectUpcall(
+                MethodHandles.lookup().findStatic(owner, method, type), descriptor);
+        return 1;
     }
 }

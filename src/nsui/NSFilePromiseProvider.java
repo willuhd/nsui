@@ -63,6 +63,29 @@ public final class NSFilePromiseProvider extends NSObject {
         } catch (Throwable t) { throw new RuntimeException("delegate failed", t); }
     }
 
+    /// setFileType:
+    public void setFileType(String fileType) {
+        ensureInit();
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.ID));
+            h.invokeExact(peer, ObjC.sel("setFileType:"), ObjC.nsstring(fileType));
+        } catch (Throwable t) { throw new RuntimeException("setFileType: failed", t); }
+    }
+
+    /// setDelegate:
+    public void setDelegate(MemorySegment delegate) {
+        ensureInit();
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.ID));
+            h.invokeExact(peer, ObjC.sel("setDelegate:"), (MemorySegment) (delegate == null ? MemorySegment.NULL : delegate));
+        } catch (Throwable t) { throw new RuntimeException("setDelegate: failed", t); }
+    }
+
+    /// setDelegate with NSObject
+    public void setDelegate(NSObject delegate) {
+        setDelegate(delegate == null ? MemorySegment.NULL : delegate.peer());
+    }
+
     /// userInfo — optional metadata.
     public NSObject userInfo() {
         ensureInit();

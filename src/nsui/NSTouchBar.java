@@ -12,12 +12,8 @@ import static nsui.objc.Sig.Ret;
 /// Thin 1:1, stateless: every method maps to one objc_msgSend.
 public final class NSTouchBar extends NSObject {
 
-    private static volatile boolean initialized;
-    private static MethodHandle hId;       // (id, SEL) -> id
-    private static MethodHandle hVoidId;   // (id, SEL, id) -> void
-    private static MethodHandle hGetId;    // (id, SEL) -> id
-    private static MethodHandle hSetId;    // (id, SEL, id) -> void
-    private static MethodHandle hTouchBarMakeItem; // (id, SEL, id, id) -> id [touchBar:makeItemForIdentifier:]
+            private record Handles(MethodHandle hId, MethodHandle hVoidId, MethodHandle hTouchBarMakeItem) {}
+    private static volatile Handles handles;
 
     private NSTouchBar(MemorySegment peer) {
         super(peer);
@@ -28,14 +24,9 @@ public final class NSTouchBar extends NSObject {
         return (peer == null || peer.address() == 0) ? null : new NSTouchBar(peer);
     }
 
-    private static synchronized void ensureInit() {
-        if (initialized) return;
-        hId = ObjC.handle(Sig.of(Ret.ID));
-        hVoidId = ObjC.handle(Sig.of(Ret.VOID, Arg.ID));
-        hGetId = ObjC.handle(Sig.of(Ret.ID));
-        hSetId = ObjC.handle(Sig.of(Ret.VOID, Arg.ID));
-        hTouchBarMakeItem = ObjC.handle(Sig.of(Ret.ID, Arg.ID, Arg.ID)); // touchBar:makeItemForIdentifier:
-        initialized = true;
+        private static synchronized void ensureInit() {
+        if (handles != null) return;
+        handles = new Handles(ObjC.handle(Sig.of(Ret.ID)), ObjC.handle(Sig.of(Ret.VOID, Arg.ID)), ObjC.handle(Sig.of(Ret.ID, Arg.ID, Arg.ID)));
     }
 
     /// alloc + init — empty touch bar.
@@ -51,7 +42,7 @@ public final class NSTouchBar extends NSObject {
     public void setDelegate(MemorySegment delegate) {
         ensureInit();
         try {
-            hVoidId.invokeExact(peer, ObjC.sel("setDelegate:"), (MemorySegment) (delegate == null ? MemorySegment.NULL : delegate));
+            handles.hVoidId().invokeExact(peer, ObjC.sel("setDelegate:"), (MemorySegment) (delegate == null ? MemorySegment.NULL : delegate));
         } catch (Throwable t) {
             throw new RuntimeException("setDelegate: failed", t);
         }
@@ -66,7 +57,7 @@ public final class NSTouchBar extends NSObject {
     public MemorySegment delegate() {
         ensureInit();
         try {
-            return (MemorySegment) hId.invokeExact(peer, ObjC.sel("delegate"));
+            return (MemorySegment) handles.hId().invokeExact(peer, ObjC.sel("delegate"));
         } catch (Throwable t) {
             throw new RuntimeException("delegate failed", t);
         }
@@ -77,7 +68,7 @@ public final class NSTouchBar extends NSObject {
         ensureInit();
         MemorySegment s = identifier == null ? MemorySegment.NULL : ObjC.nsstring(identifier);
         try {
-            hVoidId.invokeExact(peer, ObjC.sel("setCustomizationIdentifier:"), s);
+            handles.hVoidId().invokeExact(peer, ObjC.sel("setCustomizationIdentifier:"), s);
         } catch (Throwable t) {
             throw new RuntimeException("setCustomizationIdentifier: failed", t);
         }
@@ -87,7 +78,7 @@ public final class NSTouchBar extends NSObject {
     public String customizationIdentifier() {
         ensureInit();
         try {
-            MemorySegment s = (MemorySegment) hId.invokeExact(peer, ObjC.sel("customizationIdentifier"));
+            MemorySegment s = (MemorySegment) handles.hId().invokeExact(peer, ObjC.sel("customizationIdentifier"));
             return ObjC.toString(s);
         } catch (Throwable t) {
             throw new RuntimeException("customizationIdentifier failed", t);
@@ -98,12 +89,12 @@ public final class NSTouchBar extends NSObject {
     public NSArray itemIdentifiers() {
         ensureInit();
         try {
-            MemorySegment arr = (MemorySegment) hId.invokeExact(peer, ObjC.sel("defaultItemIdentifiers"));
+            MemorySegment arr = (MemorySegment) handles.hId().invokeExact(peer, ObjC.sel("defaultItemIdentifiers"));
             // fallback: try itemIdentifiers if default not set? Prefer generic.
             if (arr == null || arr.address() == 0) {
                 // try itemIdentifiers selector
                 try {
-                    arr = (MemorySegment) hId.invokeExact(peer, ObjC.sel("itemIdentifiers"));
+                    arr = (MemorySegment) handles.hId().invokeExact(peer, ObjC.sel("itemIdentifiers"));
                 } catch (Throwable ignored) {}
             }
             return NSArray.wrap(arr);
@@ -121,7 +112,7 @@ public final class NSTouchBar extends NSObject {
     public void setDefaultItemIdentifiers(NSArray identifiers) {
         ensureInit();
         try {
-            hVoidId.invokeExact(peer, ObjC.sel("setDefaultItemIdentifiers:"), (MemorySegment) (identifiers == null ? MemorySegment.NULL : identifiers.peer()));
+            handles.hVoidId().invokeExact(peer, ObjC.sel("setDefaultItemIdentifiers:"), (MemorySegment) (identifiers == null ? MemorySegment.NULL : identifiers.peer()));
         } catch (Throwable t) {
             throw new RuntimeException("setDefaultItemIdentifiers: failed", t);
         }
@@ -131,7 +122,7 @@ public final class NSTouchBar extends NSObject {
     public void setCustomizationAllowedItemIdentifiers(NSArray ids) {
         ensureInit();
         try {
-            hVoidId.invokeExact(peer, ObjC.sel("setCustomizationAllowedItemIdentifiers:"), (MemorySegment) (ids == null ? MemorySegment.NULL : ids.peer()));
+            handles.hVoidId().invokeExact(peer, ObjC.sel("setCustomizationAllowedItemIdentifiers:"), (MemorySegment) (ids == null ? MemorySegment.NULL : ids.peer()));
         } catch (Throwable t) {
             throw new RuntimeException("setCustomizationAllowedItemIdentifiers: failed", t);
         }
@@ -141,7 +132,7 @@ public final class NSTouchBar extends NSObject {
     public NSArray customizationAllowedItemIdentifiers() {
         ensureInit();
         try {
-            MemorySegment arr = (MemorySegment) hId.invokeExact(peer, ObjC.sel("customizationAllowedItemIdentifiers"));
+            MemorySegment arr = (MemorySegment) handles.hId().invokeExact(peer, ObjC.sel("customizationAllowedItemIdentifiers"));
             return NSArray.wrap(arr);
         } catch (Throwable t) {
             throw new RuntimeException("customizationAllowedItemIdentifiers failed", t);

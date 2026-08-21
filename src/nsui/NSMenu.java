@@ -28,14 +28,8 @@ import static nsui.objc.Sig.Ret;
 /// via `setView` with `insertGallerySearchFieldItem`.
 public final class NSMenu extends NSObject {
 
-    private static volatile boolean initialized;
-    private static MethodHandle hIdInt;    // (id, SEL, long) -> id  [itemAtIndex:/insert...]
-    private static MethodHandle hVoidIdInt; // (id, SEL, id, long) -> void [insertItem:atIndex:]
-    private static MethodHandle hIntId;     // (id, SEL, id) -> long [indexOfItem:]
-    private static MethodHandle hSize;      // (SegmentAllocator,id,SEL)-> NSSize [size]
-    private static MethodHandle hPopUp; // (id, SEL, id, point, id) -> bool [popUpMenuPositioningItem:atLocation:inView:]
-    private static MethodHandle hInsertTitleActionKEIndex; // (id, SEL, id, id, id, long) -> id [insertItemWithTitle:action:keyEquivalent:atIndex:]
-    private static MethodHandle hSetSubmenuForItem; // (id, SEL, id, id) -> void [setSubmenu:forItem:]
+    private record Handles(MethodHandle hIdInt, MethodHandle hVoidIdInt, MethodHandle hIntId, MethodHandle hSize, MethodHandle hPopUp, MethodHandle hInsertTitleActionKEIndex, MethodHandle hSetSubmenuForItem) {}
+    private static volatile Handles H;
 
     private NSMenu(MemorySegment peer) {
         super(peer);
@@ -43,15 +37,15 @@ public final class NSMenu extends NSObject {
     }
 
     private static synchronized void ensureInit() {
-        if (initialized) return;
-        hIdInt = ObjC.handle(Sig.of(Ret.ID, Arg.INT));
-        hVoidIdInt = ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.INT));
-        hIntId = ObjC.handle(Sig.of(Ret.INT, Arg.ID));
-        hSize = ObjC.handle(Sig.of(Ret.SIZE));
-        hPopUp = ObjC.handle(Sig.of(Ret.BOOL, Arg.ID, Arg.POINT, Arg.ID));
-        hInsertTitleActionKEIndex = ObjC.handle(Sig.of(Ret.ID, Arg.ID, Arg.ID, Arg.ID, Arg.INT));
-        hSetSubmenuForItem = ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.ID));
-        initialized = true;
+        if (H != null) return;
+        H = new Handles(
+                ObjC.handle(Sig.of(Ret.ID, Arg.INT)),
+                ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.INT)),
+                ObjC.handle(Sig.of(Ret.INT, Arg.ID)),
+                ObjC.handle(Sig.of(Ret.SIZE)),
+                ObjC.handle(Sig.of(Ret.BOOL, Arg.ID, Arg.POINT, Arg.ID)),
+                ObjC.handle(Sig.of(Ret.ID, Arg.ID, Arg.ID, Arg.ID, Arg.INT)),
+                ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.ID)));
     }
 
     public static NSMenu wrap(MemorySegment peer) {
@@ -83,13 +77,32 @@ public final class NSMenu extends NSObject {
         return wrap(ObjC.msgSendId(peer, ObjC.sel("supermenu")));
     }
 
+    /// [menu setSupermenu:] — set the supermenu (rarely set directly).
+    public void setSupermenu(NSMenu menu) {
+        ObjC.msgSendVoidId(peer, ObjC.sel("setSupermenu:"), (MemorySegment) (menu == null ? MemorySegment.NULL : menu.peer()));
+    }
+
+    /// [menu setItemArray:] — replace the item array.
+    public void setItemArray(java.util.List<NSMenuItem> items) {
+        if (items == null) return;
+        // Build NSArray from items
+        MemorySegment arr = ObjC.msgSendId(ObjC.cls("NSArray"), ObjC.sel("alloc"));
+        // Use initWithObjects:count: via handle if needed, fallback to adding
+        // Simpler: create mutable array and add objects
+        MemorySegment mArr = ObjC.msgSendId(ObjC.cls("NSMutableArray"), ObjC.sel("array"));
+        for (NSMenuItem it : items) {
+            if (it != null) ObjC.msgSendVoidId(mArr, ObjC.sel("addObject:"), it.peer());
+        }
+        ObjC.msgSendVoidId(peer, ObjC.sel("setItemArray:"), mArr);
+    }
+
     // ---- items ----
     public void addItem(NSMenuItem item) {
         ObjC.msgSendVoidId(peer, ObjC.sel("addItem:"), item.peer());
     }
     public void insertItem(NSMenuItem item, long index) {
         ensureInit();
-        try { hVoidIdInt.invokeExact(peer, ObjC.sel("insertItem:atIndex:"), item.peer(), index); } catch (Throwable t) { throw new RuntimeException("insertItem:atIndex: failed", t); }
+        try { H.hVoidIdInt().invokeExact(peer, ObjC.sel("insertItem:atIndex:"), item.peer(), index); } catch (Throwable t) { throw new RuntimeException("insertItem:atIndex: failed", t); }
     }
     public NSMenuItem insertItemWithTitle(String title, String action, String keyEquivalent, long index) {
         ensureInit();
@@ -98,7 +111,7 @@ public final class NSMenu extends NSObject {
             // null title is valid for search-field placeholder items (empty title + custom view)
             String safeTitle = title == null ? "" : title;
             String safeKE = keyEquivalent == null ? "" : keyEquivalent;
-            MemorySegment p = (MemorySegment) hInsertTitleActionKEIndex.invokeExact(peer,
+            MemorySegment p = (MemorySegment) H.hInsertTitleActionKEIndex().invokeExact(peer,
                     ObjC.sel("insertItemWithTitle:action:keyEquivalent:atIndex:"),
                     ObjC.nsstring(safeTitle), selAction, ObjC.nsstring(safeKE), index);
             return NSMenuItem.wrap(p);
@@ -133,7 +146,7 @@ public final class NSMenu extends NSObject {
     public void setSubmenuForItem(NSMenu submenu, NSMenuItem item) {
         ensureInit();
         try {
-            hSetSubmenuForItem.invokeExact(peer, ObjC.sel("setSubmenu:forItem:"),
+            H.hSetSubmenuForItem().invokeExact(peer, ObjC.sel("setSubmenu:forItem:"),
                     (MemorySegment) (submenu == null ? MemorySegment.NULL : submenu.peer()),
                     item.peer());
         } catch (Throwable t) {
@@ -170,13 +183,13 @@ public final class NSMenu extends NSObject {
     public NSMenuItem itemAtIndex(long index) {
         ensureInit();
         try {
-            MemorySegment p = (MemorySegment) hIdInt.invokeExact(peer, ObjC.sel("itemAtIndex:"), index);
+            MemorySegment p = (MemorySegment) H.hIdInt().invokeExact(peer, ObjC.sel("itemAtIndex:"), index);
             return NSMenuItem.wrap(p);
         } catch (Throwable t) { throw new RuntimeException("itemAtIndex: failed", t); }
     }
     public long indexOfItem(NSMenuItem item) {
         ensureInit();
-        try { return (long) hIntId.invokeExact(peer, ObjC.sel("indexOfItem:"), item.peer()); } catch (Throwable t) { throw new RuntimeException("indexOfItem: failed", t); }
+        try { return (long) H.hIntId().invokeExact(peer, ObjC.sel("indexOfItem:"), item.peer()); } catch (Throwable t) { throw new RuntimeException("indexOfItem: failed", t); }
     }
     public long indexOfItemWithTitle(String title) {
         ensureInit();
@@ -197,7 +210,7 @@ public final class NSMenu extends NSObject {
     public NSMenuItem itemWithTag(long tag) {
         ensureInit();
         try {
-            MemorySegment p = (MemorySegment) hIdInt.invokeExact(peer, ObjC.sel("itemWithTag:"), tag);
+            MemorySegment p = (MemorySegment) H.hIdInt().invokeExact(peer, ObjC.sel("itemWithTag:"), tag);
             return NSMenuItem.wrap(p);
         } catch (Throwable t) { throw new RuntimeException("itemWithTag: failed", t); }
     }
@@ -231,7 +244,7 @@ public final class NSMenu extends NSObject {
     }
     public NSSize size() {
         ensureInit();
-        try { return NSSize.fromSegment((MemorySegment) hSize.invokeExact((SegmentAllocator) Arena.global(), peer, ObjC.sel("size"))); } catch (Throwable t) { throw new RuntimeException("size failed", t); }
+        try { return NSSize.fromSegment((MemorySegment) H.hSize().invokeExact((SegmentAllocator) Arena.global(), peer, ObjC.sel("size"))); } catch (Throwable t) { throw new RuntimeException("size failed", t); }
     }
     public MemorySegment font() { return ObjC.msgSendId(peer, ObjC.sel("font")); }
     public void setFont(NSFont f) { ObjC.msgSendVoidId(peer, ObjC.sel("setFont:"), (MemorySegment) (f == null ? MemorySegment.NULL : f.peer())); }
@@ -357,7 +370,7 @@ public final class NSMenu extends NSObject {
         try {
             MemorySegment itemPeer = (item == null) ? MemorySegment.NULL : item.peer();
             MemorySegment viewPeer = (view == null) ? MemorySegment.NULL : view.peer();
-            return (boolean) hPopUp.invokeExact(peer, ObjC.sel("popUpMenuPositioningItem:atLocation:inView:"), itemPeer, loc.toSegment(), viewPeer);
+            return (boolean) H.hPopUp().invokeExact(peer, ObjC.sel("popUpMenuPositioningItem:atLocation:inView:"), itemPeer, loc.toSegment(), viewPeer);
         } catch (Throwable t) {
             throw new RuntimeException("popUpMenuPositioningItem:atLocation:inView: failed", t);
         }

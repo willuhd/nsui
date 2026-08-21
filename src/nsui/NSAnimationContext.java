@@ -12,13 +12,8 @@ import static nsui.objc.Sig.Ret;
 /// Provides currentContext, duration, and grouping.
 public final class NSAnimationContext extends NSObject {
 
-    private static volatile boolean initialized;
-    private static MethodHandle hCurrent;    // (id, SEL) -> id [currentContext]
-    private static MethodHandle hGetDouble;  // (id, SEL) -> double [duration]
-    private static MethodHandle hSetDouble;  // (id, SEL, double) -> void [setDuration:]
-    private static MethodHandle hVoid;       // (id, SEL) -> void [beginGrouping/endGrouping]
-    private static MethodHandle hBool;       // (id, SEL) -> bool
-    private static MethodHandle hVoidBool;   // (id, SEL, bool) -> void
+            private record Handles(MethodHandle hCurrent, MethodHandle hGetDouble, MethodHandle hSetDouble, MethodHandle hVoid, MethodHandle hBool, MethodHandle hVoidBool) {}
+    private static volatile Handles handles;
 
     private NSAnimationContext(MemorySegment peer) {
         super(peer);
@@ -29,22 +24,23 @@ public final class NSAnimationContext extends NSObject {
         return (peer == null || peer.address() == 0) ? null : new NSAnimationContext(peer);
     }
 
-    private static synchronized void ensureInit() {
-        if (initialized) return;
-        hCurrent = ObjC.handle(Sig.of(Ret.ID));
-        hGetDouble = ObjC.handle(Sig.of(Ret.DOUBLE));
-        hSetDouble = ObjC.handle(Sig.of(Ret.VOID, Arg.DOUBLE));
-        hVoid = ObjC.handle(Sig.of(Ret.VOID));
-        hBool = ObjC.handle(Sig.of(Ret.BOOL));
-        hVoidBool = ObjC.handle(Sig.of(Ret.VOID, Arg.BOOL));
-        initialized = true;
+        private static synchronized void ensureInit() {
+        if (handles != null) return;
+        handles = new Handles(
+                ObjC.handle(Sig.of(Ret.ID)),
+                ObjC.handle(Sig.of(Ret.DOUBLE)),
+                ObjC.handle(Sig.of(Ret.VOID, Arg.DOUBLE)),
+                ObjC.handle(Sig.of(Ret.VOID)),
+                ObjC.handle(Sig.of(Ret.BOOL)),
+                ObjC.handle(Sig.of(Ret.VOID, Arg.BOOL))
+        );
     }
 
     /// +[NSAnimationContext currentContext]
     public static NSAnimationContext currentContext() {
         ensureInit();
         try {
-            MemorySegment p = (MemorySegment) hCurrent.invokeExact(ObjC.cls("NSAnimationContext"), ObjC.sel("currentContext"));
+            MemorySegment p = (MemorySegment) handles.hCurrent().invokeExact(ObjC.cls("NSAnimationContext"), ObjC.sel("currentContext"));
             return wrap(p);
         } catch (Throwable t) {
             throw new RuntimeException("currentContext failed", t);
@@ -77,7 +73,7 @@ public final class NSAnimationContext extends NSObject {
     public double duration() {
         ensureInit();
         try {
-            return (double) hGetDouble.invokeExact(peer, ObjC.sel("duration"));
+            return (double) handles.hGetDouble().invokeExact(peer, ObjC.sel("duration"));
         } catch (Throwable t) {
             throw new RuntimeException("duration failed", t);
         }
@@ -87,7 +83,7 @@ public final class NSAnimationContext extends NSObject {
     public void setDuration(double d) {
         ensureInit();
         try {
-            hSetDouble.invokeExact(peer, ObjC.sel("setDuration:"), d);
+            handles.hSetDouble().invokeExact(peer, ObjC.sel("setDuration:"), d);
         } catch (Throwable t) {
             throw new RuntimeException("setDuration: failed", t);
         }
@@ -97,7 +93,7 @@ public final class NSAnimationContext extends NSObject {
     public boolean allowsImplicitAnimation() {
         ensureInit();
         try {
-            return (boolean) hBool.invokeExact(peer, ObjC.sel("allowsImplicitAnimation"));
+            return (boolean) handles.hBool().invokeExact(peer, ObjC.sel("allowsImplicitAnimation"));
         } catch (Throwable t) {
             throw new RuntimeException("allowsImplicitAnimation failed", t);
         }
@@ -106,7 +102,7 @@ public final class NSAnimationContext extends NSObject {
     public void setAllowsImplicitAnimation(boolean flag) {
         ensureInit();
         try {
-            hVoidBool.invokeExact(peer, ObjC.sel("setAllowsImplicitAnimation:"), flag);
+            handles.hVoidBool().invokeExact(peer, ObjC.sel("setAllowsImplicitAnimation:"), flag);
         } catch (Throwable t) {
             throw new RuntimeException("setAllowsImplicitAnimation: failed", t);
         }

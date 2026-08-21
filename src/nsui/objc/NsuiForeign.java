@@ -106,6 +106,8 @@ public final class NsuiForeign {
     public static FunctionDescriptor delegateWindowWillResize() { return FunctionDescriptor.of(NS_SIZE, PTR, PTR, PTR, NS_SIZE); }
     /// -(id)touchBar:(id) makeItemForIdentifier:(id) — Touch Bar delegate shape (id return, id + id args)
     public static FunctionDescriptor delegateIdIdUpcall() { return FunctionDescriptor.of(PTR, PTR, PTR, PTR, PTR); }
+    /// -(id)applicationDockMenu:(id) — Dock menu delegate (id return, id arg)
+    public static FunctionDescriptor delegateDockMenu() { return FunctionDescriptor.of(PTR, PTR, PTR, PTR); }
 
     // --------------------------------------------- CoreText (text rendering shim)
 

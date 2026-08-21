@@ -19,15 +19,8 @@ import static nsui.objc.Sig.Ret;
 public final class NSToolbar extends NSObject {
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
-    private static volatile boolean initialized;
-    private static MethodHandle hInitIdentifier; // (id, SEL, id) -> id   [initWithIdentifier:]
-    private static MethodHandle hSetDisplayMode; // (id, SEL, long) -> void [setDisplayMode:]
-    private static MethodHandle hSetAllowsCustom; // (id, SEL, bool) -> void [setAllowsUserCustomization:]
-    private static MethodHandle hInsertItem;     // (id, SEL, id, long) -> void [insertItemWithItemIdentifier:atIndex:]
-    private static MethodHandle hRemoveItem;     // (id, SEL, long) -> void [removeItemAtIndex:]
-    private static MethodHandle hSetVisible;     // (id, SEL, bool) -> void [setVisible:]
-    private static MethodHandle hSetShowsBaseline; // (id, SEL, bool) -> void [setShowsBaselineSeparator:]
-    private static MethodHandle hSetDelegate;    // (id, SEL, id) -> void [setDelegate:]
+            private record Handles(MethodHandle hInitIdentifier, MethodHandle hSetDisplayMode, MethodHandle hSetAllowsCustom, MethodHandle hInsertItem, MethodHandle hSetDelegate) {}
+    private static volatile Handles handles;
 
     private NSToolbar(MemorySegment peer) {
         super(peer);
@@ -39,17 +32,15 @@ public final class NSToolbar extends NSObject {
         return (peer == null || peer.address() == 0) ? null : new NSToolbar(peer);
     }
 
-    private static synchronized void ensureInit() {
-        if (initialized) return;
-        hInitIdentifier = ObjC.handle(Sig.of(Ret.ID, Arg.ID));
-        hSetDisplayMode = ObjC.handle(Sig.of(Ret.VOID, Arg.INT));
-        hSetAllowsCustom = ObjC.handle(Sig.of(Ret.VOID, Arg.BOOL));
-        hInsertItem = ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.INT));
-        hRemoveItem = ObjC.handle(Sig.of(Ret.VOID, Arg.INT));
-        hSetVisible = ObjC.handle(Sig.of(Ret.VOID, Arg.BOOL));
-        hSetShowsBaseline = ObjC.handle(Sig.of(Ret.VOID, Arg.BOOL));
-        hSetDelegate = ObjC.handle(Sig.of(Ret.VOID, Arg.ID));
-        initialized = true;
+        private static synchronized void ensureInit() {
+        if (handles != null) return;
+        handles = new Handles(
+                ObjC.handle(Sig.of(Ret.ID, Arg.ID)),
+                ObjC.handle(Sig.of(Ret.VOID, Arg.INT)),
+                ObjC.handle(Sig.of(Ret.VOID, Arg.BOOL)),
+                ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.INT)),
+                ObjC.handle(Sig.of(Ret.VOID, Arg.ID))
+        );
     }
 
     /// `[[NSToolbar alloc] initWithIdentifier:identifier]` — a new toolbar.
@@ -57,7 +48,7 @@ public final class NSToolbar extends NSObject {
         ensureInit();
         MemorySegment p = ObjC.msgSendId(ObjC.cls("NSToolbar"), ObjC.sel("alloc"));
         try {
-            p = (MemorySegment) hInitIdentifier.invokeExact(p, ObjC.sel("initWithIdentifier:"), ObjC.nsstring(identifier));
+            p = (MemorySegment) handles.hInitIdentifier().invokeExact(p, ObjC.sel("initWithIdentifier:"), ObjC.nsstring(identifier));
         } catch (Throwable t) {
             throw new RuntimeException("initWithIdentifier: failed for NSToolbar", t);
         }
@@ -79,7 +70,7 @@ public final class NSToolbar extends NSObject {
     /// [toolbar setDisplayMode:] — NSToolbarDisplayMode.
     public void setDisplayMode(long mode) {
         try {
-            hSetDisplayMode.invokeExact(peer, ObjC.sel("setDisplayMode:"), mode);
+            handles.hSetDisplayMode().invokeExact(peer, ObjC.sel("setDisplayMode:"), mode);
         } catch (Throwable t) {
             throw new RuntimeException("setDisplayMode: failed", t);
         }
@@ -94,7 +85,7 @@ public final class NSToolbar extends NSObject {
     /// [toolbar setAllowsUserCustomization:]
     public void setAllowsUserCustomization(boolean flag) {
         try {
-            hSetAllowsCustom.invokeExact(peer, ObjC.sel("setAllowsUserCustomization:"), flag);
+            handles.hSetAllowsCustom().invokeExact(peer, ObjC.sel("setAllowsUserCustomization:"), flag);
         } catch (Throwable t) {
             throw new RuntimeException("setAllowsUserCustomization: failed", t);
         }
@@ -109,7 +100,7 @@ public final class NSToolbar extends NSObject {
     /// [toolbar setVisible:]
     public void setVisible(boolean flag) {
         try {
-            hSetVisible.invokeExact(peer, ObjC.sel("setVisible:"), flag);
+            handles.hSetAllowsCustom().invokeExact(peer, ObjC.sel("setVisible:"), flag);
         } catch (Throwable t) {
             throw new RuntimeException("setVisible: failed", t);
         }
@@ -124,7 +115,7 @@ public final class NSToolbar extends NSObject {
     /// [toolbar setShowsBaselineSeparator:]
     public void setShowsBaselineSeparator(boolean flag) {
         try {
-            hSetShowsBaseline.invokeExact(peer, ObjC.sel("setShowsBaselineSeparator:"), flag);
+            handles.hSetAllowsCustom().invokeExact(peer, ObjC.sel("setShowsBaselineSeparator:"), flag);
         } catch (Throwable t) {
             throw new RuntimeException("setShowsBaselineSeparator: failed", t);
         }
@@ -139,7 +130,7 @@ public final class NSToolbar extends NSObject {
     /// [toolbar setDelegate:] — delegate object (DelegateProxy or any id).
     public void setDelegate(MemorySegment delegate) {
         try {
-            hSetDelegate.invokeExact(peer, ObjC.sel("setDelegate:"), (MemorySegment) ((MemorySegment) (delegate == null ? MemorySegment.NULL : delegate)));
+            handles.hSetDelegate().invokeExact(peer, ObjC.sel("setDelegate:"), (MemorySegment) ((MemorySegment) (delegate == null ? MemorySegment.NULL : delegate)));
         } catch (Throwable t) {
             throw new RuntimeException("setDelegate: failed", t);
         }
@@ -149,7 +140,7 @@ public final class NSToolbar extends NSObject {
     /// [toolbar insertItemWithItemIdentifier:atIndex:]
     public void insertItemWithItemIdentifier(String identifier, long index) {
         try {
-            hInsertItem.invokeExact(peer, ObjC.sel("insertItemWithItemIdentifier:atIndex:"), ObjC.nsstring(identifier), index);
+            handles.hInsertItem().invokeExact(peer, ObjC.sel("insertItemWithItemIdentifier:atIndex:"), ObjC.nsstring(identifier), index);
         } catch (Throwable t) {
             throw new RuntimeException("insertItemWithItemIdentifier:atIndex: failed", t);
         }
@@ -159,7 +150,7 @@ public final class NSToolbar extends NSObject {
     public void insertItemWithItemIdentifier(MemorySegment identifier, long index) {
         try {
             MemorySegment arg = (identifier == null || identifier.address() == 0) ? MemorySegment.NULL : identifier;
-            hInsertItem.invokeExact(peer, ObjC.sel("insertItemWithItemIdentifier:atIndex:"), (MemorySegment) arg, index);
+            handles.hInsertItem().invokeExact(peer, ObjC.sel("insertItemWithItemIdentifier:atIndex:"), (MemorySegment) arg, index);
         } catch (Throwable t) {
             throw new RuntimeException("insertItemWithItemIdentifier:atIndex: failed", t);
         }
@@ -168,7 +159,7 @@ public final class NSToolbar extends NSObject {
     /// [toolbar removeItemAtIndex:]
     public void removeItemAtIndex(long index) {
         try {
-            hRemoveItem.invokeExact(peer, ObjC.sel("removeItemAtIndex:"), index);
+            handles.hSetDisplayMode().invokeExact(peer, ObjC.sel("removeItemAtIndex:"), index);
         } catch (Throwable t) {
             throw new RuntimeException("removeItemAtIndex: failed", t);
         }

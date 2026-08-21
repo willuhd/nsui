@@ -12,11 +12,8 @@ import static nsui.objc.Sig.Ret;
 /// Provides generalPasteboard, clearContents, setString:forType:, stringForType:.
 public final class NSPasteboard extends NSObject {
 
-    private static volatile boolean initialized;
-    private static MethodHandle hClear;      // (id, SEL) -> long
-    private static MethodHandle hSetString;  // (id, SEL, id, id) -> bool
-    private static MethodHandle hStringFor;  // (id, SEL, id) -> id
-    private static MethodHandle hName;       // (id, SEL) -> id
+            private record Handles(MethodHandle hClear, MethodHandle hSetString, MethodHandle hStringFor, MethodHandle hName) {}
+    private static volatile Handles handles;
 
     private NSPasteboard(MemorySegment peer) {
         super(peer);
@@ -41,19 +38,20 @@ public final class NSPasteboard extends NSObject {
         return wrap(pb);
     }
 
-    private static synchronized void ensureInit() {
-        if (initialized) return;
-        hClear = ObjC.handle(Sig.of(Ret.INT));
-        hSetString = ObjC.handle(Sig.of(Ret.BOOL, Arg.ID, Arg.ID));
-        hStringFor = ObjC.handle(Sig.of(Ret.ID, Arg.ID));
-        hName = ObjC.handle(Sig.of(Ret.ID));
-        initialized = true;
+        private static synchronized void ensureInit() {
+        if (handles != null) return;
+        handles = new Handles(
+                ObjC.handle(Sig.of(Ret.INT)),
+                ObjC.handle(Sig.of(Ret.BOOL, Arg.ID, Arg.ID)),
+                ObjC.handle(Sig.of(Ret.ID, Arg.ID)),
+                ObjC.handle(Sig.of(Ret.ID))
+        );
     }
 
     /// clearContents — returns changeCount.
     public long clearContents() {
         ensureInit();
-        try { return (long) hClear.invokeExact(peer, ObjC.sel("clearContents")); }
+        try { return (long) handles.hClear().invokeExact(peer, ObjC.sel("clearContents")); }
         catch (Throwable t) { throw new RuntimeException("clearContents failed", t); }
     }
 
@@ -62,7 +60,7 @@ public final class NSPasteboard extends NSObject {
         ensureInit();
         if (string == null || type == null) return false;
         try {
-            return (boolean) hSetString.invokeExact(peer, ObjC.sel("setString:forType:"), ObjC.nsstring(string), ObjC.nsstring(type));
+            return (boolean) handles.hSetString().invokeExact(peer, ObjC.sel("setString:forType:"), ObjC.nsstring(string), ObjC.nsstring(type));
         } catch (Throwable t) { throw new RuntimeException("setString:forType: failed", t); }
     }
 
@@ -70,7 +68,7 @@ public final class NSPasteboard extends NSObject {
         ensureInit();
         if (string == null || type == null || type.address() == 0) return false;
         try {
-            return (boolean) hSetString.invokeExact(peer, ObjC.sel("setString:forType:"), ObjC.nsstring(string), type);
+            return (boolean) handles.hSetString().invokeExact(peer, ObjC.sel("setString:forType:"), ObjC.nsstring(string), type);
         } catch (Throwable t) { throw new RuntimeException("setString:forType: failed", t); }
     }
 
@@ -79,7 +77,7 @@ public final class NSPasteboard extends NSObject {
         ensureInit();
         if (type == null) return null;
         try {
-            MemorySegment s = (MemorySegment) hStringFor.invokeExact(peer, ObjC.sel("stringForType:"), ObjC.nsstring(type));
+            MemorySegment s = (MemorySegment) handles.hStringFor().invokeExact(peer, ObjC.sel("stringForType:"), ObjC.nsstring(type));
             return ObjC.toString(s);
         } catch (Throwable t) { throw new RuntimeException("stringForType: failed", t); }
     }
@@ -88,7 +86,7 @@ public final class NSPasteboard extends NSObject {
         ensureInit();
         if (type == null || type.address() == 0) return null;
         try {
-            MemorySegment s = (MemorySegment) hStringFor.invokeExact(peer, ObjC.sel("stringForType:"), type);
+            MemorySegment s = (MemorySegment) handles.hStringFor().invokeExact(peer, ObjC.sel("stringForType:"), type);
             return ObjC.toString(s);
         } catch (Throwable t) { throw new RuntimeException("stringForType: failed", t); }
     }
@@ -97,7 +95,7 @@ public final class NSPasteboard extends NSObject {
     public String name() {
         ensureInit();
         try {
-            MemorySegment s = (MemorySegment) hName.invokeExact(peer, ObjC.sel("name"));
+            MemorySegment s = (MemorySegment) handles.hName().invokeExact(peer, ObjC.sel("name"));
             return ObjC.toString(s);
         } catch (Throwable t) { throw new RuntimeException("name failed", t); }
     }

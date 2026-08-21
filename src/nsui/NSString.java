@@ -13,11 +13,8 @@ import static nsui.objc.Sig.Ret;
 public final class NSString extends NSObject {
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
-    private static volatile boolean initialized;
-    private static MethodHandle hLength;   // (id, SEL) -> long [length]
-    private static MethodHandle hIsEqual;  // (id, SEL, id) -> bool [isEqualToString:]
-    private static MethodHandle hHash;     // (id, SEL) -> long [hash] (unused but shows pattern)
-    private static MethodHandle hUTF8String; // (id, SEL) -> id? no, UTF8String returns const char*
+            private record Handles(MethodHandle hLength, MethodHandle hIsEqual, MethodHandle hUTF8String) {}
+    private static volatile Handles handles;
 
     private NSString(MemorySegment peer) {
         super(peer);
@@ -40,14 +37,11 @@ public final class NSString extends NSObject {
         return of(s);
     }
 
-    private static synchronized void ensureInit() {
-        if (initialized) return;
-        hLength = ObjC.handle(Sig.of(Ret.INT));
-        hIsEqual = ObjC.handle(Sig.of(Ret.BOOL, Arg.ID));
+        private static synchronized void ensureInit() {
+        if (handles != null) return;
         // hash is INT return, no args
-        hHash = ObjC.handle(Sig.of(Ret.INT));
         // UTF8String is ID return? Actually returns const char* (PTR) but we don't use handle for it; ObjC.toString handles directly.
-        initialized = true;
+        handles = new Handles(ObjC.handle(Sig.of(Ret.INT)), ObjC.handle(Sig.of(Ret.BOOL, Arg.ID)), null);
     }
 
     /// Java String contents via `UTF8String` (uses ObjC.toString).
@@ -59,7 +53,7 @@ public final class NSString extends NSObject {
     public long length() {
         ensureInit();
         try {
-            return (long) hLength.invokeExact(peer, ObjC.sel("length"));
+            return (long) handles.hLength().invokeExact(peer, ObjC.sel("length"));
         } catch (Throwable t) {
             throw new RuntimeException("NSString length failed", t);
         }
@@ -70,7 +64,7 @@ public final class NSString extends NSObject {
         ensureInit();
         if (other == null) return false;
         try {
-            return (boolean) hIsEqual.invokeExact(peer, ObjC.sel("isEqualToString:"), other.peer());
+            return (boolean) handles.hIsEqual().invokeExact(peer, ObjC.sel("isEqualToString:"), other.peer());
         } catch (Throwable t) {
             throw new RuntimeException("isEqualToString: failed", t);
         }

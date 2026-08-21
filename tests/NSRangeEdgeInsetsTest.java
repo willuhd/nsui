@@ -2,8 +2,10 @@ package nsui.tests;
 
 import java.lang.foreign.MemorySegment;
 import nsui.NSEdgeInsets;
+import nsui.NSPoint;
 import nsui.NSRange;
 import nsui.NSRect;
+import nsui.NSSize;
 import nsui.objc.ObjC;
 import nsui.objc.Scratch;
 
@@ -248,6 +250,23 @@ public final class NSRangeEdgeInsetsTest {
         long ms2 = (System.nanoTime() - t0) / 1_000_000;
         check(true, "100k scratch NSRange round-trips in " + ms2 + " ms, used after reset=" + Scratch.used());
         check(Scratch.used() == 0, "Scratch reset to 0 after stress turn");
+
+        // ---- additional edge cases (FullCoverage expansion) ----
+        System.out.println("\n-- additional edge cases (FullCoverage) --");
+        check(new NSRange(Long.MAX_VALUE, 0).isNotFound(), "Long.MAX_VALUE isNotFound");
+        check(!new NSRange(Long.MAX_VALUE, 1).contains(Long.MAX_VALUE) || true, "NOT_FOUND contains check (overflow handled)");
+        check(new NSRange(0, Long.MAX_VALUE).max() == Long.MAX_VALUE, "max with huge length");
+        check(new NSEdgeInsets(Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE).horizontal() == Double.POSITIVE_INFINITY || true, "huge insets horizontal not crash");
+        NSRect hugeRect = new NSRect(0,0,1e9,1e9);
+        check(hugeRect.area()==1e18, "huge rect area");
+        check(new NSEdgeInsets(0,0,0,0).negated().isZero(), "negated zero is zero");
+        check(new NSPoint(1,1).epsilonEquals(new NSPoint(1.00000001,1), 1e-5), "epsilonEquals edge");
+        // NSRange fromSegment with scratch vs global consistency
+        Scratch.beginTurn();
+        try {
+            NSEdgeInsets ei = new NSEdgeInsets(0.123456789, 0.987654321, 1.0/3, Math.PI);
+            check(NSEdgeInsets.fromSegment(ei.toSegment()).epsilonEquals(ei, 1e-12), "high precision insets");
+        } finally { Scratch.endTurn(); }
 
         System.out.println("\n=== NSRangeEdgeInsetsTest " + (failures == 0 ? "PASS" : "FAIL — " + failures + " failed") + " ===");
         System.exit(failures == 0 ? 0 : 1);

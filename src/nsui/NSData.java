@@ -16,9 +16,8 @@ import static nsui.objc.Sig.Ret;
 public class NSData extends NSObject {
 
     private static final ConcurrentHashMap<Long, byte[]> STORE = new ConcurrentHashMap<>();
-    private static volatile boolean initialized;
-    private static MethodHandle hLength; // (id, SEL) -> long
-    private static MethodHandle hBytes;  // (id, SEL) -> id (const void*)
+            private record Handles(MethodHandle hLength, MethodHandle hBytes) {}
+    private static volatile Handles handles;
 
     protected NSData(MemorySegment peer) {
         super(peer);
@@ -70,11 +69,9 @@ public class NSData extends NSObject {
         return dataWithBytes(slice);
     }
 
-    private static synchronized void ensureInit() {
-        if (initialized) return;
-        hLength = ObjC.handle(Sig.of(Ret.INT));
-        hBytes = ObjC.handle(Sig.of(Ret.ID));
-        initialized = true;
+        private static synchronized void ensureInit() {
+        if (handles != null) return;
+        handles = new Handles(ObjC.handle(Sig.of(Ret.INT)), ObjC.handle(Sig.of(Ret.ID)));
     }
 
     /// length
@@ -82,7 +79,7 @@ public class NSData extends NSObject {
         byte[] cached = STORE.get(peer.address());
         if (cached != null) return cached.length;
         ensureInit();
-        try { return (long) hLength.invokeExact(peer, ObjC.sel("length")); }
+        try { return (long) handles.hLength().invokeExact(peer, ObjC.sel("length")); }
         catch (Throwable t) { throw new RuntimeException("NSData length failed", t); }
     }
 
@@ -90,7 +87,7 @@ public class NSData extends NSObject {
     public MemorySegment bytes() {
         ensureInit();
         try {
-            MemorySegment r = (MemorySegment) hBytes.invokeExact(peer, ObjC.sel("bytes"));
+            MemorySegment r = (MemorySegment) handles.hBytes().invokeExact(peer, ObjC.sel("bytes"));
             return (r == null || r.address() == 0) ? null : r;
         } catch (Throwable t) { throw new RuntimeException("bytes failed", t); }
     }

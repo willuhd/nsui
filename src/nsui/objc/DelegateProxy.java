@@ -73,17 +73,21 @@ public final class DelegateProxy {
     /// Java-side `-(id)touchBar:(id) makeItemForIdentifier:(id)` — Touch Bar delegate, returns NSTouchBarItem.
     public interface IdIdArg { MemorySegment call(MemorySegment touchBar, MemorySegment identifier); }
 
+    /// Java-side `-(id)method:(id)` — e.g. applicationDockMenu: returns NSMenu for sender.
+    public interface IdArg { MemorySegment call(MemorySegment sender); }
+
     /// Per-instance dispatch state, keyed by the native instance address.
-    private record Holder(Map<Long, BoolArg> bools, Map<Long, VoidArg> voids,
-                          Map<Long, IntArg> ints, Map<Long, IdIdIntArg> idIdInts,
-                          Map<Long, WindowSizeArg> windowSizes,
-                          Map<Long, IdIdArg> idIds,
-                          MemorySegment superClass) {}
+        private record Holder(Map<Long, BoolArg> bools, Map<Long, VoidArg> voids,
+                           Map<Long, IntArg> ints, Map<Long, IdIdIntArg> idIdInts,
+                           Map<Long, WindowSizeArg> windowSizes,
+                           Map<Long, IdIdArg> idIds,
+                           Map<Long, IdArg> ids,
+                           MemorySegment superClass) {}
 
     /// ObjC class pair (native class + the selector names already installed on it).
     private record RuntimeClass(MemorySegment cls, Set<String> boolMethods, Set<String> voidMethods,
                                  Set<String> intMethods, Set<String> idIdIntMethods,
-                                 Set<String> windowSizeMethods, Set<String> idIdMethods) {}
+                                 Set<String> windowSizeMethods, Set<String> idIdMethods, Set<String> idMethods) {}
 
     // A registry keyed by the native instance address -> its dispatch holder.
     private static final ConcurrentMap<Long, Holder> REGISTRY = new ConcurrentHashMap<>();
@@ -104,6 +108,7 @@ public final class DelegateProxy {
     private static MemorySegment idIdIntStub;
     private static MemorySegment windowSizeStub;
     private static MemorySegment idIdStub;
+    private static MemorySegment idStub;
     private static MemorySegment deallocStub;
     private static MemorySegment sigStub;    // methodSignatureForSelector: (returns an NSMethodSignature)
     private static MemorySegment invStub;    // forwardInvocation: (swallows unknown selectors)
@@ -198,6 +203,20 @@ public final class DelegateProxy {
         }
     }
 
+    /// FFM upcall target: `-(id)method:(id)` — e.g. applicationDockMenu: returns NSMenu
+    static MemorySegment dispatchId(MemorySegment self, MemorySegment sel, MemorySegment sender) {
+        Holder h = REGISTRY.get(self.address());
+        IdArg f = (h == null) ? null : h.ids().get(sel.address());
+        if (f == null) return MemorySegment.NULL;
+        Scratch.beginTurn();
+        try {
+            MemorySegment r = f.call(sender);
+            return (r == null) ? MemorySegment.NULL : r;
+        } finally {
+            Scratch.endTurn();
+        }
+    }
+
     /// FFM upcall target: `-(void)dealloc` — unregister the instance, then chain `[super dealloc]`.
     static void dispatchDealloc(MemorySegment self, MemorySegment sel) {
         Holder h = REGISTRY.remove(self.address());
@@ -258,7 +277,8 @@ public final class DelegateProxy {
         Map<Long, IdIdIntArg> idIdInts = new ConcurrentHashMap<>();
         Map<Long, WindowSizeArg> windowSizes = new ConcurrentHashMap<>();
         Map<Long, IdIdArg> idIds = new ConcurrentHashMap<>();
-        REGISTRY.put(instance.address(), new Holder(bools, voids, ints, idIdInts, windowSizes, idIds, ObjC.classGetSuperclass(pair)));
+        Map<Long, IdArg> ids = new ConcurrentHashMap<>();
+        REGISTRY.put(instance.address(), new Holder(bools, voids, ints, idIdInts, windowSizes, idIds, ids, ObjC.classGetSuperclass(pair)));
         return instance;
     }
 
@@ -283,7 +303,9 @@ public final class DelegateProxy {
         Map<String, IntArg> ints = Map.of();
         Map<String, IdIdIntArg> idIdInts = Map.of();
         Map<String, WindowSizeArg> windowSizes = Map.of();
-        return delegate(superClassName, className, boolSelectors, voidSelectors, ints, idIdInts, windowSizes);
+        Map<String, IdIdArg> idIds = Map.of();
+        Map<String, IdArg> ids = Map.of();
+        return delegate(superClassName, className, boolSelectors, voidSelectors, ints, idIdInts, windowSizes, idIds, ids);
     }
 
     /// Build (lazily) a protocol-ish delegate / data-source object subclassing
@@ -309,7 +331,9 @@ public final class DelegateProxy {
             Map<String, BoolArg> boolSelectors, Map<String, VoidArg> voidSelectors,
             Map<String, IntArg> intSelectors, Map<String, IdIdIntArg> idIdIntSelectors) {
         Map<String, WindowSizeArg> windowSizes = Map.of();
-        return delegate(superClassName, className, boolSelectors, voidSelectors, intSelectors, idIdIntSelectors, windowSizes);
+        Map<String, IdIdArg> idIds = Map.of();
+        Map<String, IdArg> ids = Map.of();
+        return delegate(superClassName, className, boolSelectors, voidSelectors, intSelectors, idIdIntSelectors, windowSizes, idIds, ids);
     }
 
     /// Build (lazily) a protocol-ish delegate / data-source / window-delegate object subclassing
@@ -337,7 +361,59 @@ public final class DelegateProxy {
             Map<String, BoolArg> boolSelectors, Map<String, VoidArg> voidSelectors,
             Map<String, IntArg> intSelectors, Map<String, IdIdIntArg> idIdIntSelectors,
             Map<String, WindowSizeArg> windowSizeSelectors) {
-        return delegate(superClassName, className, boolSelectors, voidSelectors, intSelectors, idIdIntSelectors, windowSizeSelectors, Map.of());
+        Map<String, IdIdArg> idIds = Map.of();
+        Map<String, IdArg> ids = Map.of();
+        return delegate(superClassName, className, boolSelectors, voidSelectors, intSelectors, idIdIntSelectors, windowSizeSelectors, idIds, ids);
+    }
+
+    /// Build delegate for `NSApplication` dock menu `applicationDockMenu:` → `"@@:@"` → `dispatchId`.
+    public static MemorySegment delegate(String superClassName, String className,
+            Map<String, BoolArg> boolSelectors, Map<String, VoidArg> voidSelectors,
+            Map<String, IntArg> intSelectors, Map<String, IdIdIntArg> idIdIntSelectors,
+            Map<String, WindowSizeArg> windowSizeSelectors,
+            Map<String, IdIdArg> idIdSelectors,
+            Map<String, IdArg> idSelectors) {
+        MemorySegment pair = ensureClassPair(superClassName + "\0" + className);
+        Map<Long, BoolArg> bools = new ConcurrentHashMap<>();
+        Map<Long, VoidArg> voids = new ConcurrentHashMap<>();
+        Map<Long, IntArg> ints = new ConcurrentHashMap<>();
+        Map<Long, IdIdIntArg> idIdInts = new ConcurrentHashMap<>();
+        Map<Long, WindowSizeArg> windowSizes = new ConcurrentHashMap<>();
+        Map<Long, IdIdArg> idIds = new ConcurrentHashMap<>();
+        Map<Long, IdArg> ids = new ConcurrentHashMap<>();
+
+        for (Map.Entry<String, BoolArg> e : boolSelectors.entrySet()) {
+            addBoolMethod(pair, e.getKey());
+            bools.put(ObjC.sel(e.getKey()).address(), e.getValue());
+        }
+        for (Map.Entry<String, VoidArg> e : voidSelectors.entrySet()) {
+            addVoidMethod(pair, e.getKey());
+            voids.put(ObjC.sel(e.getKey()).address(), e.getValue());
+        }
+        for (Map.Entry<String, IntArg> e : intSelectors.entrySet()) {
+            addIntMethod(pair, e.getKey());
+            ints.put(ObjC.sel(e.getKey()).address(), e.getValue());
+        }
+        for (Map.Entry<String, IdIdIntArg> e : idIdIntSelectors.entrySet()) {
+            addIdIdIntMethod(pair, e.getKey());
+            idIdInts.put(ObjC.sel(e.getKey()).address(), e.getValue());
+        }
+        for (Map.Entry<String, WindowSizeArg> e : windowSizeSelectors.entrySet()) {
+            addWindowSizeMethod(pair, e.getKey());
+            windowSizes.put(ObjC.sel(e.getKey()).address(), e.getValue());
+        }
+        for (Map.Entry<String, IdIdArg> e : idIdSelectors.entrySet()) {
+            addIdIdMethod(pair, e.getKey());
+            idIds.put(ObjC.sel(e.getKey()).address(), e.getValue());
+        }
+        for (Map.Entry<String, IdArg> e : idSelectors.entrySet()) {
+            addIdMethod(pair, e.getKey());
+            ids.put(ObjC.sel(e.getKey()).address(), e.getValue());
+        }
+
+        MemorySegment instance = allocInit(pair);
+        REGISTRY.put(instance.address(), new Holder(bools, voids, ints, idIdInts, windowSizes, idIds, ids, ObjC.classGetSuperclass(pair)));
+        return instance;
     }
 
     /// Build delegate with Touch Bar `touchBar:makeItemForIdentifier:` support.
@@ -354,6 +430,7 @@ public final class DelegateProxy {
         Map<Long, IdIdIntArg> idIdInts = new ConcurrentHashMap<>();
         Map<Long, WindowSizeArg> windowSizes = new ConcurrentHashMap<>();
         Map<Long, IdIdArg> idIds = new ConcurrentHashMap<>();
+        Map<Long, IdArg> ids = new ConcurrentHashMap<>();
 
         for (Map.Entry<String, BoolArg> e : boolSelectors.entrySet()) {
             addBoolMethod(pair, e.getKey());
@@ -381,7 +458,7 @@ public final class DelegateProxy {
         }
 
         MemorySegment instance = allocInit(pair);
-        REGISTRY.put(instance.address(), new Holder(bools, voids, ints, idIdInts, windowSizes, idIds, ObjC.classGetSuperclass(pair)));
+        REGISTRY.put(instance.address(), new Holder(bools, voids, ints, idIdInts, windowSizes, idIds, ids, ObjC.classGetSuperclass(pair)));
         return instance;
     }
 
@@ -421,6 +498,10 @@ public final class DelegateProxy {
             MethodHandle idIdTarget = MethodHandles.lookup().findStatic(DelegateProxy.class, "dispatchIdId",
                     MethodType.methodType(MemorySegment.class, MemorySegment.class, MemorySegment.class, MemorySegment.class, MemorySegment.class));
             idIdStub = ObjC.upcall(idIdTarget, NsuiForeign.delegateIdIdUpcall()); // (PTR, PTR, PTR, PTR, PTR) touchBar:makeItemForIdentifier:
+
+            MethodHandle idTarget = MethodHandles.lookup().findStatic(DelegateProxy.class, "dispatchId",
+                    MethodType.methodType(MemorySegment.class, MemorySegment.class, MemorySegment.class, MemorySegment.class));
+            idStub = ObjC.upcall(idTarget, NsuiForeign.delegateDockMenu()); // (PTR, PTR, PTR, PTR) applicationDockMenu:
 
             MethodHandle deallocTarget = MethodHandles.lookup().findStatic(DelegateProxy.class, "dispatchDealloc",
                     MethodType.methodType(void.class, MemorySegment.class, MemorySegment.class));
@@ -470,7 +551,7 @@ public final class DelegateProxy {
             rc = new RuntimeClass(pair,
                     new CopyOnWriteArraySet<>(), new CopyOnWriteArraySet<>(),
                     new CopyOnWriteArraySet<>(), new CopyOnWriteArraySet<>(),
-                    new CopyOnWriteArraySet<>(), new CopyOnWriteArraySet<>());
+                    new CopyOnWriteArraySet<>(), new CopyOnWriteArraySet<>(), new CopyOnWriteArraySet<>());
             CLASSES.put(key, rc);
         }
         return rc.cls();
@@ -522,6 +603,16 @@ public final class DelegateProxy {
         if (rc.windowSizeMethods().add(selector)) {
             if (!ObjC.addMethod(pair, selector, windowSizeStub, "{CGSize=dd}@:@{CGSize=dd}")) {
                 throw new RuntimeException("class_addMethod windowSize " + selector + " failed");
+            }
+        }
+    }
+
+    /// Add a `-(id)method:(id)` (encoding "@@:@") to a class pair unless already present.
+    private static void addIdMethod(MemorySegment pair, String selector) {
+        RuntimeClass rc = classInfo(pair);
+        if (rc.idMethods().add(selector)) {
+            if (!ObjC.addMethod(pair, selector, idStub, "@@:@")) {
+                throw new RuntimeException("class_addMethod id " + selector + " failed");
             }
         }
     }

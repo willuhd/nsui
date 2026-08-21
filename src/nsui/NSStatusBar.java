@@ -11,24 +11,22 @@ import static nsui.objc.Sig.Ret;
 /// NSStatusBar — the system menu bar. Thin 1:1 wrapper.
 public final class NSStatusBar extends NSObject {
 
-    private static volatile boolean initialized;
-    private static MethodHandle hId;       // (id,SEL)->id [systemStatusBar]
-    private static MethodHandle hWithLength; // (id,SEL,double)->id [statusItemWithLength:]
-    private static MethodHandle hThickness; // (id,SEL)->double [thickness]
-    private static MethodHandle hIsVertical; // (id,SEL)->bool
+            private record Handles(MethodHandle hId, MethodHandle hWithLength, MethodHandle hThickness, MethodHandle hIsVertical) {}
+    private static volatile Handles handles;
 
     private NSStatusBar(MemorySegment peer) {
         super(peer);
         ensureInit();
     }
 
-    private static synchronized void ensureInit() {
-        if (initialized) return;
-        hId = ObjC.handle(Sig.of(Ret.ID));
-        hWithLength = ObjC.handle(Sig.of(Ret.ID, Arg.DOUBLE));
-        hThickness = ObjC.handle(Sig.of(Ret.DOUBLE));
-        hIsVertical = ObjC.handle(Sig.of(Ret.BOOL));
-        initialized = true;
+        private static synchronized void ensureInit() {
+        if (handles != null) return;
+        handles = new Handles(
+                ObjC.handle(Sig.of(Ret.ID)),
+                ObjC.handle(Sig.of(Ret.ID, Arg.DOUBLE)),
+                ObjC.handle(Sig.of(Ret.DOUBLE)),
+                ObjC.handle(Sig.of(Ret.BOOL))
+        );
     }
 
     public static NSStatusBar wrap(MemorySegment peer) {
@@ -39,7 +37,7 @@ public final class NSStatusBar extends NSObject {
     public static NSStatusBar systemStatusBar() {
         ensureInit();
         try {
-            MemorySegment p = (MemorySegment) hId.invokeExact(ObjC.cls("NSStatusBar"), ObjC.sel("systemStatusBar"));
+            MemorySegment p = (MemorySegment) handles.hId().invokeExact(ObjC.cls("NSStatusBar"), ObjC.sel("systemStatusBar"));
             return wrap(p);
         } catch (Throwable t) { throw new RuntimeException("systemStatusBar failed", t); }
     }
@@ -48,7 +46,7 @@ public final class NSStatusBar extends NSObject {
     public NSStatusItem statusItemWithLength(double length) {
         ensureInit();
         try {
-            MemorySegment p = (MemorySegment) hWithLength.invokeExact(peer, ObjC.sel("statusItemWithLength:"), length);
+            MemorySegment p = (MemorySegment) handles.hWithLength().invokeExact(peer, ObjC.sel("statusItemWithLength:"), length);
             return NSStatusItem.wrap(p);
         } catch (Throwable t) { throw new RuntimeException("statusItemWithLength: failed", t); }
     }
@@ -92,12 +90,12 @@ public final class NSStatusBar extends NSObject {
 
     public double thickness() {
         ensureInit();
-        try { return (double) hThickness.invokeExact(peer, ObjC.sel("thickness")); } catch (Throwable t) { throw new RuntimeException("thickness failed", t); }
+        try { return (double) handles.hThickness().invokeExact(peer, ObjC.sel("thickness")); } catch (Throwable t) { throw new RuntimeException("thickness failed", t); }
     }
 
     public boolean isVertical() {
         ensureInit();
-        try { return (boolean) hIsVertical.invokeExact(peer, ObjC.sel("isVertical")); } catch (Throwable t) { throw new RuntimeException("isVertical failed", t); }
+        try { return (boolean) handles.hIsVertical().invokeExact(peer, ObjC.sel("isVertical")); } catch (Throwable t) { throw new RuntimeException("isVertical failed", t); }
     }
 
     // ---- length constants ----

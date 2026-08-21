@@ -12,12 +12,8 @@ import static nsui.objc.Sig.Ret;
 /// Provides currentContext and CGContext access.
 public final class NSGraphicsContext extends NSObject {
 
-    private static volatile boolean initialized;
-    private static MethodHandle hCurrent;    // (id, SEL) -> id [currentContext]
-    private static MethodHandle hCGContext;  // (id, SEL) -> id [CGContext]
-    private static MethodHandle hSave;       // (id, SEL) -> void [saveGraphicsState]
-    private static MethodHandle hRestore;    // (id, SEL) -> void [restoreGraphicsState]
-    private static MethodHandle hWithCG;     // (id, SEL, id, bool) -> id [graphicsContextWithCGContext:flipped:]
+            private record Handles(MethodHandle hCurrent, MethodHandle hSave, MethodHandle hWithCG) {}
+    private static volatile Handles handles;
 
     private NSGraphicsContext(MemorySegment peer) {
         super(peer);
@@ -28,21 +24,16 @@ public final class NSGraphicsContext extends NSObject {
         return (peer == null || peer.address() == 0) ? null : new NSGraphicsContext(peer);
     }
 
-    private static synchronized void ensureInit() {
-        if (initialized) return;
-        hCurrent = ObjC.handle(Sig.of(Ret.ID));
-        hCGContext = ObjC.handle(Sig.of(Ret.ID));
-        hSave = ObjC.handle(Sig.of(Ret.VOID));
-        hRestore = ObjC.handle(Sig.of(Ret.VOID));
-        hWithCG = ObjC.handle(Sig.of(Ret.ID, Arg.ID, Arg.BOOL));
-        initialized = true;
+        private static synchronized void ensureInit() {
+        if (handles != null) return;
+        handles = new Handles(ObjC.handle(Sig.of(Ret.ID)), ObjC.handle(Sig.of(Ret.VOID)), ObjC.handle(Sig.of(Ret.ID, Arg.ID, Arg.BOOL)));
     }
 
     /// +[NSGraphicsContext currentContext]
     public static NSGraphicsContext currentContext() {
         ensureInit();
         try {
-            MemorySegment p = (MemorySegment) hCurrent.invokeExact(ObjC.cls("NSGraphicsContext"), ObjC.sel("currentContext"));
+            MemorySegment p = (MemorySegment) handles.hCurrent().invokeExact(ObjC.cls("NSGraphicsContext"), ObjC.sel("currentContext"));
             return wrap(p);
         } catch (Throwable t) {
             throw new RuntimeException("currentContext failed", t);
@@ -53,7 +44,7 @@ public final class NSGraphicsContext extends NSObject {
     public MemorySegment CGContext() {
         ensureInit();
         try {
-            return (MemorySegment) hCGContext.invokeExact(peer, ObjC.sel("CGContext"));
+            return (MemorySegment) handles.hCurrent().invokeExact(peer, ObjC.sel("CGContext"));
         } catch (Throwable t) {
             throw new RuntimeException("CGContext failed", t);
         }
@@ -63,7 +54,7 @@ public final class NSGraphicsContext extends NSObject {
     public void saveGraphicsState() {
         ensureInit();
         try {
-            hSave.invokeExact(peer, ObjC.sel("saveGraphicsState"));
+            handles.hSave().invokeExact(peer, ObjC.sel("saveGraphicsState"));
         } catch (Throwable t) {
             throw new RuntimeException("saveGraphicsState failed", t);
         }
@@ -73,7 +64,7 @@ public final class NSGraphicsContext extends NSObject {
     public void restoreGraphicsState() {
         ensureInit();
         try {
-            hRestore.invokeExact(peer, ObjC.sel("restoreGraphicsState"));
+            handles.hSave().invokeExact(peer, ObjC.sel("restoreGraphicsState"));
         } catch (Throwable t) {
             throw new RuntimeException("restoreGraphicsState failed", t);
         }
@@ -96,7 +87,7 @@ public final class NSGraphicsContext extends NSObject {
         ensureInit();
         try {
             MemorySegment cg = (cgContext == null ? MemorySegment.NULL : cgContext);
-            MemorySegment p = (MemorySegment) hWithCG.invokeExact(ObjC.cls("NSGraphicsContext"), ObjC.sel("graphicsContextWithCGContext:flipped:"), cg, flipped);
+            MemorySegment p = (MemorySegment) handles.hWithCG().invokeExact(ObjC.cls("NSGraphicsContext"), ObjC.sel("graphicsContextWithCGContext:flipped:"), cg, flipped);
             return wrap(p);
         } catch (Throwable t) {
             throw new RuntimeException("graphicsContextWithCGContext:flipped: failed", t);

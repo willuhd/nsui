@@ -132,6 +132,11 @@ public final class NsuiFeature implements Feature {
                     NsuiForeign.delegateWindowWillResize());
             upcalls++;
             RuntimeForeignAccess.registerForDirectUpcall(
+                    MethodHandles.lookup().findStatic(DelegateProxy.class, "dispatchId",
+                            MethodType.methodType(MemorySegment.class, MemorySegment.class, MemorySegment.class, MemorySegment.class)),
+                    NsuiForeign.delegateDockMenu());
+            upcalls++;
+            RuntimeForeignAccess.registerForDirectUpcall(
                     MethodHandles.lookup().findStatic(DelegateProxy.class, "dispatchIdId",
                             MethodType.methodType(MemorySegment.class, MemorySegment.class, MemorySegment.class, MemorySegment.class, MemorySegment.class)),
                     NsuiForeign.delegateIdIdUpcall());

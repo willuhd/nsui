@@ -12,11 +12,8 @@ import static nsui.objc.Sig.Ret;
 /// Thin 1:1, stateless.
 public final class NSWindowTabGroup extends NSObject {
 
-    private static volatile boolean initialized;
-    private static MethodHandle hId;       // (id, SEL) -> id
-    private static MethodHandle hBool;     // (id, SEL) -> bool
-    private static MethodHandle hVoidId;   // (id, SEL, id) -> void
-    private static MethodHandle hInt;      // (id, SEL) -> long
+            private record Handles(MethodHandle hId, MethodHandle hBool, MethodHandle hVoidId, MethodHandle hInt) {}
+    private static volatile Handles handles;
 
     private NSWindowTabGroup(MemorySegment peer) {
         super(peer);
@@ -27,20 +24,21 @@ public final class NSWindowTabGroup extends NSObject {
         return (peer == null || peer.address() == 0) ? null : new NSWindowTabGroup(peer);
     }
 
-    private static synchronized void ensureInit() {
-        if (initialized) return;
-        hId = ObjC.handle(Sig.of(Ret.ID));
-        hBool = ObjC.handle(Sig.of(Ret.BOOL));
-        hVoidId = ObjC.handle(Sig.of(Ret.VOID, Arg.ID));
-        hInt = ObjC.handle(Sig.of(Ret.INT));
-        initialized = true;
+        private static synchronized void ensureInit() {
+        if (handles != null) return;
+        handles = new Handles(
+                ObjC.handle(Sig.of(Ret.ID)),
+                ObjC.handle(Sig.of(Ret.BOOL)),
+                ObjC.handle(Sig.of(Ret.VOID, Arg.ID)),
+                ObjC.handle(Sig.of(Ret.INT))
+        );
     }
 
     /// [group windows] -> NSArray of NSWindow
     public NSArray windows() {
         ensureInit();
         try {
-            MemorySegment arr = (MemorySegment) hId.invokeExact(peer, ObjC.sel("windows"));
+            MemorySegment arr = (MemorySegment) handles.hId().invokeExact(peer, ObjC.sel("windows"));
             return NSArray.wrap(arr);
         } catch (Throwable t) {
             throw new RuntimeException("windows failed", t);
@@ -51,7 +49,7 @@ public final class NSWindowTabGroup extends NSObject {
     public NSWindow selectedWindow() {
         ensureInit();
         try {
-            MemorySegment w = (MemorySegment) hId.invokeExact(peer, ObjC.sel("selectedWindow"));
+            MemorySegment w = (MemorySegment) handles.hId().invokeExact(peer, ObjC.sel("selectedWindow"));
             return NSWindow.wrap(w);
         } catch (Throwable t) {
             throw new RuntimeException("selectedWindow failed", t);
@@ -63,7 +61,7 @@ public final class NSWindowTabGroup extends NSObject {
         ensureInit();
         try {
             MemorySegment p = (window == null ? MemorySegment.NULL : window.peer());
-            hVoidId.invokeExact(peer, ObjC.sel("setSelectedWindow:"), p);
+            handles.hVoidId().invokeExact(peer, ObjC.sel("setSelectedWindow:"), p);
         } catch (Throwable t) {
             throw new RuntimeException("setSelectedWindow: failed", t);
         }
@@ -74,7 +72,7 @@ public final class NSWindowTabGroup extends NSObject {
         ensureInit();
         try {
             MemorySegment p = (window == null ? MemorySegment.NULL : window.peer());
-            hVoidId.invokeExact(peer, ObjC.sel("addWindow:"), p);
+            handles.hVoidId().invokeExact(peer, ObjC.sel("addWindow:"), p);
         } catch (Throwable t) {
             throw new RuntimeException("addWindow: failed", t);
         }
@@ -85,7 +83,7 @@ public final class NSWindowTabGroup extends NSObject {
         ensureInit();
         try {
             MemorySegment p = (window == null ? MemorySegment.NULL : window.peer());
-            hVoidId.invokeExact(peer, ObjC.sel("removeWindow:"), p);
+            handles.hVoidId().invokeExact(peer, ObjC.sel("removeWindow:"), p);
         } catch (Throwable t) {
             throw new RuntimeException("removeWindow: failed", t);
         }
@@ -95,7 +93,7 @@ public final class NSWindowTabGroup extends NSObject {
     public boolean isOverviewVisible() {
         ensureInit();
         try {
-            return (boolean) hBool.invokeExact(peer, ObjC.sel("isOverviewVisible"));
+            return (boolean) handles.hBool().invokeExact(peer, ObjC.sel("isOverviewVisible"));
         } catch (Throwable t) {
             throw new RuntimeException("isOverviewVisible failed", t);
         }
@@ -111,7 +109,7 @@ public final class NSWindowTabGroup extends NSObject {
     public long count() {
         ensureInit();
         try {
-            return (long) hInt.invokeExact(peer, ObjC.sel("count"));
+            return (long) handles.hInt().invokeExact(peer, ObjC.sel("count"));
         } catch (Throwable t) {
             // fallback via windows array
             NSArray arr = windows();

@@ -15,10 +15,8 @@ import static nsui.objc.Sig.Ret;
 public class NSTextField extends NSControl {
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
-    private static volatile boolean initialized;
-    private static MethodHandle hInitFrame;   // (id, SEL, NSRect) -> id
-    private static MethodHandle hDouble;      // (id, SEL) -> double
-    private static MethodHandle hSetDouble;   // (id, SEL, double) -> void
+    private record Handles(MethodHandle hInitFrame, MethodHandle hDouble, MethodHandle hSetDouble) {}
+    private static volatile Handles H;
 
     protected NSTextField(MemorySegment peer) {
         super(peer);
@@ -26,11 +24,11 @@ public class NSTextField extends NSControl {
     }
 
     private static synchronized void ensureInit() {
-        if (initialized) return;
-        hInitFrame = ObjC.handle(Sig.of(Ret.ID, Arg.RECT));
-        hDouble = ObjC.handle(Sig.of(Ret.DOUBLE));
-        hSetDouble = ObjC.handle(Sig.of(Ret.VOID, Arg.DOUBLE));
-        initialized = true;
+        if (H != null) return;
+        H = new Handles(
+                ObjC.handle(Sig.of(Ret.ID, Arg.RECT)),
+                ObjC.handle(Sig.of(Ret.DOUBLE)),
+                ObjC.handle(Sig.of(Ret.VOID, Arg.DOUBLE)));
     }
 
     /// `[[NSTextField alloc] initWithFrame:frame]` — a new text field at the given rect.
@@ -38,7 +36,7 @@ public class NSTextField extends NSControl {
         ensureInit();
         MemorySegment f = ObjC.msgSendId(ObjC.cls("NSTextField"), ObjC.sel("alloc"));
         try {
-            f = (MemorySegment) hInitFrame.invokeExact(f, ObjC.sel("initWithFrame:"), frame.toSegment());
+            f = (MemorySegment) H.hInitFrame().invokeExact(f, ObjC.sel("initWithFrame:"), frame.toSegment());
         } catch (Throwable t) {
             throw new RuntimeException("initWithFrame: failed for NSTextField", t);
         }
@@ -167,11 +165,11 @@ public class NSTextField extends NSControl {
     }
     public double preferredMaxLayoutWidth() {
         ensureInit();
-        try { return (double) hDouble.invokeExact(peer, ObjC.sel("preferredMaxLayoutWidth")); } catch (Throwable t) { throw new RuntimeException("preferredMaxLayoutWidth failed", t); }
+        try { return (double) H.hDouble().invokeExact(peer, ObjC.sel("preferredMaxLayoutWidth")); } catch (Throwable t) { throw new RuntimeException("preferredMaxLayoutWidth failed", t); }
     }
     public void setPreferredMaxLayoutWidth(double w) {
         ensureInit();
-        try { hSetDouble.invokeExact(peer, ObjC.sel("setPreferredMaxLayoutWidth:"), w); } catch (Throwable t) { throw new RuntimeException("setPreferredMaxLayoutWidth: failed", t); }
+        try { H.hSetDouble().invokeExact(peer, ObjC.sel("setPreferredMaxLayoutWidth:"), w); } catch (Throwable t) { throw new RuntimeException("setPreferredMaxLayoutWidth: failed", t); }
     }
     public long maximumNumberOfLines() {
         return ObjC.msgSendLong(peer, ObjC.sel("maximumNumberOfLines"));

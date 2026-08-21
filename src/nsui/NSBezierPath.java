@@ -12,17 +12,8 @@ import static nsui.objc.Sig.Ret;
 /// Provides construction, point manipulation, stroking/filling.
 public final class NSBezierPath extends NSObject {
 
-    private static volatile boolean initialized;
-    private static MethodHandle hCreate;       // (id, SEL) -> id  [bezierPath]
-    private static MethodHandle hWithRect;     // (id, SEL, NSRect) -> id [bezierPathWithRect:]
-    private static MethodHandle hWithOval;     // (id, SEL, NSRect) -> id [bezierPathWithOvalInRect:]
-    private static MethodHandle hVoidPoint;    // (id, SEL, NSPoint) -> void [moveToPoint:/lineToPoint:]
-    private static MethodHandle hCurve;        // (id, SEL, NSPoint, NSPoint, NSPoint) -> void
-    private static MethodHandle hVoid;         // (id, SEL) -> void [stroke/fill/closePath]
-    private static MethodHandle hGetDouble;    // (id, SEL) -> double
-    private static MethodHandle hSetDouble;    // (id, SEL, double) -> void
-    private static MethodHandle hBool;         // (id, SEL) -> bool
-    private static MethodHandle hVoidId;       // (id, SEL, id) -> void
+            private record Handles(MethodHandle hCreate, MethodHandle hWithRect, MethodHandle hVoidPoint, MethodHandle hCurve, MethodHandle hVoid, MethodHandle hGetDouble, MethodHandle hSetDouble, MethodHandle hBool, MethodHandle hVoidId) {}
+    private static volatile Handles handles;
 
     private NSBezierPath(MemorySegment peer) {
         super(peer);
@@ -33,26 +24,26 @@ public final class NSBezierPath extends NSObject {
         return (peer == null || peer.address() == 0) ? null : new NSBezierPath(peer);
     }
 
-    private static synchronized void ensureInit() {
-        if (initialized) return;
-        hCreate = ObjC.handle(Sig.of(Ret.ID));
-        hWithRect = ObjC.handle(Sig.of(Ret.ID, Arg.RECT));
-        hWithOval = ObjC.handle(Sig.of(Ret.ID, Arg.RECT));
-        hVoidPoint = ObjC.handle(Sig.of(Ret.VOID, Arg.POINT));
-        hCurve = ObjC.handle(Sig.of(Ret.VOID, Arg.POINT, Arg.POINT, Arg.POINT));
-        hVoid = ObjC.handle(Sig.of(Ret.VOID));
-        hGetDouble = ObjC.handle(Sig.of(Ret.DOUBLE));
-        hSetDouble = ObjC.handle(Sig.of(Ret.VOID, Arg.DOUBLE));
-        hBool = ObjC.handle(Sig.of(Ret.BOOL));
-        hVoidId = ObjC.handle(Sig.of(Ret.VOID, Arg.ID));
-        initialized = true;
+        private static synchronized void ensureInit() {
+        if (handles != null) return;
+        handles = new Handles(
+                ObjC.handle(Sig.of(Ret.ID)),
+                ObjC.handle(Sig.of(Ret.ID, Arg.RECT)),
+                ObjC.handle(Sig.of(Ret.VOID, Arg.POINT)),
+                ObjC.handle(Sig.of(Ret.VOID, Arg.POINT, Arg.POINT, Arg.POINT)),
+                ObjC.handle(Sig.of(Ret.VOID)),
+                ObjC.handle(Sig.of(Ret.DOUBLE)),
+                ObjC.handle(Sig.of(Ret.VOID, Arg.DOUBLE)),
+                ObjC.handle(Sig.of(Ret.BOOL)),
+                ObjC.handle(Sig.of(Ret.VOID, Arg.ID))
+        );
     }
 
     /// +[NSBezierPath bezierPath]
     public static NSBezierPath bezierPath() {
         ensureInit();
         try {
-            MemorySegment p = (MemorySegment) hCreate.invokeExact(ObjC.cls("NSBezierPath"), ObjC.sel("bezierPath"));
+            MemorySegment p = (MemorySegment) handles.hCreate().invokeExact(ObjC.cls("NSBezierPath"), ObjC.sel("bezierPath"));
             return new NSBezierPath(p);
         } catch (Throwable t) {
             throw new RuntimeException("bezierPath failed", t);
@@ -63,7 +54,7 @@ public final class NSBezierPath extends NSObject {
     public static NSBezierPath bezierPathWithRect(NSRect rect) {
         ensureInit();
         try {
-            MemorySegment p = (MemorySegment) hWithRect.invokeExact(ObjC.cls("NSBezierPath"), ObjC.sel("bezierPathWithRect:"), rect.toSegment());
+            MemorySegment p = (MemorySegment) handles.hWithRect().invokeExact(ObjC.cls("NSBezierPath"), ObjC.sel("bezierPathWithRect:"), rect.toSegment());
             return new NSBezierPath(p);
         } catch (Throwable t) {
             throw new RuntimeException("bezierPathWithRect: failed", t);
@@ -74,7 +65,7 @@ public final class NSBezierPath extends NSObject {
     public static NSBezierPath bezierPathWithOvalInRect(NSRect rect) {
         ensureInit();
         try {
-            MemorySegment p = (MemorySegment) hWithOval.invokeExact(ObjC.cls("NSBezierPath"), ObjC.sel("bezierPathWithOvalInRect:"), rect.toSegment());
+            MemorySegment p = (MemorySegment) handles.hWithRect().invokeExact(ObjC.cls("NSBezierPath"), ObjC.sel("bezierPathWithOvalInRect:"), rect.toSegment());
             return new NSBezierPath(p);
         } catch (Throwable t) {
             throw new RuntimeException("bezierPathWithOvalInRect: failed", t);
@@ -85,7 +76,7 @@ public final class NSBezierPath extends NSObject {
     public void moveToPoint(NSPoint p) {
         ensureInit();
         try {
-            hVoidPoint.invokeExact(peer, ObjC.sel("moveToPoint:"), p.toSegment());
+            handles.hVoidPoint().invokeExact(peer, ObjC.sel("moveToPoint:"), p.toSegment());
         } catch (Throwable t) {
             throw new RuntimeException("moveToPoint: failed", t);
         }
@@ -95,7 +86,7 @@ public final class NSBezierPath extends NSObject {
     public void lineToPoint(NSPoint p) {
         ensureInit();
         try {
-            hVoidPoint.invokeExact(peer, ObjC.sel("lineToPoint:"), p.toSegment());
+            handles.hVoidPoint().invokeExact(peer, ObjC.sel("lineToPoint:"), p.toSegment());
         } catch (Throwable t) {
             throw new RuntimeException("lineToPoint: failed", t);
         }
@@ -105,7 +96,7 @@ public final class NSBezierPath extends NSObject {
     public void curveToPoint(NSPoint end, NSPoint cp1, NSPoint cp2) {
         ensureInit();
         try {
-            hCurve.invokeExact(peer, ObjC.sel("curveToPoint:controlPoint1:controlPoint2:"), end.toSegment(), cp1.toSegment(), cp2.toSegment());
+            handles.hCurve().invokeExact(peer, ObjC.sel("curveToPoint:controlPoint1:controlPoint2:"), end.toSegment(), cp1.toSegment(), cp2.toSegment());
         } catch (Throwable t) {
             throw new RuntimeException("curveToPoint:controlPoint1:controlPoint2: failed", t);
         }
@@ -115,7 +106,7 @@ public final class NSBezierPath extends NSObject {
     public void closePath() {
         ensureInit();
         try {
-            hVoid.invokeExact(peer, ObjC.sel("closePath"));
+            handles.hVoid().invokeExact(peer, ObjC.sel("closePath"));
         } catch (Throwable t) {
             throw new RuntimeException("closePath failed", t);
         }
@@ -125,7 +116,7 @@ public final class NSBezierPath extends NSObject {
     public void stroke() {
         ensureInit();
         try {
-            hVoid.invokeExact(peer, ObjC.sel("stroke"));
+            handles.hVoid().invokeExact(peer, ObjC.sel("stroke"));
         } catch (Throwable t) {
             throw new RuntimeException("stroke failed", t);
         }
@@ -135,7 +126,7 @@ public final class NSBezierPath extends NSObject {
     public void fill() {
         ensureInit();
         try {
-            hVoid.invokeExact(peer, ObjC.sel("fill"));
+            handles.hVoid().invokeExact(peer, ObjC.sel("fill"));
         } catch (Throwable t) {
             throw new RuntimeException("fill failed", t);
         }
@@ -145,7 +136,7 @@ public final class NSBezierPath extends NSObject {
     public double lineWidth() {
         ensureInit();
         try {
-            return (double) hGetDouble.invokeExact(peer, ObjC.sel("lineWidth"));
+            return (double) handles.hGetDouble().invokeExact(peer, ObjC.sel("lineWidth"));
         } catch (Throwable t) {
             throw new RuntimeException("lineWidth failed", t);
         }
@@ -155,7 +146,7 @@ public final class NSBezierPath extends NSObject {
     public void setLineWidth(double w) {
         ensureInit();
         try {
-            hSetDouble.invokeExact(peer, ObjC.sel("setLineWidth:"), w);
+            handles.hSetDouble().invokeExact(peer, ObjC.sel("setLineWidth:"), w);
         } catch (Throwable t) {
             throw new RuntimeException("setLineWidth: failed", t);
         }
@@ -165,7 +156,7 @@ public final class NSBezierPath extends NSObject {
     public boolean isEmpty() {
         ensureInit();
         try {
-            return (boolean) hBool.invokeExact(peer, ObjC.sel("isEmpty"));
+            return (boolean) handles.hBool().invokeExact(peer, ObjC.sel("isEmpty"));
         } catch (Throwable t) {
             throw new RuntimeException("isEmpty failed", t);
         }
@@ -175,7 +166,7 @@ public final class NSBezierPath extends NSObject {
     public void appendBezierPath(NSBezierPath other) {
         ensureInit();
         try {
-            hVoidId.invokeExact(peer, ObjC.sel("appendBezierPath:"), (MemorySegment) (other == null ? MemorySegment.NULL : other.peer()));
+            handles.hVoidId().invokeExact(peer, ObjC.sel("appendBezierPath:"), (MemorySegment) (other == null ? MemorySegment.NULL : other.peer()));
         } catch (Throwable t) {
             throw new RuntimeException("appendBezierPath: failed", t);
         }
@@ -185,7 +176,7 @@ public final class NSBezierPath extends NSObject {
     public void setClip() {
         ensureInit();
         try {
-            hVoid.invokeExact(peer, ObjC.sel("setClip"));
+            handles.hVoid().invokeExact(peer, ObjC.sel("setClip"));
         } catch (Throwable t) {
             throw new RuntimeException("setClip failed", t);
         }

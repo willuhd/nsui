@@ -11,10 +11,8 @@ import static nsui.objc.Sig.Ret;
 /// NSDate — minimal wrapper over native `NSDate`.
 public final class NSDate extends NSObject {
 
-    private static volatile boolean initialized;
-    private static MethodHandle hTimeIntervalSince1970; // (id, SEL) -> double
-    private static MethodHandle hTimeIntervalSinceNow;  // (id, SEL) -> double
-    private static MethodHandle hCompare;               // (id, SEL, id) -> long
+            private record Handles(MethodHandle hTimeIntervalSince1970, MethodHandle hCompare) {}
+    private static volatile Handles handles;
 
     private NSDate(MemorySegment peer) {
         super(peer);
@@ -66,25 +64,22 @@ public final class NSDate extends NSObject {
         return wrap(s);
     }
 
-    private static synchronized void ensureInit() {
-        if (initialized) return;
-        hTimeIntervalSince1970 = ObjC.handle(Sig.of(Ret.DOUBLE));
-        hTimeIntervalSinceNow = ObjC.handle(Sig.of(Ret.DOUBLE));
-        hCompare = ObjC.handle(Sig.of(Ret.INT, Arg.ID));
-        initialized = true;
+        private static synchronized void ensureInit() {
+        if (handles != null) return;
+        handles = new Handles(ObjC.handle(Sig.of(Ret.DOUBLE)), ObjC.handle(Sig.of(Ret.INT, Arg.ID)));
     }
 
     /// timeIntervalSince1970
     public double timeIntervalSince1970() {
         ensureInit();
-        try { return (double) hTimeIntervalSince1970.invokeExact(peer, ObjC.sel("timeIntervalSince1970")); }
+        try { return (double) handles.hTimeIntervalSince1970().invokeExact(peer, ObjC.sel("timeIntervalSince1970")); }
         catch (Throwable t) { throw new RuntimeException("timeIntervalSince1970 failed", t); }
     }
 
     /// timeIntervalSinceNow
     public double timeIntervalSinceNow() {
         ensureInit();
-        try { return (double) hTimeIntervalSinceNow.invokeExact(peer, ObjC.sel("timeIntervalSinceNow")); }
+        try { return (double) handles.hTimeIntervalSince1970().invokeExact(peer, ObjC.sel("timeIntervalSinceNow")); }
         catch (Throwable t) { throw new RuntimeException("timeIntervalSinceNow failed", t); }
     }
 
@@ -102,7 +97,7 @@ public final class NSDate extends NSObject {
     public long compare(NSDate other) {
         ensureInit();
         if (other == null) throw new IllegalArgumentException("other null");
-        try { return (long) hCompare.invokeExact(peer, ObjC.sel("compare:"), other.peer()); }
+        try { return (long) handles.hCompare().invokeExact(peer, ObjC.sel("compare:"), other.peer()); }
         catch (Throwable t) { throw new RuntimeException("compare: failed", t); }
     }
 

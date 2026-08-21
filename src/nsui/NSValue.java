@@ -18,13 +18,8 @@ import static nsui.objc.Sig.Ret;
 public class NSValue extends NSObject {
 
     private static final ConcurrentHashMap<Long, Object> STORE = new ConcurrentHashMap<>();
-    private static volatile boolean initialized;
-    private static MethodHandle hPointValue; // (id, SEL) -> point
-    private static MethodHandle hSizeValue;  // (id, SEL) -> size
-    private static MethodHandle hRectValue;  // (id, SEL) -> rect
-    private static MethodHandle hRangeValue; // (id, SEL) -> range
-    private static MethodHandle hObjCType;   // (id, SEL) -> id (actually const char*)
-    private static MethodHandle hNonretained; // (id, SEL) -> id
+            private record Handles(MethodHandle hPointValue, MethodHandle hSizeValue, MethodHandle hRectValue, MethodHandle hRangeValue, MethodHandle hObjCType) {}
+    private static volatile Handles handles;
 
     protected NSValue(MemorySegment peer) {
         super(peer);
@@ -35,16 +30,16 @@ public class NSValue extends NSObject {
         return (peer == null || peer.address() == 0) ? null : new NSValue(peer);
     }
 
-    private static synchronized void ensureInit() {
-        if (initialized) return;
-        hPointValue = ObjC.handle(Sig.of(Ret.POINT));
-        hSizeValue = ObjC.handle(Sig.of(Ret.SIZE));
-        hRectValue = ObjC.handle(Sig.of(Ret.RECT));
-        hRangeValue = ObjC.handle(Sig.of(Ret.RANGE));
+        private static synchronized void ensureInit() {
+        if (handles != null) return;
         // objCType returns const char* (PTR) treated as ID handle
-        hObjCType = ObjC.handle(Sig.of(Ret.ID));
-        hNonretained = ObjC.handle(Sig.of(Ret.ID));
-        initialized = true;
+        handles = new Handles(
+                ObjC.handle(Sig.of(Ret.POINT)),
+                ObjC.handle(Sig.of(Ret.SIZE)),
+                ObjC.handle(Sig.of(Ret.RECT)),
+                ObjC.handle(Sig.of(Ret.RANGE)),
+                ObjC.handle(Sig.of(Ret.ID))
+        );
     }
 
     private static MemorySegment allocInit(String clsName) {
@@ -113,7 +108,7 @@ public class NSValue extends NSObject {
         if (cached instanceof NSPoint p) return p;
         ensureInit();
         try {
-            MemorySegment seg = (MemorySegment) hPointValue.invokeExact((java.lang.foreign.SegmentAllocator) Arena.global(), peer, ObjC.sel("pointValue"));
+            MemorySegment seg = (MemorySegment) handles.hPointValue().invokeExact((java.lang.foreign.SegmentAllocator) Arena.global(), peer, ObjC.sel("pointValue"));
             return NSPoint.fromSegment(seg);
         } catch (Throwable t) { throw new RuntimeException("pointValue failed", t); }
     }
@@ -124,7 +119,7 @@ public class NSValue extends NSObject {
         if (cached instanceof NSSize s) return s;
         ensureInit();
         try {
-            MemorySegment seg = (MemorySegment) hSizeValue.invokeExact((java.lang.foreign.SegmentAllocator) Arena.global(), peer, ObjC.sel("sizeValue"));
+            MemorySegment seg = (MemorySegment) handles.hSizeValue().invokeExact((java.lang.foreign.SegmentAllocator) Arena.global(), peer, ObjC.sel("sizeValue"));
             return NSSize.fromSegment(seg);
         } catch (Throwable t) { throw new RuntimeException("sizeValue failed", t); }
     }
@@ -135,7 +130,7 @@ public class NSValue extends NSObject {
         if (cached instanceof NSRect r) return r;
         ensureInit();
         try {
-            MemorySegment seg = (MemorySegment) hRectValue.invokeExact((java.lang.foreign.SegmentAllocator) Arena.global(), peer, ObjC.sel("rectValue"));
+            MemorySegment seg = (MemorySegment) handles.hRectValue().invokeExact((java.lang.foreign.SegmentAllocator) Arena.global(), peer, ObjC.sel("rectValue"));
             return NSRect.fromSegment(seg);
         } catch (Throwable t) { throw new RuntimeException("rectValue failed", t); }
     }
@@ -146,7 +141,7 @@ public class NSValue extends NSObject {
         if (cached instanceof NSRange r) return r;
         ensureInit();
         try {
-            MemorySegment seg = (MemorySegment) hRangeValue.invokeExact((java.lang.foreign.SegmentAllocator) Arena.global(), peer, ObjC.sel("rangeValue"));
+            MemorySegment seg = (MemorySegment) handles.hRangeValue().invokeExact((java.lang.foreign.SegmentAllocator) Arena.global(), peer, ObjC.sel("rangeValue"));
             return NSRange.fromSegment(seg);
         } catch (Throwable t) { throw new RuntimeException("rangeValue failed", t); }
     }
@@ -155,7 +150,7 @@ public class NSValue extends NSObject {
     public String objCType() {
         ensureInit();
         try {
-            MemorySegment c = (MemorySegment) hObjCType.invokeExact(peer, ObjC.sel("objCType"));
+            MemorySegment c = (MemorySegment) handles.hObjCType().invokeExact(peer, ObjC.sel("objCType"));
             if (c == null || c.address() == 0) return null;
             long len = 0;
             while (c.reinterpret(len + 1).get(java.lang.foreign.ValueLayout.JAVA_BYTE, len) != 0) len++;
@@ -168,7 +163,7 @@ public class NSValue extends NSObject {
     public MemorySegment nonretainedObjectValue() {
         ensureInit();
         try {
-            MemorySegment r = (MemorySegment) hNonretained.invokeExact(peer, ObjC.sel("nonretainedObjectValue"));
+            MemorySegment r = (MemorySegment) handles.hObjCType().invokeExact(peer, ObjC.sel("nonretainedObjectValue"));
             return (r == null || r.address() == 0) ? null : r;
         } catch (Throwable t) { throw new RuntimeException("nonretainedObjectValue failed", t); }
     }

@@ -11,8 +11,8 @@ import static nsui.objc.Sig.Ret;
 /// NSMenuItem — a menu entry with title, action selector and key equivalent.
 public final class NSMenuItem extends NSObject {
 
-    private static volatile boolean initialized;
-    private static MethodHandle hIdInt; // (id,SEL,long)->id
+    private record Handles(MethodHandle hIdInt) {}
+    private static volatile Handles H;
 
     private NSMenuItem(MemorySegment peer) {
         super(peer);
@@ -20,9 +20,8 @@ public final class NSMenuItem extends NSObject {
     }
 
     private static synchronized void ensureInit() {
-        if (initialized) return;
-        hIdInt = ObjC.handle(Sig.of(Ret.ID, Arg.INT));
-        initialized = true;
+        if (H != null) return;
+        H = new Handles(ObjC.handle(Sig.of(Ret.ID, Arg.INT)));
     }
 
     public static NSMenuItem wrap(MemorySegment peer) {
@@ -114,6 +113,8 @@ public final class NSMenuItem extends NSObject {
 
     // ---- menu / submenu ----
     public NSMenu menu() { return NSMenu.wrap(ObjC.msgSendId(peer, ObjC.sel("menu"))); }
+    /// [item setMenu:] — set the menu this item belongs to (rarely set directly).
+    public void setMenu(NSMenu m) { ObjC.msgSendVoidId(peer, ObjC.sel("setMenu:"), (MemorySegment) (m == null ? MemorySegment.NULL : m.peer())); }
     public boolean hasSubmenu() { return ObjC.msgSendBool(peer, ObjC.sel("hasSubmenu")); }
     public NSMenu submenu() { return NSMenu.wrap(ObjC.msgSendId(peer, ObjC.sel("submenu"))); }
     public void setSubmenu(NSMenu m) { ObjC.msgSendVoidId(peer, ObjC.sel("setSubmenu:"), (MemorySegment) (m == null ? MemorySegment.NULL : m.peer())); }

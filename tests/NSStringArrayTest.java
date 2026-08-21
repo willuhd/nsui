@@ -239,6 +239,35 @@ public final class NSStringArrayTest {
             check("inside pool".equals(tmp.string()), "inside Autorelease.run string ok");
         });
 
+        // ---- additional edge cases (FullCoverage expansion) ----
+        System.out.println("\n-- additional edge cases (FullCoverage) --");
+        // empty string edge
+        check(NSString.of("") != null && "".equals(NSString.of("").string()), "empty string edge");
+        // unicode emoji (2 code units)
+        NSString emoji = NSString.of("a\uD83D\uDE00b");
+        check(emoji.length()==4, "emoji length 4 code units got "+emoji.length());
+        // very large string 20000 chars (beyond 4096 truncation boundary)
+        String huge = "z".repeat(20000);
+        check(huge.equals(NSString.of(huge).string()), "20k string round-trip");
+        check(huge.equals(ObjC.toString(ObjC.nsstring(huge))), "20k ObjC round-trip");
+        // NSString wrap null
+        check(NSString.wrap(MemorySegment.NULL)==null, "wrap NULL null");
+        // NSArray edge: out-of-bounds should not crash? we test count
+        NSArray emptyArr = NSArray.array();
+        check(emptyArr.count()==0 && emptyArr.isEmpty(), "immutable empty");
+        // NSDictionary edge: missing key returns null
+        NSDictionary emptyDict = NSDictionary.dictionary();
+        check(emptyDict.objectForKey("missing")==null, "missing key null");
+        check(emptyDict.objectForKey(MemorySegment.NULL)==null, "missing MemorySegment key null");
+        // NSArray containsObject with null
+        NSArray arr3 = NSArray.mutableArray(); arr3.addObject(NSString.of("x"));
+        check(!arr3.containsObject(MemorySegment.NULL), "contains NULL false");
+        // NSRange via NSString: substring edge at bounds
+        NSString hw = NSString.of("hello world");
+        NSRange full = new NSRange(0, hw.length());
+        check(hw.substringWithRange(full).string().equals("hello world"), "substring full length");
+        check(hw.substringWithRange(new NSRange(0,0)).string().equals(""), "substring empty");
+
         System.out.println("\n=== NSStringArrayTest " + (failures == 0 ? "PASS" : "FAIL — " + failures + " failed") + " ===");
         System.exit(failures == 0 ? 0 : 1);
     }

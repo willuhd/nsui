@@ -40,7 +40,7 @@ for t in AutoreleaseTest ExceptionsTest DispatchTest NSViewTest \
          DataSourceProxyTest ImageSliderTest StackLayoutTest \
          SelectionWidgetsTest TableViewTest SmallWidgetsTest \
          NSRangeEdgeInsetsTest NSStringArrayTest PanelMenuToolbarTest CollectionOutlinePathTest \
-         AttributedLayerTest GestureTest MenuBarStatusTest TouchBarWindowDocTest PopoverTest; do
+         AttributedLayerTest GestureTest MenuBarStatusTest TouchBarWindowDocTest PopoverTest TouchBarMenuTest DockSheetTest FullCoverageTest; do
     echo "== $t"
     set +e
     # use safe copies if available, otherwise fallback to out/

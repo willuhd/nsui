@@ -23,20 +23,17 @@ import static nsui.objc.Sig.Ret;
 /// Explicitly: `button().setImage(NSImage.imageNamed("magnifyingglass"))` for SF Symbols.
 public class NSViewController extends NSObject {
 
-    private static volatile boolean initialized;
-    private static MethodHandle hSetView; // (id, SEL, id) -> void
-    private static MethodHandle hGetView; // (id, SEL) -> id
+            private record Handles(MethodHandle hSetView, MethodHandle hGetView) {}
+    private static volatile Handles handles;
 
     protected NSViewController(MemorySegment peer) {
         super(peer);
         ensureInit();
     }
 
-    private static synchronized void ensureInit() {
-        if (initialized) return;
-        hSetView = ObjC.handle(Sig.of(Ret.VOID, Arg.ID));
-        hGetView = ObjC.handle(Sig.of(Ret.ID));
-        initialized = true;
+        private static synchronized void ensureInit() {
+        if (handles != null) return;
+        handles = new Handles(ObjC.handle(Sig.of(Ret.VOID, Arg.ID)), ObjC.handle(Sig.of(Ret.ID)));
     }
 
     public static NSViewController wrap(MemorySegment peer) {
@@ -56,7 +53,7 @@ public class NSViewController extends NSObject {
     public NSView view() {
         ensureInit();
         try {
-            MemorySegment v = (MemorySegment) hGetView.invokeExact(peer, ObjC.sel("view"));
+            MemorySegment v = (MemorySegment) handles.hGetView().invokeExact(peer, ObjC.sel("view"));
             return NSView.wrap(v);
         } catch (Throwable t) {
             throw new RuntimeException("view failed", t);
@@ -68,7 +65,7 @@ public class NSViewController extends NSObject {
         ensureInit();
         try {
             MemorySegment p = (view == null ? MemorySegment.NULL : view.peer());
-            hSetView.invokeExact(peer, ObjC.sel("setView:"), p);
+            handles.hSetView().invokeExact(peer, ObjC.sel("setView:"), p);
         } catch (Throwable t) {
             throw new RuntimeException("setView: failed", t);
         }

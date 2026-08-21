@@ -20,16 +20,8 @@ import static nsui.objc.Sig.Ret;
 public final class NSOutlineView extends NSTableView {
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
-    private static volatile boolean initialized;
-    private static MethodHandle hInitFrame;   // (id, SEL, NSRect) -> id [initWithFrame:]
-    private static MethodHandle hExpand;      // (id, SEL, id) -> void [expandItem:]
-    private static MethodHandle hExpandChildren;// (id, SEL, id, bool) -> void [expandItem:expandChildren:]
-    private static MethodHandle hCollapse;    // (id, SEL, id) -> void [collapseItem:]
-    private static MethodHandle hCollapseChildren; // (id, SEL, id, bool) -> void [collapseItem:collapseChildren:]
-    private static MethodHandle hIsExpanded;  // (id, SEL, id) -> bool [isItemExpanded:]
-    private static MethodHandle hIsExpandable;// (id, SEL, id) -> bool [isExpandable:]
-    private static MethodHandle hSetOutlineCol; // (id, SEL, id) -> void [setOutlineTableColumn:]
-    private static MethodHandle hGetId;       // (id, SEL) -> id
+            private record Handles(MethodHandle hInitFrame, MethodHandle hExpand, MethodHandle hExpandChildren, MethodHandle hIsExpanded, MethodHandle hGetId) {}
+    private static volatile Handles handles;
 
     private NSOutlineView(MemorySegment peer) {
         super(peer);
@@ -41,21 +33,18 @@ public final class NSOutlineView extends NSTableView {
         return (peer == null || peer.address() == 0) ? null : new NSOutlineView(peer);
     }
 
-    private static synchronized void ensureOutlineInit() {
-        if (initialized) return;
+        private static synchronized void ensureOutlineInit() {
+        if (handles != null) return;
         // NSTableView.ensureInit may not have run; ensure base handles exist if called first.
         // We handle our own symbols; base class init is lazy and synchronized separately.
         try { NSTableView.ensureInit(); } catch (Throwable ignored) {}
-        hInitFrame = ObjC.handle(Sig.of(Ret.ID, Arg.RECT));
-        hExpand = ObjC.handle(Sig.of(Ret.VOID, Arg.ID));
-        hExpandChildren = ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.BOOL));
-        hCollapse = ObjC.handle(Sig.of(Ret.VOID, Arg.ID));
-        hCollapseChildren = ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.BOOL));
-        hIsExpanded = ObjC.handle(Sig.of(Ret.BOOL, Arg.ID));
-        hIsExpandable = ObjC.handle(Sig.of(Ret.BOOL, Arg.ID));
-        hSetOutlineCol = ObjC.handle(Sig.of(Ret.VOID, Arg.ID));
-        hGetId = ObjC.handle(Sig.of(Ret.ID));
-        initialized = true;
+        handles = new Handles(
+                ObjC.handle(Sig.of(Ret.ID, Arg.RECT)),
+                ObjC.handle(Sig.of(Ret.VOID, Arg.ID)),
+                ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.BOOL)),
+                ObjC.handle(Sig.of(Ret.BOOL, Arg.ID)),
+                ObjC.handle(Sig.of(Ret.ID))
+        );
     }
 
     /// `[[NSOutlineView alloc] initWithFrame:frame]` — a new outline view.
@@ -63,7 +52,7 @@ public final class NSOutlineView extends NSTableView {
         ensureOutlineInit();
         MemorySegment p = ObjC.msgSendId(ObjC.cls("NSOutlineView"), ObjC.sel("alloc"));
         try {
-            p = (MemorySegment) hInitFrame.invokeExact(p, ObjC.sel("initWithFrame:"), frame.toSegment());
+            p = (MemorySegment) handles.hInitFrame().invokeExact(p, ObjC.sel("initWithFrame:"), frame.toSegment());
         } catch (Throwable t) {
             throw new RuntimeException("initWithFrame: failed for NSOutlineView", t);
         }
@@ -76,7 +65,7 @@ public final class NSOutlineView extends NSTableView {
     /// [outline expandItem:] — expand a single item (no recursion).
     public void expandItem(MemorySegment item) {
         try {
-            hExpand.invokeExact(peer, ObjC.sel("expandItem:"), (MemorySegment) ((MemorySegment) (item == null ? MemorySegment.NULL : item)));
+            handles.hExpand().invokeExact(peer, ObjC.sel("expandItem:"), (MemorySegment) ((MemorySegment) (item == null ? MemorySegment.NULL : item)));
         } catch (Throwable t) {
             throw new RuntimeException("expandItem: failed", t);
         }
@@ -86,7 +75,7 @@ public final class NSOutlineView extends NSTableView {
     public void expandItem(MemorySegment item, boolean expandChildren) {
         try {
             MemorySegment arg = (item == null || item.address() == 0) ? MemorySegment.NULL : item;
-            hExpandChildren.invokeExact(peer, ObjC.sel("expandItem:expandChildren:"), (MemorySegment) arg, expandChildren);
+            handles.hExpandChildren().invokeExact(peer, ObjC.sel("expandItem:expandChildren:"), (MemorySegment) arg, expandChildren);
         } catch (Throwable t) {
             throw new RuntimeException("expandItem:expandChildren: failed", t);
         }
@@ -95,7 +84,7 @@ public final class NSOutlineView extends NSTableView {
     /// [outline collapseItem:]
     public void collapseItem(MemorySegment item) {
         try {
-            hCollapse.invokeExact(peer, ObjC.sel("collapseItem:"), (MemorySegment) ((MemorySegment) (item == null ? MemorySegment.NULL : item)));
+            handles.hExpand().invokeExact(peer, ObjC.sel("collapseItem:"), (MemorySegment) ((MemorySegment) (item == null ? MemorySegment.NULL : item)));
         } catch (Throwable t) {
             throw new RuntimeException("collapseItem: failed", t);
         }
@@ -105,7 +94,7 @@ public final class NSOutlineView extends NSTableView {
     public void collapseItem(MemorySegment item, boolean collapseChildren) {
         try {
             MemorySegment arg = (item == null || item.address() == 0) ? MemorySegment.NULL : item;
-            hCollapseChildren.invokeExact(peer, ObjC.sel("collapseItem:collapseChildren:"), (MemorySegment) arg, collapseChildren);
+            handles.hExpandChildren().invokeExact(peer, ObjC.sel("collapseItem:collapseChildren:"), (MemorySegment) arg, collapseChildren);
         } catch (Throwable t) {
             throw new RuntimeException("collapseItem:collapseChildren: failed", t);
         }
@@ -114,7 +103,7 @@ public final class NSOutlineView extends NSTableView {
     /// [outline isItemExpanded:]
     public boolean isItemExpanded(MemorySegment item) {
         try {
-            return (boolean) hIsExpanded.invokeExact(peer, ObjC.sel("isItemExpanded:"), (MemorySegment) ((MemorySegment) (item == null ? MemorySegment.NULL : item)));
+            return (boolean) handles.hIsExpanded().invokeExact(peer, ObjC.sel("isItemExpanded:"), (MemorySegment) ((MemorySegment) (item == null ? MemorySegment.NULL : item)));
         } catch (Throwable t) {
             throw new RuntimeException("isItemExpanded: failed", t);
         }
@@ -123,7 +112,7 @@ public final class NSOutlineView extends NSTableView {
     /// [outline isExpandable:] — whether the item can be expanded.
     public boolean isExpandable(MemorySegment item) {
         try {
-            return (boolean) hIsExpandable.invokeExact(peer, ObjC.sel("isExpandable:"), (MemorySegment) ((MemorySegment) (item == null ? MemorySegment.NULL : item)));
+            return (boolean) handles.hIsExpanded().invokeExact(peer, ObjC.sel("isExpandable:"), (MemorySegment) ((MemorySegment) (item == null ? MemorySegment.NULL : item)));
         } catch (Throwable t) {
             throw new RuntimeException("isExpandable: failed", t);
         }
@@ -132,7 +121,7 @@ public final class NSOutlineView extends NSTableView {
     /// [outline outlineTableColumn] — the outline column (NSTableColumn peer).
     public NSTableColumn outlineTableColumn() {
         try {
-            MemorySegment c = (MemorySegment) hGetId.invokeExact(peer, ObjC.sel("outlineTableColumn"));
+            MemorySegment c = (MemorySegment) handles.hGetId().invokeExact(peer, ObjC.sel("outlineTableColumn"));
             return (c == null || c.address() == 0) ? null : NSTableColumn.wrap(c);
         } catch (Throwable t) {
             throw new RuntimeException("outlineTableColumn failed", t);
@@ -142,7 +131,7 @@ public final class NSOutlineView extends NSTableView {
     /// [outline setOutlineTableColumn:]
     public void setOutlineTableColumn(NSTableColumn column) {
         try {
-            hSetOutlineCol.invokeExact(peer, ObjC.sel("setOutlineTableColumn:"), (MemorySegment) ((MemorySegment) (column == null ? MemorySegment.NULL : column.peer())));
+            handles.hExpand().invokeExact(peer, ObjC.sel("setOutlineTableColumn:"), (MemorySegment) ((MemorySegment) (column == null ? MemorySegment.NULL : column.peer())));
         } catch (Throwable t) {
             throw new RuntimeException("setOutlineTableColumn: failed", t);
         }
@@ -192,7 +181,7 @@ public final class NSOutlineView extends NSTableView {
     public void reloadItem(MemorySegment item, boolean reloadChildren) {
         try {
             MemorySegment arg = (item == null || item.address() == 0) ? MemorySegment.NULL : item;
-            hExpandChildren.invokeExact(peer, ObjC.sel("reloadItem:reloadChildren:"), (MemorySegment) arg, reloadChildren);
+            handles.hExpandChildren().invokeExact(peer, ObjC.sel("reloadItem:reloadChildren:"), (MemorySegment) arg, reloadChildren);
         } catch (Throwable t) {
             throw new RuntimeException("reloadItem:reloadChildren: failed", t);
         }

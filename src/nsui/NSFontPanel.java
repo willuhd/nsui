@@ -131,4 +131,9 @@ public final class NSFontPanel extends NSObject {
     public boolean worksWhenModal() {
         return ObjC.msgSendBool(peer, ObjC.sel("worksWhenModal"));
     }
+
+    /// [panel setWorksWhenModal:]
+    public void setWorksWhenModal(boolean flag) {
+        ObjC.msgSendVoidBool(peer, ObjC.sel("setWorksWhenModal:"), flag);
+    }
 }

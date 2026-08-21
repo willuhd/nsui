@@ -46,22 +46,13 @@ public class NSView extends NSObject {
     private static final ConcurrentHashMap<Long, Drawable> DRAWABLES = new ConcurrentHashMap<>();
 
     // ---- runtime ObjC class + upcall stubs, created ONCE lazily (NEVER in a static initializer) ----
-    private static volatile boolean initialized;
     private static MemorySegment drawableClass;
     private static MemorySegment drawRectStub;
     private static MemorySegment deallocStub;
 
     // ---- resolved once per process (rule: resolve-once, invokeExact on hot paths) ----
-    private static MethodHandle hInitFrame;   // (id, SEL, NSRect) -> id
-    private static MethodHandle hSetFrame;    // (id, SEL, NSRect) -> void
-    private static MethodHandle hNeedsRect;   // (id, SEL, NSRect) -> void   [setNeedsDisplayInRect:]
-    private static MethodHandle hAutoMask;   // (id, SEL, long) -> void        [setAutoresizingMask:]
-    private static MethodHandle hBacking;     // (id, SEL) -> double         [backingScaleFactor]
-    private static MethodHandle hConvBacking; // (id, SEL, NSRect) -> NSRect [convertRectToBacking:]
-    private static MethodHandle hGetDouble;   // (id, SEL) -> double
-    private static MethodHandle hSetDouble;   // (id, SEL, double) -> void
-    private static MethodHandle hGetSize;     // (id, SEL) -> NSSize
-    private static MethodHandle hSetSize;     // (id, SEL, NSSize) -> void
+    private record Handles(MethodHandle hInitFrame, MethodHandle hSetFrame, MethodHandle hNeedsRect, MethodHandle hAutoMask, MethodHandle hBacking, MethodHandle hConvBacking, MethodHandle hGetDouble, MethodHandle hSetDouble, MethodHandle hGetSize, MethodHandle hSetSize) {}
+    private static volatile Handles H;
 
     /// Wrap a native NSView id (e.g. a box's contentView) as an NSView.
     public static NSView wrap(MemorySegment peer) {
@@ -77,7 +68,7 @@ public class NSView extends NSObject {
         ensureInit();
         MemorySegment v = ObjC.msgSendId(drawableClass, ObjC.sel("alloc"));
         try {
-            v = (MemorySegment) hInitFrame.invokeExact(v, ObjC.sel("initWithFrame:"), frame.toSegment());
+            v = (MemorySegment) H.hInitFrame().invokeExact(v, ObjC.sel("initWithFrame:"), frame.toSegment());
         } catch (Throwable t) {
             throw new RuntimeException("initWithFrame: failed", t);
         }
@@ -87,7 +78,7 @@ public class NSView extends NSObject {
     }
 
     private static synchronized void ensureInit() {
-        if (initialized) return;
+        if (H != null) return;
         drawableClass = ObjC.makeClass("NSView", "NSUIViewImpl");
         try {
             MethodHandle drawTarget = MethodHandles.lookup().findStatic(NSView.class, "drawRectImpl",
@@ -105,17 +96,17 @@ public class NSView extends NSObject {
         if (!ObjC.addMethod(drawableClass, "dealloc", deallocStub, "v@:")) {
             throw new RuntimeException("class_addMethod dealloc failed");
         }
-        hInitFrame = ObjC.handle(Sig.of(Ret.ID, Arg.RECT));
-        hSetFrame = ObjC.handle(Sig.of(Ret.VOID, Arg.RECT));
-        hNeedsRect = ObjC.handle(Sig.of(Ret.VOID, Arg.RECT));
-        hAutoMask = ObjC.handle(Sig.of(Ret.VOID, Arg.INT));
-        hBacking = ObjC.handle(Sig.of(Ret.DOUBLE));
-        hConvBacking = ObjC.handle(Sig.of(Ret.RECT, Arg.RECT));
-        hGetDouble = ObjC.handle(Sig.of(Ret.DOUBLE));
-        hSetDouble = ObjC.handle(Sig.of(Ret.VOID, Arg.DOUBLE));
-        hGetSize = ObjC.handle(Sig.of(Ret.SIZE));
-        hSetSize = ObjC.handle(Sig.of(Ret.VOID, Arg.SIZE));
-        initialized = true;
+        H = new Handles(
+                ObjC.handle(Sig.of(Ret.ID, Arg.RECT)),
+                ObjC.handle(Sig.of(Ret.VOID, Arg.RECT)),
+                ObjC.handle(Sig.of(Ret.VOID, Arg.RECT)),
+                ObjC.handle(Sig.of(Ret.VOID, Arg.INT)),
+                ObjC.handle(Sig.of(Ret.DOUBLE)),
+                ObjC.handle(Sig.of(Ret.RECT, Arg.RECT)),
+                ObjC.handle(Sig.of(Ret.DOUBLE)),
+                ObjC.handle(Sig.of(Ret.VOID, Arg.DOUBLE)),
+                ObjC.handle(Sig.of(Ret.SIZE)),
+                ObjC.handle(Sig.of(Ret.VOID, Arg.SIZE)));
     }
 
     /// FFM upcall target: `-(void)drawRect:(NSRect)dirtyRect` — called by AppKit on the main thread.
@@ -159,7 +150,7 @@ public class NSView extends NSObject {
     public void setFrame(NSRect frame) {
         ensureInit();
         try {
-            hSetFrame.invokeExact(peer, ObjC.sel("setFrame:"), frame.toSegment());
+            H.hSetFrame().invokeExact(peer, ObjC.sel("setFrame:"), frame.toSegment());
         } catch (Throwable t) {
             throw new RuntimeException("setFrame: failed", t);
         }
@@ -173,7 +164,7 @@ public class NSView extends NSObject {
     public void setAutoresizingMask(long mask) {
         ensureInit();
         try {
-            hAutoMask.invokeExact(peer, ObjC.sel("setAutoresizingMask:"), mask);
+            H.hAutoMask().invokeExact(peer, ObjC.sel("setAutoresizingMask:"), mask);
         } catch (Throwable t) {
             throw new RuntimeException("setAutoresizingMask: failed", t);
         }
@@ -185,9 +176,25 @@ public class NSView extends NSObject {
         return NSRect.fromSegment(ObjC.msgSendRect(peer, ObjC.sel("bounds")));
     }
 
+    /// setBounds: — set the view's bounds.
+    public void setBounds(NSRect bounds) {
+        ensureInit();
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.RECT));
+            h.invokeExact(peer, ObjC.sel("setBounds:"), bounds.toSegment());
+        } catch (Throwable t) {
+            throw new RuntimeException("setBounds: failed", t);
+        }
+    }
+
     /// frame — the view's frame in its superview's coordinates (struct return).
     public NSRect frame() {
         return NSRect.fromSegment(ObjC.msgSendRect(peer, ObjC.sel("frame")));
+    }
+
+    /// needsDisplay — whether the view needs display.
+    public boolean needsDisplay() {
+        return ObjC.msgSendBool(peer, ObjC.sel("needsDisplay"));
     }
 
     /// setNeedsDisplay: — request a redraw on the next run-loop pass.
@@ -203,7 +210,7 @@ public class NSView extends NSObject {
     public void setNeedsDisplayInRect(NSRect rect) {
         ensureInit();
         try {
-            hNeedsRect.invokeExact(peer, ObjC.sel("setNeedsDisplayInRect:"), rect.toSegment());
+            H.hNeedsRect().invokeExact(peer, ObjC.sel("setNeedsDisplayInRect:"), rect.toSegment());
         } catch (Throwable t) {
             throw new RuntimeException("setNeedsDisplayInRect: failed", t);
         }
@@ -216,7 +223,7 @@ public class NSView extends NSObject {
     public double backingScaleFactor() {
         ensureInit();
         try {
-            return (double) hBacking.invokeExact(peer, ObjC.sel("backingScaleFactor"));
+            return (double) H.hBacking().invokeExact(peer, ObjC.sel("backingScaleFactor"));
         } catch (Throwable t) {
             throw new RuntimeException("backingScaleFactor failed", t);
         }
@@ -226,7 +233,7 @@ public class NSView extends NSObject {
     public NSRect convertRectToBacking(NSRect rect) {
         ensureInit();
         try {
-            return NSRect.fromSegment((MemorySegment) hConvBacking.invokeExact(
+            return NSRect.fromSegment((MemorySegment) H.hConvBacking().invokeExact(
                     (java.lang.foreign.SegmentAllocator) java.lang.foreign.Arena.global(), peer,
                     ObjC.sel("convertRectToBacking:"), rect.toSegment()));
         } catch (Throwable t) {
@@ -381,7 +388,7 @@ public class NSView extends NSObject {
     public void displayIfNeededInRect(NSRect rect) {
         ensureInit();
         try {
-            hNeedsRect.invokeExact(peer, ObjC.sel("displayIfNeededInRect:"), rect.toSegment());
+            H.hNeedsRect().invokeExact(peer, ObjC.sel("displayIfNeededInRect:"), rect.toSegment());
         } catch (Throwable t) {
             throw new RuntimeException("displayIfNeededInRect: failed", t);
         }
@@ -396,7 +403,7 @@ public class NSView extends NSObject {
     public NSSize intrinsicContentSize() {
         ensureInit();
         try {
-            MemorySegment s = (MemorySegment) hGetSize.invokeExact((java.lang.foreign.SegmentAllocator) java.lang.foreign.Arena.global(), peer, ObjC.sel("intrinsicContentSize"));
+            MemorySegment s = (MemorySegment) H.hGetSize().invokeExact((java.lang.foreign.SegmentAllocator) java.lang.foreign.Arena.global(), peer, ObjC.sel("intrinsicContentSize"));
             return NSSize.fromSegment(s);
         } catch (Throwable t) {
             throw new RuntimeException("intrinsicContentSize failed", t);
@@ -407,7 +414,7 @@ public class NSView extends NSObject {
     public double alphaValue() {
         ensureInit();
         try {
-            return (double) hGetDouble.invokeExact(peer, ObjC.sel("alphaValue"));
+            return (double) H.hGetDouble().invokeExact(peer, ObjC.sel("alphaValue"));
         } catch (Throwable t) {
             throw new RuntimeException("alphaValue failed", t);
         }
@@ -417,7 +424,7 @@ public class NSView extends NSObject {
     public void setAlphaValue(double alpha) {
         ensureInit();
         try {
-            hSetDouble.invokeExact(peer, ObjC.sel("setAlphaValue:"), alpha);
+            H.hSetDouble().invokeExact(peer, ObjC.sel("setAlphaValue:"), alpha);
         } catch (Throwable t) {
             throw new RuntimeException("setAlphaValue: failed", t);
         }
@@ -447,6 +454,32 @@ public class NSView extends NSObject {
     /// isOpaque — whether the view is opaque.
     public boolean isOpaque() {
         return ObjC.msgSendBool(peer, ObjC.sel("isOpaque"));
+    }
+
+    /// visibleRect — the visible rect (readonly).
+    public NSRect visibleRect() {
+        return NSRect.fromSegment(ObjC.msgSendRect(peer, ObjC.sel("visibleRect")));
+    }
+
+    /// isRotatedFromBase
+    public boolean isRotatedFromBase() {
+        return ObjC.msgSendBool(peer, ObjC.sel("isRotatedFromBase"));
+    }
+
+    /// isRotatedOrScaledFromBase
+    public boolean isRotatedOrScaledFromBase() {
+        return ObjC.msgSendBool(peer, ObjC.sel("isRotatedOrScaledFromBase"));
+    }
+
+    /// canBecomeKeyView
+    public boolean canBecomeKeyView() {
+        return ObjC.msgSendBool(peer, ObjC.sel("canBecomeKeyView"));
+    }
+
+    /// enclosingScrollView
+    public NSView enclosingScrollView() {
+        MemorySegment v = ObjC.msgSendId(peer, ObjC.sel("enclosingScrollView"));
+        return NSView.wrap(v);
     }
 
     /// invalidateIntrinsicContentSize.

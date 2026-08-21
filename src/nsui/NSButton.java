@@ -21,9 +21,8 @@ import static nsui.objc.Sig.Ret;
 public final class NSButton extends NSControl {
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
-    private static volatile boolean initialized;
-    private static MethodHandle hInitFrame;   // (id, SEL, NSRect) -> id
-    private static MethodHandle hSetPeriodicDelay; // (id, SEL, float, float) -> void
+    private record Handles(MethodHandle hInitFrame, MethodHandle hSetPeriodicDelay) {}
+    private static volatile Handles H;
 
     private NSButton(MemorySegment peer) {
         super(peer);
@@ -36,10 +35,10 @@ public final class NSButton extends NSControl {
     }
 
     private static synchronized void ensureInit() {
-        if (initialized) return;
-        hInitFrame = ObjC.handle(Sig.of(Ret.ID, Arg.RECT));
-        hSetPeriodicDelay = ObjC.handle(Sig.of(Ret.VOID, Arg.FLOAT, Arg.FLOAT));
-        initialized = true;
+        if (H != null) return;
+        H = new Handles(
+                ObjC.handle(Sig.of(Ret.ID, Arg.RECT)),
+                ObjC.handle(Sig.of(Ret.VOID, Arg.FLOAT, Arg.FLOAT)));
     }
 
     /// `[[NSButton alloc] initWithFrame:frame]` then configure bezel/type and
@@ -55,7 +54,7 @@ public final class NSButton extends NSControl {
         ensureInit();
         MemorySegment b = ObjC.msgSendId(ObjC.cls("NSButton"), ObjC.sel("alloc"));
         try {
-            b = (MemorySegment) hInitFrame.invokeExact(b, ObjC.sel("initWithFrame:"), frame.toSegment());
+            b = (MemorySegment) H.hInitFrame().invokeExact(b, ObjC.sel("initWithFrame:"), frame.toSegment());
         } catch (Throwable t) {
             throw new RuntimeException("initWithFrame: failed for NSButton", t);
         }
@@ -250,7 +249,7 @@ public final class NSButton extends NSControl {
     public void setPeriodicDelay(float delay, float interval) {
         ensureInit();
         try {
-            hSetPeriodicDelay.invokeExact(peer, ObjC.sel("setPeriodicDelay:interval:"), delay, interval);
+            H.hSetPeriodicDelay().invokeExact(peer, ObjC.sel("setPeriodicDelay:interval:"), delay, interval);
         } catch (Throwable t) {
             throw new RuntimeException("setPeriodicDelay:interval: failed", t);
         }

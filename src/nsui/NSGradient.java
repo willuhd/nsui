@@ -12,11 +12,8 @@ import static nsui.objc.Sig.Ret;
 /// Provides creation and drawing.
 public final class NSGradient extends NSObject {
 
-    private static volatile boolean initialized;
-    private static MethodHandle hInitTwo;    // (id, SEL, id, id) -> id [initWithStartingColor:endingColor:]
-    private static MethodHandle hInitColors; // (id, SEL, id) -> id alternative
-    private static MethodHandle hDrawRectAngle; // (id, SEL, NSRect, double) -> void [drawInRect:angle:]
-    private static MethodHandle hDrawBezierAngle; // (id, SEL, id, double) -> void [drawInBezierPath:angle:]
+            private record Handles(MethodHandle hInitTwo, MethodHandle hInitColors, MethodHandle hDrawRectAngle, MethodHandle hDrawBezierAngle) {}
+    private static volatile Handles handles;
 
     private NSGradient(MemorySegment peer) {
         super(peer);
@@ -27,13 +24,14 @@ public final class NSGradient extends NSObject {
         return (peer == null || peer.address() == 0) ? null : new NSGradient(peer);
     }
 
-    private static synchronized void ensureInit() {
-        if (initialized) return;
-        hInitTwo = ObjC.handle(Sig.of(Ret.ID, Arg.ID, Arg.ID));
-        hInitColors = ObjC.handle(Sig.of(Ret.ID, Arg.ID));
-        hDrawRectAngle = ObjC.handle(Sig.of(Ret.VOID, Arg.RECT, Arg.DOUBLE));
-        hDrawBezierAngle = ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.DOUBLE));
-        initialized = true;
+        private static synchronized void ensureInit() {
+        if (handles != null) return;
+        handles = new Handles(
+                ObjC.handle(Sig.of(Ret.ID, Arg.ID, Arg.ID)),
+                ObjC.handle(Sig.of(Ret.ID, Arg.ID)),
+                ObjC.handle(Sig.of(Ret.VOID, Arg.RECT, Arg.DOUBLE)),
+                ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.DOUBLE))
+        );
     }
 
     /// [[NSGradient alloc] initWithStartingColor:endingColor:]
@@ -41,7 +39,7 @@ public final class NSGradient extends NSObject {
         ensureInit();
         MemorySegment alloc = ObjC.msgSendId(ObjC.cls("NSGradient"), ObjC.sel("alloc"));
         try {
-            MemorySegment p = (MemorySegment) hInitTwo.invokeExact(alloc, ObjC.sel("initWithStartingColor:endingColor:"),
+            MemorySegment p = (MemorySegment) handles.hInitTwo().invokeExact(alloc, ObjC.sel("initWithStartingColor:endingColor:"),
                     (MemorySegment) (starting == null ? MemorySegment.NULL : starting.peer()),
                     (MemorySegment) (ending == null ? MemorySegment.NULL : ending.peer()));
             if (p == null || p.address() == 0) throw new IllegalStateException("NSGradient initWithStartingColor:endingColor: returned nil");
@@ -56,7 +54,7 @@ public final class NSGradient extends NSObject {
         ensureInit();
         MemorySegment alloc = ObjC.msgSendId(ObjC.cls("NSGradient"), ObjC.sel("alloc"));
         try {
-            MemorySegment p = (MemorySegment) hInitColors.invokeExact(alloc, ObjC.sel("initWithColors:"), colors.peer());
+            MemorySegment p = (MemorySegment) handles.hInitColors().invokeExact(alloc, ObjC.sel("initWithColors:"), colors.peer());
             if (p == null || p.address() == 0) throw new IllegalStateException("NSGradient initWithColors: returned nil");
             return new NSGradient(p);
         } catch (Throwable t) {
@@ -68,7 +66,7 @@ public final class NSGradient extends NSObject {
     public void drawInRectAngle(NSRect rect, double angle) {
         ensureInit();
         try {
-            hDrawRectAngle.invokeExact(peer, ObjC.sel("drawInRect:angle:"), rect.toSegment(), angle);
+            handles.hDrawRectAngle().invokeExact(peer, ObjC.sel("drawInRect:angle:"), rect.toSegment(), angle);
         } catch (Throwable t) {
             throw new RuntimeException("drawInRect:angle: failed", t);
         }
@@ -78,7 +76,7 @@ public final class NSGradient extends NSObject {
     public void drawInBezierPathAngle(NSBezierPath path, double angle) {
         ensureInit();
         try {
-            hDrawBezierAngle.invokeExact(peer, ObjC.sel("drawInBezierPath:angle:"),
+            handles.hDrawBezierAngle().invokeExact(peer, ObjC.sel("drawInBezierPath:angle:"),
                     (MemorySegment) (path == null ? MemorySegment.NULL : path.peer()), angle);
         } catch (Throwable t) {
             throw new RuntimeException("drawInBezierPath:angle: failed", t);

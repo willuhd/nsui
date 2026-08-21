@@ -19,14 +19,8 @@ import static nsui.objc.Sig.Ret;
 public final class NSPathControl extends NSControl {
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
-    private static volatile boolean initialized;
-    private static MethodHandle hInitFrame;  // (id, SEL, NSRect) -> id [initWithFrame:]
-    private static MethodHandle hSetURL;     // (id, SEL, id) -> void [setURL:]
-    private static MethodHandle hGetURL;     // (id, SEL) -> id      [URL]
-    private static MethodHandle hSetPathStyle;// (id, SEL, long)-> void [setPathStyle:]
-    private static MethodHandle hGetPathStyle;// (id, SEL) -> long [pathStyle]
-    private static MethodHandle hSetDoubleAction; // (id, SEL, id) -> void [setDoubleAction:]
-    private static MethodHandle hSetPlaceholder;  // (id, SEL, id) -> void [setPlaceholderString:]
+            private record Handles(MethodHandle hInitFrame, MethodHandle hSetURL, MethodHandle hGetURL, MethodHandle hSetPathStyle, MethodHandle hGetPathStyle) {}
+    private static volatile Handles handles;
 
     private NSPathControl(MemorySegment peer) {
         super(peer);
@@ -38,16 +32,15 @@ public final class NSPathControl extends NSControl {
         return (peer == null || peer.address() == 0) ? null : new NSPathControl(peer);
     }
 
-    private static synchronized void ensureInit() {
-        if (initialized) return;
-        hInitFrame = ObjC.handle(Sig.of(Ret.ID, Arg.RECT));
-        hSetURL = ObjC.handle(Sig.of(Ret.VOID, Arg.ID));
-        hGetURL = ObjC.handle(Sig.of(Ret.ID));
-        hSetPathStyle = ObjC.handle(Sig.of(Ret.VOID, Arg.INT));
-        hGetPathStyle = ObjC.handle(Sig.of(Ret.INT));
-        hSetDoubleAction = ObjC.handle(Sig.of(Ret.VOID, Arg.ID));
-        hSetPlaceholder = ObjC.handle(Sig.of(Ret.VOID, Arg.ID));
-        initialized = true;
+        private static synchronized void ensureInit() {
+        if (handles != null) return;
+        handles = new Handles(
+                ObjC.handle(Sig.of(Ret.ID, Arg.RECT)),
+                ObjC.handle(Sig.of(Ret.VOID, Arg.ID)),
+                ObjC.handle(Sig.of(Ret.ID)),
+                ObjC.handle(Sig.of(Ret.VOID, Arg.INT)),
+                ObjC.handle(Sig.of(Ret.INT))
+        );
     }
 
     /// `[[NSPathControl alloc] initWithFrame:frame]` — a new path control.
@@ -55,7 +48,7 @@ public final class NSPathControl extends NSControl {
         ensureInit();
         MemorySegment p = ObjC.msgSendId(ObjC.cls("NSPathControl"), ObjC.sel("alloc"));
         try {
-            p = (MemorySegment) hInitFrame.invokeExact(p, ObjC.sel("initWithFrame:"), frame.toSegment());
+            p = (MemorySegment) handles.hInitFrame().invokeExact(p, ObjC.sel("initWithFrame:"), frame.toSegment());
         } catch (Throwable t) {
             throw new RuntimeException("initWithFrame: failed for NSPathControl", t);
         }
@@ -69,7 +62,7 @@ public final class NSPathControl extends NSControl {
     public void setURL(MemorySegment url) {
         try {
             MemorySegment u = (url == null || url.address() == 0) ? MemorySegment.NULL : url;
-            hSetURL.invokeExact(peer, ObjC.sel("setURL:"), (MemorySegment) u);
+            handles.hSetURL().invokeExact(peer, ObjC.sel("setURL:"), (MemorySegment) u);
         } catch (Throwable t) {
             throw new RuntimeException("setURL: failed", t);
         }
@@ -78,7 +71,7 @@ public final class NSPathControl extends NSControl {
     /// [control URL] — NSURL peer or nil.
     public MemorySegment URL() {
         try {
-            return (MemorySegment) hGetURL.invokeExact(peer, ObjC.sel("URL"));
+            return (MemorySegment) handles.hGetURL().invokeExact(peer, ObjC.sel("URL"));
         } catch (Throwable t) {
             throw new RuntimeException("URL failed", t);
         }
@@ -105,7 +98,7 @@ public final class NSPathControl extends NSControl {
     /// [control pathStyle] — NSPathStyle (0=standard, 1=navigational, 2=popUp).
     public long pathStyle() {
         try {
-            return (long) hGetPathStyle.invokeExact(peer, ObjC.sel("pathStyle"));
+            return (long) handles.hGetPathStyle().invokeExact(peer, ObjC.sel("pathStyle"));
         } catch (Throwable t) {
             throw new RuntimeException("pathStyle failed", t);
         }
@@ -114,7 +107,7 @@ public final class NSPathControl extends NSControl {
     /// [control setPathStyle:] — NSPathStyle.
     public void setPathStyle(long style) {
         try {
-            hSetPathStyle.invokeExact(peer, ObjC.sel("setPathStyle:"), style);
+            handles.hSetPathStyle().invokeExact(peer, ObjC.sel("setPathStyle:"), style);
         } catch (Throwable t) {
             throw new RuntimeException("setPathStyle: failed", t);
         }
@@ -123,7 +116,7 @@ public final class NSPathControl extends NSControl {
     /// [control setDoubleAction:] — SEL for double-click on a path component.
     public void setDoubleAction(String selector) {
         try {
-            hSetDoubleAction.invokeExact(peer, ObjC.sel("setDoubleAction:"), (MemorySegment) (selector == null ? MemorySegment.NULL : ObjC.sel(selector)));
+            handles.hSetURL().invokeExact(peer, ObjC.sel("setDoubleAction:"), (MemorySegment) (selector == null ? MemorySegment.NULL : ObjC.sel(selector)));
         } catch (Throwable t) {
             throw new RuntimeException("setDoubleAction: failed", t);
         }
@@ -132,7 +125,7 @@ public final class NSPathControl extends NSControl {
     /// [control doubleAction] — SEL id or nil.
     public MemorySegment doubleAction() {
         try {
-            return (MemorySegment) hGetURL.invokeExact(peer, ObjC.sel("doubleAction"));
+            return (MemorySegment) handles.hGetURL().invokeExact(peer, ObjC.sel("doubleAction"));
         } catch (Throwable t) {
             throw new RuntimeException("doubleAction failed", t);
         }
@@ -146,7 +139,7 @@ public final class NSPathControl extends NSControl {
     /// [control setPlaceholderString:]
     public void setPlaceholderString(String s) {
         try {
-            hSetPlaceholder.invokeExact(peer, ObjC.sel("setPlaceholderString:"), (MemorySegment) (s == null ? MemorySegment.NULL : ObjC.nsstring(s)));
+            handles.hSetURL().invokeExact(peer, ObjC.sel("setPlaceholderString:"), (MemorySegment) (s == null ? MemorySegment.NULL : ObjC.nsstring(s)));
         } catch (Throwable t) {
             throw new RuntimeException("setPlaceholderString: failed", t);
         }

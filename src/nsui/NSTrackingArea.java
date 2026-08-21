@@ -12,11 +12,8 @@ import static nsui.objc.Sig.Ret;
 /// Monitors mouse enter/exit/moved events over a rect.
 public final class NSTrackingArea extends NSObject {
 
-    private static volatile boolean initialized;
-    private static MethodHandle hInit;     // (id, SEL, NSRect, long, id, id) -> id
-    private static MethodHandle hRect;     // (SegmentAllocator, id, SEL) -> NSRect
-    private static MethodHandle hInt;      // (id, SEL) -> long
-    private static MethodHandle hId;       // (id, SEL) -> id
+            private record Handles(MethodHandle hInit, MethodHandle hRect, MethodHandle hInt, MethodHandle hId) {}
+    private static volatile Handles handles;
 
     private NSTrackingArea(MemorySegment peer) {
         super(peer);
@@ -27,13 +24,14 @@ public final class NSTrackingArea extends NSObject {
         return (peer == null || peer.address() == 0) ? null : new NSTrackingArea(peer);
     }
 
-    private static synchronized void ensureInit() {
-        if (initialized) return;
-        hInit = ObjC.handle(Sig.of(Ret.ID, Arg.RECT, Arg.INT, Arg.ID, Arg.ID));
-        hRect = ObjC.handle(Sig.of(Ret.RECT));
-        hInt = ObjC.handle(Sig.of(Ret.INT));
-        hId = ObjC.handle(Sig.of(Ret.ID));
-        initialized = true;
+        private static synchronized void ensureInit() {
+        if (handles != null) return;
+        handles = new Handles(
+                ObjC.handle(Sig.of(Ret.ID, Arg.RECT, Arg.INT, Arg.ID, Arg.ID)),
+                ObjC.handle(Sig.of(Ret.RECT)),
+                ObjC.handle(Sig.of(Ret.INT)),
+                ObjC.handle(Sig.of(Ret.ID))
+        );
     }
 
     /// [[NSTrackingArea alloc] initWithRect:options:owner:userInfo:]
@@ -45,7 +43,7 @@ public final class NSTrackingArea extends NSObject {
         ensureInit();
         MemorySegment alloc = ObjC.msgSendId(ObjC.cls("NSTrackingArea"), ObjC.sel("alloc"));
         try {
-            MemorySegment p = (MemorySegment) hInit.invokeExact(alloc, ObjC.sel("initWithRect:options:owner:userInfo:"),
+            MemorySegment p = (MemorySegment) handles.hInit().invokeExact(alloc, ObjC.sel("initWithRect:options:owner:userInfo:"),
                     rect.toSegment(), options,
                     (MemorySegment) (owner == null ? MemorySegment.NULL : owner.peer()),
                     (MemorySegment) (userInfo == null ? MemorySegment.NULL : userInfo));
@@ -64,7 +62,7 @@ public final class NSTrackingArea extends NSObject {
     public NSRect rect() {
         ensureInit();
         try {
-            MemorySegment r = (MemorySegment) hRect.invokeExact((java.lang.foreign.SegmentAllocator) java.lang.foreign.Arena.global(), peer, ObjC.sel("rect"));
+            MemorySegment r = (MemorySegment) handles.hRect().invokeExact((java.lang.foreign.SegmentAllocator) java.lang.foreign.Arena.global(), peer, ObjC.sel("rect"));
             return NSRect.fromSegment(r);
         } catch (Throwable t) {
             throw new RuntimeException("rect failed", t);
@@ -75,7 +73,7 @@ public final class NSTrackingArea extends NSObject {
     public long options() {
         ensureInit();
         try {
-            return (long) hInt.invokeExact(peer, ObjC.sel("options"));
+            return (long) handles.hInt().invokeExact(peer, ObjC.sel("options"));
         } catch (Throwable t) {
             throw new RuntimeException("options failed", t);
         }
@@ -85,7 +83,7 @@ public final class NSTrackingArea extends NSObject {
     public MemorySegment owner() {
         ensureInit();
         try {
-            return (MemorySegment) hId.invokeExact(peer, ObjC.sel("owner"));
+            return (MemorySegment) handles.hId().invokeExact(peer, ObjC.sel("owner"));
         } catch (Throwable t) {
             throw new RuntimeException("owner failed", t);
         }
@@ -95,7 +93,7 @@ public final class NSTrackingArea extends NSObject {
     public MemorySegment userInfo() {
         ensureInit();
         try {
-            return (MemorySegment) hId.invokeExact(peer, ObjC.sel("userInfo"));
+            return (MemorySegment) handles.hId().invokeExact(peer, ObjC.sel("userInfo"));
         } catch (Throwable t) {
             throw new RuntimeException("userInfo failed", t);
         }

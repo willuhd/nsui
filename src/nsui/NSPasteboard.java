@@ -116,6 +116,29 @@ public final class NSPasteboard extends NSObject {
         } catch (Throwable t) { throw new RuntimeException("declareTypes:owner: failed", t); }
     }
 
+    /// declareTypes:owner: with List<String> convenience (converts to NSArray of NSString, owner as MemorySegment)
+    public void declareTypes(java.util.List<String> types, MemorySegment owner) {
+        ensureInit();
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.INT, Arg.ID, Arg.ID));
+            MemorySegment arr;
+            if (types == null || types.isEmpty()) {
+                arr = ObjC.msgSendId(ObjC.cls("NSArray"), ObjC.sel("array"));
+            } else {
+                arr = ObjC.msgSendId(ObjC.cls("NSMutableArray"), ObjC.sel("array"));
+                for (String t : types) {
+                    if (t == null) continue;
+                    ObjC.msgSendVoidId(arr, ObjC.sel("addObject:"), ObjC.nsstring(t));
+                }
+            }
+            MemorySegment ownerSeg = (owner == null || owner.address() == 0) ? MemorySegment.NULL : owner;
+            // native returns NSInteger but void API ignores it
+            long ignored = (long) h.invokeExact(peer, ObjC.sel("declareTypes:owner:"), arr, ownerSeg);
+            // suppress unused
+            if (ignored == Long.MIN_VALUE) System.out.print("");
+        } catch (Throwable t) { throw new RuntimeException("declareTypes:owner: failed", t); }
+    }
+
     /// availableTypeFromArray:
     public String availableTypeFromArray(NSArray types) {
         ensureInit();

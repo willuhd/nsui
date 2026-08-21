@@ -146,7 +146,7 @@ public final class NSStatusItem extends NSObject {
         try { popover.setBehavior(1L); } catch (Throwable ignored) {}
         return setActionHandler(sel, (MemorySegment sender) -> togglePopover(popover));
     }
-    /// ToolTip via button's tooltip (NSView toolTip). Guarded — no-op if selector absent.
+    /// ToolTip via button's toolTip (NSView toolTip). Guarded — no-op if selector absent.
     public String toolTip() {
         NSButton b = button();
         if (b == null) return null;

@@ -60,15 +60,32 @@ public final class NSProgressIndicator extends NSControl {
         return ObjC.msgSendBool(peer, ObjC.sel("isIndeterminate"));
     }
 
+    // ---------------------------------------------------------------- nested enum — verified against local SDK headers
+    // SDK: $(xcrun --show-sdk-path)/System/Library/Frameworks/AppKit.framework/Headers/NSProgressIndicator.h
+    //   NSProgressIndicatorStyle: Bar 0, Spinning 1
+    // Docs: https://developer.apple.com/documentation/appkit/nsprogressindicator/style
+
+    /// `NSProgressIndicatorStyle` — 0=Bar, 1=Spinning. From `NSProgressIndicator.h`.
+    public enum Style {
+        bar(0), spinning(1);
+        public final long value;
+        Style(long v) { this.value = v; }
+        public static Style fromValue(long v) { for (var e : values()) if (e.value == v) return e; return null; }
+    }
+
     /// [indicator setStyle:] — NSProgressIndicatorStyle (0 = NSProgressIndicatorBarStyle).
     public void setStyle(long style) {
         ObjC.msgSendVoidLong(peer, ObjC.sel("setStyle:"), style);
     }
+    /// Typed overload.
+    public void setStyle(Style s) { setStyle(s.value); }
 
     /// [indicator style] — current style.
     public long style() {
         return ObjC.msgSendLong(peer, ObjC.sel("style"));
     }
+    /// Typed getter.
+    public Style styleEnum() { return Style.fromValue(style()); }
 
     /// [indicator setMinValue:] — minimum of the determinate range.
     public void setMinValue(double v) {

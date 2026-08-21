@@ -65,15 +65,32 @@ public final class NSAlert extends NSObject {
         ObjC.msgSendVoidId(peer, ObjC.sel("setInformativeText:"), ObjC.nsstring(text));
     }
 
+    // ---------------------------------------------------------------- nested enum — verified against local SDK headers
+    // SDK: $(xcrun --show-sdk-path)/System/Library/Frameworks/AppKit.framework/Headers/NSAlert.h
+    //   NSAlertStyle: Warning 0, Informational 1, Critical 2
+    // Docs: https://developer.apple.com/documentation/appkit/nsalert/style
+
+    /// `NSAlertStyle` — 0=Warning, 1=Informational, 2=Critical. From `NSAlert.h`.
+    public enum Style {
+        warning(0), informational(1), critical(2);
+        public final long value;
+        Style(long v) { this.value = v; }
+        public static Style fromValue(long v) { for (var e : values()) if (e.value == v) return e; return null; }
+    }
+
     // ---- alertStyle ----
     public long alertStyle() {
         ensureInit();
         try { return (long) hInt.invokeExact(peer, ObjC.sel("alertStyle")); } catch (Throwable t) { throw new RuntimeException("alertStyle failed", t); }
     }
+    /// Typed getter.
+    public Style alertStyleEnum() { return Style.fromValue(alertStyle()); }
     public void setAlertStyle(long style) {
         ensureInit();
         try { hSetInt.invokeExact(peer, ObjC.sel("setAlertStyle:"), style); } catch (Throwable t) { throw new RuntimeException("setAlertStyle: failed", t); }
     }
+    /// Typed overload.
+    public void setAlertStyle(Style s) { setAlertStyle(s.value); }
 
     // ---- addButtonWithTitle: ----
     public NSButton addButtonWithTitle(String title) {

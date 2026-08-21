@@ -51,7 +51,7 @@ public class NSView extends NSObject {
     private static MemorySegment deallocStub;
 
     // ---- resolved once per process (rule: resolve-once, invokeExact on hot paths) ----
-    private record Handles(MethodHandle hInitFrame, MethodHandle hSetFrame, MethodHandle hNeedsRect, MethodHandle hAutoMask, MethodHandle hBacking, MethodHandle hConvBacking, MethodHandle hGetDouble, MethodHandle hSetDouble, MethodHandle hGetSize, MethodHandle hSetSize) {}
+    private record Handles(MethodHandle hInitFrame, MethodHandle hSetFrame, MethodHandle hNeedsRect, MethodHandle hAutoMask, MethodHandle hBacking, MethodHandle hConvBacking, MethodHandle hGetDouble, MethodHandle hSetDouble, MethodHandle hGetSize, MethodHandle hSetSize, MethodHandle hObjectAtIndex, MethodHandle hSetBounds, MethodHandle hRegisterForDraggedTypes, MethodHandle hBeginDraggingSession) {}
     private static volatile Handles H;
 
     /// Wrap a native NSView id (e.g. a box's contentView) as an NSView.
@@ -106,7 +106,11 @@ public class NSView extends NSObject {
                 ObjC.handle(Sig.of(Ret.DOUBLE)),
                 ObjC.handle(Sig.of(Ret.VOID, Arg.DOUBLE)),
                 ObjC.handle(Sig.of(Ret.SIZE)),
-                ObjC.handle(Sig.of(Ret.VOID, Arg.SIZE)));
+                ObjC.handle(Sig.of(Ret.VOID, Arg.SIZE)),
+                ObjC.handle(Sig.of(Ret.ID, Arg.INT)),
+                ObjC.handle(Sig.of(Ret.VOID, Arg.RECT)),
+                ObjC.handle(Sig.of(Ret.VOID, Arg.ID)),
+                ObjC.handle(Sig.of(Ret.ID, Arg.ID, Arg.ID, Arg.ID)));
     }
 
     /// FFM upcall target: `-(void)drawRect:(NSRect)dirtyRect` — called by AppKit on the main thread.
@@ -180,8 +184,7 @@ public class NSView extends NSObject {
     public void setBounds(NSRect bounds) {
         ensureInit();
         try {
-            MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.RECT));
-            h.invokeExact(peer, ObjC.sel("setBounds:"), bounds.toSegment());
+            H.hSetBounds().invokeExact(peer, ObjC.sel("setBounds:"), bounds.toSegment());
         } catch (Throwable t) {
             throw new RuntimeException("setBounds: failed", t);
         }
@@ -362,12 +365,13 @@ public class NSView extends NSObject {
 
     /// constraints — the view's installed constraints.
     public java.util.List<NSLayoutConstraint> constraints() {
+        ensureInit();
         MemorySegment arr = ObjC.msgSendId(peer, ObjC.sel("constraints"));
         if (arr == null || arr.address() == 0) return java.util.List.of();
         long count = ObjC.msgSendLong(arr, ObjC.sel("count"));
         java.util.List<NSLayoutConstraint> list = new java.util.ArrayList<>((int) count);
         MemorySegment selAt = ObjC.sel("objectAtIndex:");
-        MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.INT));
+        MethodHandle h = H.hObjectAtIndex();
         for (long i = 0; i < count; i++) {
             try {
                 MemorySegment v = (MemorySegment) h.invokeExact(arr, selAt, i);
@@ -485,5 +489,65 @@ public class NSView extends NSObject {
     /// invalidateIntrinsicContentSize.
     public void invalidateIntrinsicContentSize() {
         ObjC.msgSendVoid(peer, ObjC.sel("invalidateIntrinsicContentSize"));
+    }
+
+    // ---- dragging support (Phase 0B) ----
+
+    /// registerForDraggedTypes: — register pasteboard types this view accepts for drops.
+    public void registerForDraggedTypes(java.util.List<String> types) {
+        ensureInit();
+        MemorySegment arr;
+        if (types == null || types.isEmpty()) {
+            arr = ObjC.msgSendId(ObjC.cls("NSArray"), ObjC.sel("array"));
+        } else {
+            arr = ObjC.msgSendId(ObjC.cls("NSMutableArray"), ObjC.sel("array"));
+            for (String t : types) {
+                if (t == null) continue;
+                MemorySegment ns = ObjC.nsstring(t);
+                ObjC.msgSendVoidId(arr, ObjC.sel("addObject:"), ns);
+            }
+        }
+        try {
+            H.hRegisterForDraggedTypes().invokeExact(peer, ObjC.sel("registerForDraggedTypes:"), arr);
+        } catch (Throwable t) {
+            throw new RuntimeException("registerForDraggedTypes: failed", t);
+        }
+    }
+
+    /// unregisterDraggedTypes — unregister all previously registered drag types.
+    public void unregisterDraggedTypes() {
+        ObjC.msgSendVoid(peer, ObjC.sel("unregisterDraggedTypes"));
+    }
+
+    /// beginDraggingSessionWithItems:event:source: — begin a dragging session.
+    /// Best-effort: converts items to NSArray, handles nulls gracefully, wraps result.
+    /// If event or source is null/NULL, AppKit would dereference and SIGSEGV; we return null gracefully instead.
+    public NSDraggingSession beginDraggingSessionWithItems(java.util.List<NSDraggingItem> items, NSEvent event, NSDraggingSource source) {
+        ensureInit();
+        MemorySegment arr;
+        if (items == null || items.isEmpty()) {
+            arr = ObjC.msgSendId(ObjC.cls("NSArray"), ObjC.sel("array"));
+        } else {
+            arr = ObjC.msgSendId(ObjC.cls("NSMutableArray"), ObjC.sel("array"));
+            for (NSDraggingItem item : items) {
+                if (item == null || item.peer() == null || item.peer().address() == 0) continue;
+                ObjC.msgSendVoidId(arr, ObjC.sel("addObject:"), item.peer());
+            }
+        }
+        MemorySegment eventSeg = (event == null || event.peer() == null || event.peer().address() == 0) ? MemorySegment.NULL : event.peer();
+        MemorySegment sourceSeg = (source == null || source.peer() == null || source.peer().address() == 0) ? MemorySegment.NULL : source.peer();
+        // Graceful best-effort: AppKit crashes (SIGSEGV) if event is NULL; return null instead.
+        if (eventSeg.address() == 0 || sourceSeg.address() == 0) {
+            return null;
+        }
+        try {
+            MemorySegment sess = (MemorySegment) H.hBeginDraggingSession().invokeExact(peer, ObjC.sel("beginDraggingSessionWithItems:event:source:"), arr, eventSeg, sourceSeg);
+            return NSDraggingSession.wrap(sess);
+        } catch (Throwable t) {
+            // Also graceful: if AppKit raises (e.g. view not in window), return null rather than throw
+            // But preserve original exception for debugging if it's a vocabulary miss
+            if (t.getMessage() != null && t.getMessage().contains("vocabulary")) throw new RuntimeException("beginDraggingSessionWithItems:event:source: failed", t);
+            return null;
+        }
     }
 }

@@ -115,19 +115,64 @@ public final class NSButton extends NSControl {
         ObjC.msgSendVoid(peer, ObjC.sel("sizeToFit"));
     }
 
+    // ---------------------------------------------------------------- nested enums — verified against local SDK headers
+    // SDK: $(xcrun --show-sdk-path)/System/Library/Frameworks/AppKit.framework/Headers/NSButtonCell.h
+    //   NSBezelStyle / NSButtonType
+    // Docs: https://developer.apple.com/documentation/appkit/nsbezelstyle
+    // Docs: https://developer.apple.com/documentation/appkit/nsbuttontype
+
+    /// `NSBezelStyle` — values from `NSButtonCell.h` `typedef NS_ENUM(NSUInteger, NSBezelStyle)`.
+    /// Canonical: Automatic 0, Push 1 (=Rounded), FlexiblePush 2 (=RegularSquare), Disclosure 5, ShadowlessSquare 6, Circular 7, TexturedSquare 8, HelpButton 9, SmallSquare 10, Toolbar 11 (=TexturedRounded), AccessoryBarAction 12 (=RoundRect), AccessoryBar 13 (=Recessed), PushDisclosure 14 (=RoundedDisclosure), Badge 15 (=Inline), Glass 16.
+    public enum BezelStyle {
+        automatic(0),
+        push(1),                  // NSRoundedBezelStyle deprecated alias
+        flexiblePush(2),         // NSRegularSquareBezelStyle alias
+        disclosure(5),
+        shadowlessSquare(6),
+        circular(7),
+        texturedSquare(8),
+        helpButton(9),
+        smallSquare(10),
+        toolbar(11),              // NSTexturedRoundedBezelStyle alias
+        accessoryBarAction(12), // NSRoundRectBezelStyle alias
+        accessoryBar(13),        // NSRecessedBezelStyle alias
+        pushDisclosure(14),
+        badge(15),                // NSInlineBezelStyle alias
+        glass(16);
+        public final long value;
+        BezelStyle(long v) { this.value = v; }
+        public static BezelStyle fromValue(long v) { for (var e : values()) if (e.value == v) return e; return null; }
+    }
+
+    /// `NSButtonType` — values from `NSButtonCell.h` `typedef NS_ENUM(NSUInteger, NSButtonType)`.
+    public enum ButtonType {
+        momentaryLight(0), momentaryPushIn(7), // 7 is the common push-button momentaryPushIn used by NSButton.create
+        pushOnPushOff(1), toggle(2), switchButton(3), radio(4), momentaryChange(5), onOff(6),
+        accelerator(8), multiLevelAccelerator(9);
+        public final long value;
+        ButtonType(long v) { this.value = v; }
+        public static ButtonType fromValue(long v) { for (var e : values()) if (e.value == v) return e; return null; }
+    }
+
     /// [button bezelStyle] — NSBezelStyle.
     public long bezelStyle() {
         return ObjC.msgSendLong(peer, ObjC.sel("bezelStyle"));
     }
+    /// Typed getter.
+    public BezelStyle bezelStyleEnum() { return BezelStyle.fromValue(bezelStyle()); }
     /// [button setBezelStyle:] — NSBezelStyle (1 = Rounded).
     public void setBezelStyle(long style) {
         ObjC.msgSendVoidLong(peer, ObjC.sel("setBezelStyle:"), style);
     }
+    /// Typed overload.
+    public void setBezelStyle(BezelStyle s) { setBezelStyle(s.value); }
 
     /// [button setButtonType:] — NSButtonType (0 = MomentaryPushIn).
     public void setButtonType(long type) {
         ObjC.msgSendVoidLong(peer, ObjC.sel("setButtonType:"), type);
     }
+    /// Typed overload.
+    public void setButtonType(ButtonType t) { setButtonType(t.value); }
 
     // ---- state ----
     public long state() {

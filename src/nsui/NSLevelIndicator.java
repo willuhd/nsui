@@ -56,6 +56,28 @@ public final class NSLevelIndicator extends NSControl {
 
     // ---------------------------------------------------------------- instance API
 
+    // ---------------------------------------------------------------- nested enums — verified against local SDK headers
+    // SDK: $(xcrun --show-sdk-path)/System/Library/Frameworks/AppKit.framework/Headers/NSLevelIndicatorCell.h
+    //   NSLevelIndicatorStyle: Relevancy 0, ContinuousCapacity 1, DiscreteCapacity 2, Rating 3
+    // Docs: https://developer.apple.com/documentation/appkit/nslevelindicator/style
+    // Also NSTickMarkPosition: Below 0, Above 1 (from NSSliderCell.h)
+
+    /// `NSLevelIndicatorStyle` — 0=Relevancy, 1=ContinuousCapacity, 2=DiscreteCapacity, 3=Rating. From `NSLevelIndicatorCell.h`.
+    public enum Style {
+        relevancy(0), continuousCapacity(1), discreteCapacity(2), rating(3);
+        public final long value;
+        Style(long v) { this.value = v; }
+        public static Style fromValue(long v) { for (var e : values()) if (e.value == v) return e; return null; }
+    }
+
+    /// `NSTickMarkPosition` — 0=Below, 1=Above (also Leading/Trailing aliases). From `NSSliderCell.h`.
+    public enum TickMarkPosition {
+        below(0), above(1);
+        public final long value;
+        TickMarkPosition(long v) { this.value = v; }
+        public static TickMarkPosition fromValue(long v) { for (var e : values()) if (e.value == v) return e; return null; }
+    }
+
     /// [indicator setLevelIndicatorStyle:] — NSLevelIndicatorStyle (0 = Relevancy).
     public void setLevelIndicatorStyle(long style) {
         try {
@@ -64,11 +86,15 @@ public final class NSLevelIndicator extends NSControl {
             throw new RuntimeException("setLevelIndicatorStyle: failed", t);
         }
     }
+    /// Typed overload.
+    public void setLevelIndicatorStyle(Style s) { setLevelIndicatorStyle(s.value); }
 
     /// [indicator levelIndicatorStyle] — current style.
     public long levelIndicatorStyle() {
         return ObjC.msgSendLong(peer, ObjC.sel("levelIndicatorStyle"));
     }
+    /// Typed getter.
+    public Style levelIndicatorStyleEnum() { return Style.fromValue(levelIndicatorStyle()); }
 
     /// [indicator setMinValue:] — minimum value.
     public void setMinValue(double v) {
@@ -186,11 +212,15 @@ public final class NSLevelIndicator extends NSControl {
     public long tickMarkPosition() {
         return ObjC.msgSendLong(peer, ObjC.sel("tickMarkPosition"));
     }
+    /// Typed getter.
+    public TickMarkPosition tickMarkPositionEnum() { return TickMarkPosition.fromValue(tickMarkPosition()); }
 
     /// [indicator setTickMarkPosition:] — set position.
     public void setTickMarkPosition(long pos) {
         ObjC.msgSendVoidLong(peer, ObjC.sel("setTickMarkPosition:"), pos);
     }
+    /// Typed overload.
+    public void setTickMarkPosition(TickMarkPosition p) { setTickMarkPosition(p.value); }
 
     /// [indicator isEditable] — whether user can edit.
     public boolean isEditable() {

@@ -342,11 +342,29 @@ public class NSView extends NSResponder {
     /// `sel(event)` to the view's next responder. Plain msgSend on the NEXT
     /// object — never a re-send on `self`, which would recurse into this
     /// override. A nil next responder ends the chain silently.
+    ///
+    /// A per-thread visited-set guards against responder CYCLES: AppKit's own
+    /// default implementations can route back into the subtree we are forwarding
+    /// out of (the window broadcasts `performKeyEquivalent:` down its content
+    /// view tree, and our contentView subclass forwards up to that same
+    /// window), which without the guard is an infinite upcall ping-pong and a
+    /// StackOverflowError inside the FFM upcall stub. Entries are added before
+    /// the send and removed after it, so unrelated later deliveries to the same
+    /// responder still work.
+    private static final ThreadLocal<java.util.Set<Long>> FORWARDING = ThreadLocal.withInitial(java.util.HashSet::new);
+
     private static void forwardChain(MemorySegment self, MemorySegment sel, MemorySegment eventSeg) {
         MemorySegment next = ObjC.msgSendId(self, ObjC.sel("nextResponder"));
         if (next == null || next.address() == 0) return;
-        ObjC.msgSendVoidId(next, sel,
-                (MemorySegment)(eventSeg == null ? MemorySegment.NULL : eventSeg));
+        long nextAddr = next.address();
+        java.util.Set<Long> visiting = FORWARDING.get();
+        if (!visiting.add(nextAddr)) return; // cycle — this responder is already unwinding this delivery
+        try {
+            ObjC.msgSendVoidId(next, sel,
+                    (MemorySegment)(eventSeg == null ? MemorySegment.NULL : eventSeg));
+        } finally {
+            visiting.remove(nextAddr);
+        }
     }
 
     /// FFM upcall target: `-(void)mouseDown:(NSEvent *)event`.
@@ -424,11 +442,17 @@ public class NSView extends NSResponder {
     }
 
     /// FFM upcall target: `-(BOOL)performKeyEquivalent:(NSEvent *)event`.
-    /// Always passes the event to the next responder and reports false
-    /// ("not handled") so key equivalents continue down the responder chain and
-    /// still arrive as `keyDown:` — there is deliberately no Java hook here yet.
+    /// Always answers NO ("not handled") and does NOT forward. AppKit delivers
+    /// key equivalents by walking the whole view tree itself (the window sends
+    /// this to the content view, whose default walks every subview), so the
+    /// NSResponder-style "forward to next responder" is not just unnecessary —
+    /// for a window whose contentView is one of our subclasses it is a cycle:
+    /// view → window → window's tree-walk → same view → … (observed live as a
+    /// StackOverflowError inside the upcall stub). Returning NO lets AppKit
+    /// finish its own traversal; unhandled equivalents still surface as
+    /// `keyDown:` on the first responder. There is deliberately no Java hook
+    /// here yet — add `onKeyEquivalent` to KeyListener when one is needed.
     public static boolean performKeyEquivalentImpl(MemorySegment self, MemorySegment sel, MemorySegment eventSeg) {
-        forwardChain(self, sel, eventSeg);
         return false;
     }
 

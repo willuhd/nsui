@@ -12,7 +12,7 @@ import static nsui.objc.Sig.Ret;
 /// Covers CABasicAnimation-style key-path animations via the same peer.
 public class CAAnimation extends NSObject {
 
-            private record Handles(MethodHandle hWithKeyPath, MethodHandle hSetFrom, MethodHandle hSetDuration, MethodHandle hGetId) {}
+            private record Handles(MethodHandle hWithKeyPath, MethodHandle hSetFrom, MethodHandle hSetDuration, MethodHandle hGetId, MethodHandle hGetBool, MethodHandle hSetBool, MethodHandle hGetFloat, MethodHandle hSetFloat) {}
     private static volatile Handles handles;
 
     protected CAAnimation(MemorySegment peer) {
@@ -27,7 +27,7 @@ public class CAAnimation extends NSObject {
         private static synchronized void ensureInit() {
         if (handles != null) return;
         try { ObjC.ensureFramework("QuartzCore"); } catch (Throwable ignored) {}
-        handles = new Handles(ObjC.handle(Sig.of(Ret.ID, Arg.ID)), ObjC.handle(Sig.of(Ret.VOID, Arg.ID)), ObjC.handle(Sig.of(Ret.VOID, Arg.DOUBLE)), ObjC.handle(Sig.of(Ret.ID)));
+        handles = new Handles(ObjC.handle(Sig.of(Ret.ID, Arg.ID)), ObjC.handle(Sig.of(Ret.VOID, Arg.ID)), ObjC.handle(Sig.of(Ret.VOID, Arg.DOUBLE)), ObjC.handle(Sig.of(Ret.ID)), ObjC.handle(Sig.of(Ret.BOOL)), ObjC.handle(Sig.of(Ret.VOID, Arg.BOOL)), ObjC.handle(Sig.of(Ret.FLOAT)), ObjC.handle(Sig.of(Ret.VOID, Arg.FLOAT)));
     }
 
     /// +[CABasicAnimation animationWithKeyPath:]
@@ -64,6 +64,42 @@ public class CAAnimation extends NSObject {
             MemorySegment fn = (MemorySegment) h.invokeExact(ObjC.cls("CAMediaTimingFunction"), ObjC.sel("functionWithName:"), ObjC.nsstring(name));
             setTimingFunction(fn);
         } catch (Throwable t) { throw new RuntimeException("functionWithName: failed", t); }
+    }
+
+    /// [animation autoreverses]
+    public boolean autoreverses() {
+        ensureInit();
+        try { return (boolean) handles.hGetBool().invokeExact(peer, ObjC.sel("autoreverses")); } catch (Throwable t) { throw new RuntimeException("autoreverses failed", t); }
+    }
+
+    /// [animation setAutoreverses:]
+    public void setAutoreverses(boolean flag) {
+        ensureInit();
+        try { handles.hSetBool().invokeExact(peer, ObjC.sel("setAutoreverses:"), flag); } catch (Throwable t) { throw new RuntimeException("setAutoreverses: failed", t); }
+    }
+
+    /// [animation repeatCount]
+    public float repeatCount() {
+        ensureInit();
+        try { return (float) handles.hGetFloat().invokeExact(peer, ObjC.sel("repeatCount")); } catch (Throwable t) { throw new RuntimeException("repeatCount failed", t); }
+    }
+
+    /// [animation setRepeatCount:]
+    public void setRepeatCount(float count) {
+        ensureInit();
+        try { handles.hSetFloat().invokeExact(peer, ObjC.sel("setRepeatCount:"), count); } catch (Throwable t) { throw new RuntimeException("setRepeatCount: failed", t); }
+    }
+
+    /// [animation removedOnCompletion]
+    public boolean removedOnCompletion() {
+        ensureInit();
+        try { return (boolean) handles.hGetBool().invokeExact(peer, ObjC.sel("isRemovedOnCompletion")); } catch (Throwable t) { throw new RuntimeException("isRemovedOnCompletion failed", t); }
+    }
+
+    /// [animation setRemovedOnCompletion:]
+    public void setRemovedOnCompletion(boolean flag) {
+        ensureInit();
+        try { handles.hSetBool().invokeExact(peer, ObjC.sel("setRemovedOnCompletion:"), flag); } catch (Throwable t) { throw new RuntimeException("setRemovedOnCompletion: failed", t); }
     }
 
     /// [animation setByValue:] — same shape as setFromValue:; identical cast discipline.

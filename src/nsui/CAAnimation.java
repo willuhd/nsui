@@ -102,6 +102,18 @@ public class CAAnimation extends NSObject {
         try { handles.hSetBool().invokeExact(peer, ObjC.sel("setRemovedOnCompletion:"), flag); } catch (Throwable t) { throw new RuntimeException("setRemovedOnCompletion: failed", t); }
     }
 
+    /// [animation fillMode] — e.g. "forwards", "backwards", "both", "removed"
+    public String fillMode() {
+        ensureInit();
+        try { return ObjC.toString((MemorySegment) handles.hGetId().invokeExact(peer, ObjC.sel("fillMode"))); } catch (Throwable t) { throw new RuntimeException("fillMode failed", t); }
+    }
+
+    /// [animation setFillMode:]
+    public void setFillMode(String mode) {
+        ensureInit();
+        try { handles.hSetFrom().invokeExact(peer, ObjC.sel("setFillMode:"), (MemorySegment)(mode==null?MemorySegment.NULL:ObjC.nsstring(mode))); } catch (Throwable t) { throw new RuntimeException("setFillMode: failed", t); }
+    }
+
     /// [animation setByValue:] — same shape as setFromValue:; identical cast discipline.
     public void setByValue(MemorySegment value) {
         try { handles.hSetFrom().invokeExact(peer, ObjC.sel("setByValue:"), (MemorySegment) (value == null ? MemorySegment.NULL : value)); } catch (Throwable t) { throw new RuntimeException("setByValue: failed", t); }

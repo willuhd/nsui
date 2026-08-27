@@ -19,7 +19,7 @@ import static nsui.objc.Sig.Ret;
 /// AppKit/CoreGraphics dependencies, but we ensure QuartzCore explicitly if needed.
 public class CALayer extends NSObject {
 
-            private record Handles(MethodHandle hGetDouble, MethodHandle hSetDouble, MethodHandle hGetFloat, MethodHandle hSetFloat, MethodHandle hGetId, MethodHandle hSetId, MethodHandle hGetPoint, MethodHandle hSetPoint, MethodHandle hGetSize, MethodHandle hSetSize, MethodHandle hGetBool, MethodHandle hSetBool) {}
+            private record Handles(MethodHandle hGetDouble, MethodHandle hSetDouble, MethodHandle hGetFloat, MethodHandle hSetFloat, MethodHandle hGetId, MethodHandle hSetId, MethodHandle hGetPoint, MethodHandle hSetPoint, MethodHandle hGetSize, MethodHandle hSetSize, MethodHandle hGetBool, MethodHandle hSetBool, MethodHandle hGetRect, MethodHandle hSetRect) {}
     private static volatile Handles handles;
 
     protected CALayer(MemorySegment peer) {
@@ -47,7 +47,9 @@ public class CALayer extends NSObject {
                 ObjC.handle(Sig.of(Ret.SIZE)),
                 ObjC.handle(Sig.of(Ret.VOID, Arg.SIZE)),
                 ObjC.handle(Sig.of(Ret.BOOL)),
-                ObjC.handle(Sig.of(Ret.VOID, Arg.BOOL))
+                ObjC.handle(Sig.of(Ret.VOID, Arg.BOOL)),
+                ObjC.handle(Sig.of(Ret.RECT)),
+                ObjC.handle(Sig.of(Ret.VOID, Arg.RECT))
         );
     }
 
@@ -292,6 +294,40 @@ public class CALayer extends NSObject {
         try {
             handles.hSetPoint().invokeExact(peer, ObjC.sel("setAnchorPoint:"), p.toSegment());
         } catch (Throwable t) { throw new RuntimeException("setAnchorPoint: failed", t); }
+    }
+
+    /// [layer bounds] — the layer's bounds in its own coordinate space.
+    public NSRect bounds() {
+        ensureInit();
+        try {
+            MemorySegment s = (MemorySegment) handles.hGetRect().invokeExact((SegmentAllocator) Arena.global(), peer, ObjC.sel("bounds"));
+            return NSRect.fromSegment(s);
+        } catch (Throwable t) { throw new RuntimeException("bounds failed", t); }
+    }
+
+    /// [layer setBounds:]
+    public void setBounds(NSRect bounds) {
+        ensureInit();
+        try {
+            handles.hSetRect().invokeExact(peer, ObjC.sel("setBounds:"), bounds.toSegment());
+        } catch (Throwable t) { throw new RuntimeException("setBounds: failed", t); }
+    }
+
+    /// [layer frame] — the layer's frame in the superlayer's coordinate space.
+    public NSRect frame() {
+        ensureInit();
+        try {
+            MemorySegment s = (MemorySegment) handles.hGetRect().invokeExact((SegmentAllocator) Arena.global(), peer, ObjC.sel("frame"));
+            return NSRect.fromSegment(s);
+        } catch (Throwable t) { throw new RuntimeException("frame failed", t); }
+    }
+
+    /// [layer setFrame:]
+    public void setFrame(NSRect frame) {
+        ensureInit();
+        try {
+            handles.hSetRect().invokeExact(peer, ObjC.sel("setFrame:"), frame.toSegment());
+        } catch (Throwable t) { throw new RuntimeException("setFrame: failed", t); }
     }
 
     /// [layer zPosition] — depth ordering above/below sibling layers.

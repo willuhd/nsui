@@ -96,7 +96,7 @@ public class NSView extends NSResponder {
     public static final long trackingEnabledDuringMouseDrag = 1L << 10;
 
     // ---- resolved once per process (rule: resolve-once, invokeExact on hot paths) ----
-    private record Handles(MethodHandle hInitFrame, MethodHandle hSetFrame, MethodHandle hNeedsRect, MethodHandle hAutoMask, MethodHandle hBacking, MethodHandle hConvBacking, MethodHandle hGetDouble, MethodHandle hSetDouble, MethodHandle hGetSize, MethodHandle hSetSize, MethodHandle hObjectAtIndex, MethodHandle hSetBounds, MethodHandle hRegisterForDraggedTypes, MethodHandle hBeginDraggingSession) {}
+    private record Handles(MethodHandle hInitFrame, MethodHandle hSetFrame, MethodHandle hNeedsRect, MethodHandle hAutoMask, MethodHandle hBacking, MethodHandle hConvBacking, MethodHandle hGetDouble, MethodHandle hSetDouble, MethodHandle hGetSize, MethodHandle hSetSize, MethodHandle hObjectAtIndex, MethodHandle hSetBounds, MethodHandle hRegisterForDraggedTypes, MethodHandle hBeginDraggingSession, MethodHandle hRepForCache, MethodHandle hCacheDisplay) {}
     private static volatile Handles H;
 
     /// Wrap a native NSView id (e.g. a box's contentView) as an NSView.
@@ -179,7 +179,9 @@ public class NSView extends NSResponder {
                 ObjC.handle(Sig.of(Ret.ID, Arg.INT)),
                 ObjC.handle(Sig.of(Ret.VOID, Arg.RECT)),
                 ObjC.handle(Sig.of(Ret.VOID, Arg.ID)),
-                ObjC.handle(Sig.of(Ret.ID, Arg.ID, Arg.ID, Arg.ID)));
+                ObjC.handle(Sig.of(Ret.ID, Arg.ID, Arg.ID, Arg.ID)),
+                ObjC.handle(Sig.of(Ret.ID, Arg.RECT)),
+                ObjC.handle(Sig.of(Ret.VOID, Arg.RECT, Arg.ID)));
     }
 
     // ---- upcall-stub builders (called only from the lazy ensureInit, never class-init) ----
@@ -870,5 +872,24 @@ public class NSView extends NSResponder {
             if (t.getMessage() != null && t.getMessage().contains("vocabulary")) throw new RuntimeException("beginDraggingSessionWithItems:event:source: failed", t);
             return null;
         }
+    }
+
+    // ---- bitmap caching (for PNG snapshot) ----
+
+    /// [view bitmapImageRepForCachingDisplayInRect:] — create a rep sized for caching.
+    public NSBitmapImageRep bitmapImageRepForCachingDisplayInRect(NSRect rect) {
+        ensureInit();
+        try {
+            MemorySegment rep = (MemorySegment) H.hRepForCache().invokeExact(peer, ObjC.sel("bitmapImageRepForCachingDisplayInRect:"), rect.toSegment());
+            return NSBitmapImageRep.wrap(rep);
+        } catch (Throwable e) { throw new RuntimeException("bitmapImageRepForCachingDisplayInRect: failed", e); }
+    }
+
+    /// [view cacheDisplayInRect:toBitmapImageRep:] — render into a rep.
+    public void cacheDisplayInRectToBitmapImageRep(NSRect rect, NSBitmapImageRep rep) {
+        ensureInit();
+        try {
+            H.hCacheDisplay().invokeExact(peer, ObjC.sel("cacheDisplayInRect:toBitmapImageRep:"), rect.toSegment(), (MemorySegment)(rep == null ? MemorySegment.NULL : rep.peer()));
+        } catch (Throwable e) { throw new RuntimeException("cacheDisplayInRect:toBitmapImageRep: failed", e); }
     }
 }

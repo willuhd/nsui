@@ -114,4 +114,35 @@ public final class CAEmitterCell extends NSObject {
     public double emissionRange() { return getDouble("emissionRange"); }
     /// setEmissionRange:.
     public void setEmissionRange(double v) { setDouble("setEmissionRange:", v); }
+    /// velocity points/second.
+    public double velocity() { return getDouble("velocity"); }
+    /// setVelocity:.
+    public void setVelocity(double v) { setDouble("setVelocity:", v); }
+    /// velocityRange.
+    public double velocityRange() { return getDouble("velocityRange"); }
+    /// setVelocityRange:.
+    public void setVelocityRange(double v) { setDouble("setVelocityRange:", v); }
+    /// xAcceleration.
+    public double xAcceleration() { return getDouble("xAcceleration"); }
+    /// setXAcceleration:.
+    public void setXAcceleration(double v) { setDouble("setXAcceleration:", v); }
+    /// yAcceleration (gravity: positive pulls down in layer coords).
+    public double yAcceleration() { return getDouble("yAcceleration"); }
+    /// setYAcceleration:.
+    public void setYAcceleration(double v) { setDouble("setYAcceleration:", v); }
+    /// zAcceleration.
+    public double zAcceleration() { return getDouble("zAcceleration"); }
+    /// setZAcceleration:.
+    public void setZAcceleration(double v) { setDouble("setZAcceleration:", v); }
+    /// scale multiplier.
+    public double scale() { return getDouble("scale"); }
+    /// setScale:.
+    public void setScale(double v) { setDouble("setScale:", v); }
+    /// color (CGColorRef peer, nil-safe raw).
+    public MemorySegment color() { return ObjC.msgSendId(peer, ObjC.sel("color")); }
+    /// setColor:.
+    public void setColor(NSColor color) {
+        ObjC.msgSendVoidId(peer, ObjC.sel("setColor:"),
+                (MemorySegment) (color == null ? MemorySegment.NULL : color.cgColor()));
+    }
 }

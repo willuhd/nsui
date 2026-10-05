@@ -19,7 +19,7 @@ import static nsui.objc.Sig.Ret;
 public final class NSPathControl extends NSControl {
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
-            private record Handles(MethodHandle hInitFrame, MethodHandle hSetURL, MethodHandle hGetURL, MethodHandle hSetPathStyle, MethodHandle hGetPathStyle) {}
+            private record Handles(MethodHandle hSetURL, MethodHandle hGetURL, MethodHandle hSetPathStyle, MethodHandle hGetPathStyle) {}
     private static volatile Handles handles;
 
     private NSPathControl(MemorySegment peer) {
@@ -35,7 +35,6 @@ public final class NSPathControl extends NSControl {
         private static synchronized void ensureInit() {
         if (handles != null) return;
         handles = new Handles(
-                ObjC.handle(Sig.of(Ret.ID, Arg.RECT)),
                 ObjC.handle(Sig.of(Ret.VOID, Arg.ID)),
                 ObjC.handle(Sig.of(Ret.ID)),
                 ObjC.handle(Sig.of(Ret.VOID, Arg.INT)),
@@ -44,16 +43,9 @@ public final class NSPathControl extends NSControl {
     }
 
     /// `[[NSPathControl alloc] initWithFrame:frame]` — a new path control.
-    public static NSPathControl create(NSRect frame) {
+        public static NSPathControl create(NSRect frame) {
         ensureInit();
-        MemorySegment p = ObjC.msgSendId(ObjC.cls("NSPathControl"), ObjC.sel("alloc"));
-        try {
-            p = (MemorySegment) handles.hInitFrame().invokeExact(p, ObjC.sel("initWithFrame:"), frame.toSegment());
-        } catch (Throwable t) {
-            throw new RuntimeException("initWithFrame: failed for NSPathControl", t);
-        }
-        if (p.address() == 0) throw new IllegalStateException("NSPathControl alloc/initWithFrame: returned nil");
-        return new NSPathControl(p);
+        return new NSPathControl(ObjC.newView("NSPathControl", frame));
     }
 
     // ---------------------------------------------------------------- instance API

@@ -50,18 +50,9 @@ public final class NSPopUpButton extends NSControl {
     }
 
     /// `[[NSPopUpButton alloc] initWithFrame:frame]` — a new popup at the given rect.
-    public static NSPopUpButton create(NSRect frame) {
+        public static NSPopUpButton create(NSRect frame) {
         ensureInit();
-        MemorySegment b = ObjC.msgSendId(ObjC.cls("NSPopUpButton"), ObjC.sel("alloc"));
-        try {
-            b = (MemorySegment) hInitFrame.invokeExact(b, ObjC.sel("initWithFrame:"), frame.toSegment());
-        } catch (Throwable t) {
-            throw new RuntimeException("initWithFrame: failed for NSPopUpButton", t);
-        }
-        if (b.address() == 0) {
-            throw new IllegalStateException("NSPopUpButton alloc/initWithFrame: returned nil");
-        }
-        return new NSPopUpButton(b);
+        return new NSPopUpButton(ObjC.newView("NSPopUpButton", frame));
     }
 
     // ---------------------------------------------------------------- instance API

@@ -40,18 +40,9 @@ public final class NSLevelIndicator extends NSControl {
     }
 
     /// `[[NSLevelIndicator alloc] initWithFrame:frame]` — a new indicator at the given rect.
-    public static NSLevelIndicator create(NSRect frame) {
+        public static NSLevelIndicator create(NSRect frame) {
         ensureInit();
-        MemorySegment p = ObjC.msgSendId(ObjC.cls("NSLevelIndicator"), ObjC.sel("alloc"));
-        try {
-            p = (MemorySegment) hInitFrame.invokeExact(p, ObjC.sel("initWithFrame:"), frame.toSegment());
-        } catch (Throwable t) {
-            throw new RuntimeException("initWithFrame: failed for NSLevelIndicator", t);
-        }
-        if (p.address() == 0) {
-            throw new IllegalStateException("NSLevelIndicator alloc/initWithFrame: returned nil");
-        }
-        return new NSLevelIndicator(p);
+        return new NSLevelIndicator(ObjC.newView("NSLevelIndicator", frame));
     }
 
     // ---------------------------------------------------------------- instance API

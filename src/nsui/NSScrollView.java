@@ -43,18 +43,9 @@ public final class NSScrollView extends NSView {
     }
 
     /// `[[NSScrollView alloc] initWithFrame:frame]` — a new scroll view.
-    public static NSScrollView create(NSRect frame) {
+        public static NSScrollView create(NSRect frame) {
         ensureInit();
-        MemorySegment v = ObjC.msgSendId(ObjC.cls("NSScrollView"), ObjC.sel("alloc"));
-        try {
-            v = (MemorySegment) hInitFrame.invokeExact(v, ObjC.sel("initWithFrame:"), frame.toSegment());
-        } catch (Throwable t) {
-            throw new RuntimeException("initWithFrame: failed for NSScrollView", t);
-        }
-        if (v.address() == 0) {
-            throw new IllegalStateException("NSScrollView alloc/initWithFrame: returned nil");
-        }
-        return new NSScrollView(v);
+        return new NSScrollView(ObjC.newView("NSScrollView", frame));
     }
 
     // ---------------------------------------------------------------- instance API

@@ -42,18 +42,9 @@ public final class NSDatePicker extends NSControl {
     }
 
     /// `[[NSDatePicker alloc] initWithFrame:frame]` — a new date picker at the given rect.
-    public static NSDatePicker create(NSRect frame) {
+        public static NSDatePicker create(NSRect frame) {
         ensureInit();
-        MemorySegment p = ObjC.msgSendId(ObjC.cls("NSDatePicker"), ObjC.sel("alloc"));
-        try {
-            p = (MemorySegment) hInitFrame.invokeExact(p, ObjC.sel("initWithFrame:"), frame.toSegment());
-        } catch (Throwable t) {
-            throw new RuntimeException("initWithFrame: failed for NSDatePicker", t);
-        }
-        if (p.address() == 0) {
-            throw new IllegalStateException("NSDatePicker alloc/initWithFrame: returned nil");
-        }
-        return new NSDatePicker(p);
+        return new NSDatePicker(ObjC.newView("NSDatePicker", frame));
     }
 
     // ---------------------------------------------------------------- instance API

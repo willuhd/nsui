@@ -256,6 +256,23 @@ public final class ObjC {
         return new String(bytes, 0, (int) len, java.nio.charset.StandardCharsets.UTF_8);
     }
 
+    /// alloc + initWithFrame: for an AppKit view class, by name — the one-line
+    /// replacement for the create() ceremony every view wrapper repeats. Uses
+    /// the shared registered (ID, RECT) -> ID handle: same stub, same cost as
+    /// a per-class handle, minus ~8 lines per call site. Throws when native
+    /// construction fails or returns nil (never returns a null peer).
+    public static MemorySegment newView(String className, nsui.NSRect frame) {
+        MemorySegment p = msgSendId(cls(className), sel("alloc"));
+        try {
+            p = (MemorySegment) handle(Sig.of(Ret.ID, Arg.RECT))
+                    .invokeExact(p, sel("initWithFrame:"), frame.toSegment());
+        } catch (Throwable t) {
+            throw new RuntimeException("initWithFrame: failed for " + className, t);
+        }
+        if (p.address() == 0) throw new IllegalStateException("initWithFrame: returned nil for " + className);
+        return p;
+    }
+
     /// Allocate an NSRect for call-scoped use. Always a by-value INPUT argument
     /// (the callee reads it during the call), so it comes from the thread-local
     /// bump buffer (`Scratch.allocInput`); struct RETURNS (`msgSendRect`) use

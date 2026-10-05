@@ -19,7 +19,7 @@ import static nsui.objc.Sig.Ret;
 public class NSTableView extends NSView {
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
-    private record Handles(MethodHandle hInitFrame, MethodHandle hVoidId, MethodHandle hVoid, MethodHandle hInt, MethodHandle hVoidBool, MethodHandle hVoidDouble, MethodHandle hDouble, MethodHandle hId, MethodHandle hVoidIdBool, MethodHandle hVoidInt, MethodHandle hEdit, MethodHandle hBoolInt) {}
+    private record Handles(MethodHandle hVoidId, MethodHandle hVoid, MethodHandle hInt, MethodHandle hVoidBool, MethodHandle hVoidDouble, MethodHandle hDouble, MethodHandle hId, MethodHandle hVoidIdBool, MethodHandle hVoidInt, MethodHandle hEdit, MethodHandle hBoolInt) {}
     private static volatile Handles H;
 
     protected NSTableView(MemorySegment peer) {
@@ -30,7 +30,6 @@ public class NSTableView extends NSView {
     protected static synchronized void ensureInit() {
         if (H != null) return;
         H = new Handles(
-                ObjC.handle(Sig.of(Ret.ID, Arg.RECT)),
                 ObjC.handle(Sig.of(Ret.VOID, Arg.ID)),
                 ObjC.handle(Sig.of(Ret.VOID)),
                 ObjC.handle(Sig.of(Ret.INT)),
@@ -45,18 +44,9 @@ public class NSTableView extends NSView {
     }
 
     /// `[[NSTableView alloc] initWithFrame:frame]` — a new table view.
-    public static NSTableView create(NSRect frame) {
+        public static NSTableView create(NSRect frame) {
         ensureInit();
-        MemorySegment v = ObjC.msgSendId(ObjC.cls("NSTableView"), ObjC.sel("alloc"));
-        try {
-            v = (MemorySegment) H.hInitFrame().invokeExact(v, ObjC.sel("initWithFrame:"), frame.toSegment());
-        } catch (Throwable t) {
-            throw new RuntimeException("initWithFrame: failed for NSTableView", t);
-        }
-        if (v.address() == 0) {
-            throw new IllegalStateException("NSTableView alloc/initWithFrame: returned nil");
-        }
-        return new NSTableView(v);
+        return new NSTableView(ObjC.newView("NSTableView", frame));
     }
 
     // ---------------------------------------------------------------- instance API

@@ -41,18 +41,9 @@ public final class NSComboBox extends NSControl {
     }
 
     /// `[[NSComboBox alloc] initWithFrame:frame]` — a new combo box at the given rect.
-    public static NSComboBox create(NSRect frame) {
+        public static NSComboBox create(NSRect frame) {
         ensureInit();
-        MemorySegment b = ObjC.msgSendId(ObjC.cls("NSComboBox"), ObjC.sel("alloc"));
-        try {
-            b = (MemorySegment) hInitFrame.invokeExact(b, ObjC.sel("initWithFrame:"), frame.toSegment());
-        } catch (Throwable t) {
-            throw new RuntimeException("initWithFrame: failed for NSComboBox", t);
-        }
-        if (b.address() == 0) {
-            throw new IllegalStateException("NSComboBox alloc/initWithFrame: returned nil");
-        }
-        return new NSComboBox(b);
+        return new NSComboBox(ObjC.newView("NSComboBox", frame));
     }
 
     // ---------------------------------------------------------------- instance API

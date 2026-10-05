@@ -19,7 +19,7 @@ import static nsui.objc.Sig.Ret;
 public final class NSCollectionView extends NSView {
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
-            private record Handles(MethodHandle hInitFrame, MethodHandle hSetDataSource, MethodHandle hReloadData, MethodHandle hGetId, MethodHandle hSetSelectable) {}
+            private record Handles(MethodHandle hSetDataSource, MethodHandle hReloadData, MethodHandle hGetId, MethodHandle hSetSelectable) {}
     private static volatile Handles handles;
 
     private NSCollectionView(MemorySegment peer) {
@@ -35,7 +35,6 @@ public final class NSCollectionView extends NSView {
         private static synchronized void ensureInit() {
         if (handles != null) return;
         handles = new Handles(
-                ObjC.handle(Sig.of(Ret.ID, Arg.RECT)),
                 ObjC.handle(Sig.of(Ret.VOID, Arg.ID)),
                 ObjC.handle(Sig.of(Ret.VOID)),
                 ObjC.handle(Sig.of(Ret.ID)),
@@ -44,16 +43,9 @@ public final class NSCollectionView extends NSView {
     }
 
     /// `[[NSCollectionView alloc] initWithFrame:frame]` — a new collection view.
-    public static NSCollectionView create(NSRect frame) {
+        public static NSCollectionView create(NSRect frame) {
         ensureInit();
-        MemorySegment p = ObjC.msgSendId(ObjC.cls("NSCollectionView"), ObjC.sel("alloc"));
-        try {
-            p = (MemorySegment) handles.hInitFrame().invokeExact(p, ObjC.sel("initWithFrame:"), frame.toSegment());
-        } catch (Throwable t) {
-            throw new RuntimeException("initWithFrame: failed for NSCollectionView", t);
-        }
-        if (p.address() == 0) throw new IllegalStateException("NSCollectionView alloc/initWithFrame: returned nil");
-        return new NSCollectionView(p);
+        return new NSCollectionView(ObjC.newView("NSCollectionView", frame));
     }
 
     // ---------------------------------------------------------------- instance API

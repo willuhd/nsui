@@ -12,7 +12,7 @@ import static nsui.objc.Sig.Ret;
 /// The content view of an NSScrollView; clips its document view.
 public class NSClipView extends NSView {
 
-            private record Handles(MethodHandle hInitFrame, MethodHandle hVoidId, MethodHandle hId, MethodHandle hVoidPoint, MethodHandle hGetRect, MethodHandle hGetPoint, MethodHandle hBool, MethodHandle hVoidBool) {}
+            private record Handles(MethodHandle hVoidId, MethodHandle hId, MethodHandle hVoidPoint, MethodHandle hGetRect, MethodHandle hGetPoint, MethodHandle hBool, MethodHandle hVoidBool) {}
     private static volatile Handles handles;
 
     protected NSClipView(MemorySegment peer) {
@@ -27,7 +27,6 @@ public class NSClipView extends NSView {
         private static synchronized void ensureInit() {
         if (handles != null) return;
         handles = new Handles(
-                ObjC.handle(Sig.of(Ret.ID, Arg.RECT)),
                 ObjC.handle(Sig.of(Ret.VOID, Arg.ID)),
                 ObjC.handle(Sig.of(Ret.ID)),
                 ObjC.handle(Sig.of(Ret.VOID, Arg.POINT)),
@@ -39,16 +38,9 @@ public class NSClipView extends NSView {
     }
 
     /// [[NSClipView alloc] initWithFrame:]
-    public static NSClipView create(NSRect frame) {
+        public static NSClipView create(NSRect frame) {
         ensureInit();
-        MemorySegment p = ObjC.msgSendId(ObjC.cls("NSClipView"), ObjC.sel("alloc"));
-        try {
-            p = (MemorySegment) handles.hInitFrame().invokeExact(p, ObjC.sel("initWithFrame:"), frame.toSegment());
-        } catch (Throwable t) {
-            throw new RuntimeException("initWithFrame: failed for NSClipView", t);
-        }
-        if (p.address() == 0) throw new IllegalStateException("NSClipView alloc/initWithFrame: returned nil");
-        return new NSClipView(p);
+        return new NSClipView(ObjC.newView("NSClipView", frame));
     }
 
     /// [clip documentView]

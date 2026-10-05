@@ -32,18 +32,9 @@ public class NSSecureTextField extends NSTextField {
     }
 
     /// `[[NSSecureTextField alloc] initWithFrame:frame]` — a new secure field at the given rect.
-    public static NSSecureTextField create(NSRect frame) {
+        public static NSSecureTextField create(NSRect frame) {
         ensureInit();
-        MemorySegment f = ObjC.msgSendId(ObjC.cls("NSSecureTextField"), ObjC.sel("alloc"));
-        try {
-            f = (MemorySegment) hInitFrame.invokeExact(f, ObjC.sel("initWithFrame:"), frame.toSegment());
-        } catch (Throwable t) {
-            throw new RuntimeException("initWithFrame: failed for NSSecureTextField", t);
-        }
-        if (f.address() == 0) {
-            throw new IllegalStateException("NSSecureTextField alloc/initWithFrame: returned nil");
-        }
-        return new NSSecureTextField(f);
+        return new NSSecureTextField(ObjC.newView("NSSecureTextField", frame));
     }
 
     // ---------------------------------------------------------------- instance API

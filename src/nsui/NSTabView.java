@@ -48,18 +48,9 @@ public final class NSTabView extends NSView {
     }
 
     /// `[[NSTabView alloc] initWithFrame:frame]` — a new tab view at the given rect.
-    public static NSTabView create(NSRect frame) {
+        public static NSTabView create(NSRect frame) {
         ensureInit();
-        MemorySegment p = ObjC.msgSendId(ObjC.cls("NSTabView"), ObjC.sel("alloc"));
-        try {
-            p = (MemorySegment) hInitFrame.invokeExact(p, ObjC.sel("initWithFrame:"), frame.toSegment());
-        } catch (Throwable t) {
-            throw new RuntimeException("initWithFrame: failed for NSTabView", t);
-        }
-        if (p.address() == 0) {
-            throw new IllegalStateException("NSTabView alloc/initWithFrame: returned nil");
-        }
-        return new NSTabView(p);
+        return new NSTabView(ObjC.newView("NSTabView", frame));
     }
 
     // ---------------------------------------------------------------- instance API

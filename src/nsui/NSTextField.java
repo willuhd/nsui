@@ -15,7 +15,7 @@ import static nsui.objc.Sig.Ret;
 public class NSTextField extends NSControl {
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
-    private record Handles(MethodHandle hInitFrame, MethodHandle hDouble, MethodHandle hSetDouble) {}
+    private record Handles(MethodHandle hDouble, MethodHandle hSetDouble) {}
     private static volatile Handles H;
 
     protected NSTextField(MemorySegment peer) {
@@ -26,24 +26,14 @@ public class NSTextField extends NSControl {
     private static synchronized void ensureInit() {
         if (H != null) return;
         H = new Handles(
-                ObjC.handle(Sig.of(Ret.ID, Arg.RECT)),
                 ObjC.handle(Sig.of(Ret.DOUBLE)),
                 ObjC.handle(Sig.of(Ret.VOID, Arg.DOUBLE)));
     }
 
     /// `[[NSTextField alloc] initWithFrame:frame]` — a new text field at the given rect.
-    public static NSTextField create(NSRect frame) {
+        public static NSTextField create(NSRect frame) {
         ensureInit();
-        MemorySegment f = ObjC.msgSendId(ObjC.cls("NSTextField"), ObjC.sel("alloc"));
-        try {
-            f = (MemorySegment) H.hInitFrame().invokeExact(f, ObjC.sel("initWithFrame:"), frame.toSegment());
-        } catch (Throwable t) {
-            throw new RuntimeException("initWithFrame: failed for NSTextField", t);
-        }
-        if (f.address() == 0) {
-            throw new IllegalStateException("NSTextField alloc/initWithFrame: returned nil");
-        }
-        return new NSTextField(f);
+        return new NSTextField(ObjC.newView("NSTextField", frame));
     }
 
     // factory helpers mirroring NSControl.h convenience constructors

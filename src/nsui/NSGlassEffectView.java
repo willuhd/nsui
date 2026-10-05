@@ -18,7 +18,7 @@ public final class NSGlassEffectView extends NSView {
     public static final long STYLE_REGULAR = 0;
     public static final long STYLE_CLEAR = 1;
 
-    private record Handles(MethodHandle hInitFrame, MethodHandle hContentView, MethodHandle hSetContentView,
+    private record Handles(MethodHandle hContentView, MethodHandle hSetContentView,
             MethodHandle hGetDouble, MethodHandle hSetDouble, MethodHandle hTintColor, MethodHandle hSetTintColor,
             MethodHandle hStyle, MethodHandle hSetStyle) {}
     private static volatile Handles handles;
@@ -36,7 +36,6 @@ public final class NSGlassEffectView extends NSView {
     private static synchronized void ensureInit() {
         if (handles != null) return;
         handles = new Handles(
-                ObjC.handle(Sig.of(Ret.ID, Arg.RECT)),
                 ObjC.handle(Sig.of(Ret.ID)),
                 ObjC.handle(Sig.of(Ret.VOID, Arg.ID)),
                 ObjC.handle(Sig.of(Ret.DOUBLE)),
@@ -48,16 +47,9 @@ public final class NSGlassEffectView extends NSView {
     }
 
     /// [[NSGlassEffectView alloc] initWithFrame:].
-    public static NSGlassEffectView create(NSRect frame) {
+        public static NSGlassEffectView create(NSRect frame) {
         ensureInit();
-        MemorySegment p = ObjC.msgSendId(ObjC.cls("NSGlassEffectView"), ObjC.sel("alloc"));
-        try {
-            p = (MemorySegment) handles.hInitFrame().invokeExact(p, ObjC.sel("initWithFrame:"), frame.toSegment());
-        } catch (Throwable t) {
-            throw new RuntimeException("initWithFrame: failed for NSGlassEffectView", t);
-        }
-        if (p.address() == 0) throw new IllegalStateException("initWithFrame: returned nil for NSGlassEffectView");
-        return new NSGlassEffectView(p);
+        return new NSGlassEffectView(ObjC.newView("NSGlassEffectView", frame));
     }
 
     /// contentView — the view embedded in glass.

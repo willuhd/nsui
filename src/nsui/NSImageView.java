@@ -58,18 +58,9 @@ public final class NSImageView extends NSControl {
     }
 
     /// `[[NSImageView alloc] initWithFrame:frame]` — a new image view at the given rect.
-    public static NSImageView create(NSRect frame) {
+        public static NSImageView create(NSRect frame) {
         ensureInit();
-        MemorySegment v = ObjC.msgSendId(ObjC.cls("NSImageView"), ObjC.sel("alloc"));
-        try {
-            v = (MemorySegment) hInitFrame.invokeExact(v, ObjC.sel("initWithFrame:"), frame.toSegment());
-        } catch (Throwable t) {
-            throw new RuntimeException("initWithFrame: failed for NSImageView", t);
-        }
-        if (v.address() == 0) {
-            throw new IllegalStateException("NSImageView alloc/initWithFrame: returned nil");
-        }
-        return new NSImageView(v);
+        return new NSImageView(ObjC.newView("NSImageView", frame));
     }
 
     // ---------------------------------------------------------------- instance API

@@ -20,7 +20,7 @@ import static nsui.objc.Sig.Ret;
 public final class NSOutlineView extends NSTableView {
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
-            private record Handles(MethodHandle hInitFrame, MethodHandle hExpand, MethodHandle hExpandChildren, MethodHandle hIsExpanded, MethodHandle hGetId) {}
+            private record Handles(MethodHandle hExpand, MethodHandle hExpandChildren, MethodHandle hIsExpanded, MethodHandle hGetId) {}
     private static volatile Handles handles;
 
     private NSOutlineView(MemorySegment peer) {
@@ -39,7 +39,6 @@ public final class NSOutlineView extends NSTableView {
         // We handle our own symbols; base class init is lazy and synchronized separately.
         try { NSTableView.ensureInit(); } catch (Throwable ignored) {}
         handles = new Handles(
-                ObjC.handle(Sig.of(Ret.ID, Arg.RECT)),
                 ObjC.handle(Sig.of(Ret.VOID, Arg.ID)),
                 ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.BOOL)),
                 ObjC.handle(Sig.of(Ret.BOOL, Arg.ID)),
@@ -48,16 +47,9 @@ public final class NSOutlineView extends NSTableView {
     }
 
     /// `[[NSOutlineView alloc] initWithFrame:frame]` — a new outline view.
-    public static NSOutlineView create(NSRect frame) {
-        ensureOutlineInit();
-        MemorySegment p = ObjC.msgSendId(ObjC.cls("NSOutlineView"), ObjC.sel("alloc"));
-        try {
-            p = (MemorySegment) handles.hInitFrame().invokeExact(p, ObjC.sel("initWithFrame:"), frame.toSegment());
-        } catch (Throwable t) {
-            throw new RuntimeException("initWithFrame: failed for NSOutlineView", t);
-        }
-        if (p.address() == 0) throw new IllegalStateException("NSOutlineView alloc/initWithFrame: returned nil");
-        return new NSOutlineView(p);
+        public static NSOutlineView create(NSRect frame) {
+        ensureInit();
+        return new NSOutlineView(ObjC.newView("NSOutlineView", frame));
     }
 
     // ---------------------------------------------------------------- instance API

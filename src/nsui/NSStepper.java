@@ -38,18 +38,9 @@ public final class NSStepper extends NSControl {
     }
 
     /// `[[NSStepper alloc] initWithFrame:frame]` — a new stepper at the given rect.
-    public static NSStepper create(NSRect frame) {
+        public static NSStepper create(NSRect frame) {
         ensureInit();
-        MemorySegment p = ObjC.msgSendId(ObjC.cls("NSStepper"), ObjC.sel("alloc"));
-        try {
-            p = (MemorySegment) hInitFrame.invokeExact(p, ObjC.sel("initWithFrame:"), frame.toSegment());
-        } catch (Throwable t) {
-            throw new RuntimeException("initWithFrame: failed for NSStepper", t);
-        }
-        if (p.address() == 0) {
-            throw new IllegalStateException("NSStepper alloc/initWithFrame: returned nil");
-        }
-        return new NSStepper(p);
+        return new NSStepper(ObjC.newView("NSStepper", frame));
     }
 
     // ---------------------------------------------------------------- instance API

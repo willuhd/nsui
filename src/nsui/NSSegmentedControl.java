@@ -75,18 +75,9 @@ public final class NSSegmentedControl extends NSControl {
     }
 
     /// `[[NSSegmentedControl alloc] initWithFrame:frame]` — a new control at the given rect.
-    public static NSSegmentedControl create(NSRect frame) {
+        public static NSSegmentedControl create(NSRect frame) {
         ensureInit();
-        MemorySegment s = ObjC.msgSendId(ObjC.cls("NSSegmentedControl"), ObjC.sel("alloc"));
-        try {
-            s = (MemorySegment) hInitFrame.invokeExact(s, ObjC.sel("initWithFrame:"), frame.toSegment());
-        } catch (Throwable t) {
-            throw new RuntimeException("initWithFrame: failed for NSSegmentedControl", t);
-        }
-        if (s.address() == 0) {
-            throw new IllegalStateException("NSSegmentedControl alloc/initWithFrame: returned nil");
-        }
-        return new NSSegmentedControl(s);
+        return new NSSegmentedControl(ObjC.newView("NSSegmentedControl", frame));
     }
 
     // ---------------------------------------------------------------- instance API

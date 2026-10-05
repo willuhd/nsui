@@ -9,7 +9,6 @@ import java.lang.foreign.SegmentAllocator;
 import java.lang.foreign.SymbolLookup;
 import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -39,11 +38,14 @@ import static nsui.objc.Sig.S;
 ///   initializers — so everything is built by `init`, called from main().
 /// - Nothing is linked at build time: libobjc, AppKit & friends are dlopen'ed
 ///   at runtime via their absolute paths (works through the dyld shared cache).
-/// - By-value INPUT marshalling (`rect`, `cstring`) is routed through the
-///   per-turn `Scratch` arena so it does not leak immortal segments at 60fps.
-/// Struct RETURNS (`msgSendRect`) and the escape hatch still land in
-/// `Arena.global()`. Selector/class names are cached in the global arena
-/// (`sel`, `cls`).
+/// - By-value INPUT marshalling (`rect`, `cstring`) defaults to the thread-local
+///   `Scratch` bump buffer (rewound at turn end), so application code outside
+///   any turn no longer leaks immortal segments at 60fps.
+/// - Struct RETURNS (`msgSendRect`, one 32-byte NSRect) land in a per-thread
+///   reusable slot, not a fresh arena slice per call: every caller copies
+///   the four doubles out immediately, so overwriting on the next call is
+///   safe. The escape hatch still lands in `Arena.global()`. Selector/class
+///   names are cached in the global arena (`sel`, `cls`).
 public final class ObjC {
 
     // ---- canonical layouts (resolved at runtime to stay platform-correct) ----
@@ -71,7 +73,10 @@ public final class ObjC {
     private static MethodHandle hMsgSuper;      // objc_msgSendSuper(struct objc_super*, SEL) -> void
 
     // ---- downcall handles: one per vocabulary signature (built in init()) ----
-    private static final Map<S, MethodHandle> HANDLES = new HashMap<>();
+    // ConcurrentHashMap (not HashMap): init() is guarded, but a concurrent map
+    // makes even an off-protocol concurrent init race-free instead of risking
+    // HashMap corruption mid-resize.
+    private static final Map<S, MethodHandle> HANDLES = new ConcurrentHashMap<>();
     private static MethodHandle hId;          // (id, SEL) -> id
     private static MethodHandle hIdId;        // (id, SEL, id) -> id
     private static MethodHandle hId3;         // (id, SEL, id, id, id) -> id
@@ -88,10 +93,23 @@ public final class ObjC {
     private static MethodHandle hEscapeId;    // (id, SEL, id x6) -> id
     private static MethodHandle hEscapeVoid;  // (id, SEL, id x6) -> void
 
+    /// Reusable per-thread destination for struct returns (one 32-byte NSRect).
+    /// Lazily allocated from the global arena on first use per thread; never
+    /// rewound, just overwritten by the next `msgSendRect` on the same thread.
+    /// Safe because every caller (`NSView.frame`, `NSWindow.frame`, ...) copies
+    /// the doubles out via `NSRect.fromSegment` before any subsequent call.
+    private static final ThreadLocal<MemorySegment> RECT_SLOT =
+            ThreadLocal.withInitial(() -> ARENA.allocate(NS_RECT));
+
     private ObjC() {}
 
+    private static boolean INIT;
+
     /// Must run at RUNTIME, from main() — not from a static initializer (native-image rule).
-    public static void init() {
+    /// Synchronized + idempotent like every other ensureInit in this package;
+    /// re-entry (EdgeTest double-init) is a harmless no-op.
+    public static synchronized void init() {
+        if (INIT) return;
         LINKER = Linker.nativeLinker();
         PTR = (ValueLayout) LINKER.canonicalLayouts().get("void*");
         LONG = (ValueLayout) LINKER.canonicalLayouts().get("long");
@@ -140,6 +158,7 @@ public final class ObjC {
         hRect = handle(Sig.of(Ret.RECT));
         hEscapeId = handle(Sig.of(Ret.ID, Arg.ID, Arg.ID, Arg.ID, Arg.ID, Arg.ID, Arg.ID));
         hEscapeVoid = handle(Sig.of(Ret.VOID, Arg.ID, Arg.ID, Arg.ID, Arg.ID, Arg.ID, Arg.ID));
+        INIT = true;
     }
 
     /// The downcall handle for a vocabulary signature. Fails loudly when the signature
@@ -173,23 +192,20 @@ public final class ObjC {
     private static final ConcurrentHashMap<String, MemorySegment> SEL_CACHE = new ConcurrentHashMap<>();
     private static final ConcurrentHashMap<String, MemorySegment> CLASS_CACHE = new ConcurrentHashMap<>();
 
-    /// NUL-terminated C string. During a turn the bytes are written into the per-turn
-    /// scratch buffer (`Scratch`), so the memory is only valid until the turn ends —
-    /// the callee MUST copy it before returning. With no turn active it falls back to the
-    /// global arena (as before). Prefer one of the cached paths (`sel`, `cls`)
-    /// for selector/class names that repeat.
+    /// NUL-terminated C string for call-scoped use. The bytes live in the
+    /// thread-local bump buffer (`Scratch.allocInput`) — valid only until the
+    /// next buffer rewind, so the callee MUST copy before returning (all
+    /// current callees do). Prefer the cached paths (`sel`, `cls`) for
+    /// selector/class names that repeat.
     public static MemorySegment cstring(String s) {
         if (s.indexOf(0) >= 0) {
             throw new IllegalArgumentException("cstring must not contain a NUL byte");
         }
-        if (Scratch.active()) {
-            byte[] bytes = s.getBytes(java.nio.charset.StandardCharsets.UTF_8);
-            MemorySegment seg = Scratch.alloc(bytes.length + 1);
-            MemorySegment.copy(bytes, 0, seg, ValueLayout.JAVA_BYTE, 0, bytes.length);
-            seg.set(ValueLayout.JAVA_BYTE, bytes.length, (byte) 0);
-            return seg;
-        }
-        return ARENA.allocateFrom(s);
+        byte[] bytes = s.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        MemorySegment seg = Scratch.allocInput(bytes.length + 1);
+        MemorySegment.copy(bytes, 0, seg, ValueLayout.JAVA_BYTE, 0, bytes.length);
+        seg.set(ValueLayout.JAVA_BYTE, bytes.length, (byte) 0);
+        return seg;
     }
 
     /// Global-arena cstring used by the SEL/CLASS caches (safe to hold forever).
@@ -215,37 +231,37 @@ public final class ObjC {
         return (MemorySegment) invokeX(hIdId, cls("NSString"), sel("stringWithUTF8String:"), cstring(s));
     }
 
-    /// NSString -> Java String (via [NSString UTF8String]) — safe for arbitrary length (strlen loop, no 4096 truncation).
+    /// NSString -> Java String (via [NSString UTF8String]) — safe for arbitrary length.
+    /// Scans for the NUL terminator in 4096-byte windows (one reinterpret per
+    /// window, not per byte — a 500-char string costs 1), then copies exactly
+    /// the string bytes. Past the 16M cap the string truncates (a split
+    /// multi-byte tail decodes with a trailing replacement char) instead of
+    /// looping forever or throwing: getString would scan past the region.
     public static String toString(MemorySegment nsString) {
         if (nsString == null || nsString.address() == 0) return null;
         MemorySegment c = msgSendId(nsString, sel("UTF8String"));
         if (c.address() == 0) return null;
-        // Manual strlen: scan for NUL byte; avoids fixed 4096 cap.
-        // Reinterpret grows with len; handles strings of any length (tested via loop, not native strlen).
-        long len = 0;
-        // Fast path: probe in 4096-byte blocks to avoid per-byte reinterpret for long strings
+        long len = -1;
+        long base = 0;
         while (true) {
-            // Need len+1 bytes to read byte at len
-            byte b = c.reinterpret(len + 1).get(ValueLayout.JAVA_BYTE, len);
-            if (b == 0) break;
-            len++;
-            if (len > 16_000_000) {
-                // safety cap for pathological strings (16 MB); truncate rather than loop forever
-                break;
+            MemorySegment w = c.reinterpret(base + 4096);
+            for (long i = 0; i < 4096; i++) {
+                if (w.get(ValueLayout.JAVA_BYTE, base + i) == 0) { len = base + i; break; }
             }
+            if (len >= 0) break;
+            base += 4096;
+            if (base >= 16_000_000) { len = 16_000_000; break; }
         }
-        return c.reinterpret(len + 1).getString(0);
+        byte[] bytes = c.reinterpret(len).toArray(ValueLayout.JAVA_BYTE);
+        return new String(bytes, 0, (int) len, java.nio.charset.StandardCharsets.UTF_8);
     }
 
-    /// Allocate an NSRect. When a turn is active the 32-byte struct comes from the per-turn
-    /// scratch buffer (`Scratch`) — safe because a rect is always a by-value INPUT
-    /// argument (the callee reads it during the call); when no turn is active it falls back
-    /// to the global arena, exactly as before. Struct RETURNS (`msgSendRect`) are never
-    /// scratch — they stay in the global arena.
+    /// Allocate an NSRect for call-scoped use. Always a by-value INPUT argument
+    /// (the callee reads it during the call), so it comes from the thread-local
+    /// bump buffer (`Scratch.allocInput`); struct RETURNS (`msgSendRect`) use
+    /// the separate reusable slot, never scratch.
     public static MemorySegment rect(double x, double y, double w, double h) {
-        MemorySegment r = Scratch.active()
-                ? Scratch.alloc(NS_RECT.byteSize())
-                : ARENA.allocate(NS_RECT);
+        MemorySegment r = Scratch.allocInput(NS_RECT.byteSize());
         r.set(ValueLayout.JAVA_DOUBLE, 0, x);
         r.set(ValueLayout.JAVA_DOUBLE, 8, y);
         r.set(ValueLayout.JAVA_DOUBLE, 16, w);
@@ -316,7 +332,7 @@ public final class ObjC {
     /// FFM gives downcalls with group-layout returns an implicit leading
     /// SegmentAllocator parameter, which is where the returned struct is written.
     public static MemorySegment msgSendRect(MemorySegment recv, MemorySegment s) {
-        try { return (MemorySegment) hRect.invokeExact((SegmentAllocator) ARENA, recv, s); } catch (Throwable t) { throw fail(t); }
+        try { return (MemorySegment) hRect.invokeExact((SegmentAllocator) RECT_SLOT.get(), recv, s); } catch (Throwable t) { throw fail(t); }
     }
 
     /// Generic object-argument message: any selector whose arguments are all objects

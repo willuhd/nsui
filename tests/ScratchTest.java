@@ -16,10 +16,13 @@ import nsui.objc.Scratch;
 /// - Fallback: a single 2 MiB alloc (larger than the 1 MiB buffer) returns a
 /// non-null global-arena segment without throwing.
 /// - Round-trip: within a turn, create an NSWindow, set a frame, and read it back via
-/// `ObjC#msgSendRect` — the struct RETURN reads correct doubles, proving returns
-/// stay in the global arena.
+/// `ObjC#msgSendRect` — the struct RETURN reads correct doubles, reuses one
+/// per-thread slot across calls (same address, fresh values), and survives
+/// `endTurn` (it is neither scratch nor a fresh global slice per call).
 /// - SEL cache: two `sel("setTitle:")` calls return address-identical cached cstrings
 /// and both resolve to the same native SEL.
+/// - Default inputs: `rect`/`cstring` with NO turn bump exactly 40_000 B for
+/// 1000 pairs (no global-arena leak), read back correctly, rewind to 0.
 public final class ScratchTest {
 
     public static void main(String[] args) {
@@ -98,7 +101,7 @@ public final class ScratchTest {
         TestKit.check(Scratch.used() == 0, "used()==0 after fallback turn ends");
 
         // ---- 4. round-trip: rect input + NSRect return within a turn --------------------------
-        System.out.println("\n-- 4. round-trip sanity: NSRect return stays in the global arena --");
+        System.out.println("\n-- 4. round-trip sanity: NSRect return reads correctly + reuses its slot --");
         Scratch.beginTurn();
         MemorySegment win = ObjC.msgSendId(ObjC.cls("NSWindow"), ObjC.sel("alloc"));
         MemorySegment winPeer = win;
@@ -109,8 +112,8 @@ public final class ScratchTest {
                 ObjC.rect(10, 20, 300, 200), 1L /* titled */, 2L /* buffered */, false);
         TestKit.check(winPeer.address() != 0, "initWithContentRect:... accepted a scratch NSRect input");
 
-        // Frame getter: msgSendRect allocates the RETURN in the global arena. NOTE: on macOS
-        // frame != contentRect — initWithContentRect: sets the CLIENT area, while frame returns
+        // Frame getter: msgSendRect writes the RETURN into a per-thread reusable slot.
+        // NOTE: on macOS frame != contentRect — initWithContentRect: sets the CLIENT area, while frame returns
         // the OUTER window rect (title bar + shadow), so y/height shift by the chrome (~28px +
         // origin offset). x and width are 1:1, so we assert those exactly and only bound y/h.
         MemorySegment frameSeg = ObjC.msgSendRect(winPeer, ObjC.sel("frame"));
@@ -122,10 +125,19 @@ public final class ScratchTest {
         TestKit.check(fh >= 200 && fy >= 20,
                 "frame height/origin bound the content rect (title-bar+shadow present): got y=" + fy + ", h=" + fh);
 
+        // Reuse proof: a second call must return the SAME address (slot overwrite),
+        // carrying fresh values — zero immortal allocation per call.
+        MemorySegment frameSeg2 = ObjC.msgSendRect(winPeer, ObjC.sel("frame"));
+        TestKit.check(frameSeg2.address() == frameSeg.address(),
+                "msgSendRect reuses one per-thread slot (same address both calls)");
+        TestKit.check(ObjC.rectX(frameSeg2) == fx && ObjC.rectW(frameSeg2) == fw,
+                "reused slot carries fresh values on rewrite");
+
         // Now #endTurn() resets scratch: if the RETURN had been scratch it would be garbled here.
+        // (The slot is deliberately NOT rewound — only overwritten by the next call.)
         Scratch.endTurn();
         double afterResetFx = ObjC.rectX(frameSeg);
-        TestKit.check(afterResetFx == 10, "rect-return segment still valid AFTER endTurn → truly global: got " + afterResetFx);
+        TestKit.check(afterResetFx == 10, "rect-return segment still valid AFTER endTurn (slot, not scratch): got " + afterResetFx);
 
         // ---- 5. SEL cache ---------------------------------------------------------------------
         System.out.println("\n-- 5. SEL cache --");
@@ -141,6 +153,25 @@ public final class ScratchTest {
         String gotTitle = ObjC.toString(got);
         TestKit.check("scratch-roundtrip-title".equals(gotTitle),
                 "cached SEL works for both setTitle: and title: via msgSend → got '" + gotTitle + "'");
+
+        // ---- 6. default inputs: rect/cstring with NO turn use the bump buffer ---------
+        System.out.println("\n-- 6. default inputs outside any turn --");
+        // 1000 x (32-byte rect + 8-byte cstring granule); used() reads 0 while
+        // inactive, so rewind first (drops dead residue from earlier sections),
+        // then open a turn afterwards to observe the bump offset: it must show
+        // exactly the spill-free 40_000 bytes, proving no-turn inputs bumped
+        // instead of leaking to the global arena.
+        Scratch.beginTurn(); Scratch.endTurn();
+        for (int i = 0; i < 1000; i++) { ObjC.rect(i, i, 1, 1); ObjC.cstring("edge"); }
+        Scratch.beginTurn();
+        TestKit.check(Scratch.used() == 40_000,
+                "1000 no-turn inputs bumped 40_000 B (used=" + Scratch.used() + ")");
+        // Values stay correct: the last rect reads back, the last cstring round-trips.
+        MemorySegment lr = ObjC.rect(7, 8, 9, 10);
+        TestKit.check(ObjC.rectX(lr) == 7 && ObjC.rectW(lr) == 9, "no-turn rect reads back");
+        TestKit.check("edge".equals(ObjC.toString(ObjC.nsstring("edge"))), "no-turn cstring round-trips");
+        Scratch.endTurn();
+        TestKit.check(Scratch.used() == 0, "used()==0 after rewinding default inputs");
 
         System.out.println("\n=== ScratchTest " + (TestKit.failures() == 0 ? "PASS" : "FAIL — " + TestKit.failures() + " failed") + " ===");
         TestKit.end();

@@ -34,7 +34,7 @@ import java.util.List;
 public final class Sig {
 
     /// Argument classes. `ID` covers id/SEL/Class/pointers — one ABI class.
-    public enum Arg { ID, INT, BOOL, DOUBLE, RECT, POINT, SIZE, FLOAT, RANGE }
+    public enum Arg { ID, INT, BOOL, DOUBLE, RECT, POINT, SIZE, FLOAT, RANGE, REGION }
 
     /// Return classes. `RECT` is a 32-byte struct (stret on x86_64); POINT/SIZE/RANGE are 16-byte structs.
     public enum Ret { VOID, ID, INT, BOOL, DOUBLE, RECT, POINT, SIZE, FLOAT, RANGE }
@@ -83,6 +83,8 @@ public final class Sig {
     private static final MemoryLayout NS_POINT = MemoryLayout.structLayout(DOUBLE, DOUBLE);
     private static final MemoryLayout NS_SIZE  = MemoryLayout.structLayout(DOUBLE, DOUBLE);
     private static final MemoryLayout NS_RANGE = MemoryLayout.structLayout(LONG, LONG);
+    private static final MemoryLayout MTL_REGION =
+            MemoryLayout.structLayout(LONG, LONG, LONG, LONG, LONG, LONG);
 
     private static FunctionDescriptor descriptor(S s) {
         // objc_msgSend's real C signature is (id, SEL, ...) — the receiver and
@@ -101,6 +103,7 @@ public final class Sig {
                 case SIZE -> NS_SIZE;
                 case FLOAT -> FLOAT;
                 case RANGE -> NS_RANGE;
+                case REGION -> MTL_REGION;
             };
         }
         return switch (s.ret()) {
@@ -157,6 +160,13 @@ public final class Sig {
         of(Ret.ID, Arg.INT, Arg.ID, Arg.INT),          // constraintWithAttribute: (source-relative)
         of(Ret.ID, Arg.DOUBLE, Arg.DOUBLE, Arg.DOUBLE, Arg.DOUBLE),  // colorWithSRGBRed:green:blue:alpha:
         of(Ret.ID, Arg.INT, Arg.BOOL),                  // standardWindowButton:forFlag:
+        // Metal v1 (all auto-registered like the rest)
+        of(Ret.ID, Arg.INT, Arg.INT),                  // newBufferWithLength:options:
+        of(Ret.VOID, Arg.ID, Arg.INT, Arg.INT),        // setVertexBytes:length:atIndex:
+        of(Ret.VOID, Arg.INT, Arg.INT, Arg.INT),       // drawPrimitives:vertexStart:vertexCount:
+        of(Ret.ID, Arg.INT, Arg.INT, Arg.INT, Arg.BOOL), // texture2DDescriptorWithPixelFormat:...
+        of(Ret.ID, Arg.ID, Arg.FLOAT),                 // initWithDevice:sigma: (MPS)
+        of(Ret.VOID, Arg.ID, Arg.INT, Arg.REGION, Arg.INT), // getBytes:bytesPerRow:fromRegion:mipmapLevel:
         of(Ret.ID, Arg.ID, Arg.ID, Arg.INT),            // dictionaryWithObjects:forKeys:count:
         of(Ret.VOID, Arg.POINT),                        // setFrameOrigin:
         of(Ret.VOID, Arg.ID, Arg.ID, Arg.ID),           // 3-object void (e.g. alerts with aux buttons)

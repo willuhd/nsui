@@ -120,18 +120,18 @@ public final class TestKit {
         if (win == null) return;
         park(win);
         try {
-            ObjC.msgSendVoidId(win.peer(), ObjC.sel("orderFront:"), MemorySegment.NULL);
+            win.orderFront(null);
         } catch (Throwable t) {
-            System.out.println("NOTE: orderFront: failed: " + t.getMessage());
+            System.out.println("NOTE: orderFront failed: " + t.getMessage());
         }
     }
 
 /// Show AND make key (steals focus, activates the app). Reserved for tests
 /// where key-window event routing is the thing under test (NSEventTest's
 /// window-server click, ButtonTest's hit-test path). Everywhere else this
-/// is disruption without coverage. Does NOT park: NSEventTest needs real
-/// screen coordinates (call park() first when the test is window-coordinate
-/// based, as ButtonTest does).
+/// is disruption without coverage. Does NOT park: both callers need real
+/// screen coordinates (NSEventTest’s window-server click, ButtonTest’s
+/// screen-coordinate hit-test).
     public static void showKey(NSWindow win) {
         if (win == null) return;
         NSApplication.shared().activateIgnoringOtherApps(true);
@@ -171,18 +171,10 @@ public final class TestKit {
         pump(app, 1500);
     }
 
-    /// Pump the AppKit run loop for {@code millis} ms (same pattern as Main).
+    /// Pump the AppKit run loop for {@code millis} ms — delegates to the real
+    /// `NSApplication.pumpFor`, so there is exactly one pump implementation.
     public static void pump(NSApplication app, long millis) throws InterruptedException {
-        MemorySegment dateCls = ObjC.cls("NSDate");
-        String mode = "kCFRunLoopDefaultMode";
-        long deadline = System.currentTimeMillis() + millis;
-        while (System.currentTimeMillis() < deadline) {
-            MemorySegment until = ObjC.msgSendIdDouble(dateCls, ObjC.sel("dateWithTimeIntervalSinceNow:"), 0.05);
-            NSEvent ev = app.nextEvent(-1L /* NSEventMaskAny */, until, mode, true);
-            if (ev != null) app.sendEvent(ev);
-            app.updateWindows();
-            Thread.sleep(10);
-        }
+        app.pumpFor(millis);
     }
 
     /// One pump iteration: useful for settle-wait loops with custom exits.

@@ -170,6 +170,23 @@ public final class NSApplication extends NSObject {
         ObjC.msgSendVoid(peer, ObjC.sel("updateWindows"));
     }
 
+    /// Pump the main run loop for {@code millis} ms: the time-boxed form of
+    /// [NSApp run] — pull events, dispatch, flush drawing, repeat until the
+    /// deadline. Production code lets run() own the thread forever; this is
+    /// for tests, previews, and embedding, where the caller must get control
+    /// back. Never blocks past the deadline; each turn waits at most 50 ms.
+    public void pumpFor(long millis) throws InterruptedException {
+        MemorySegment dateCls = ObjC.cls("NSDate");
+        long deadline = System.currentTimeMillis() + millis;
+        while (System.currentTimeMillis() < deadline) {
+            MemorySegment until = ObjC.msgSendIdDouble(dateCls, ObjC.sel("dateWithTimeIntervalSinceNow:"), 0.05);
+            NSEvent ev = nextEvent(-1L /* NSEventMaskAny */, until, "kCFRunLoopDefaultMode", true);
+            if (ev != null) sendEvent(ev);
+            updateWindows();
+            Thread.sleep(10);
+        }
+    }
+
     public MemorySegment dockTile() {
         return ObjC.msgSendId(peer, ObjC.sel("dockTile"));
     }

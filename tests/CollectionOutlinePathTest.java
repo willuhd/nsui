@@ -17,24 +17,17 @@ import nsui.objc.ObjC;
  * NSCollectionViewItem, NSOutlineView, NSPathControl, and NSSplitView (if present).
  */
 public final class CollectionOutlinePathTest {
-    private static int failures;
+    
     private static int asserts;
 
-    private static void check(boolean ok, String msg) {
-        asserts++;
-        System.out.println((ok ? "PASS" : "FAIL") + ": " + msg);
-        if (!ok) failures++;
-    }
+    private static void check(boolean ok, String msg) { asserts++; TestKit.check(ok, msg); }
 
     public static void main(String[] args) {
         System.out.println("=== CollectionOutlinePathTest — NSCollectionView/NSCollectionViewItem/NSOutlineView/NSPathControl/NSSplitView ===");
         try {
             ObjC.init();
         } catch (Throwable t) {
-            System.out.println("SKIP: ObjC.init failed (connection error or not macOS): " + t);
-            t.printStackTrace(System.out);
-            System.out.println("RESULT: SKIP (connection error, continuing)");
-            System.exit(0);
+            TestKit.skip("ObjC.init failed (connection error or not macOS): : " + t);
         }
 
         // ---------------- NSCollectionView ----------------
@@ -288,9 +281,9 @@ public final class CollectionOutlinePathTest {
             }
         }
 
-        System.out.println(failures == 0
+        System.out.println(TestKit.failures() == 0
                 ? "RESULT: ALL PASS (" + asserts + " assertions)"
-                : "RESULT: " + failures + " of " + asserts + " assertions FAILED");
-        System.exit(failures == 0 ? 0 : 1);
+                : "RESULT: " + TestKit.failures() + " of " + asserts + " assertions FAILED");
+        TestKit.end();
     }
 }

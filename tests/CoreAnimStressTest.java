@@ -28,15 +28,11 @@ import static nsui.objc.Sig.Ret;
 /// Reuses the TouchBarMenuTest SKIP pattern when AppKit init fails.
 public final class CoreAnimStressTest {
 
-    private static int failures;
+    
     private static int asserts;
     private static int wrongMethodTypeCount;
 
-    private static void check(boolean ok, String msg) {
-        asserts++;
-        System.out.println((ok ? "PASS" : "FAIL") + ": " + msg);
-        if (!ok) failures++;
-    }
+    private static void check(boolean ok, String msg) { asserts++; TestKit.check(ok, msg); }
 
     private static boolean eps(double a, double b) {
         return Math.abs(a - b) < 1e-6;
@@ -51,9 +47,7 @@ public final class CoreAnimStressTest {
         } catch (Throwable t) {
             String m = String.valueOf(t.getMessage()).toLowerCase();
             if (m.contains("connection") || m.contains("dlopen") || m.contains("appkit")) {
-                System.out.println("SKIP: ObjC.init failed (not macOS / connection error): " + t);
-                System.out.println("RESULT: SKIP (connection error, continuing)");
-                System.exit(0);
+                TestKit.skip("ObjC.init failed (not macOS / connection error): : " + t);
             }
             System.out.println("FAIL: ObjC.init threw unexpected: " + t);
             t.printStackTrace(System.out);
@@ -74,10 +68,10 @@ public final class CoreAnimStressTest {
         shapeTextGradientRoundTrips();
         hotfixRegressionGuard();
 
-        System.out.println(failures == 0 && wrongMethodTypeCount == 0
+        System.out.println(TestKit.failures() == 0 && wrongMethodTypeCount == 0
                 ? "RESULT: PASS (" + asserts + " assertions)"
-                : "RESULT: FAIL (" + failures + " of " + asserts + " assertions failed, wrongMethodType=" + wrongMethodTypeCount + ")");
-        System.exit((failures == 0 && wrongMethodTypeCount == 0) ? 0 : 1);
+                : "RESULT: FAIL (" + TestKit.failures() + " of " + asserts + " assertions failed, wrongMethodType=" + wrongMethodTypeCount + ")");
+        System.exit((TestKit.failures() == 0 && wrongMethodTypeCount == 0) ? 0 : 1);
     }
 
     // ---------------------------------------------------------------- section 1

@@ -27,12 +27,9 @@ import static nsui.objc.Sig.Ret;
  */
 public final class NSViewTest {
 
-    private static int failures;
+    
 
-    private static void check(boolean ok, String msg) {
-        System.out.println((ok ? "PASS" : "FAIL") + ": " + msg);
-        if (!ok) failures++;
-    }
+    
 
     public static void main(String[] args) throws Throwable {
         System.out.println("=== NSViewTest — drawRect: pipeline + pixel verification ===");
@@ -61,8 +58,6 @@ public final class NSViewTest {
         window.setContentView(view);
         view.setNeedsDisplay(true);
 
-        app.activateIgnoringOtherApps(true);
-        window.makeKeyAndOrderFront(null);
         app.finishLaunching();
 
         long deadline = System.currentTimeMillis() + 1500;
@@ -75,11 +70,11 @@ public final class NSViewTest {
             Thread.sleep(10);
         }
 
-        check(drawCount.get() >= 1, "drawRect: fired at least once (count=" + drawCount.get() + ")");
+        TestKit.check(drawCount.get() >= 1, "drawRect: fired at least once (count=" + drawCount.get() + ")");
         if (drawCount.get() == 0) {
             System.out.println("NOTE: forcing displayIfNeeded fallback after zero draws");
             ObjC.msgSendVoid(window.peer(), ObjC.sel("displayIfNeeded"));
-            check(drawCount.get() >= 1, "drawRect: fired after displayIfNeeded (count=" + drawCount.get() + ")");
+            TestKit.check(drawCount.get() >= 1, "drawRect: fired after displayIfNeeded (count=" + drawCount.get() + ")");
         }
 
         // ---- render the view to a bitmap and read actual pixels ----
@@ -103,12 +98,12 @@ public final class NSViewTest {
         // a "blue" pixel has the BLUE-ish sample dominant, a "red" pixel the RED-ish one.
         boolean centerIsBlue = center[2] > 150 && center[0] < 100;
         boolean cornerIsRed  = corner[0] > 150 && corner[2] < 100;
-        check(centerIsBlue, "center pixel is BLUE (b>150, r<100)");
-        check(cornerIsRed, "corner pixel is RED (r>150, b<100)");
+        TestKit.check(centerIsBlue, "center pixel is BLUE (b>150, r<100)");
+        TestKit.check(cornerIsRed, "corner pixel is RED (r>150, b<100)");
 
-        window.performClose(null);
-        System.out.println(failures == 0 ? "RESULT: ALL PASS" : "RESULT: " + failures + " FAILURE(S)");
-        System.exit(failures == 0 ? 0 : 1);
+        TestKit.close(window);
+        System.out.println(TestKit.failures() == 0 ? "RESULT: ALL PASS" : "RESULT: " + TestKit.failures() + " FAILURE(S)");
+        TestKit.end();
     }
 
     /** Render the view's bounds into an NSBitmapImageRep and read its bitmap data. */

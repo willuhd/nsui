@@ -25,14 +25,10 @@ import static nsui.objc.Sig.Ret;
 /// - wrap(null)/wrap(NULL) null-safety
 /// - 100x create/drain stress loop inside autorelease pools
 public final class PrintOperationTest {
-    private static int failures;
+    
     private static int asserts;
 
-    private static void check(boolean ok, String msg) {
-        asserts++;
-        System.out.println((ok ? "PASS" : "FAIL") + ": " + msg);
-        if (!ok) failures++;
-    }
+    private static void check(boolean ok, String msg) { asserts++; TestKit.check(ok, msg); }
 
     /// respondsToSelector: probe — works for instance methods on an object and
     /// for class methods when passed the Class object itself (the class is an
@@ -53,9 +49,7 @@ public final class PrintOperationTest {
         } catch (Throwable t) {
             String m = String.valueOf(t.getMessage()).toLowerCase();
             if (m.contains("connection") || m.contains("dlopen") || m.contains("appkit")) {
-                System.out.println("SKIP: ObjC.init failed (not macOS / connection error): " + t);
-                System.out.println("RESULT: SKIP");
-                System.exit(0);
+                TestKit.skip("ObjC.init failed (not macOS / connection error): : " + t);
             }
             System.out.println("FAIL: ObjC.init threw unexpected: " + t);
             t.printStackTrace(System.out);
@@ -81,8 +75,8 @@ public final class PrintOperationTest {
         } catch (Throwable t) {
             check(false, "fixture setup threw: " + t);
             t.printStackTrace(System.out);
-            System.out.println(failures == 0 ? "RESULT: PASS (" + asserts + " assertions)" : "RESULT: FAIL (" + failures + " of " + asserts + " assertions failed)");
-            System.exit(failures == 0 ? 0 : 1);
+            System.out.println(TestKit.failures() == 0 ? "RESULT: PASS (" + asserts + " assertions)" : "RESULT: FAIL (" + TestKit.failures() + " of " + asserts + " assertions failed)");
+            TestKit.end();
             return;
         }
 
@@ -195,9 +189,9 @@ public final class PrintOperationTest {
             t.printStackTrace(System.out);
         }
 
-        System.out.println(failures == 0
+        System.out.println(TestKit.failures() == 0
                 ? "RESULT: PASS (" + asserts + " assertions)"
-                : "RESULT: FAIL (" + failures + " of " + asserts + " assertions failed)");
-        System.exit(failures == 0 ? 0 : 1);
+                : "RESULT: FAIL (" + TestKit.failures() + " of " + asserts + " assertions failed)");
+        TestKit.end();
     }
 }

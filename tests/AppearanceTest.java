@@ -21,12 +21,9 @@ import nsui.objc.ObjC;
  */
 public final class AppearanceTest {
 
-    private static int failures;
+    
 
-    private static void check(boolean ok, String msg) {
-        System.out.println((ok ? "PASS" : "FAIL") + ": " + msg);
-        if (!ok) failures++;
-    }
+    
 
     public static void main(String[] args) throws Throwable {
         System.out.println("=== AppearanceTest — NSAppearance round-trip + stress ===");
@@ -34,63 +31,63 @@ public final class AppearanceTest {
 
         // ---- appearanceNamed Aqua ----
         NSAppearance aqua = NSAppearance.appearanceNamed("NSAppearanceNameAqua");
-        check(aqua != null && aqua.peer().address() != 0, "appearanceNamed(\"NSAppearanceNameAqua\") non-null [got " + (aqua == null ? "null" : aqua.peer()) + "]");
+        TestKit.check(aqua != null && aqua.peer().address() != 0, "appearanceNamed(\"NSAppearanceNameAqua\") non-null [got " + (aqua == null ? "null" : aqua.peer()) + "]");
         if (aqua != null) {
             String n = aqua.name();
             System.out.println("  aqua name = \"" + n + "\"");
-            check("NSAppearanceNameAqua".equals(n), "aqua name round-trip == \"NSAppearanceNameAqua\" [got \"" + n + "\"]");
+            TestKit.check("NSAppearanceNameAqua".equals(n), "aqua name round-trip == \"NSAppearanceNameAqua\" [got \"" + n + "\"]");
         }
 
         // ---- appearanceNamed DarkAqua ----
         NSAppearance dark = NSAppearance.appearanceNamed("NSAppearanceNameDarkAqua");
-        check(dark != null && dark.peer().address() != 0, "appearanceNamed(\"NSAppearanceNameDarkAqua\") non-null [got " + (dark == null ? "null" : dark.peer()) + "]");
+        TestKit.check(dark != null && dark.peer().address() != 0, "appearanceNamed(\"NSAppearanceNameDarkAqua\") non-null [got " + (dark == null ? "null" : dark.peer()) + "]");
         if (dark != null) {
             String n = dark.name();
             System.out.println("  dark name = \"" + n + "\"");
-            check("NSAppearanceNameDarkAqua".equals(n), "dark name round-trip == \"NSAppearanceNameDarkAqua\" [got \"" + n + "\"]");
-            check(dark.isKindOfClass("NSAppearance"), "dark isKindOfClass:NSAppearance == YES");
+            TestKit.check("NSAppearanceNameDarkAqua".equals(n), "dark name round-trip == \"NSAppearanceNameDarkAqua\" [got \"" + n + "\"]");
+            TestKit.check(dark.isKindOfClass("NSAppearance"), "dark isKindOfClass:NSAppearance == YES");
         }
 
         // ---- currentAppearance ----
         NSAppearance cur = NSAppearance.currentAppearance();
-        check(cur != null && cur.peer().address() != 0, "currentAppearance non-null [got " + (cur == null ? "null" : cur.peer()) + "]");
+        TestKit.check(cur != null && cur.peer().address() != 0, "currentAppearance non-null [got " + (cur == null ? "null" : cur.peer()) + "]");
         if (cur != null) {
             String cn = cur.name();
             System.out.println("  currentAppearance name = \"" + cn + "\"");
-            check(cn != null && !cn.isEmpty(), "currentAppearance name non-empty [got \"" + cn + "\"]");
-            check(cur.isKindOfClass("NSAppearance"), "currentAppearance isKindOfClass:NSAppearance == YES");
+            TestKit.check(cn != null && !cn.isEmpty(), "currentAppearance name non-empty [got \"" + cn + "\"]");
+            TestKit.check(cur.isKindOfClass("NSAppearance"), "currentAppearance isKindOfClass:NSAppearance == YES");
         }
 
         // ---- wrap nil safety ----
-        check(NSAppearance.wrap(null) == null, "NSAppearance.wrap(null) == null");
-        check(NSAppearance.wrap(java.lang.foreign.MemorySegment.NULL) == null, "NSAppearance.wrap(NULL) == null");
+        TestKit.check(NSAppearance.wrap(null) == null, "NSAppearance.wrap(null) == null");
+        TestKit.check(NSAppearance.wrap(java.lang.foreign.MemorySegment.NULL) == null, "NSAppearance.wrap(NULL) == null");
 
         // ---- NSView effectiveAppearance after setAppearance ----
         NSView view = NSView.create(new NSRect(0, 0, 200, 120), (ctx, dirty) -> {});
-        check(view != null && view.peer().address() != 0, "NSView.create for appearance test non-nil");
+        TestKit.check(view != null && view.peer().address() != 0, "NSView.create for appearance test non-nil");
 
         if (aqua != null) {
             NSAppearance.setAppearance(view, aqua);
             NSAppearance eff = NSAppearance.effectiveAppearance(view);
-            check(eff != null && eff.peer().address() != 0, "effectiveAppearance after setAppearance(aqua) non-null [got " + (eff == null ? "null" : eff.peer()) + "]");
+            TestKit.check(eff != null && eff.peer().address() != 0, "effectiveAppearance after setAppearance(aqua) non-null [got " + (eff == null ? "null" : eff.peer()) + "]");
             if (eff != null) {
                 String en = eff.name();
                 System.out.println("  effectiveAppearance name = \"" + en + "\"");
                 // On macOS 14+, effectiveAppearance may resolve to a concrete appearance whose name contains Aqua
                 // Accept either exact Aqua or containing Aqua (e.g. NSAppearanceNameAqua remains)
                 boolean containsAqua = en != null && en.contains("Aqua");
-                check(containsAqua, "effectiveAppearance name contains \"Aqua\" [got \"" + en + "\"]");
+                TestKit.check(containsAqua, "effectiveAppearance name contains \"Aqua\" [got \"" + en + "\"]");
             }
 
             // Also test dark appearance assignment
             if (dark != null) {
                 NSAppearance.setAppearance(view, dark);
                 NSAppearance eff2 = NSAppearance.effectiveAppearance(view);
-                check(eff2 != null, "effectiveAppearance after setAppearance(dark) non-null");
+                TestKit.check(eff2 != null, "effectiveAppearance after setAppearance(dark) non-null");
                 if (eff2 != null) {
                     String en2 = eff2.name();
                     System.out.println("  effectiveAppearance(dark) name = \"" + en2 + "\"");
-                    check(en2 != null && en2.contains("DarkAqua"), "effectiveAppearance(dark) name contains \"DarkAqua\" [got \"" + en2 + "\"]");
+                    TestKit.check(en2 != null && en2.contains("DarkAqua"), "effectiveAppearance(dark) name contains \"DarkAqua\" [got \"" + en2 + "\"]");
                 }
             }
 
@@ -99,9 +96,9 @@ public final class AppearanceTest {
                 NSAppearance.setAppearance(view, null);
                 NSAppearance effNull = NSAppearance.effectiveAppearance(view);
                 // Effective after nil may fall back to system; just ensure no crash and non-null
-                check(effNull != null, "effectiveAppearance after setAppearance(null) non-null (fallback) [got " + (effNull == null ? "null" : effNull.name()) + "]");
+                TestKit.check(effNull != null, "effectiveAppearance after setAppearance(null) non-null (fallback) [got " + (effNull == null ? "null" : effNull.name()) + "]");
             } catch (Throwable t) {
-                check(false, "setAppearance(null) threw: " + t);
+                TestKit.check(false, "setAppearance(null) threw: " + t);
             }
         }
 
@@ -112,13 +109,13 @@ public final class AppearanceTest {
             NSAppearance a = NSAppearance.appearanceNamed("NSAppearanceNameAqua");
             if (a == null || a.peer().address() == 0) {
                 stressOk = false;
-                check(false, "stress iteration " + i + ": appearanceNamed returned nil");
+                TestKit.check(false, "stress iteration " + i + ": appearanceNamed returned nil");
                 break;
             }
             String nm = a.name();
             if (!"NSAppearanceNameAqua".equals(nm)) {
                 stressOk = false;
-                check(false, "stress iteration " + i + ": name mismatch [got \"" + nm + "\"]");
+                TestKit.check(false, "stress iteration " + i + ": name mismatch [got \"" + nm + "\"]");
                 break;
             }
             // Alternate dark every 10 to exercise both paths
@@ -126,16 +123,16 @@ public final class AppearanceTest {
                 NSAppearance d = NSAppearance.appearanceNamed("NSAppearanceNameDarkAqua");
                 if (d == null || !"NSAppearanceNameDarkAqua".equals(d.name())) {
                     stressOk = false;
-                    check(false, "stress iteration " + i + " dark variant failed");
+                    TestKit.check(false, "stress iteration " + i + " dark variant failed");
                     break;
                 }
             }
         }
         if (stressOk) {
-            check(true, "stress 200 iterations appearanceNamed+name no crash");
+            TestKit.check(true, "stress 200 iterations appearanceNamed+name no crash");
         }
 
-        System.out.println(failures == 0 ? "RESULT: ALL PASS" : "RESULT: " + failures + " FAILURE(S)");
-        System.exit(failures == 0 ? 0 : 1);
+        System.out.println(TestKit.failures() == 0 ? "RESULT: ALL PASS" : "RESULT: " + TestKit.failures() + " FAILURE(S)");
+        TestKit.end();
     }
 }

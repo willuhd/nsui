@@ -17,13 +17,9 @@ import nsui.objc.ThemeObserver;
 
 public final class ThemeObserverTest {
 
-    private static int failures = 0;
     private static int passes = 0;
 
-    private static void check(boolean ok, String msg) {
-        System.out.println((ok ? "PASS" : "FAIL") + ": " + msg);
-        if (ok) passes++; else failures++;
-    }
+    private static void check(boolean ok, String msg) { if (ok) passes++; TestKit.check(ok, msg); }
 
     public static void main(String[] args) throws Throwable {
         System.out.println("=== ThemeObserverTest ===");
@@ -49,8 +45,8 @@ public final class ThemeObserverTest {
         }
 
         if (!hasObjC) {
-            System.out.println("\nThemeObserverTest SUMMARY (headless): " + passes + " PASS, " + failures + " FAIL");
-            System.exit(failures == 0 ? 0 : 1);
+            System.out.println("\nThemeObserverTest SUMMARY (headless): " + passes + " PASS, " + TestKit.failures() + " FAIL");
+            TestKit.end();
             return;
         }
 
@@ -64,10 +60,8 @@ public final class ThemeObserverTest {
             win.setTitle("ThemeObserverTest");
             win.center();
             win.setReleasedWhenClosed(false);
-            win.makeKeyAndOrderFront(null);
-            app.activateIgnoringOtherApps(true);
             app.finishLaunching();
-            pump(app, 300);
+            TestKit.pump(app, 300);
             hasWindow = true;
             System.out.println("window created for cross-check");
         } catch (Throwable t) {
@@ -211,7 +205,7 @@ public final class ThemeObserverTest {
                     // Use NSAppearance helper for view (window's contentView) and NSApplication for app
                     NSAppearance.setAppearance(win.contentView(), aqua);
                     app.setAppearance(aqua);
-                    pump(app, 200);
+                    TestKit.pump(app, 200);
                     NSAppearance eff = NSAppearance.effectiveAppearance(win.contentView());
                     String name = eff != null ? eff.name() : null;
                     System.out.println("effectiveAppearance after Aqua: " + name);
@@ -220,7 +214,7 @@ public final class ThemeObserverTest {
                 if (darkAqua != null) {
                     NSAppearance.setAppearance(win.contentView(), darkAqua);
                     app.setAppearance(darkAqua);
-                    pump(app, 200);
+                    TestKit.pump(app, 200);
                     NSAppearance eff2 = NSAppearance.effectiveAppearance(win.contentView());
                     String n2 = eff2 != null ? eff2.name() : null;
                     System.out.println("effectiveAppearance after DarkAqua: " + n2);
@@ -251,29 +245,19 @@ public final class ThemeObserverTest {
         if (win != null) {
             try {
                 win.orderOut(null);
-                pump(app, 100);
-                win.performClose(null);
-                pump(app, 200);
+                TestKit.pump(app, 100);
+                TestKit.close(win);
+                TestKit.pump(app, 200);
                 if (app != null) app.updateWindows();
             } catch (Throwable ignore) {}
         }
         try { ThemeObserver.dispose(); } catch (Throwable ignore) {}
 
         System.out.println("\n==============================");
-        System.out.println("ThemeObserverTest SUMMARY: " + passes + " PASS, " + failures + " FAIL");
-        System.out.println(failures == 0 ? "RESULT: ALL PASS" : "RESULT: " + failures + " FAILURE(S)");
-        System.exit(failures == 0 ? 0 : 1);
+        System.out.println("ThemeObserverTest SUMMARY: " + passes + " PASS, " + TestKit.failures() + " FAIL");
+        System.out.println(TestKit.failures() == 0 ? "RESULT: ALL PASS" : "RESULT: " + TestKit.failures() + " FAILURE(S)");
+        TestKit.end();
     }
 
-    private static void pump(NSApplication app, long millis) throws InterruptedException {
-        if (app == null) { Thread.sleep(millis); return; }
-        long deadline = System.currentTimeMillis() + millis;
-        while (System.currentTimeMillis() < deadline) {
-            MemorySegment until = ObjC.msgSendIdDouble(ObjC.cls("NSDate"), ObjC.sel("dateWithTimeIntervalSinceNow:"), 0.05);
-            NSEvent ev = app.nextEvent(-1L, until, "kCFRunLoopDefaultMode", true);
-            if (ev != null) app.sendEvent(ev);
-            app.updateWindows();
-            Thread.sleep(10);
-        }
-    }
+    
 }

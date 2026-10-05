@@ -16,14 +16,10 @@ import nsui.objc.ObjC;
 /// - `NSData.writeToFile` lands a real file under `/tmp` (never inside the repo);
 /// - property accessors are sane; `wrap`/`create` are null-safe; 100× export stress.
 public final class ImageRepExportTest {
-    private static int failures;
+    
     private static int asserts;
 
-    private static void check(boolean ok, String msg) {
-        asserts++;
-        System.out.println((ok ? "PASS" : "FAIL") + ": " + msg);
-        if (!ok) failures++;
-    }
+    private static void check(boolean ok, String msg) { asserts++; TestKit.check(ok, msg); }
 
     private static boolean magic(byte[] data, int[] expected) {
         if (data == null || data.length < expected.length) return false;
@@ -40,9 +36,7 @@ public final class ImageRepExportTest {
         } catch (Throwable t) {
             String m = String.valueOf(t.getMessage()).toLowerCase();
             if (m.contains("connection") || m.contains("dlopen") || m.contains("appkit")) {
-                System.out.println("SKIP: ObjC.init failed (not macOS / connection error): " + t);
-                System.out.println("RESULT: SKIP (connection error, continuing)");
-                System.exit(0);
+                TestKit.skip("ObjC.init failed (not macOS / connection error): : " + t);
             }
             System.out.println("FAIL: ObjC.init threw unexpected: " + t);
             t.printStackTrace(System.out);
@@ -160,9 +154,9 @@ public final class ImageRepExportTest {
             t.printStackTrace(System.out);
         }
 
-        System.out.println(failures == 0
+        System.out.println(TestKit.failures() == 0
                 ? "RESULT: PASS (" + asserts + " assertions)"
-                : "RESULT: FAIL (" + failures + " of " + asserts + " assertions failed)");
-        System.exit(failures == 0 ? 0 : 1);
+                : "RESULT: FAIL (" + TestKit.failures() + " of " + asserts + " assertions failed)");
+        TestKit.end();
     }
 }

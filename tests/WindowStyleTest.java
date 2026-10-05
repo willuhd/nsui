@@ -26,12 +26,9 @@ import nsui.objc.ObjC;
  */
 public final class WindowStyleTest {
 
-    private static int failures;
+    
 
-    private static void check(boolean ok, String msg) {
-        System.out.println((ok ? "PASS" : "FAIL") + ": " + msg);
-        if (!ok) failures++;
-    }
+    
 
     public static void main(String[] args) {
         System.out.println("=== WindowStyleTest — compositional window style (styleMask + NSPanel + behavior) ===");
@@ -43,25 +40,25 @@ public final class WindowStyleTest {
         System.out.println("---- 1) Normal NSWindow (styleMask 15 = Titled|Closable|Miniaturizable|Resizable) ----");
         NSWindow win = NSWindow.create(new NSRect(0, 0, 400, 250), 15L, 2L, false);
 
-        check(win.styleMask() == 15L, "normal window styleMask() == 15 (got " + win.styleMask() + ")");
+        TestKit.check(win.styleMask() == 15L, "normal window styleMask() == 15 (got " + win.styleMask() + ")");
 
         win.setTitlebarAppearsTransparent(true);
-        check(win.isTitlebarAppearsTransparent(), "setTitlebarAppearsTransparent(true) round-trips");
+        TestKit.check(win.isTitlebarAppearsTransparent(), "setTitlebarAppearsTransparent(true) round-trips");
 
         win.setTitleVisibility(1 /* NSWindowTitleHidden */);
         System.out.println("PASS: setTitleVisibility(1) did not crash (no native assertion); reads back on title");
 
         win.setLevel(3 /* NSFloatingWindowLevel */);
-        check(win.level() == 3L, "setLevel(3) -> level() == 3 (got " + win.level() + ")");
+        TestKit.check(win.level() == 3L, "setLevel(3) -> level() == 3 (got " + win.level() + ")");
 
         win.setCollectionBehavior(0); // no behavior
         System.out.println("PASS: setCollectionBehavior(0) did not crash");
 
         NSObject closeBtn = win.standardWindowButton(0 /* NSWindowCloseButton */);
-        check(closeBtn != null && closeBtn.peer().address() != 0,
+        TestKit.check(closeBtn != null && closeBtn.peer().address() != 0,
                 "standardWindowButton(close) returns a non-null object on a titled window");
 
-        check(!win.isUtilityWindow(), "normal window isUtilityWindow() == false");
+        TestKit.check(!win.isUtilityWindow(), "normal window isUtilityWindow() == false");
 
         //
 
@@ -69,27 +66,27 @@ public final class WindowStyleTest {
         NSWindow panel = NSWindow.createPanel(new NSRect(0, 0, 300, 200), 15L | 16L, 2L, false);
 
         String panelClass = ObjC.toString(ObjC.msgSendId(panel.peer(), ObjC.sel("className")));
-        check("NSPanel".equals(panelClass),
+        TestKit.check("NSPanel".equals(panelClass),
                 "panel className == \"NSPanel\" (got " + panelClass + ")");
-        check(panel.isUtilityWindow(), "panel isUtilityWindow() == true");
+        TestKit.check(panel.isUtilityWindow(), "panel isUtilityWindow() == true");
 
         panel.setHidesOnDeactivate(true);
-        check(panel.hidesOnDeactivate(), "setHidesOnDeactivate(true) round-trips");
+        TestKit.check(panel.hidesOnDeactivate(), "setHidesOnDeactivate(true) round-trips");
 
         panel.setBecomesKeyOnlyIfNeeded(true);
-        check(panel.becomesKeyOnlyIfNeeded(), "setBecomesKeyOnlyIfNeeded(true) round-trips");
+        TestKit.check(panel.becomesKeyOnlyIfNeeded(), "setBecomesKeyOnlyIfNeeded(true) round-trips");
 
         NSObject panelClose = panel.standardWindowButton(0 /* NSWindowCloseButton */);
-        check(panelClose != null && panelClose.peer().address() != 0,
+        TestKit.check(panelClose != null && panelClose.peer().address() != 0,
                 "panel standardWindowButton(close) returns a non-null object");
 
         // ---- cleanup: close both ----
         System.out.println("\n---- cleanup ----");
-        panel.performClose(null);
-        win.performClose(null);
+        TestKit.close(panel);
+        TestKit.close(win);
         System.out.println("PASS: performClose on panel and window did not crash");
 
-        System.out.println(failures == 0 ? "RESULT: ALL PASS" : "RESULT: " + failures + " FAILURE(S)");
-        System.exit(failures == 0 ? 0 : 1);
+        System.out.println(TestKit.failures() == 0 ? "RESULT: ALL PASS" : "RESULT: " + TestKit.failures() + " FAILURE(S)");
+        TestKit.end();
     }
 }

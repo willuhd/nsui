@@ -28,12 +28,9 @@ import nsui.objc.ObjC;
  */
 public final class DirtyRectTest {
 
-    private static int failures;
+    
 
-    private static void check(boolean ok, String msg) {
-        System.out.println((ok ? "PASS" : "FAIL") + ": " + msg);
-        if (!ok) failures++;
-    }
+    
 
     public static void main(String[] args) throws Throwable {
         System.out.println("=== DirtyRectTest — dirty-rect redraw reaches Drawable with sub-rect ===");
@@ -64,49 +61,37 @@ public final class DirtyRectTest {
         window.setContentView(view);
         view.setNeedsDisplay(true);
 
-        app.activateIgnoringOtherApps(true);
-        window.makeKeyAndOrderFront(null);
         app.finishLaunching();
 
         // Phase 0: pump until the initial full redraw has happened and drained.
-        pump(app, 250);
+        TestKit.pump(app, 250);
         System.out.printf("after initial pump: draws=%d lastDirty=[%.1f x %.1f]%n",
                 draws.get(), lastDirty[0], lastDirty[1]);
-        check(draws.get() >= 1, "initial full redraw fired (draws=" + draws.get() + ")");
+        TestKit.check(draws.get() >= 1, "initial full redraw fired (draws=" + draws.get() + ")");
 
         // Phase 1: invalidate a sub-rect in the view's coordinate system.
         view.setNeedsDisplayInRect(new NSRect(10, 10, 60, 40));
-        pump(app, 350);
+        TestKit.pump(app, 350);
         System.out.printf("after sub-rect invalidate: draws=%d lastDirty=[%.1f x %.1f]%n",
                 draws.get(), lastDirty[0], lastDirty[1]);
 
-        check(lastDirty[0] < 200, "sub-rect dirty WIDTH " + lastDirty[0] + " is small (<200, not the full 500)");
-        check(lastDirty[1] < 200, "sub-rect dirty HEIGHT " + lastDirty[1] + " is small (<200)");
+        TestKit.check(lastDirty[0] < 200, "sub-rect dirty WIDTH " + lastDirty[0] + " is small (<200, not the full 500)");
+        TestKit.check(lastDirty[1] < 200, "sub-rect dirty HEIGHT " + lastDirty[1] + " is small (<200)");
 
         // Phase 2: full invalidate -> dirty rect must come back full-size.
         int beforeFull = draws.get();
         view.setNeedsDisplay(true);
-        pump(app, 350);
+        TestKit.pump(app, 350);
         System.out.printf("after full invalidate: draws=%d lastDirty=[%.1f x %.1f]%n",
                 draws.get(), lastDirty[0], lastDirty[1]);
-        check(draws.get() > beforeFull, "full invalidate produced another draw (draws " + beforeFull + " -> " + draws.get() + ")");
-        check(lastDirty[0] >= 499, "full invalidate dirty WIDTH " + lastDirty[0] + " is full-size (>=499)");
+        TestKit.check(draws.get() > beforeFull, "full invalidate produced another draw (draws " + beforeFull + " -> " + draws.get() + ")");
+        TestKit.check(lastDirty[0] >= 499, "full invalidate dirty WIDTH " + lastDirty[0] + " is full-size (>=499)");
 
-        window.performClose(null);
-        System.out.println(failures == 0 ? "RESULT: ALL PASS" : "RESULT: " + failures + " FAILURE(S)");
-        System.exit(failures == 0 ? 0 : 1);
+        TestKit.close(window);
+        System.out.println(TestKit.failures() == 0 ? "RESULT: ALL PASS" : "RESULT: " + TestKit.failures() + " FAILURE(S)");
+        TestKit.end();
     }
 
     /** Manual run-loop pump for the given duration (like NSViewTest). */
-    private static void pump(NSApplication app, long millis) throws Exception {
-        long deadline = System.currentTimeMillis() + millis;
-        while (System.currentTimeMillis() < deadline) {
-            MemorySegment until = ObjC.msgSendIdDouble(
-                    ObjC.cls("NSDate"), ObjC.sel("dateWithTimeIntervalSinceNow:"), 0.05);
-            NSEvent ev = app.nextEvent(-1L, until, "kCFRunLoopDefaultMode", true);
-            if (ev != null) app.sendEvent(ev);
-            app.updateWindows();
-            Thread.sleep(10);
-        }
-    }
+    
 }

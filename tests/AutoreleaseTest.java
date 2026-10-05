@@ -7,7 +7,6 @@ import java.lang.foreign.MemorySegment;
 
 public class AutoreleaseTest {
 
-    private static int failures;
 
     public static void main(String[] args) {
         ObjC.init();
@@ -87,16 +86,8 @@ public class AutoreleaseTest {
             System.out.println("[AutoreleaseTest] post-stress sanity ok");
         }
 
-        if (failures > 0) {
-            System.out.println("[AutoreleaseTest] FAIL — " + failures + " check(s) failed");
-            System.exit(1);
-        }
-        System.out.println("[AutoreleaseTest] PASS");
-        System.exit(0);
+        TestKit.end();
     }
 
-    private static void fail(String msg) {
-        failures++;
-        System.out.println("[AutoreleaseTest] FAIL: " + msg);
-    }
+    private static void fail(String msg) { TestKit.check(false, msg); }
 }

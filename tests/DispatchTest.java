@@ -24,8 +24,6 @@ import nsui.objc.ObjC;
  */
 public class DispatchTest {
 
-    private static long FAILED = 0;
-
     private static final long mainThreadId = Thread.currentThread().threadId();
 
     // Shared app + pump primitives.
@@ -54,10 +52,7 @@ public class DispatchTest {
         test2_ordering();
         test3_mainToMain();
 
-        System.out.println(FAILED == 0
-                ? "\nALL TESTS PASSED"
-                : "\n" + FAILED + " TEST(S) FAILED");
-        System.exit(FAILED == 0 ? 0 : 1);
+        TestKit.end();
     }
 
     // ------------------------------------------------------------------ pump
@@ -104,10 +99,9 @@ public class DispatchTest {
         boolean ok = latch.getCount() == 0
                 && ranCount.get() == 1
                 && ranOn.get() == (int) mainThreadId;
-        System.out.println((ok ? "PASS" : "FAIL") + " test1: latchFired=" + (latch.getCount() == 0)
+        TestKit.check(ok, "test1: latchFired=" + (latch.getCount() == 0)
                 + " ranCount=" + ranCount.get()
                 + " ranOn=" + ranOn.get() + " (expect " + mainThreadId + ")");
-        if (!ok) FAILED++;
     }
 
     /** Two blocks from a background thread must run in FIFO order. */
@@ -129,8 +123,7 @@ public class DispatchTest {
                 && order.size() == 2
                 && "A".equals(order.get(0))
                 && "B".equals(order.get(1));
-        System.out.println((ok ? "PASS" : "FAIL") + " test2: order=" + order);
-        if (!ok) FAILED++;
+        TestKit.check(ok, "test2: order=" + order);
     }
 
     /** Enqueue from the main thread itself; it must still run exactly once. */
@@ -144,7 +137,6 @@ public class DispatchTest {
         waitFor(latch, 5);
 
         boolean ok = latch.getCount() == 0 && ran.get() == 1;
-        System.out.println((ok ? "PASS" : "FAIL") + " test3: latchFired=" + (latch.getCount() == 0) + " ran=" + ran.get());
-        if (!ok) FAILED++;
+        TestKit.check(ok, "test3: latchFired=" + (latch.getCount() == 0) + " ran=" + ran.get());
     }
 }

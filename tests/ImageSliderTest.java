@@ -36,12 +36,9 @@ import static nsui.objc.Sig.Ret;
  */
 public final class ImageSliderTest {
 
-    private static int failures;
+    
 
-    private static void check(boolean ok, String msg) {
-        System.out.println((ok ? "PASS" : "FAIL") + ": " + msg);
-        if (!ok) failures++;
-    }
+    
 
     public static void main(String[] args) throws Throwable {
         System.out.println("=== ImageSliderTest — NSImage/NSImageView/NSSlider/NSProgressIndicator ===");
@@ -52,14 +49,14 @@ public final class ImageSliderTest {
         writeRedPng(png, 64, 64);
 
         NSImage img = NSImage.imageWithContentsOfFile(png);
-        check(img != null, "NSImage.imageWithContentsOfFile loaded a file (non-null)");
+        TestKit.check(img != null, "NSImage.imageWithContentsOfFile loaded a file (non-null)");
         if (img == null) {
             System.out.println("FAIL(TOTAL): image load failed — cannot proceed with draw test");
             System.exit(1);
         }
-        check(img.isValid(), "NSImage.isValid() == true");
+        TestKit.check(img.isValid(), "NSImage.isValid() == true");
         double w = img.size().width(), h = img.size().height();
-        check(Math.abs(w - 64.0) < 0.01 && Math.abs(h - 64.0) < 0.01,
+        TestKit.check(Math.abs(w - 64.0) < 0.01 && Math.abs(h - 64.0) < 0.01,
                 "NSImage.size() == (64,64) [got (" + w + "," + h + ")]");
 
         // ---- draw it through a Java drawRect: and verify the composited pixel is red ----
@@ -81,11 +78,9 @@ public final class ImageSliderTest {
         window.setContentView(view);
         view.setNeedsDisplay(true);
 
-        app.activateIgnoringOtherApps(true);
-        window.makeKeyAndOrderFront(null);
         app.finishLaunching();
 
-        pump(app);
+        TestKit.pump(app);
 
         System.out.println("  -- rendering view to bitmap --");
         MemPixels px = renderToBitmap(view);
@@ -94,7 +89,7 @@ public final class ImageSliderTest {
         int[] pix = px.rgb(50, 50);
         System.out.printf("  pixel(50,50) channel[0,1,2]=[%d,%d,%d] (expect red)%n", pix[0], pix[1], pix[2]);
         boolean drawnRed = pix[0] > 150 && pix[2] < 100;
-        check(drawnRed, "pixel inside drawInRect region is RED (r>150, b<100)");
+        TestKit.check(drawnRed, "pixel inside drawInRect region is RED (r>150, b<100)");
 
         // ------------------------------------------------------------ NSImageView
         NSImageView imageView = NSImageView.create(new NSRect(10, 150, 128, 32));
@@ -102,8 +97,8 @@ public final class ImageSliderTest {
         imageView.setImageScaling(3L);          // NSImageScaleProportionallyUpOrDown
         imageView.setImageFrameStyle(0L);
         view.addSubview(imageView);             // view IS the content view (setContentView above)
-        pump(app);
-        check(true, "NSImageView created + setImage + setImageScaling(3) without crash");
+        TestKit.pump(app);
+        TestKit.check(true, "NSImageView created + setImage + setImageScaling(3) without crash");
 
         // ------------------------------------------------------------ NSSlider
         NSSlider slider = NSSlider.create(new NSRect(10, 165, 200, 20));
@@ -111,47 +106,37 @@ public final class ImageSliderTest {
         slider.setMaxValue(100.0);
         slider.setDoubleValue(42.0);
         double got = slider.doubleValue();
-        check(Math.abs(got - 42.0) < 0.01, "NSSlider doubleValue() round-trips 42.0 [got " + got + "]");
+        TestKit.check(Math.abs(got - 42.0) < 0.01, "NSSlider doubleValue() round-trips 42.0 [got " + got + "]");
         slider.setNumberOfTickMarks(5L);
         slider.setAllowsTickMarkValuesOnly(true);
         slider.setEnabled(false);
-        check(!slider.isEnabled(), "NSSlider.isEnabled() == false after setEnabled(false)");
+        TestKit.check(!slider.isEnabled(), "NSSlider.isEnabled() == false after setEnabled(false)");
         view.addSubview(slider);
-        pump(app);
-        check(true, "NSSlider configured + added without crash");
+        TestKit.pump(app);
+        TestKit.check(true, "NSSlider configured + added without crash");
 
         // ------------------------------------------------------------ NSProgressIndicator
         NSProgressIndicator pi = NSProgressIndicator.create(new NSRect(10, 140, 200, 18));
         pi.setIndeterminate(false);
-        check(!pi.isIndeterminate(), "NSProgressIndicator.isIndeterminate() == false after setIndeterminate(false)");
+        TestKit.check(!pi.isIndeterminate(), "NSProgressIndicator.isIndeterminate() == false after setIndeterminate(false)");
         pi.setMinValue(0.0);
         pi.setMaxValue(1.0);
         pi.setDoubleValue(0.5);
         pi.setStyle(0L);          // NSProgressIndicatorBarStyle
         pi.startAnimation();
         pi.stopAnimation();
-        check(true, "NSProgressIndicator range set + startAnimation/stopAnimation without crash");
+        TestKit.check(true, "NSProgressIndicator range set + startAnimation/stopAnimation without crash");
         view.addSubview(pi);
-        pump(app);
-        check(true, "NSProgressIndicator added to view without crash");
+        TestKit.pump(app);
+        TestKit.check(true, "NSProgressIndicator added to view without crash");
 
-        window.performClose(null);
-        System.out.println(failures == 0 ? "RESULT: ALL PASS" : "RESULT: " + failures + " FAILURE(S)");
-        System.exit(failures == 0 ? 0 : 1);
+        TestKit.close(window);
+        System.out.println(TestKit.failures() == 0 ? "RESULT: ALL PASS" : "RESULT: " + TestKit.failures() + " FAILURE(S)");
+        TestKit.end();
     }
 
     /** Pump the run loop for ~1.5s so the window draws on the main thread. */
-    private static void pump(NSApplication app) throws InterruptedException {
-        long deadline = System.currentTimeMillis() + 1500;
-        while (System.currentTimeMillis() < deadline) {
-            MemorySegment until = ObjC.msgSendIdDouble(
-                    ObjC.cls("NSDate"), ObjC.sel("dateWithTimeIntervalSinceNow:"), 0.05);
-            NSEvent ev = app.nextEvent(-1L, until, "kCFRunLoopDefaultMode", true);
-            if (ev != null) app.sendEvent(ev);
-            app.updateWindows();
-            Thread.sleep(10);
-        }
-    }
+    
 
     /** Write a solid-color PNG file with javax.imageio (headless, not AWT UI). */
     private static void writeRedPng(String path, int w, int h) throws Exception {

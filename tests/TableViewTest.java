@@ -41,15 +41,12 @@ public final class TableViewTest {
     /** Number of columns we build. */
     private static final int N_COLS = 2;
 
-    private static int failures;
+    
 
     // Resolved once after ObjC.init() — never in a static initializer.
     private static MethodHandle hBoolId;      // (id, SEL, id/SEL) -> bool [respondsToSelector:]
 
-    private static void check(boolean ok, String msg) {
-        System.out.println((ok ? "PASS" : "FAIL") + ": " + msg);
-        if (!ok) failures++;
-    }
+    
 
     public static void main(String[] args) throws InterruptedException {
         System.out.println("=== TableViewTest — NSTableView + NSScrollView, live data source ===");
@@ -71,14 +68,14 @@ public final class TableViewTest {
         NSTableColumn scoreCol = NSTableColumn.create("Score");
         scoreCol.setTitle("Score");
         scoreCol.setWidth(100);
-        check(Math.abs(nameCol.width() - 150) < 0.001, "name column width == 150 (got " + nameCol.width() + ")");
-        check("Name".equals(nameCol.title()), "name column title is 'Name' (got '" + nameCol.title() + "')");
+        TestKit.check(Math.abs(nameCol.width() - 150) < 0.001, "name column width == 150 (got " + nameCol.width() + ")");
+        TestKit.check("Name".equals(nameCol.title()), "name column title is 'Name' (got '" + nameCol.title() + "')");
 
         table.addTableColumn(nameCol);
         table.addTableColumn(scoreCol);
         table.setUsesAlternatingRowBackgroundColors(true);
         table.setAllowsColumnResizing(true);
-        check(Math.abs(table.rowHeight()) > 0.001, "table rowHeight > 0 (got " + table.rowHeight() + ")");
+        TestKit.check(Math.abs(table.rowHeight()) > 0.001, "table rowHeight > 0 (got " + table.rowHeight() + ")");
 
         scroll.setDocumentView(table);
         scroll.setHasVerticalScroller(true);
@@ -102,8 +99,8 @@ public final class TableViewTest {
 
         MemorySegment dataSource = DelegateProxy.delegate(
                 "NSObject", "NSUITableViewDS", bools, voids, ints, idIdInts);
-        check(dataSource != null && dataSource.address() != 0, "data-source delegate created");
-        check(DelegateProxy.registrySize() >= 1, "registry non-empty (size=" + DelegateProxy.registrySize() + ")");
+        TestKit.check(dataSource != null && dataSource.address() != 0, "data-source delegate created");
+        TestKit.check(DelegateProxy.registrySize() >= 1, "registry non-empty (size=" + DelegateProxy.registrySize() + ")");
 
         table.setDataSource(dataSource);
 
@@ -120,28 +117,26 @@ public final class TableViewTest {
         window.setContentView(content);
         ObjC.msgSendVoidId(content.peer(), ObjC.sel("addSubview:"), root.peer());
 
-        app.activateIgnoringOtherApps(true);
-        window.makeKeyAndOrderFront(null);
-        pump(app, 2000);                  // let AppKit find the table, lay it out and draw
+        TestKit.pump(app, 2000);                  // let AppKit find the table, lay it out and draw
 
         // The only reliable way AppKit materializes rows/cells is the display pass; force it
         // explicitly in case the deferred display pass hadn't redrawn the table yet.
         long rows = table.numberOfRows();
-        check(rows == N_ROWS, "table numberOfRows == " + N_ROWS + " (got " + rows + ")");
-        check(rowsCalls.get() >= 1, "numberOfRowsInTableView: fired >= 1 time (got " + rowsCalls.get() + ")");
+        TestKit.check(rows == N_ROWS, "table numberOfRows == " + N_ROWS + " (got " + rows + ")");
+        TestKit.check(rowsCalls.get() >= 1, "numberOfRowsInTableView: fired >= 1 time (got " + rowsCalls.get() + ")");
 
         // Iterate until the table genuinely draws its cells (or we exhaust patience).
         int guard = 0;
         while (cellCalls.get() < N_ROWS && guard++ < 120) {
             table.reloadData();
-            pump(app, 800);
+            TestKit.pump(app, 800);
             // displayIfNeeded: force the deferred display pass; NSView displayIfNeeded too.
             ObjC.msgSendVoid(window.peer(), ObjC.sel("displayIfNeeded"));
             ObjC.msgSendVoid(viewRootPeer(window), ObjC.sel("displayIfNeeded"));
             ObjC.msgSendVoid(table.peer(), ObjC.sel("displayIfNeeded"));
-            pump(app, 400);
+            TestKit.pump(app, 400);
         }
-        check(cellCalls.get() >= N_ROWS,
+        TestKit.check(cellCalls.get() >= N_ROWS,
                 "cell values materialized: tableView:objectValueForTableColumn:row: fired >= "
                         + N_ROWS + " times (got " + cellCalls.get() + ")");
 
@@ -152,16 +147,16 @@ public final class TableViewTest {
         // ---------------- delegate: accepts a registered void notification ----------------
         MemorySegment delegate = dataSource;   // the same object; selection notification is a void void-map entry
         boolean accepts = respondsTo(delegate, "tableViewSelectionDidChange:");
-        check(accepts, "delegate respondsToSelector: tableViewSelectionDidChange: (void shape registered)");
+        TestKit.check(accepts, "delegate respondsToSelector: tableViewSelectionDidChange: (void shape registered)");
         System.out.println("selection delegate: respondsToSelector(tableViewSelectionDidChange:) = " + accepts
                 + "  (selectionChanged fired=" + selectionNotified.get() + ")");
 
-        check(rows == N_ROWS && rowsCalls.get() >= 1 && cellCalls.get() >= N_ROWS,
+        TestKit.check(rows == N_ROWS && rowsCalls.get() >= 1 && cellCalls.get() >= N_ROWS,
                 "REAL data-source-driven table drew " + rows + " rows x " + N_COLS + " cols via live callbacks");
 
-        System.out.println(failures == 0 ? "RESULT: ALL PASS" : "RESULT: " + failures + " FAILURE(S)");
-        window.performClose(null);
-        System.exit(failures == 0 ? 0 : 1);
+        System.out.println(TestKit.failures() == 0 ? "RESULT: ALL PASS" : "RESULT: " + TestKit.failures() + " FAILURE(S)");
+        TestKit.close(window);
+        TestKit.end();
     }
 
     /** {@code [obj respondsToSelector:aSel]} via the (BOOL, id) handle (SEL rides an id register). */
@@ -182,19 +177,5 @@ public final class TableViewTest {
     }
 
     /** True non-blocking pump: past deadline drains the queue; sendEvent + updateWindows. */
-    private static void pump(NSApplication app, long ms) throws InterruptedException {
-        long deadline = System.currentTimeMillis() + ms;
-        while (System.currentTimeMillis() < deadline) {
-            MemorySegment until = ObjC.msgSendIdDouble(
-                    ObjC.cls("NSDate"), ObjC.sel("dateWithTimeIntervalSince1970:"), 0.0);
-            nsui.NSEvent ev;
-            int n = 0;
-            while ((ev = app.nextEvent(-1L, until, "kCFRunLoopDefaultMode", true)) != null) {
-                app.sendEvent(ev);
-                if (++n > 400) break;
-            }
-            app.updateWindows();
-            Thread.sleep(10);
-        }
-    }
+    
 }

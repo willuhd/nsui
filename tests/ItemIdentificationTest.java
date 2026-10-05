@@ -17,22 +17,19 @@ import nsui.objc.ObjC;
  */
 public final class ItemIdentificationTest {
 
-    private static int failures;
+    
 
-    private static void check(boolean ok, String msg) {
-        System.out.println((ok ? "PASS" : "FAIL") + ": " + msg);
-        if (!ok) failures++;
-    }
+    
 
     public static void main(String[] args) throws Throwable {
         System.out.println("=== ItemIdentificationTest — NSToolbarItem identifier round-trip ===");
         ObjC.init();
 
         NSToolbarItem item = NSToolbarItem.create("test.item.1");
-        check(item != null && item.peer().address() != 0, "NSToolbarItem.create(\"test.item.1\") non-nil");
+        TestKit.check(item != null && item.peer().address() != 0, "NSToolbarItem.create(\"test.item.1\") non-nil");
 
         // Interface conformance
-        check(item instanceof NSUserInterfaceItemIdentification,
+        TestKit.check(item instanceof NSUserInterfaceItemIdentification,
                 "NSToolbarItem instanceof NSUserInterfaceItemIdentification [got " + (item instanceof NSUserInterfaceItemIdentification) + "]");
 
         // initial identifier — toolbar item's itemIdentifier is "test.item.1"; identifier may mirror it or be distinct
@@ -43,18 +40,18 @@ public final class ItemIdentificationTest {
         // Also verify itemIdentifier remains stable
         String itemId = item.itemIdentifier();
         System.out.println("  itemIdentifier = \"" + itemId + "\"");
-        check("test.item.1".equals(itemId), "itemIdentifier round-trip == \"test.item.1\" [got \"" + itemId + "\"]");
+        TestKit.check("test.item.1".equals(itemId), "itemIdentifier round-trip == \"test.item.1\" [got \"" + itemId + "\"]");
 
         // setIdentifier round-trip
         item.setIdentifier("com.example.second");
         String after = item.identifier();
         System.out.println("  after setIdentifier(\"com.example.second\") -> \"" + after + "\"");
-        check("com.example.second".equals(after), "identifier round-trip after setIdentifier(\"com.example.second\") [got \"" + after + "\"]");
+        TestKit.check("com.example.second".equals(after), "identifier round-trip after setIdentifier(\"com.example.second\") [got \"" + after + "\"]");
 
         // second mutation
         item.setIdentifier("com.example.third");
         String after2 = item.identifier();
-        check("com.example.third".equals(after2), "identifier round-trip second mutation [got \"" + after2 + "\"]");
+        TestKit.check("com.example.third".equals(after2), "identifier round-trip second mutation [got \"" + after2 + "\"]");
 
         // nil clear (should not crash; result may be nil)
         try {
@@ -63,17 +60,17 @@ public final class ItemIdentificationTest {
             System.out.println("  after setIdentifier(null) -> " + (cleared == null ? "null" : "\"" + cleared + "\""));
             // Accept null or empty as cleared; just ensure no crash and not still previous value
             boolean clearedOk = cleared == null || cleared.isEmpty() || !cleared.equals("com.example.third");
-            check(clearedOk, "identifier after setIdentifier(null) cleared or nil [got " + (cleared == null ? "null" : "\"" + cleared + "\"") + "]");
+            TestKit.check(clearedOk, "identifier after setIdentifier(null) cleared or nil [got " + (cleared == null ? "null" : "\"" + cleared + "\"") + "]");
             // restore for stress
             item.setIdentifier("com.example.stress");
         } catch (Throwable t) {
-            check(false, "setIdentifier(null) threw: " + t);
+            TestKit.check(false, "setIdentifier(null) threw: " + t);
         }
 
         // Direct NSUserInterfaceItemIdentification interface use
         NSUserInterfaceItemIdentification iid = item;
         iid.setIdentifier("via.interface.id");
-        check("via.interface.id".equals(iid.identifier()), "NSUserInterfaceItemIdentification interface set/get [got \"" + iid.identifier() + "\"]");
+        TestKit.check("via.interface.id".equals(iid.identifier()), "NSUserInterfaceItemIdentification interface set/get [got \"" + iid.identifier() + "\"]");
 
         // Stress 200 iterations
         System.out.println("  stress: 200x setIdentifier/get ...");
@@ -84,15 +81,15 @@ public final class ItemIdentificationTest {
             String got = item.identifier();
             if (!id.equals(got)) {
                 stressOk = false;
-                check(false, "stress iteration " + i + ": expected \"" + id + "\" got \"" + got + "\"");
+                TestKit.check(false, "stress iteration " + i + ": expected \"" + id + "\" got \"" + got + "\"");
                 break;
             }
         }
         if (stressOk) {
-            check(true, "stress 200 iterations identifier round-trip no crash");
+            TestKit.check(true, "stress 200 iterations identifier round-trip no crash");
         }
 
-        System.out.println(failures == 0 ? "RESULT: ALL PASS" : "RESULT: " + failures + " FAILURE(S)");
-        System.exit(failures == 0 ? 0 : 1);
+        System.out.println(TestKit.failures() == 0 ? "RESULT: ALL PASS" : "RESULT: " + TestKit.failures() + " FAILURE(S)");
+        TestKit.end();
     }
 }

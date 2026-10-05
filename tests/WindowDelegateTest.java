@@ -54,12 +54,9 @@ import nsui.objc.Sig;
  */
 public final class WindowDelegateTest {
 
-    private static int failures;
+    
 
-    private static void check(boolean ok, String msg) {
-        System.out.println((ok ? "PASS" : "FAIL") + ": " + msg);
-        if (!ok) failures++;
-    }
+    
 
     public static void main(String[] args) throws Throwable {
         System.out.println("=== WindowDelegateTest — void notifications + multi-selector routing on one delegate ===");
@@ -79,28 +76,29 @@ public final class WindowDelegateTest {
         voids.put("windowDidMove:",   sender -> moved.set(true));       // pure notification
 
         MemorySegment winDelegate = DelegateProxy.delegate("NSObject", "NSUIWindowTriDelegate", bools, voids);
-        check(winDelegate != null && winDelegate.address() != 0, "triple-selector delegate created");
+        TestKit.check(winDelegate != null && winDelegate.address() != 0, "triple-selector delegate created");
 
         NSWindow window = NSWindow.create(new NSRect(0, 0, 400, 250), 15L, 2L, false);
         window.setTitle("window delegate multi-selector");
         window.center();
         window.setReleasedWhenClosed(false);
+        // Veto path asserts still-visible: needs a genuinely visible (not key) window.
+        TestKit.show(window);
         window.setDelegate(NSObject.wrap(winDelegate));
-        app.activateIgnoringOtherApps(true);
-        window.makeKeyAndOrderFront(null);
         app.finishLaunching();
 
         int regBefore = DelegateProxy.registrySize();
-        check(regBefore == 1, "registry holds the one triple-selector delegate (size=" + regBefore + ")");
+        TestKit.check(regBefore == 1, "registry holds the one triple-selector delegate (size=" + regBefore + ")");
 
         // ---- 1) performClose with a VETO: window stays, notifications untouched ----
-        pump(app, 500L);
+        TestKit.pump(app, 500L);
+        // Close alone here (see DelegateTest): ordering out first would mask the veto.
         window.performClose(null);
-        pump(app, 500L);
+        TestKit.pump(app, 500L);
 
-        check(window.isVisible(), "windowShouldClose vetoed the close: window still visible");
-        check(!resized.get(), "windowDidResize NOT fired while vetoing close");
-        check(!moved.get(),   "windowDidMove NOT fired while vetoing close");
+        TestKit.check(window.isVisible(), "windowShouldClose vetoed the close: window still visible");
+        TestKit.check(!resized.get(), "windowDidResize NOT fired while vetoing close");
+        TestKit.check(!moved.get(),   "windowDidMove NOT fired while vetoing close");
         System.out.println("after vetoed close: isVisible=" + window.isVisible()
                 + " resized=" + resized.get() + " moved=" + moved.get() + " (expected true/false/false)");
         System.out.println("PASS: Java veto — void selectors stayed quiet");
@@ -110,8 +108,8 @@ public final class WindowDelegateTest {
         // go through the vocabulary RECT+BOOL void handle, cached and invoked via invokeExact.
         MethodHandle setFrame = ObjC.handle(Sig.of(Sig.Ret.VOID, Sig.Arg.RECT, Sig.Arg.BOOL)); // (id, SEL, NSRect, BOOL) -> void
         setFrame.invokeExact(window.peer(), ObjC.sel("setFrame:display:"), new NSRect(120, 90, 560, 380).toSegment(), false);
-        pump(app, 800L);
-        check(resized.get(), "windowDidResize FIRED after setFrame:display: (size changed)");
+        TestKit.pump(app, 800L);
+        TestKit.check(resized.get(), "windowDidResize FIRED after setFrame:display: (size changed)");
         System.out.println("after setFrame:display: resized=" + resized.get() + " moved=" + moved.get());
 
         // NOTE (honest AppKit finding, verified in the probe): setFrame:display: posting BOTH a
@@ -124,30 +122,16 @@ public final class WindowDelegateTest {
         MethodHandle setFrameOrigin = ObjC.handle(Sig.of(Sig.Ret.VOID, Sig.Arg.POINT)); // (id, SEL, NSPoint) -> void
         MemorySegment newPoint = ObjC.rect(200, 150, 0, 0);   // only x/y (first two doubles) are read as NSPoint
         setFrameOrigin.invokeExact(window.peer(), ObjC.sel("setFrameOrigin:"), newPoint);
-        pump(app, 800L);
-        check(moved.get(),   "windowDidMove FIRED after setFrameOrigin: (origin changed)");
+        TestKit.pump(app, 800L);
+        TestKit.check(moved.get(),   "windowDidMove FIRED after setFrameOrigin: (origin changed)");
         System.out.println("after setFrameOrigin: moved=" + moved.get() + " (expected true)");
 
         System.out.println("PASS: ONE instance routed windowShouldClose + windowDidResize + "
                 + "windowDidMove across bool AND void selectors");
-        check(DelegateProxy.registrySize() == regBefore,
+        TestKit.check(DelegateProxy.registrySize() == regBefore,
                 "registry unchanged (no churn) (size=" + DelegateProxy.registrySize() + ")");
 
-        System.out.println(failures == 0 ? "RESULT: ALL PASS" : "RESULT: " + failures + " FAILURE(S)");
-        System.exit(failures == 0 ? 0 : 1);
-    }
-
-    /** Pump the AppKit run loop for {@code millis} ms (same pattern as Main.pumpEvents). */
-    private static void pump(NSApplication app, long millis) throws InterruptedException {
-        MemorySegment dateCls = ObjC.cls("NSDate");
-        String mode = "kCFRunLoopDefaultMode";
-        long deadline = System.currentTimeMillis() + millis;
-        while (System.currentTimeMillis() < deadline) {
-            MemorySegment until = ObjC.msgSendIdDouble(dateCls, ObjC.sel("dateWithTimeIntervalSinceNow:"), 0.05);
-            NSEvent ev = app.nextEvent(-1L /* NSEventMaskAny */, until, mode, true);
-            if (ev != null) app.sendEvent(ev);
-            app.updateWindows();
-            Thread.sleep(10);
-        }
+        System.out.println(TestKit.failures() == 0 ? "RESULT: ALL PASS" : "RESULT: " + TestKit.failures() + " FAILURE(S)");
+        TestKit.end();
     }
 }

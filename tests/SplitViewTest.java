@@ -8,14 +8,10 @@ import nsui.NSWindow;
 import nsui.objc.ObjC;
 
 public final class SplitViewTest {
-    private static int failures;
+    
     private static int asserts;
 
-    private static void check(boolean ok, String msg) {
-        asserts++;
-        System.out.println((ok ? "PASS" : "FAIL") + ": " + msg);
-        if (!ok) failures++;
-    }
+    private static void check(boolean ok, String msg) { asserts++; TestKit.check(ok, msg); }
 
     public static void main(String[] args) throws Throwable {
         System.out.println("=== SplitViewTest — NSSplitView ===");
@@ -80,14 +76,12 @@ public final class SplitViewTest {
         window.setReleasedWhenClosed(false);
         window.setContentView(split);
         window.center();
-        app.activateIgnoringOtherApps(true);
-        window.makeKeyAndOrderFront(null);
         app.finishLaunching();
         // Must set vertical for meaningful position along width
         split.setVertical(true);
-        pumpForMs(app, 800);
+        TestKit.pump(app, 800);
         ObjC.msgSendVoid(split.peer(), ObjC.sel("layoutSubtreeIfNeeded"));
-        pumpForMs(app, 200);
+        TestKit.pump(app, 200);
 
         // Set divider position to 150 (left pane 150pt wide)
         try {
@@ -100,7 +94,7 @@ public final class SplitViewTest {
         }
 
         // Give AppKit a moment to apply
-        pumpForMs(app, 300);
+        TestKit.pump(app, 300);
         ObjC.msgSendVoid(split.peer(), ObjC.sel("layoutSubtreeIfNeeded"));
         // Query frames — they should be non-zero and distinct
         NSRect f1 = pane1.frame();
@@ -110,26 +104,12 @@ public final class SplitViewTest {
         check(f1.width() > 0 && f1.height() > 0, "pane1 has non-zero size after layout");
         check(f2.width() > 0 && f2.height() > 0, "pane2 has non-zero size after layout");
 
-        System.out.println(failures == 0
+        System.out.println(TestKit.failures() == 0
                 ? "RESULT: ALL PASS (" + asserts + " assertions)"
-                : "RESULT: " + failures + " of " + asserts + " assertions FAILED");
-        window.performClose(null);
-        System.exit(failures == 0 ? 0 : 1);
+                : "RESULT: " + TestKit.failures() + " of " + asserts + " assertions FAILED");
+        TestKit.close(window);
+        TestKit.end();
     }
 
-    private static void pumpForMs(NSApplication app, long ms) throws InterruptedException {
-        long deadline = System.currentTimeMillis() + ms;
-        while (System.currentTimeMillis() < deadline) {
-            java.lang.foreign.MemorySegment until = ObjC.msgSendIdDouble(
-                    ObjC.cls("NSDate"), ObjC.sel("dateWithTimeIntervalSince1970:"), 0.0);
-            nsui.NSEvent ev;
-            int n = 0;
-            while ((ev = app.nextEvent(-1L, until, "kCFRunLoopDefaultMode", true)) != null) {
-                app.sendEvent(ev);
-                if (++n > 400) break;
-            }
-            app.updateWindows();
-            Thread.sleep(10);
-        }
-    }
+    
 }

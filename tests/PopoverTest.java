@@ -2,6 +2,7 @@ package nsui.tests;
 
 import java.lang.foreign.MemorySegment;
 
+import nsui.NSApplication;
 import nsui.NSView;
 import nsui.NSRect;
 import nsui.NSSize;
@@ -18,24 +19,17 @@ import static nsui.objc.Sig.Ret;
  * Never actually shows the popover in a blocking way; just verifies selectors and peers.
  */
 public final class PopoverTest {
-    private static int failures;
+    
     private static int asserts;
 
-    private static void check(boolean ok, String msg) {
-        asserts++;
-        System.out.println((ok ? "PASS" : "FAIL") + ": " + msg);
-        if (!ok) failures++;
-    }
+    private static void check(boolean ok, String msg) { asserts++; TestKit.check(ok, msg); }
 
     public static void main(String[] args) {
         System.out.println("=== PopoverTest — NSPopover / NSViewController ===");
         try {
             ObjC.init();
         } catch (Throwable t) {
-            System.out.println("SKIP: ObjC.init failed (connection error or not macOS): " + t);
-            t.printStackTrace(System.out);
-            System.out.println("RESULT: SKIP (connection error, continuing)");
-            System.exit(0);
+            TestKit.skip("ObjC.init failed (connection error or not macOS): : " + t);
         }
 
         // ---- NSViewController minimal ----
@@ -190,7 +184,7 @@ public final class PopoverTest {
                     win.center();
                     anchor = NSView.create(new NSRect(0, 0, 400, 300), (ctx, dirty) -> {});
                     win.setContentView(anchor);
-                    try { win.makeKeyAndOrderFront(null); } catch (Throwable ignore) {}
+                    try { TestKit.show(win); } catch (Throwable ignore) {}
                     // brief pump to let window server attach
                     try { Thread.sleep(50); } catch (InterruptedException ie) {}
                 } catch (Throwable e) {
@@ -229,13 +223,21 @@ public final class PopoverTest {
                     check(false, "Sig vocabulary missing void(rect,id,int): " + t2);
                 }
                 check(true, "NSPopover preferredEdge values 0..3 handled (guarded)");
-                try { if (win != null) win.performClose(null); } catch (Throwable ignore) {}
+                try { if (win != null) TestKit.close(win); } catch (Throwable ignore) {}
             } catch (Throwable t) {
                 check(false, "NSPopover showRelativeToRect outer threw: " + t);
             }
 
-            // final close cleanup
-            try { pop.close(); } catch (Throwable ignore) {}
+            // final close cleanup — dismissal (animated) completes on the runloop:
+            // close, then pump to let it land, with bounded retries. Sleeping on
+            // the main thread would freeze the runloop and the flag never flips.
+            try {
+                NSApplication app = TestKit.app();
+                for (int i = 0; i < 10 && pop.isShown(); i++) {
+                    try { pop.close(); } catch (Throwable ignore) {}
+                    TestKit.pump(app, 100);
+                }
+            } catch (Throwable ignore) {}
             check(pop.isShown() == false, "NSPopover final isShown false after close");
 
         } catch (Throwable t) {
@@ -243,9 +245,9 @@ public final class PopoverTest {
             t.printStackTrace(System.out);
         }
 
-        System.out.println(failures == 0
+        System.out.println(TestKit.failures() == 0
                 ? "RESULT: ALL PASS (" + asserts + " assertions)"
-                : "RESULT: " + failures + " of " + asserts + " assertions FAILED");
-        System.exit(failures == 0 ? 0 : 1);
+                : "RESULT: " + TestKit.failures() + " of " + asserts + " assertions FAILED");
+        TestKit.end();
     }
 }

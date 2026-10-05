@@ -139,6 +139,157 @@ public class NSAttributedString extends NSObject {
         }
     }
 
+    /// [attributedString rangeOfTextBlock:atIndex:] -> NSRange (block is NSTextBlock*).
+    public NSRange rangeOfTextBlock(MemorySegment block, long location) {
+        ensureInit();
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.RANGE, Arg.ID, Arg.INT));
+            MemorySegment s = (MemorySegment) h.invokeExact(ObjC.structSlot(), peer,
+                    ObjC.sel("rangeOfTextBlock:atIndex:"),
+                    (MemorySegment) (block == null ? MemorySegment.NULL : block), location);
+            return NSRange.fromSegment(s);
+        } catch (Throwable t) {
+            throw new RuntimeException("rangeOfTextBlock:atIndex: failed", t);
+        }
+    }
+
+    /// [attributedString rangeOfTextTable:atIndex:] -> NSRange (table is NSTextTable*).
+    public NSRange rangeOfTextTable(MemorySegment table, long location) {
+        ensureInit();
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.RANGE, Arg.ID, Arg.INT));
+            MemorySegment s = (MemorySegment) h.invokeExact(ObjC.structSlot(), peer,
+                    ObjC.sel("rangeOfTextTable:atIndex:"),
+                    (MemorySegment) (table == null ? MemorySegment.NULL : table), location);
+            return NSRange.fromSegment(s);
+        } catch (Throwable t) {
+            throw new RuntimeException("rangeOfTextTable:atIndex: failed", t);
+        }
+    }
+
+    /// [attributedString rangeOfTextList:atIndex:] -> NSRange (list is NSTextList*).
+    public NSRange rangeOfTextList(MemorySegment list, long location) {
+        ensureInit();
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.RANGE, Arg.ID, Arg.INT));
+            MemorySegment s = (MemorySegment) h.invokeExact(ObjC.structSlot(), peer,
+                    ObjC.sel("rangeOfTextList:atIndex:"),
+                    (MemorySegment) (list == null ? MemorySegment.NULL : list), location);
+            return NSRange.fromSegment(s);
+        } catch (Throwable t) {
+            throw new RuntimeException("rangeOfTextList:atIndex: failed", t);
+        }
+    }
+
+    /// `+[NSAttributedString textTypes]` — pasteboard types loadable as attributed strings.
+    public static NSArray textTypes() {
+        ensureInit();
+        return NSArray.wrap(ObjC.msgSendId(ObjC.cls("NSAttributedString"), ObjC.sel("textTypes")));
+    }
+
+    /// `+[NSAttributedString textUnfilteredTypes]` — unfiltered pasteboard types.
+    public static NSArray textUnfilteredTypes() {
+        ensureInit();
+        return NSArray.wrap(ObjC.msgSendId(ObjC.cls("NSAttributedString"), ObjC.sel("textUnfilteredTypes")));
+    }
+
+    /// `[[NSAttributedString alloc] initWithRTF:documentAttributes:]` — dictOut may be NULL.
+    public static NSAttributedString createWithRTF(MemorySegment rtfData, MemorySegment dictOutOrNull) {
+        ensureInit();
+        MemorySegment alloc = ObjC.msgSendId(ObjC.cls("NSAttributedString"), ObjC.sel("alloc"));
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.ID, Arg.ID));
+            MemorySegment p = (MemorySegment) h.invokeExact(alloc, ObjC.sel("initWithRTF:documentAttributes:"),
+                    (MemorySegment) (rtfData == null ? MemorySegment.NULL : rtfData),
+                    (MemorySegment) (dictOutOrNull == null ? MemorySegment.NULL : dictOutOrNull));
+            return wrap(p);
+        } catch (Throwable t) {
+            throw new RuntimeException("initWithRTF:documentAttributes: failed", t);
+        }
+    }
+
+    /// `[[NSAttributedString alloc] initWithHTML:documentAttributes:]` — dictOut may be NULL.
+    public static NSAttributedString createWithHTML(MemorySegment htmlData, MemorySegment dictOutOrNull) {
+        ensureInit();
+        MemorySegment alloc = ObjC.msgSendId(ObjC.cls("NSAttributedString"), ObjC.sel("alloc"));
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.ID, Arg.ID));
+            MemorySegment p = (MemorySegment) h.invokeExact(alloc, ObjC.sel("initWithHTML:documentAttributes:"),
+                    (MemorySegment) (htmlData == null ? MemorySegment.NULL : htmlData),
+                    (MemorySegment) (dictOutOrNull == null ? MemorySegment.NULL : dictOutOrNull));
+            return wrap(p);
+        } catch (Throwable t) {
+            throw new RuntimeException("initWithHTML:documentAttributes: failed", t);
+        }
+    }
+
+    /// `[[NSAttributedString alloc] initWithHTML:baseURL:documentAttributes:]`.
+    public static NSAttributedString createWithHTMLBaseURL(MemorySegment htmlData, MemorySegment baseURL, MemorySegment dictOutOrNull) {
+        ensureInit();
+        MemorySegment alloc = ObjC.msgSendId(ObjC.cls("NSAttributedString"), ObjC.sel("alloc"));
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.ID, Arg.ID, Arg.ID));
+            MemorySegment p = (MemorySegment) h.invokeExact(alloc, ObjC.sel("initWithHTML:baseURL:documentAttributes:"),
+                    (MemorySegment) (htmlData == null ? MemorySegment.NULL : htmlData),
+                    (MemorySegment) (baseURL == null ? MemorySegment.NULL : baseURL),
+                    (MemorySegment) (dictOutOrNull == null ? MemorySegment.NULL : dictOutOrNull));
+            return wrap(p);
+        } catch (Throwable t) {
+            throw new RuntimeException("initWithHTML:baseURL:documentAttributes: failed", t);
+        }
+    }
+
+    /// `[[NSAttributedString alloc] initWithDocFormat:documentAttributes:]`.
+    public static NSAttributedString createWithDocFormat(MemorySegment docData, MemorySegment dictOutOrNull) {
+        ensureInit();
+        MemorySegment alloc = ObjC.msgSendId(ObjC.cls("NSAttributedString"), ObjC.sel("alloc"));
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.ID, Arg.ID));
+            MemorySegment p = (MemorySegment) h.invokeExact(alloc, ObjC.sel("initWithDocFormat:documentAttributes:"),
+                    (MemorySegment) (docData == null ? MemorySegment.NULL : docData),
+                    (MemorySegment) (dictOutOrNull == null ? MemorySegment.NULL : dictOutOrNull));
+            return wrap(p);
+        } catch (Throwable t) {
+            throw new RuntimeException("initWithDocFormat:documentAttributes: failed", t);
+        }
+    }
+
+    /// [attributedString RTFFromRange:documentAttributes:] -> NSData* (raw segment).
+    public MemorySegment rtfFromRange(NSRange range, MemorySegment docAttributes) {
+        ensureInit();
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.RANGE, Arg.ID));
+            return (MemorySegment) h.invokeExact(peer, ObjC.sel("RTFFromRange:documentAttributes:"),
+                    range.toSegment(), (MemorySegment) (docAttributes == null ? MemorySegment.NULL : docAttributes));
+        } catch (Throwable t) {
+            throw new RuntimeException("RTFFromRange:documentAttributes: failed", t);
+        }
+    }
+
+    /// [attributedString RTFDFromRange:documentAttributes:] -> NSData* (raw segment).
+    public MemorySegment rtfdFromRange(NSRange range, MemorySegment docAttributes) {
+        ensureInit();
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.RANGE, Arg.ID));
+            return (MemorySegment) h.invokeExact(peer, ObjC.sel("RTFDFromRange:documentAttributes:"),
+                    range.toSegment(), (MemorySegment) (docAttributes == null ? MemorySegment.NULL : docAttributes));
+        } catch (Throwable t) {
+            throw new RuntimeException("RTFDFromRange:documentAttributes: failed", t);
+        }
+    }
+
+    /// [attributedString docFormatFromRange:documentAttributes:] -> NSData* (raw segment).
+    public MemorySegment docFormatFromRange(NSRange range, MemorySegment docAttributes) {
+        ensureInit();
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.RANGE, Arg.ID));
+            return (MemorySegment) h.invokeExact(peer, ObjC.sel("docFormatFromRange:documentAttributes:"),
+                    range.toSegment(), (MemorySegment) (docAttributes == null ? MemorySegment.NULL : docAttributes));
+        } catch (Throwable t) {
+            throw new RuntimeException("docFormatFromRange:documentAttributes: failed", t);
+        }
+    }
+
     /// [attributedString isEqualToAttributedString:]
     public boolean isEqualToAttributedString(NSAttributedString other) {
         ensureInit();
@@ -149,6 +300,67 @@ public class NSAttributedString extends NSObject {
             throw new RuntimeException("isEqualToAttributedString: failed", t);
         }
     }
+
+    /// `[[NSAttributedString alloc] initWithAttributedString:attrStr]`
+    public static NSAttributedString create(NSAttributedString attrStr) {
+        ensureInit();
+        MemorySegment alloc = ObjC.msgSendId(ObjC.cls("NSAttributedString"), ObjC.sel("alloc"));
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.ID));
+            MemorySegment p = (MemorySegment) h.invokeExact(alloc, ObjC.sel("initWithAttributedString:"),
+                    (MemorySegment) (attrStr == null ? MemorySegment.NULL : attrStr.peer()));
+            if (p == null || p.address() == 0) throw new IllegalStateException("NSAttributedString initWithAttributedString: returned nil");
+            return new NSAttributedString(p);
+        } catch (Throwable t) {
+            throw new RuntimeException("initWithAttributedString: failed", t);
+        }
+    }
+
+    /// [attributedString fontAttributesInRange:] -> NSDictionary* ("copy font" attributes).
+    public MemorySegment fontAttributesInRange(NSRange range) {
+        ensureInit();
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.RANGE));
+            return (MemorySegment) h.invokeExact(peer, ObjC.sel("fontAttributesInRange:"), range.toSegment());
+        } catch (Throwable t) {
+            throw new RuntimeException("fontAttributesInRange: failed", t);
+        }
+    }
+
+    /// [attributedString rulerAttributesInRange:] -> NSDictionary* ("copy ruler" attributes).
+    public MemorySegment rulerAttributesInRange(NSRange range) {
+        ensureInit();
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.RANGE));
+            return (MemorySegment) h.invokeExact(peer, ObjC.sel("rulerAttributesInRange:"), range.toSegment());
+        } catch (Throwable t) {
+            throw new RuntimeException("rulerAttributesInRange: failed", t);
+        }
+    }
+
+    /// [attributedString containsAttachmentsInRange:] — YES if an attachment sits in range.
+    public boolean containsAttachmentsInRange(NSRange range) {
+        ensureInit();
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.BOOL, Arg.RANGE));
+            return (boolean) h.invokeExact(peer, ObjC.sel("containsAttachmentsInRange:"), range.toSegment());
+        } catch (Throwable t) {
+            throw new RuntimeException("containsAttachmentsInRange: failed", t);
+        }
+    }
+
+    /// [attributedString containsAttachments] — YES if any attachment exists.
+    public boolean containsAttachments() {
+        return ObjC.msgSendBool(peer, ObjC.sel("containsAttachments"));
+    }
+
+    // SDK omissions (no vocabulary shape — verified by grep in Sig.java, reported):
+    // -doubleClickAtIndex: / -nextWordFromIndex:forward: / -lineBreakBeforeIndex:withinRange: /
+    // -lineBreakByHyphenatingBeforeIndex:withinRange: / -itemNumberInTextList:atIndex:
+    // (RANGE/INT return with INT+RANGE args); -attributesAtIndex:longestEffectiveRange:inRange:
+    // and -attribute:atIndex:longestEffectiveRange:inRange: (ID,INT,ID,RANGE); block-based
+    // -enumerateAttributesInRange:... / -enumerateAttribute:... (upcall blocks); NSError**
+    // document I/O (-initWithData:.../ -dataFromRange:.../ -fileWrapperFromRange:...).
 
     /// [attributedString mutableCopy] -> NSMutableAttributedString
     public NSMutableAttributedString mutableCopy() {

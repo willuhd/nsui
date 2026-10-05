@@ -192,7 +192,9 @@ public final class NSFontManager extends NSObject {
 
     // ---- font panel ----
 
-    /// [manager fontPanel:] — create/display font panel
+    /// [manager fontPanel:] — create/display font panel.
+    // NOTE: needs of(ID,BOOL) — no vocabulary entry (handle() throws at call time).
+    // Pre-existing wrapper kept for API stability; not exercised until Sig grows — reported.
     public NSFontPanel fontPanel(boolean create) {
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.BOOL));
@@ -232,4 +234,156 @@ public final class NSFontManager extends NSObject {
     public void setEnabled(boolean flag) {
         ObjC.msgSendVoidBool(peer, ObjC.sel("setEnabled:"), flag);
     }
+
+    /// `+[NSFontManager setFontPanelFactory:]` — factory is Class (may be NULL).
+    public static void setFontPanelFactory(MemorySegment factoryOrNull) {
+        ObjC.msgSendVoidId(ObjC.cls("NSFontManager"), ObjC.sel("setFontPanelFactory:"),
+                (MemorySegment) (factoryOrNull == null ? MemorySegment.NULL : factoryOrNull));
+    }
+
+    /// `+[NSFontManager setFontManagerFactory:]` — factory is Class (may be NULL).
+    public static void setFontManagerFactory(MemorySegment factoryOrNull) {
+        ObjC.msgSendVoidId(ObjC.cls("NSFontManager"), ObjC.sel("setFontManagerFactory:"),
+                (MemorySegment) (factoryOrNull == null ? MemorySegment.NULL : factoryOrNull));
+    }
+
+    // -fontMenu: omitted: (BOOL)->ID has no vocabulary entry (grep MISS) — reported.
+
+    /// [manager setFontMenu:] — menu is NSMenu* (may be NULL).
+    public void setFontMenu(MemorySegment menu) {
+        ObjC.msgSendVoidId(peer, ObjC.sel("setFontMenu:"),
+                (MemorySegment) (menu == null ? MemorySegment.NULL : menu));
+    }
+
+    // -convertFont:toNotHaveTrait: omitted: (ID,INT)->ID i.e. of(ID,ID,INT) has no vocabulary
+    // entry (grep: 0 matches) — reported. Same gap breaks the pre-existing
+    // -convertFont:toHaveTrait: wrapper (convertFontToHaveTrait) and
+    // -fontWithFamily:traits:weight:size: (fontWithFamilyTraitsWeightSize, needs
+    // of(ID,ID,INT,INT,DOUBLE), grep: 0 matches) at CALL time; both are left in place
+    // for API stability and documented here until Sig gains those shapes.
+
+    // -convertWeight:ofFont: omitted: (BOOL,ID)->ID has no vocabulary entry (grep MISS) — reported.
+
+    /// [manager sendAction] — send the current action up the responder chain.
+    public boolean sendAction() {
+        return ObjC.msgSendBool(peer, ObjC.sel("sendAction"));
+    }
+
+    /// [manager localizedNameForFamily:face:] — display name for a family/face pair.
+    public String localizedNameForFamilyFace(String family, String face) {
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.ID, Arg.ID));
+            MemorySegment s = (MemorySegment) h.invokeExact(peer,
+                    ObjC.sel("localizedNameForFamily:face:"), ObjC.nsstring(family == null ? "" : family),
+                    (MemorySegment) (face == null ? MemorySegment.NULL : ObjC.nsstring(face)));
+            return ObjC.toString(s);
+        } catch (Throwable t) {
+            throw new RuntimeException("localizedNameForFamily:face: failed", t);
+        }
+    }
+
+    /// [manager setSelectedAttributes:isMultiple:] — attributes is NSDictionary*.
+    public void setSelectedAttributesIsMultiple(MemorySegment attributes, boolean isMultiple) {
+        ensureInit();
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.BOOL));
+            h.invokeExact(peer, ObjC.sel("setSelectedAttributes:isMultiple:"),
+                    (MemorySegment) (attributes == null ? MemorySegment.NULL : attributes), isMultiple);
+        } catch (Throwable t) {
+            throw new RuntimeException("setSelectedAttributes:isMultiple: failed", t);
+        }
+    }
+
+    /// [manager convertAttributes:] — NSDictionary* in/out (raw segments).
+    public MemorySegment convertAttributes(MemorySegment attributes) {
+        ensureInit();
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.ID));
+            return (MemorySegment) h.invokeExact(peer, ObjC.sel("convertAttributes:"),
+                    (MemorySegment) (attributes == null ? MemorySegment.NULL : attributes));
+        } catch (Throwable t) {
+            throw new RuntimeException("convertAttributes: failed", t);
+        }
+    }
+
+    /// [manager currentFontAction] (macOS 10.5+).
+    public long currentFontAction() {
+        ensureInit();
+        try {
+            return (long) hGetInt.invokeExact(peer, ObjC.sel("currentFontAction"));
+        } catch (Throwable t) {
+            throw new RuntimeException("currentFontAction failed", t);
+        }
+    }
+
+    /// [manager convertFontTraits:] (macOS 10.5+).
+    public long convertFontTraits(long traits) {
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.INT, Arg.INT));
+            return (long) h.invokeExact(peer, ObjC.sel("convertFontTraits:"), traits);
+        } catch (Throwable t) {
+            throw new RuntimeException("convertFontTraits: failed", t);
+        }
+    }
+
+    /// [manager target] (macOS 10.5+; raw id).
+    public MemorySegment target() {
+        return ObjC.msgSendId(peer, ObjC.sel("target"));
+    }
+
+    /// [manager setTarget:] (macOS 10.5+; raw id).
+    public void setTarget(MemorySegment target) {
+        ObjC.msgSendVoidId(peer, ObjC.sel("setTarget:"),
+                (MemorySegment) (target == null ? MemorySegment.NULL : target));
+    }
+
+    /// [manager action] -> SEL (raw pointer segment; bridge via ObjC.sel for sending).
+    public MemorySegment action() {
+        return ObjC.msgSendId(peer, ObjC.sel("action"));
+    }
+
+    /// [manager setAction:] — action is SEL (raw pointer segment).
+    public void setAction(MemorySegment action) {
+        ObjC.msgSendVoidId(peer, ObjC.sel("setAction:"),
+                (MemorySegment) (action == null ? MemorySegment.NULL : action));
+    }
+
+    /// [manager fontNamed:hasTraits:] — YES if the named font carries the traits.
+    public boolean fontNamedHasTraits(String fontName, long traits) {
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.BOOL, Arg.ID, Arg.INT));
+            return (boolean) h.invokeExact(peer, ObjC.sel("fontNamed:hasTraits:"),
+                    ObjC.nsstring(fontName == null ? "" : fontName), traits);
+        } catch (Throwable t) {
+            throw new RuntimeException("fontNamed:hasTraits: failed", t);
+        }
+    }
+
+    /// [manager availableFontNamesWithTraits:] -> NSArray of NSString (untyped count via NSArray).
+    public NSArray availableFontNamesWithTraits(long traits) {
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.INT));
+            MemorySegment p = (MemorySegment) h.invokeExact(peer,
+                    ObjC.sel("availableFontNamesWithTraits:"), traits);
+            return NSArray.wrap(p);
+        } catch (Throwable t) {
+            throw new RuntimeException("availableFontNamesWithTraits: failed", t);
+        }
+    }
+
+    /// [manager modifyFontViaPanel:]
+    public void modifyFontViaPanel(MemorySegment sender) {
+        ObjC.msgSendVoidId(peer, ObjC.sel("modifyFontViaPanel:"), (MemorySegment) (sender == null ? MemorySegment.NULL : sender));
+    }
+
+    /// [manager orderFrontStylesPanel:]
+    public void orderFrontStylesPanel(MemorySegment sender) {
+        ObjC.msgSendVoidId(peer, ObjC.sel("orderFrontStylesPanel:"), (MemorySegment) (sender == null ? MemorySegment.NULL : sender));
+    }
+
+    // SDK omissions: deprecated collection/font-list API (-availableFontNamesMatchingFontDescriptor:,
+    // -collectionNames, -fontDescriptorsInCollection:, -addCollection:..., -removeCollection:,
+    // -addFontDescriptors:..., -removeFontDescriptor:...) skipped as deprecated; the-
+    // NSFontManager delegate property has no delegate methods (header-deprecated) — skipped.
+    // NSError** collection mutation lives on NSFontCollection (likewise omitted) — reported.
 }

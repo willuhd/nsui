@@ -180,6 +180,94 @@ public final class NSTextContainer extends NSObject {
         }
     }
 
+    // ---- modern size / line-break properties (TextKit 2 era; containerSize kept above) ----
+
+    /// [container size] -> CGSize (use instead of the soft-deprecated containerSize).
+    public NSSize size() {
+        ensureInit();
+        try {
+            MemorySegment s = (MemorySegment) handles.hGetSize().invokeExact(ObjC.structSlot(), peer, ObjC.sel("size"));
+            return NSSize.fromSegment(s);
+        } catch (Throwable t) {
+            throw new RuntimeException("size failed", t);
+        }
+    }
+
+    /// [container setSize:]
+    public void setSize(NSSize size) {
+        ensureInit();
+        try {
+            handles.hSetSize().invokeExact(peer, ObjC.sel("setSize:"), size.toSegment());
+        } catch (Throwable t) {
+            throw new RuntimeException("setSize: failed", t);
+        }
+    }
+
+    /// [container lineBreakMode] -> NSLineBreakMode (long).
+    public long lineBreakMode() {
+        ensureInit();
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.INT));
+            return (long) h.invokeExact(peer, ObjC.sel("lineBreakMode"));
+        } catch (Throwable t) {
+            throw new RuntimeException("lineBreakMode failed", t);
+        }
+    }
+
+    /// [container setLineBreakMode:]
+    public void setLineBreakMode(long mode) {
+        ensureInit();
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.INT));
+            h.invokeExact(peer, ObjC.sel("setLineBreakMode:"), mode);
+        } catch (Throwable t) {
+            throw new RuntimeException("setLineBreakMode: failed", t);
+        }
+    }
+
+    /// [container maximumNumberOfLines] (0 = no limit).
+    public long maximumNumberOfLines() {
+        ensureInit();
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.INT));
+            return (long) h.invokeExact(peer, ObjC.sel("maximumNumberOfLines"));
+        } catch (Throwable t) {
+            throw new RuntimeException("maximumNumberOfLines failed", t);
+        }
+    }
+
+    /// [container setMaximumNumberOfLines:]
+    public void setMaximumNumberOfLines(long max) {
+        ensureInit();
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.INT));
+            h.invokeExact(peer, ObjC.sel("setMaximumNumberOfLines:"), max);
+        } catch (Throwable t) {
+            throw new RuntimeException("setMaximumNumberOfLines: failed", t);
+        }
+    }
+
+    /// [container textLayoutManager] -> NSTextLayoutManager* (TextKit 2; raw, may be nil).
+    public MemorySegment textLayoutManager() {
+        return ObjC.msgSendId(peer, ObjC.sel("textLayoutManager"));
+    }
+
+    /// [container isSimpleRectangularTextContainer]
+    public boolean isSimpleRectangularTextContainer() {
+        return ObjC.msgSendBool(peer, ObjC.sel("isSimpleRectangularTextContainer"));
+    }
+
+    /// [container replaceLayoutManager:] — web-safe layout-manager swap.
+    public void replaceLayoutManager(NSLayoutManager newLayoutManager) {
+        ObjC.msgSendVoidId(peer, ObjC.sel("replaceLayoutManager:"),
+                (MemorySegment) (newLayoutManager == null ? MemorySegment.NULL : newLayoutManager.peer()));
+    }
+
+    // -lineFragmentRectForProposedRect:atIndex:writingDirection:remainingRect: omitted:
+    // (RECT,INT,INT,ID)->RECT has no vocabulary entry (grep MISS) — reported.
+    // Soft-deprecated containerSize/initWithContainerSize:/sweep-direction API kept above
+    // as-is for binary compatibility; prefer size/size:.
+
     // ---- exclusion paths (minimal stub) ----
 
     /// [container exclusionPaths] — NSArray of NSBezierPath ids

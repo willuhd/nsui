@@ -64,6 +64,175 @@ public class NSMutableAttributedString extends NSAttributedString {
         }
     }
 
+    /// `[[NSMutableAttributedString alloc] initWithAttributedString:attrStr]`
+    public static NSMutableAttributedString create(NSAttributedString attrStr) {
+        ensureMutInit();
+        MemorySegment alloc = ObjC.msgSendId(ObjC.cls("NSMutableAttributedString"), ObjC.sel("alloc"));
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.ID));
+            MemorySegment p = (MemorySegment) h.invokeExact(alloc, ObjC.sel("initWithAttributedString:"),
+                    (MemorySegment) (attrStr == null ? MemorySegment.NULL : attrStr.peer()));
+            if (p == null || p.address() == 0) throw new IllegalStateException("NSMutableAttributedString initWithAttributedString: returned nil");
+            return new NSMutableAttributedString(p);
+        } catch (Throwable t) {
+            throw new RuntimeException("initWithAttributedString: failed for NSMutableAttributedString", t);
+        }
+    }
+
+    /// [mutable replaceCharactersInRange:withString:]
+    public void replaceCharactersInRangeWithString(NSRange range, String str) {
+        ensureMutInit();
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.RANGE, Arg.ID));
+            h.invokeExact(peer, ObjC.sel("replaceCharactersInRange:withString:"),
+                    range.toSegment(), ObjC.nsstring(str == null ? "" : str));
+        } catch (Throwable t) {
+            throw new RuntimeException("replaceCharactersInRange:withString: failed", t);
+        }
+    }
+
+    /// [mutable replaceCharactersInRange:withAttributedString:]
+    public void replaceCharactersInRangeWithAttributedString(NSRange range, NSAttributedString attrStr) {
+        ensureMutInit();
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.RANGE, Arg.ID));
+            h.invokeExact(peer, ObjC.sel("replaceCharactersInRange:withAttributedString:"),
+                    range.toSegment(), (MemorySegment) (attrStr == null ? MemorySegment.NULL : attrStr.peer()));
+        } catch (Throwable t) {
+            throw new RuntimeException("replaceCharactersInRange:withAttributedString: failed", t);
+        }
+    }
+
+    /// [mutable insertAttributedString:atIndex:]
+    public void insertAttributedString(NSAttributedString attrStr, long index) {
+        ensureMutInit();
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.INT));
+            h.invokeExact(peer, ObjC.sel("insertAttributedString:atIndex:"),
+                    (MemorySegment) (attrStr == null ? MemorySegment.NULL : attrStr.peer()), index);
+        } catch (Throwable t) {
+            throw new RuntimeException("insertAttributedString:atIndex: failed", t);
+        }
+    }
+
+    /// [mutable deleteCharactersInRange:]
+    public void deleteCharactersInRange(NSRange range) {
+        ensureMutInit();
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.RANGE));
+            h.invokeExact(peer, ObjC.sel("deleteCharactersInRange:"), range.toSegment());
+        } catch (Throwable t) {
+            throw new RuntimeException("deleteCharactersInRange: failed", t);
+        }
+    }
+
+    /// [mutable setAttributedString:] — replace the whole contents.
+    public void setAttributedString(NSAttributedString attrStr) {
+        ObjC.msgSendVoidId(peer, ObjC.sel("setAttributedString:"),
+                (MemorySegment) (attrStr == null ? MemorySegment.NULL : attrStr.peer()));
+    }
+
+    /// [mutable beginEditing] — batch changes; must be balanced with endEditing.
+    public void beginEditing() {
+        ObjC.msgSendVoid(peer, ObjC.sel("beginEditing"));
+    }
+
+    /// [mutable endEditing]
+    public void endEditing() {
+        ObjC.msgSendVoid(peer, ObjC.sel("endEditing"));
+    }
+
+    /// [mutable mutableString] -> NSMutableString* (raw segment).
+    public MemorySegment mutableString() {
+        return ObjC.msgSendId(peer, ObjC.sel("mutableString"));
+    }
+
+    // ---- AppKit attribute fixing ----
+
+    /// [mutable fixAttributesInRange:] — fix font/paragraph/attachment inconsistencies.
+    public void fixAttributesInRange(NSRange range) {
+        ensureMutInit();
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.RANGE));
+            h.invokeExact(peer, ObjC.sel("fixAttributesInRange:"), range.toSegment());
+        } catch (Throwable t) {
+            throw new RuntimeException("fixAttributesInRange: failed", t);
+        }
+    }
+
+    /// [mutable fixFontAttributeInRange:]
+    public void fixFontAttributeInRange(NSRange range) {
+        ensureMutInit();
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.RANGE));
+            h.invokeExact(peer, ObjC.sel("fixFontAttributeInRange:"), range.toSegment());
+        } catch (Throwable t) {
+            throw new RuntimeException("fixFontAttributeInRange: failed", t);
+        }
+    }
+
+    /// [mutable fixParagraphStyleAttributeInRange:]
+    public void fixParagraphStyleAttributeInRange(NSRange range) {
+        ensureMutInit();
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.RANGE));
+            h.invokeExact(peer, ObjC.sel("fixParagraphStyleAttributeInRange:"), range.toSegment());
+        } catch (Throwable t) {
+            throw new RuntimeException("fixParagraphStyleAttributeInRange: failed", t);
+        }
+    }
+
+    /// [mutable fixAttachmentAttributeInRange:]
+    public void fixAttachmentAttributeInRange(NSRange range) {
+        ensureMutInit();
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.RANGE));
+            h.invokeExact(peer, ObjC.sel("fixAttachmentAttributeInRange:"), range.toSegment());
+        } catch (Throwable t) {
+            throw new RuntimeException("fixAttachmentAttributeInRange: failed", t);
+        }
+    }
+
+    // ---- AppKit script/style conveniences ----
+
+    /// [mutable superscriptRange:]
+    public void superscriptRange(NSRange range) {
+        ensureMutInit();
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.RANGE));
+            h.invokeExact(peer, ObjC.sel("superscriptRange:"), range.toSegment());
+        } catch (Throwable t) {
+            throw new RuntimeException("superscriptRange: failed", t);
+        }
+    }
+
+    /// [mutable subscriptRange:]
+    public void subscriptRange(NSRange range) {
+        ensureMutInit();
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.RANGE));
+            h.invokeExact(peer, ObjC.sel("subscriptRange:"), range.toSegment());
+        } catch (Throwable t) {
+            throw new RuntimeException("subscriptRange: failed", t);
+        }
+    }
+
+    /// [mutable unscriptRange:]
+    public void unscriptRange(NSRange range) {
+        ensureMutInit();
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.RANGE));
+            h.invokeExact(peer, ObjC.sel("unscriptRange:"), range.toSegment());
+        } catch (Throwable t) {
+            throw new RuntimeException("unscriptRange: failed", t);
+        }
+    }
+
+    // SDK omissions (no vocabulary shape — verified by grep in Sig.java, reported):
+    // -applyFontTraits:range: / -setAlignment:range: / -setBaseWritingDirection:range:
+    // (VOID,INT,RANGE); deprecated -readFromURL:.../-readFromData:... (NSError-style
+    // multi-id BOOL returns); variadic -appendLocalizedFormat:.
+
     /// [mutable appendAttributedString:other] — also satisfies task's "append" requirement
     public void append(NSAttributedString other) {
         ensureMutInit();

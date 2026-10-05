@@ -185,6 +185,74 @@ public final class NSFontDescriptor extends NSObject {
         }
     }
 
+    /// `+[NSFontDescriptor fontDescriptorWithName:matrix:]` — matrix is NSAffineTransform* (may be NULL).
+    public static NSFontDescriptor fontDescriptorWithNameMatrix(String name, MemorySegment matrix) {
+        ensureInit();
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.ID, Arg.ID));
+            MemorySegment d = (MemorySegment) h.invokeExact(ObjC.cls("NSFontDescriptor"),
+                    ObjC.sel("fontDescriptorWithName:matrix:"), ObjC.nsstring(name == null ? "" : name),
+                    (MemorySegment) (matrix == null ? MemorySegment.NULL : matrix));
+            return wrap(d);
+        } catch (Throwable t) {
+            throw new RuntimeException("fontDescriptorWithName:matrix: failed", t);
+        }
+    }
+
+    /// `+[NSFontDescriptor preferredFontDescriptorForTextStyle:options:]` (macOS 11+).
+    public static NSFontDescriptor preferredFontDescriptorForTextStyleOptions(String style, MemorySegment optionsOrNull) {
+        ensureInit();
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.ID, Arg.ID));
+            MemorySegment d = (MemorySegment) h.invokeExact(ObjC.cls("NSFontDescriptor"),
+                    ObjC.sel("preferredFontDescriptorForTextStyle:options:"), ObjC.nsstring(style == null ? "" : style),
+                    (MemorySegment) (optionsOrNull == null ? MemorySegment.NULL : optionsOrNull));
+            return wrap(d);
+        } catch (Throwable t) {
+            throw new RuntimeException("preferredFontDescriptorForTextStyle:options: failed", t);
+        }
+    }
+
+    /// [descriptor matrix] -> NSAffineTransform* (raw segment, may be nil).
+    public MemorySegment matrix() {
+        ensureInit();
+        try {
+            return (MemorySegment) handles.hGetId().invokeExact(peer, ObjC.sel("matrix"));
+        } catch (Throwable t) {
+            throw new RuntimeException("matrix failed", t);
+        }
+    }
+
+    /// [descriptor requiresFontAssetRequest] (macOS 10.13+).
+    public boolean requiresFontAssetRequest() {
+        return ObjC.msgSendBool(peer, ObjC.sel("requiresFontAssetRequest"));
+    }
+
+    /// [descriptor fontDescriptorWithMatrix:] -> NSFontDescriptor.
+    public NSFontDescriptor fontDescriptorWithMatrix(MemorySegment matrix) {
+        ensureInit();
+        try {
+            MemorySegment d = (MemorySegment) handles.hWithAttrs().invokeExact(peer,
+                    ObjC.sel("fontDescriptorWithMatrix:"),
+                    (MemorySegment) (matrix == null ? MemorySegment.NULL : matrix));
+            return wrap(d);
+        } catch (Throwable t) {
+            throw new RuntimeException("fontDescriptorWithMatrix: failed", t);
+        }
+    }
+
+    /// [descriptor fontDescriptorWithDesign:] -> NSFontDescriptor (macOS 10.15+).
+    public NSFontDescriptor fontDescriptorWithDesign(String design) {
+        ensureInit();
+        try {
+            MemorySegment d = (MemorySegment) handles.hWithAttrs().invokeExact(peer,
+                    ObjC.sel("fontDescriptorWithDesign:"), ObjC.nsstring(design == null ? "" : design));
+            return wrap(d);
+        } catch (Throwable t) {
+            throw new RuntimeException("fontDescriptorWithDesign: failed", t);
+        }
+    }
+
     /// [descriptor matchingFontDescriptorWithMandatoryKeys:] -> NSFontDescriptor
     public NSFontDescriptor matchingFontDescriptor(MemorySegment mandatoryKeys) {
         try {

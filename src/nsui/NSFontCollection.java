@@ -46,6 +46,10 @@ public final class NSFontCollection extends NSObject {
     }
 
     /// fontCollectionWithName:visibility: — a named library collection.
+    // NOTE: the true shape (NSString*,NSUInteger)->id, i.e. ID(ID,INT), has no vocabulary
+    // entry (grep MISS in Sig.java) and Sig.java is not in this batch, so this call cannot
+    // succeed until the vocabulary gains that shape — reported to parent. Prefer
+    // withDescriptors/withName(String) for now.
     public static NSFontCollection withName(String name, long visibility) {
         ensureInit();
         try {
@@ -67,4 +71,89 @@ public final class NSFontCollection extends NSObject {
     public NSArray queryDescriptors() {
         return NSArray.wrap(ObjC.msgSendId(peer, ObjC.sel("queryDescriptors")));
     }
+
+    /// `+[NSFontCollection fontCollectionWithAllAvailableDescriptors]`.
+    public static NSFontCollection allAvailableDescriptors() {
+        ensureInit();
+        return wrap(ObjC.msgSendId(ObjC.cls("NSFontCollection"),
+                ObjC.sel("fontCollectionWithAllAvailableDescriptors")));
+    }
+
+    /// `+[NSFontCollection fontCollectionWithLocale:]` — locale is NSLocale* (may be NULL).
+    public static NSFontCollection withLocale(MemorySegment locale) {
+        ensureInit();
+        try {
+            MemorySegment p = (MemorySegment) handles.hWithDescriptors().invokeExact(
+                    ObjC.cls("NSFontCollection"), ObjC.sel("fontCollectionWithLocale:"),
+                    (MemorySegment) (locale == null ? MemorySegment.NULL : locale));
+            return wrap(p);
+        } catch (Throwable t) {
+            throw new RuntimeException("fontCollectionWithLocale: failed", t);
+        }
+    }
+
+    /// `+[NSFontCollection allFontCollectionNames]` — named collections visible to this process.
+    public static NSArray allFontCollectionNames() {
+        ensureInit();
+        return NSArray.wrap(ObjC.msgSendId(ObjC.cls("NSFontCollection"), ObjC.sel("allFontCollectionNames")));
+    }
+
+    /// `+[NSFontCollection fontCollectionWithName:]` — the named collection (may be nil).
+    public static NSFontCollection withName(String name) {
+        ensureInit();
+        try {
+            MemorySegment p = (MemorySegment) handles.hWithDescriptors().invokeExact(
+                    ObjC.cls("NSFontCollection"), ObjC.sel("fontCollectionWithName:"),
+                    ObjC.nsstring(name == null ? "" : name));
+            return wrap(p);
+        } catch (Throwable t) {
+            throw new RuntimeException("fontCollectionWithName: failed", t);
+        }
+    }
+
+    /// exclusionDescriptors — query descriptors excluded from the match.
+    public NSArray exclusionDescriptors() {
+        return NSArray.wrap(ObjC.msgSendId(peer, ObjC.sel("exclusionDescriptors")));
+    }
+
+    /// matchingDescriptors — queryDescriptors minus exclusionDescriptors, matched now.
+    public NSArray matchingDescriptors() {
+        return NSArray.wrap(ObjC.msgSendId(peer, ObjC.sel("matchingDescriptors")));
+    }
+
+    /// -matchingDescriptorsWithOptions: — options may be NULL (NSDictionary*).
+    public NSArray matchingDescriptorsWithOptions(MemorySegment optionsOrNull) {
+        ensureInit();
+        try {
+            MemorySegment p = (MemorySegment) handles.hWithDescriptors().invokeExact(peer,
+                    ObjC.sel("matchingDescriptorsWithOptions:"),
+                    (MemorySegment) (optionsOrNull == null ? MemorySegment.NULL : optionsOrNull));
+            return NSArray.wrap(p);
+        } catch (Throwable t) {
+            throw new RuntimeException("matchingDescriptorsWithOptions: failed", t);
+        }
+    }
+
+    /// -matchingDescriptorsForFamily:options: — family match with options (may be NULL).
+    public NSArray matchingDescriptorsForFamilyOptions(String family, MemorySegment optionsOrNull) {
+        ensureInit();
+        try {
+            MemorySegment p = (MemorySegment) handles.hMatching().invokeExact(peer,
+                    ObjC.sel("matchingDescriptorsForFamily:options:"), ObjC.nsstring(family == null ? "" : family),
+                    (MemorySegment) (optionsOrNull == null ? MemorySegment.NULL : optionsOrNull));
+            return NSArray.wrap(p);
+        } catch (Throwable t) {
+            throw new RuntimeException("matchingDescriptorsForFamily:options: failed", t);
+        }
+    }
+
+    // ---- visibility values (NSFontCollectionVisibility, header bit shifts) ----
+    public static final long VISIBILITY_PROCESS = 1L;
+    public static final long VISIBILITY_USER = 2L;
+    public static final long VISIBILITY_COMPUTER = 4L;
+
+    // SDK omissions (documented in the class header + reported): show/hide/rename take
+    // NSError** (no vocabulary shape) and mutate the Font Book library. NSMutableFontCollection
+    // needs its own wrapper file (not in this batch) so add/removeQueryForDescriptors: and the
+    // query/exclusion setters are omitted here.
 }

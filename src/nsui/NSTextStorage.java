@@ -176,6 +176,59 @@ public class NSTextStorage extends NSMutableAttributedString {
         ObjC.msgSendVoid(peer, ObjC.sel("processEditing"));
     }
 
+    // ---- pending edit info (readonly) ----
+
+    /// [storage editedMask] -> NSTextStorageEditActions bitmask (long).
+    public long editedMask() {
+        return ObjC.msgSendLong(peer, ObjC.sel("editedMask"));
+    }
+
+    /// [storage editedRange] -> NSRange ({NSNotFound,0} when no pending changes).
+    public NSRange editedRange() {
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.RANGE));
+            MemorySegment s = (MemorySegment) h.invokeExact(ObjC.structSlot(), peer, ObjC.sel("editedRange"));
+            return NSRange.fromSegment(s);
+        } catch (Throwable t) {
+            throw new RuntimeException("editedRange failed", t);
+        }
+    }
+
+    /// [storage changeInLength] -> NSInteger (pending length delta).
+    public long changeInLength() {
+        return ObjC.msgSendLong(peer, ObjC.sel("changeInLength"));
+    }
+
+    /// [storage fixesAttributesLazily]
+    public boolean fixesAttributesLazily() {
+        return ObjC.msgSendBool(peer, ObjC.sel("fixesAttributesLazily"));
+    }
+
+    /// [storage invalidateAttributesInRange:] — mark attributes needing validation.
+    public void invalidateAttributesInRange(NSRange range) {
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.RANGE));
+            h.invokeExact(peer, ObjC.sel("invalidateAttributesInRange:"), range.toSegment());
+        } catch (Throwable t) {
+            throw new RuntimeException("invalidateAttributesInRange: failed", t);
+        }
+    }
+
+    // ---- text storage observer (raw id; the NSTextStorageObserving protocol needs
+    // upcall machinery — skipped, reported; same for the delegate routing beyond the
+    // raw pointer + NSTextStorageDelegate Java mirror) ----
+
+    /// [storage textStorageObserver] — raw id (may be nil, macOS 12+).
+    public MemorySegment textStorageObserver() {
+        return ObjC.msgSendId(peer, ObjC.sel("textStorageObserver"));
+    }
+
+    /// [storage setTextStorageObserver:] — raw id (macOS 12+).
+    public void setTextStorageObserver(MemorySegment observer) {
+        ObjC.msgSendVoidId(peer, ObjC.sel("setTextStorageObserver:"),
+                (MemorySegment) (observer == null ? MemorySegment.NULL : observer));
+    }
+
     /// [storage ensureAttributesAreFixedInRange:]
     public void ensureAttributesAreFixed(NSRange range) {
         try {

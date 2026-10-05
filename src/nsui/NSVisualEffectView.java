@@ -239,4 +239,30 @@ public final class NSVisualEffectView extends NSView {
     public boolean isKindOfClass(String className) {
         return isKindOfClass(ObjC.cls(className));
     }
+
+    // ---------------------------------------------------------------- header-completeness batch (NSVisualEffectView.h)
+    //
+    // Fully covered: material/blendingMode/state/maskImage/emphasized + typed enum overloads.
+    // Omitted: viewDidMoveToWindow/viewWillMoveToWindow: ARE wrapped below (plain NSView overrides,
+    // callable directly; subclassing still requires super dispatch, which is out of scope).
+
+    /// [view interiorBackgroundStyle] — NSBackgroundStyle closest to the material (readonly).
+    public long interiorBackgroundStyle() {
+        return ObjC.msgSendLong(peer, ObjC.sel("interiorBackgroundStyle"));
+    }
+
+    /// [view viewDidMoveToWindow].
+    public void viewDidMoveToWindow() {
+        ObjC.msgSendVoid(peer, ObjC.sel("viewDidMoveToWindow"));
+    }
+
+    /// [view viewWillMoveToWindow:] (nil allowed).
+    public void viewWillMoveToWindow(NSWindow window) {
+        try {
+            hSetId.invokeExact(peer, ObjC.sel("viewWillMoveToWindow:"), (MemorySegment) (window == null ? MemorySegment.NULL : window.peer()));
+        } catch (Throwable t) {
+            throw new RuntimeException("viewWillMoveToWindow: failed", t);
+        }
+    }
+
 }

@@ -15,6 +15,9 @@ import static nsui.objc.Sig.Ret;
 /// Only the label and content-view surface is wrapped here — enough to build a
 /// two-tab demo. `create` builds the item with the label as its identifier, then
 /// applies `setLabel:` so `label` round-trips.
+///
+/// Omitted from NSTabViewItem.h: drawLabel:inRect: needs of(VOID,BOOL,RECT) and sizeOfLabel: needs
+/// of(SIZE,BOOL) — both absent from the Sig vocabulary (requested shapes).
 public final class NSTabViewItem extends NSObject {
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
@@ -200,4 +203,59 @@ public final class NSTabViewItem extends NSObject {
             throw new RuntimeException("tabView failed", t);
         }
     }
+
+    // ---------------------------------------------------------------- header-completeness batch (NSTabViewItem.h)
+
+    /// +[NSTabViewItem tabViewItemWithViewController:] — item wrapping a view controller.
+    public static NSTabViewItem tabViewItemWithViewController(NSViewController controller) {
+        ensureInit();
+        try {
+            MemorySegment p = (MemorySegment) hInitIdentifier.invokeExact(ObjC.cls("NSTabViewItem"), ObjC.sel("tabViewItemWithViewController:"), controller.peer());
+            if (p == null || p.address() == 0) throw new IllegalStateException("tabViewItemWithViewController: returned nil");
+            return new NSTabViewItem(p);
+        } catch (Throwable t) {
+            throw new RuntimeException("tabViewItemWithViewController: failed", t);
+        }
+    }
+
+    /// [item image] — tab image (may be nil; only used by some tab styles).
+    public NSImage image() {
+        try {
+            MemorySegment p = (MemorySegment) hGetId.invokeExact(peer, ObjC.sel("image"));
+            return NSImage.wrap(p);
+        } catch (Throwable t) {
+            throw new RuntimeException("image failed", t);
+        }
+    }
+
+    /// [item setImage:] (nil clears).
+    public void setImage(NSImage image) {
+        try {
+            hSetId.invokeExact(peer, ObjC.sel("setImage:"), (MemorySegment) (image == null ? MemorySegment.NULL : image.peer()));
+        } catch (Throwable t) {
+            throw new RuntimeException("setImage: failed", t);
+        }
+    }
+
+    /// [item viewController] — wrapped controller (may be nil).
+    public NSViewController viewController() {
+        try {
+            MemorySegment p = (MemorySegment) hGetId.invokeExact(peer, ObjC.sel("viewController"));
+            return NSViewController.wrap(p);
+        } catch (Throwable t) {
+            throw new RuntimeException("viewController failed", t);
+        }
+    }
+
+    /// [item setViewController:] — AppKit forwards identifier/label/image from the controller.
+    /// NOTE: passing nil raises inside AppKit ([NSTabViewItem _updateWithViewController:] builds an
+    /// NSArray containing nil) — callers must pass non-nil; use a fresh item instead of clearing.
+    public void setViewController(NSViewController controller) {
+        try {
+            hSetId.invokeExact(peer, ObjC.sel("setViewController:"), (MemorySegment) (controller == null ? MemorySegment.NULL : controller.peer()));
+        } catch (Throwable t) {
+            throw new RuntimeException("setViewController: failed", t);
+        }
+    }
+
 }

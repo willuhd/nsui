@@ -1,22 +1,22 @@
 package nsui;
 import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodHandle;
-import java.util.concurrent.ConcurrentHashMap;
 
 import nsui.objc.ObjC;
 import nsui.objc.Sig;
+import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
 /// NSValue — minimal wrapper over native `NSValue`.
 /// Provides wrap/create and typed accessors for common struct types.
-/// Struct creation uses a Java-side cache so no new Sig vocabulary is required:
-/// a real native NSValue peer is allocated via alloc/init and the Java value is
-/// stored in a side map. Native peers created elsewhere return their live value
-/// via struct-return msgSend where possible.
+/// Factories build real native values (retained: immortal by design):
+/// AppKit APIs reading the peer see the value (dummy peers never could).
+/// no side map, no address keys, no ABA hazard.
+/// Getters read live values via struct-return msgSend.
 public class NSValue extends NSObject {
 
-    private static final ConcurrentHashMap<Long, Object> STORE = new ConcurrentHashMap<>();
-            private record Handles(MethodHandle hPointValue, MethodHandle hSizeValue, MethodHandle hRectValue, MethodHandle hRangeValue, MethodHandle hObjCType) {}
+    private static MemorySegment retain(MemorySegment v) { return ObjC.msgSendId(v, ObjC.sel("retain")); }
+            private record Handles(MethodHandle hPointValue, MethodHandle hSizeValue, MethodHandle hRectValue, MethodHandle hRangeValue, MethodHandle hObjCType, MethodHandle hWithPoint, MethodHandle hWithSize, MethodHandle hWithRect, MethodHandle hWithRange) {}
     private static volatile Handles handles;
 
     protected NSValue(MemorySegment peer) {
@@ -36,52 +36,56 @@ public class NSValue extends NSObject {
                 ObjC.handle(Sig.of(Ret.SIZE)),
                 ObjC.handle(Sig.of(Ret.RECT)),
                 ObjC.handle(Sig.of(Ret.RANGE)),
-                ObjC.handle(Sig.of(Ret.ID))
+                ObjC.handle(Sig.of(Ret.ID)),
+                ObjC.handle(Sig.of(Ret.ID, Arg.POINT)),
+                ObjC.handle(Sig.of(Ret.ID, Arg.SIZE)),
+                ObjC.handle(Sig.of(Ret.ID, Arg.RECT)),
+                ObjC.handle(Sig.of(Ret.ID, Arg.RANGE))
         );
     }
 
-    private static MemorySegment allocInit(String clsName) {
-        ensureInit();
-        MemorySegment a = ObjC.msgSendId(ObjC.cls(clsName), ObjC.sel("alloc"));
-        // init — (id,SEL)->id
-        a = ObjC.msgSendId(a, ObjC.sel("init"));
-        return a;
-    }
-
-    /// valueWithPoint: — Java-cached.
+    /// valueWithPoint: — real native value, retained.
     public static NSValue valueWithPoint(NSPoint point) {
         if (point == null) throw new IllegalArgumentException("point null");
-        MemorySegment peer = allocInit("NSValue");
-        NSValue v = new NSValue(peer);
-        STORE.put(peer.address(), point);
-        return v;
+        ensureInit();
+        try {
+            MemorySegment peer = (MemorySegment) handles.hWithPoint().invokeExact(
+                    ObjC.cls("NSValue"), ObjC.sel("valueWithPoint:"), point.toSegment());
+            return wrap(retain(peer));
+        } catch (Throwable t) { throw new RuntimeException("valueWithPoint: failed", t); }
     }
 
-    /// valueWithSize:
+    /// valueWithSize: — real native value, retained.
     public static NSValue valueWithSize(NSSize size) {
         if (size == null) throw new IllegalArgumentException("size null");
-        MemorySegment peer = allocInit("NSValue");
-        NSValue v = new NSValue(peer);
-        STORE.put(peer.address(), size);
-        return v;
+        ensureInit();
+        try {
+            MemorySegment peer = (MemorySegment) handles.hWithSize().invokeExact(
+                    ObjC.cls("NSValue"), ObjC.sel("valueWithSize:"), size.toSegment());
+            return wrap(retain(peer));
+        } catch (Throwable t) { throw new RuntimeException("valueWithSize: failed", t); }
     }
 
-    /// valueWithRect:
+    /// valueWithRect: — real native value, retained.
     public static NSValue valueWithRect(NSRect rect) {
         if (rect == null) throw new IllegalArgumentException("rect null");
-        MemorySegment peer = allocInit("NSValue");
-        NSValue v = new NSValue(peer);
-        STORE.put(peer.address(), rect);
-        return v;
+        ensureInit();
+        try {
+            MemorySegment peer = (MemorySegment) handles.hWithRect().invokeExact(
+                    ObjC.cls("NSValue"), ObjC.sel("valueWithRect:"), rect.toSegment());
+            return wrap(retain(peer));
+        } catch (Throwable t) { throw new RuntimeException("valueWithRect: failed", t); }
     }
 
-    /// valueWithRange:
+    /// valueWithRange: — real native value, retained.
     public static NSValue valueWithRange(NSRange range) {
         if (range == null) throw new IllegalArgumentException("range null");
-        MemorySegment peer = allocInit("NSValue");
-        NSValue v = new NSValue(peer);
-        STORE.put(peer.address(), range);
-        return v;
+        ensureInit();
+        try {
+            MemorySegment peer = (MemorySegment) handles.hWithRange().invokeExact(
+                    ObjC.cls("NSValue"), ObjC.sel("valueWithRange:"), range.toSegment());
+            return wrap(retain(peer));
+        } catch (Throwable t) { throw new RuntimeException("valueWithRange: failed", t); }
     }
 
     /// valueWithNonretainedObject: — native.
@@ -102,8 +106,6 @@ public class NSValue extends NSObject {
 
     /// pointValue
     public NSPoint pointValue() {
-        Object cached = STORE.get(peer.address());
-        if (cached instanceof NSPoint p) return p;
         ensureInit();
         try {
             MemorySegment seg = (MemorySegment) handles.hPointValue().invokeExact(ObjC.structSlot(), peer, ObjC.sel("pointValue"));
@@ -113,8 +115,6 @@ public class NSValue extends NSObject {
 
     /// sizeValue
     public NSSize sizeValue() {
-        Object cached = STORE.get(peer.address());
-        if (cached instanceof NSSize s) return s;
         ensureInit();
         try {
             MemorySegment seg = (MemorySegment) handles.hSizeValue().invokeExact(ObjC.structSlot(), peer, ObjC.sel("sizeValue"));
@@ -124,8 +124,6 @@ public class NSValue extends NSObject {
 
     /// rectValue
     public NSRect rectValue() {
-        Object cached = STORE.get(peer.address());
-        if (cached instanceof NSRect r) return r;
         ensureInit();
         try {
             MemorySegment seg = (MemorySegment) handles.hRectValue().invokeExact(ObjC.structSlot(), peer, ObjC.sel("rectValue"));
@@ -135,8 +133,6 @@ public class NSValue extends NSObject {
 
     /// rangeValue
     public NSRange rangeValue() {
-        Object cached = STORE.get(peer.address());
-        if (cached instanceof NSRange r) return r;
         ensureInit();
         try {
             MemorySegment seg = (MemorySegment) handles.hRangeValue().invokeExact(ObjC.structSlot(), peer, ObjC.sel("rangeValue"));

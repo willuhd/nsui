@@ -12,7 +12,10 @@ import java.util.concurrent.TimeUnit;
 import nsui.CABasicAnimation;
 import nsui.CALayer;
 import nsui.NSPoint;
+import nsui.NSRange;
 import nsui.NSRect;
+import nsui.NSSize;
+import nsui.NSValue;
 import nsui.objc.ObjC;
 
 /// Edge cases the rest of the suite never pins down (all pre-existing gaps):
@@ -27,6 +30,7 @@ import nsui.objc.ObjC;
 /// itself stays untested on purpose (unguarded initializer — the audit's
 /// latent race; this test refuses to deliberately hang the JVM).
 /// - `sel`/`cls` results stable process-wide (result-caching invariant).
+/// - `NSValue` factories build real native values (round-trips prove interop).
 /// - Studio-era typed wrappers (`CALayer` bounds/frame,
 /// `CAAnimation` fillMode/autoreverses/repeatCount), previously
 /// called only by the untracked demo.
@@ -46,6 +50,7 @@ public final class EdgeTest {
         doubleInit();
         typedWrappers();
         cacheIdentity();
+        nativeValues();
 
         TestKit.end();
     }
@@ -182,6 +187,23 @@ public final class EdgeTest {
         MemorySegment c1 = ObjC.cls("NSString");
         MemorySegment c2 = ObjC.cls("NSString");
         TestKit.check(c1.address() != 0 && c1.address() == c2.address(), "cls stable across calls");
+    }
+
+    /// NSValue factories build REAL native values (retained): getters must read
+    /// live structs back, proving AppKit interop (dummy peers never could).
+    private static void nativeValues() {
+        try {
+            TestKit.check(NSValue.valueWithPoint(new NSPoint(1, 2)).pointValue().equals(new NSPoint(1, 2)),
+                    "NSValue point round-trip");
+            TestKit.check(NSValue.valueWithSize(new NSSize(3, 4)).sizeValue().equals(new NSSize(3, 4)),
+                    "NSValue size round-trip");
+            TestKit.check(NSValue.valueWithRect(new NSRect(1, 2, 3, 4)).rectValue().equals(new NSRect(1, 2, 3, 4)),
+                    "NSValue rect round-trip");
+            TestKit.check(NSValue.valueWithRange(new NSRange(5, 6)).rangeValue().equals(new NSRange(5, 6)),
+                    "NSValue range round-trip");
+        } catch (Throwable t) {
+            TestKit.check(false, "nativeValues threw: " + t);
+        }
     }
 
     /// Studio-era typed wrappers, proven through round-trips (previously only

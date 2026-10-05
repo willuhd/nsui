@@ -217,7 +217,7 @@ public final class NSToolbarItem extends NSObject implements NSUserInterfaceItem
     public NSSize minSize() {
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.SIZE));
-            MemorySegment s = (MemorySegment) h.invokeExact((java.lang.foreign.SegmentAllocator) java.lang.foreign.Arena.global(), peer, ObjC.sel("minSize"));
+            MemorySegment s = (MemorySegment) h.invokeExact(ObjC.structSlot(), peer, ObjC.sel("minSize"));
             return NSSize.fromSegment(s);
         } catch (Throwable t) {
             throw new RuntimeException("minSize failed", t);
@@ -237,7 +237,7 @@ public final class NSToolbarItem extends NSObject implements NSUserInterfaceItem
     public NSSize maxSize() {
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.SIZE));
-            MemorySegment s = (MemorySegment) h.invokeExact((java.lang.foreign.SegmentAllocator) java.lang.foreign.Arena.global(), peer, ObjC.sel("maxSize"));
+            MemorySegment s = (MemorySegment) h.invokeExact(ObjC.structSlot(), peer, ObjC.sel("maxSize"));
             return NSSize.fromSegment(s);
         } catch (Throwable t) {
             throw new RuntimeException("maxSize failed", t);

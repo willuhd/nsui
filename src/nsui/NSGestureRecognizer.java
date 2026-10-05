@@ -184,7 +184,7 @@ public class NSGestureRecognizer extends NSObject {
     /// [recognizer locationInView:] — point in view's coordinates.
     public NSPoint locationInView(NSView view) {
         try {
-            MemorySegment seg = (MemorySegment) handles.hLocation().invokeExact((java.lang.foreign.SegmentAllocator) java.lang.foreign.Arena.global(), peer, ObjC.sel("locationInView:"), (MemorySegment) (view == null ? MemorySegment.NULL : view.peer()));
+            MemorySegment seg = (MemorySegment) handles.hLocation().invokeExact(ObjC.structSlot(), peer, ObjC.sel("locationInView:"), (MemorySegment) (view == null ? MemorySegment.NULL : view.peer()));
             return NSPoint.fromSegment(seg);
         } catch (Throwable t) {
             throw new RuntimeException("locationInView: failed", t);

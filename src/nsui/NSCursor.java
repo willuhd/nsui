@@ -131,7 +131,7 @@ public final class NSCursor extends NSObject {
         ensureInit();
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.POINT));
-            MemorySegment pt = (MemorySegment) h.invokeExact((java.lang.foreign.SegmentAllocator) java.lang.foreign.Arena.global(), peer, ObjC.sel("hotSpot"));
+            MemorySegment pt = (MemorySegment) h.invokeExact(ObjC.structSlot(), peer, ObjC.sel("hotSpot"));
             return NSPoint.fromSegment(pt);
         } catch (Throwable t) {
             throw new RuntimeException("hotSpot failed", t);

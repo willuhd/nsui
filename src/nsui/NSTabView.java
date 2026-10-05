@@ -206,7 +206,7 @@ public final class NSTabView extends NSView {
     public NSSize minimumSize() {
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.SIZE));
-            MemorySegment s = (MemorySegment) h.invokeExact((java.lang.foreign.SegmentAllocator) java.lang.foreign.Arena.global(), peer, ObjC.sel("minimumSize"));
+            MemorySegment s = (MemorySegment) h.invokeExact(ObjC.structSlot(), peer, ObjC.sel("minimumSize"));
             return NSSize.fromSegment(s);
         } catch (Throwable t) {
             throw new RuntimeException("minimumSize failed", t);

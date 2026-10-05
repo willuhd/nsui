@@ -98,7 +98,7 @@ public final class NSPopover extends NSObject {
     public NSSize contentSize() {
         ensureInit();
         try {
-            MemorySegment s = (MemorySegment) handles.hGetContentSize().invokeExact((java.lang.foreign.SegmentAllocator) java.lang.foreign.Arena.global(), peer, ObjC.sel("contentSize"));
+            MemorySegment s = (MemorySegment) handles.hGetContentSize().invokeExact(ObjC.structSlot(), peer, ObjC.sel("contentSize"));
             return NSSize.fromSegment(s);
         } catch (Throwable t) {
             throw new RuntimeException("contentSize failed", t);

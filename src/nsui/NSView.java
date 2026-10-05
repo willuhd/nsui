@@ -560,7 +560,7 @@ public class NSView extends NSResponder {
         ensureInit();
         try {
             return NSRect.fromSegment((MemorySegment) H.hConvBacking().invokeExact(
-                    (java.lang.foreign.SegmentAllocator) java.lang.foreign.Arena.global(), peer,
+                    ObjC.structSlot(), peer,
                     ObjC.sel("convertRectToBacking:"), rect.toSegment()));
         } catch (Throwable t) {
             throw new RuntimeException("convertRectToBacking: failed", t);
@@ -730,7 +730,7 @@ public class NSView extends NSResponder {
     public NSSize intrinsicContentSize() {
         ensureInit();
         try {
-            MemorySegment s = (MemorySegment) H.hGetSize().invokeExact((java.lang.foreign.SegmentAllocator) java.lang.foreign.Arena.global(), peer, ObjC.sel("intrinsicContentSize"));
+            MemorySegment s = (MemorySegment) H.hGetSize().invokeExact(ObjC.structSlot(), peer, ObjC.sel("intrinsicContentSize"));
             return NSSize.fromSegment(s);
         } catch (Throwable t) {
             throw new RuntimeException("intrinsicContentSize failed", t);

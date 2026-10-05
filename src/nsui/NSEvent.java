@@ -1,6 +1,4 @@
 package nsui;
-
-import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.SegmentAllocator;
 import java.lang.invoke.MethodHandle;
@@ -68,7 +66,7 @@ public final class NSEvent extends NSObject {
     /// carries an implicit leading SegmentAllocator for the struct it returns.
     public NSPoint locationInWindow() {
         try {
-            MemorySegment seg = (MemorySegment) handles.hLocation().invokeExact((SegmentAllocator) Arena.global(), peer, ObjC.sel("locationInWindow"));
+            MemorySegment seg = (MemorySegment) handles.hLocation().invokeExact(ObjC.structSlot(), peer, ObjC.sel("locationInWindow"));
             return NSPoint.fromSegment(seg);
         } catch (Throwable t) {
             throw new RuntimeException("locationInWindow failed", t);
@@ -215,7 +213,7 @@ public final class NSEvent extends NSObject {
     /// [event tilt] — NSPoint {x,y} tilt
     public NSPoint tilt() {
         try {
-            MemorySegment seg = (MemorySegment) handles.hLocation().invokeExact((SegmentAllocator) Arena.global(), peer, ObjC.sel("tilt"));
+            MemorySegment seg = (MemorySegment) handles.hLocation().invokeExact(ObjC.structSlot(), peer, ObjC.sel("tilt"));
             return NSPoint.fromSegment(seg);
         } catch (Throwable t) { throw new RuntimeException("tilt failed", t); }
     }
@@ -254,7 +252,7 @@ public final class NSEvent extends NSObject {
     /// [NSEvent mouseLocation] — class property NSPoint
     public static NSPoint mouseLocation() {
         try {
-            MemorySegment seg = (MemorySegment) handles.hLocation().invokeExact((SegmentAllocator) Arena.global(), ObjC.cls("NSEvent"), ObjC.sel("mouseLocation"));
+            MemorySegment seg = (MemorySegment) handles.hLocation().invokeExact(ObjC.structSlot(), ObjC.cls("NSEvent"), ObjC.sel("mouseLocation"));
             return NSPoint.fromSegment(seg);
         } catch (Throwable t) { throw new RuntimeException("mouseLocation failed", t); }
     }

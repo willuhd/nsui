@@ -100,7 +100,7 @@ public final class NSPanGestureRecognizer extends NSGestureRecognizer {
     /// [recognizer translationInView:] — delta since last reset.
     public NSPoint translationInView(NSView view) {
         try {
-            MemorySegment seg = (MemorySegment) handles.hTranslation().invokeExact((java.lang.foreign.SegmentAllocator) java.lang.foreign.Arena.global(), peer, ObjC.sel("translationInView:"), (MemorySegment) ((view == null || view.peer() == null || view.peer().address()==0) ? MemorySegment.NULL : view.peer()));
+            MemorySegment seg = (MemorySegment) handles.hTranslation().invokeExact(ObjC.structSlot(), peer, ObjC.sel("translationInView:"), (MemorySegment) ((view == null || view.peer() == null || view.peer().address()==0) ? MemorySegment.NULL : view.peer()));
             return NSPoint.fromSegment(seg);
         } catch (Throwable t) {
             throw new RuntimeException("translationInView: failed", t);
@@ -119,7 +119,7 @@ public final class NSPanGestureRecognizer extends NSGestureRecognizer {
     /// [recognizer velocityInView:] — points per second.
     public NSPoint velocityInView(NSView view) {
         try {
-            MemorySegment seg = (MemorySegment) handles.hTranslation().invokeExact((java.lang.foreign.SegmentAllocator) java.lang.foreign.Arena.global(), peer, ObjC.sel("velocityInView:"), (MemorySegment) ((view == null || view.peer() == null || view.peer().address()==0) ? MemorySegment.NULL : view.peer()));
+            MemorySegment seg = (MemorySegment) handles.hTranslation().invokeExact(ObjC.structSlot(), peer, ObjC.sel("velocityInView:"), (MemorySegment) ((view == null || view.peer() == null || view.peer().address()==0) ? MemorySegment.NULL : view.peer()));
             return NSPoint.fromSegment(seg);
         } catch (Throwable t) {
             throw new RuntimeException("velocityInView: failed", t);

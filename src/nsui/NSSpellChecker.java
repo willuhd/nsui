@@ -1,8 +1,5 @@
 package nsui;
-
-import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.SegmentAllocator;
 import java.lang.invoke.MethodHandle;
 
 import nsui.objc.ObjC;
@@ -52,7 +49,7 @@ public final class NSSpellChecker extends NSObject {
         ensureInit();
         try {
             MemorySegment seg = (MemorySegment) handles.hCheck().invokeExact(
-                    (SegmentAllocator) Arena.global(), peer,
+                    ObjC.structSlot(), peer,
                     ObjC.sel("checkSpellingOfString:startingAt:"), ObjC.nsstring(text), offset);
             return NSRange.fromSegment(seg);
         } catch (Throwable t) {

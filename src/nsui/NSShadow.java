@@ -64,7 +64,7 @@ public final class NSShadow extends NSObject {
     public NSSize shadowOffset() {
         ensureInit();
         try {
-            MemorySegment s = (MemorySegment) handles.hGetSize().invokeExact((java.lang.foreign.SegmentAllocator) java.lang.foreign.Arena.global(), peer, ObjC.sel("shadowOffset"));
+            MemorySegment s = (MemorySegment) handles.hGetSize().invokeExact(ObjC.structSlot(), peer, ObjC.sel("shadowOffset"));
             return NSSize.fromSegment(s);
         } catch (Throwable t) {
             throw new RuntimeException("shadowOffset failed", t);

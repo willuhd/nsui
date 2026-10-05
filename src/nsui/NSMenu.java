@@ -1,8 +1,5 @@
 package nsui;
-
-import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.SegmentAllocator;
 import java.lang.invoke.MethodHandle;
 
 import nsui.objc.ObjC;
@@ -245,7 +242,7 @@ public final class NSMenu extends NSObject {
     }
     public NSSize size() {
         ensureInit();
-        try { return NSSize.fromSegment((MemorySegment) H.hSize().invokeExact((SegmentAllocator) Arena.global(), peer, ObjC.sel("size"))); } catch (Throwable t) { throw new RuntimeException("size failed", t); }
+        try { return NSSize.fromSegment((MemorySegment) H.hSize().invokeExact(ObjC.structSlot(), peer, ObjC.sel("size"))); } catch (Throwable t) { throw new RuntimeException("size failed", t); }
     }
     public MemorySegment font() { return ObjC.msgSendId(peer, ObjC.sel("font")); }
     public void setFont(NSFont f) { ObjC.msgSendVoidId(peer, ObjC.sel("setFont:"), (MemorySegment) (f == null ? MemorySegment.NULL : f.peer())); }

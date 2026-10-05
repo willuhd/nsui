@@ -1,6 +1,4 @@
 package nsui;
-
-import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.SegmentAllocator;
 import java.lang.invoke.MethodHandle;
@@ -140,7 +138,7 @@ public final class NSImage extends NSObject {
     public NSSize size() {
         try {
             // FFM gives group-layout returns an implicit leading SegmentAllocator param.
-            MemorySegment s = (MemorySegment) H.hSize().invokeExact((SegmentAllocator) Arena.global(), peer, ObjC.sel("size"));
+            MemorySegment s = (MemorySegment) H.hSize().invokeExact(ObjC.structSlot(), peer, ObjC.sel("size"));
             return NSSize.fromSegment(s);
         } catch (Throwable t) {
             throw new RuntimeException("NSImage size failed", t);
@@ -209,7 +207,7 @@ public final class NSImage extends NSObject {
     /// [image capInsets] — edge insets for 9-part scaling (NSEdgeInsets ~ 4 doubles, returned as NSRect).
     public NSRect capInsets() {
         try {
-            MemorySegment s = (MemorySegment) H.hCapInsets().invokeExact((SegmentAllocator) Arena.global(), peer, ObjC.sel("capInsets"));
+            MemorySegment s = (MemorySegment) H.hCapInsets().invokeExact(ObjC.structSlot(), peer, ObjC.sel("capInsets"));
             // NSEdgeInsets is {top,left,bottom,right} -> map to NSRect {x=top,y=left,w=bottom,h=right}
             return NSRect.fromSegment(s);
         } catch (Throwable t) {

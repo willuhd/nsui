@@ -7,6 +7,12 @@ package nsui;
 /// pointer (see `setDelegate`). The full AppKit delegate
 /// routing ( `DelegateProxy` ) can be used to forward native
 /// callbacks into these Java methods when needed.
+///
+/// SDK omissions (need upcall machinery — skipped, reported): the
+/// `NSTextStorageObserving` protocol (`-processEditingForTextStorage:...`,
+/// `-performEditingTransactionForTextStorage:...`) and the deprecated
+/// notification-based delegate interface. Same applies to `NSTextDelegate`,
+/// `NSTextViewDelegate` and `NSLayoutManagerDelegate` (no wrappers in this batch).
 public interface NSTextStorageDelegate {
 
     /// `-textStorage:willProcessEditing:range:changeInLength:` — called before

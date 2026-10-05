@@ -140,6 +140,9 @@ public final class Sig {
         of(Ret.VOID, Arg.DOUBLE),                       // setSpacing: / setDoubleValue: / setWidth:
         of(Ret.VOID, Arg.ID, Arg.INT), of(Ret.VOID, Arg.ID, Arg.BOOL),
         of(Ret.VOID, Arg.INT, Arg.ID),                  // setLabel:forSegment: / setGravity:forArrangedSubviews:
+        of(Ret.VOID, Arg.BOOL, Arg.ID),                 // setBool:forKey: / setEmphasized-style setters
+        of(Ret.VOID, Arg.DOUBLE, Arg.ID),               // setDouble:forKey:
+        of(Ret.DOUBLE, Arg.ID),                        // doubleForKey: / draggedDistance
         of(Ret.BOOL, Arg.INT), of(Ret.VOID, Arg.BOOL, Arg.INT),  // isEnabledForSegment: / setEnabled:forSegment:
         of(Ret.DOUBLE, Arg.INT), of(Ret.VOID, Arg.DOUBLE, Arg.INT), // widthForSegment: / setWidth:forSegment:
         of(Ret.ID, Arg.ID, Arg.DOUBLE),                 // fontWithName:size:

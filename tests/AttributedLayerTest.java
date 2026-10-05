@@ -14,15 +14,9 @@ import nsui.NSRect;
 import nsui.NSTextView;
 import nsui.objc.ObjC;
 
-/**
- * AttributedLayerTest — covers attributed string, paragraph style, text view
- * storage round-trip and CALayer properties with 1000-iteration stress.
- */
+/// AttributedLayerTest — covers attributed string, paragraph style, text view
+/// storage round-trip and CALayer properties with 1000-iteration stress.
 public final class AttributedLayerTest {
-
-    
-
-    
 
     public static void main(String[] args) throws Throwable {
         System.out.println("=== AttributedLayerTest — attributed text + paragraph style + layer ===");

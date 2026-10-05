@@ -4,22 +4,14 @@ import nsui.NSToolbarItem;
 import nsui.NSUserInterfaceItemIdentification;
 import nsui.objc.ObjC;
 
-/**
- * NSUserInterfaceItemIdentification round-trip on NSToolbarItem.
- *
- * <ul>
- *   <li>Create NSToolbarItem with identifier "test.item.1";</li>
- *   <li>Check identifier() returns the creation identifier (or setIdentifier round-trip);</li>
- *   <li>setIdentifier("com.example.second") then identifier() == that string;</li>
- *   <li>Check instanceof NSUserInterfaceItemIdentification;</li>
- *   <li>Stress 200 iterations: set/get loop no crash.</li>
- * </ul>
- */
+/// NSUserInterfaceItemIdentification round-trip on NSToolbarItem.
+///
+/// - Create NSToolbarItem with identifier "test.item.1";
+/// - Check identifier() returns the creation identifier (or setIdentifier round-trip);
+/// - setIdentifier("com.example.second") then identifier() == that string;
+/// - Check instanceof NSUserInterfaceItemIdentification;
+/// - Stress 200 iterations: set/get loop no crash.
 public final class ItemIdentificationTest {
-
-    
-
-    
 
     public static void main(String[] args) throws Throwable {
         System.out.println("=== ItemIdentificationTest — NSToolbarItem identifier round-trip ===");

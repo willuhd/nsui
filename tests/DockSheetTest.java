@@ -9,7 +9,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import nsui.NSApplication;
 import nsui.NSMenu;
 import nsui.NSMenuItem;
-import nsui.NSEvent;
 import nsui.NSObject;
 import nsui.NSRect;
 import nsui.NSWindow;
@@ -18,30 +17,25 @@ import nsui.objc.DelegateProxy;
 import nsui.objc.ObjC;
 import nsui.objc.Sig;
 
-/**
- * DockSheetTest — verifies Dock and Sheet APIs that were missing and caused a crash.
- *
- * <p>Coverage:
- * <ul>
- *   <li>NSApplication.dockTile() — returns non-null MemorySegment (NSDockTile); no crash.</li>
- *   <li>NSApplication delegate applicationDockMenu: — Java IdArg delegate returning NSMenu,
- *       respondsToSelector, and direct native dispatch all work. Would catch WrongMethodType
- *       if the dispatchId upcall had wrong descriptor (e.g. BOOL instead of ID).</li>
- *   <li>NSWindow sheet plumbing: isSheet, attachedSheet, sheetParent, beginSheet:completionHandler:
- *       (both NULL and IntConsumer overloads + raw MemorySegment overload), endSheet: and
- *       endSheet:returnCode:. Uses short non-blocking sheets: beginSheet then immediately
- *       endSheet, no modal loop. Would catch WrongMethodType if the beginSheet handle or the
- *       block adaptation were wrong (the historical bug was bindTo vs insertArguments).</li>
- *   <li>Sig vocabulary entries for sheet selectors exist (fails loudly if missing).</li>
- *   <li>Null guards: beginSheet(null)/endSheet(null) no throw.</li>
- * </ul>
- *
- * <p>Non-blocking: sheets are attached and dismissed synchronously with TestKit.pump(100-300ms);
- * no run() or modal session is entered.
- */
+/// DockSheetTest — verifies Dock and Sheet APIs that were missing and caused a crash.
+///
+/// Coverage:
+/// - NSApplication.dockTile() — returns non-null MemorySegment (NSDockTile); no crash.
+/// - NSApplication delegate applicationDockMenu: — Java IdArg delegate returning NSMenu,
+/// respondsToSelector, and direct native dispatch all work. Would catch WrongMethodType
+/// if the dispatchId upcall had wrong descriptor (e.g. BOOL instead of ID).
+/// - NSWindow sheet plumbing: isSheet, attachedSheet, sheetParent, beginSheet:completionHandler:
+/// (both NULL and IntConsumer overloads + raw MemorySegment overload), endSheet: and
+/// endSheet:returnCode:. Uses short non-blocking sheets: beginSheet then immediately
+/// endSheet, no modal loop. Would catch WrongMethodType if the beginSheet handle or the
+/// block adaptation were wrong (the historical bug was bindTo vs insertArguments).
+/// - Sig vocabulary entries for sheet selectors exist (fails loudly if missing).
+/// - Null guards: beginSheet(null)/endSheet(null) no throw.
+///
+/// Non-blocking: sheets are attached and dismissed synchronously with TestKit.pump(100-300ms);
+/// no run() or modal session is entered.
 public final class DockSheetTest {
 
-    
     private static int asserts;
 
     private static void check(boolean ok, String msg) { asserts++; TestKit.check(ok, msg); }
@@ -677,5 +671,4 @@ public final class DockSheetTest {
 
     // ------------------------------------------------------------------ pump helper
 
-    
 }

@@ -10,30 +10,21 @@ import nsui.NSRect;
 import nsui.NSSearchField;
 import nsui.NSView;
 import nsui.NSWindow;
-import nsui.NSEvent;
 import nsui.objc.ObjC;
 import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * SearchFieldTest — end-to-end NSSearchField control test.
- *
- * Creates a window + content view, installs an NSSearchField, verifies:
- * <ul>
- *   <li>isKindOfClass hierarchy (NSSearchField is a NSTextField/NSControl/NSView);</li>
- *   <li>placeholderString round-trip (minimal viable + search);</li>
- *   <li>stringValue round-trip;</li>
- *   <li>searchField specifics: cancelButtonCell, searchMenuTemplate,
- *       sendsSearchStringImmediately, sendsWholeSearchString,
- *       maximumRecents, recentsAutosaveName, centersPlaceholder.</li>
- * </ul>
- */
+/// SearchFieldTest — end-to-end NSSearchField control test.
+///
+/// Creates a window + content view, installs an NSSearchField, verifies:
+/// - isKindOfClass hierarchy (NSSearchField is a NSTextField/NSControl/NSView);
+/// - placeholderString round-trip (minimal viable + search);
+/// - stringValue round-trip;
+/// - searchField specifics: cancelButtonCell, searchMenuTemplate,
+/// sendsSearchStringImmediately, sendsWholeSearchString,
+/// maximumRecents, recentsAutosaveName, centersPlaceholder.
 public final class SearchFieldTest {
-
-    
-
-    
 
     private static boolean isKindOf(MemorySegment obj, String className) {
         try {
@@ -190,7 +181,4 @@ public final class SearchFieldTest {
         TestKit.end();
     }
 
-    
-
-    
 }

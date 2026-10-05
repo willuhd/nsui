@@ -7,7 +7,6 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import nsui.NSApplication;
-import nsui.NSEvent;
 import nsui.NSObject;
 import nsui.NSRect;
 import nsui.NSWindow;
@@ -15,48 +14,40 @@ import nsui.objc.DelegateProxy;
 import nsui.objc.ObjC;
 import nsui.objc.Sig;
 
-/**
- * Void-notification delegates + multi-selector routing on a SINGLE proxy instance.
- *
- * <p>One {@code NSWindowDelegate} instance implements THREE selectors on ONE native object:
- * <ul>
- *   <li>{@code windowShouldClose:} ({@code -(BOOL)}) — a Java veto that rejects the close.</li>
- *   <li>{@code windowDidResize:} ({@code -(void)}) — a pure side-effecting notification.</li>
- *   <li>{@code windowDidMove:} ({@code -(void)}) — another pure side-effecting notification.</li>
- * </ul>
- * The three selectors route to three distinct Java lambdas on one instance, proving the
- * selector-address-keyed dispatch of {@code DelegateProxy} on a single peer.
- *
- * <p>Driving the delegate: a {@code windowShouldClose:} veto keeps the window open, a
- * {@code setFrame:display:} size change fires {@code windowDidResize:}, and a
- * {@code setFrameOrigin:} origin change fires {@code windowDidMove:} — three distinct
- * selectors (one {@code -(BOOL)}, two {@code -(void)}) all routed by the selector-address
- * dispatch of a single proxy instance.
- *
- * <p>NSWindow API reality (measured, not assumed): {@code NSWindow} has NO bare
- * {@code setFrame:} — that is an {@code NSView} selector, and calling it on a window raises
- * {@code 'unrecognized selector sent to instance'} (we hit that and it aborted the JVM as a
- * native exception). The real {@code NSWindow} API is {@code setFrame:display:} and
- * {@code setFrameOrigin:}. Also, {@code setFrame:display:} posting both a size AND an origin
- * change fires {@code windowDidResize:} but NOT {@code windowDidMove:}; the move notification
- * only fires via {@code setFrameOrigin:}. Both behaviours are AppKit's own — they do not affect
- * the DelegateProxy routing, which works for every registered selector.
- *
- * <p>{@code NSWindow} has no Java wrapper for either frame selector, so we go through the
- * vocabulary escape hatch: {@code setFrame:display:} uses {@code (id, SEL, NSRect, BOOL) -> void}
- * ({@code Sig#of(Sig.Ret.VOID, Sig.Arg.RECT, Sig.Arg.BOOL)}) and {@code setFrameOrigin:} uses
- * {@code (id, SEL, NSPoint) -> void} ({@code Sig#of(Sig.Ret.VOID, Sig.Arg.POINT)}), each cached
- * as a {@code MethodHandle} and invoked with {@code invokeExact} (the hot-path requirement).
- *
- * <p>Honesty about delivery: frame-change notifications are normally posted synchronously by
- * {@code setFrame:display:}, but if the manual pump does not surface them the test iterates —
- * pumping longer and calling {@code displayIfNeeded:} — and reports what ACTUALLY fired.
- */
+/// Void-notification delegates + multi-selector routing on a SINGLE proxy instance.
+///
+/// One `NSWindowDelegate` instance implements THREE selectors on ONE native object:
+/// - `windowShouldClose:` (`-(BOOL)`) — a Java veto that rejects the close.
+/// - `windowDidResize:` (`-(void)`) — a pure side-effecting notification.
+/// - `windowDidMove:` (`-(void)`) — another pure side-effecting notification.
+/// The three selectors route to three distinct Java lambdas on one instance, proving the
+/// selector-address-keyed dispatch of `DelegateProxy` on a single peer.
+///
+/// Driving the delegate: a `windowShouldClose:` veto keeps the window open, a
+/// `setFrame:display:` size change fires `windowDidResize:`, and a
+/// `setFrameOrigin:` origin change fires `windowDidMove:` — three distinct
+/// selectors (one `-(BOOL)`, two `-(void)`) all routed by the selector-address
+/// dispatch of a single proxy instance.
+///
+/// NSWindow API reality (measured, not assumed): `NSWindow` has NO bare
+/// `setFrame:` — that is an `NSView` selector, and calling it on a window raises
+/// `'unrecognized selector sent to instance'` (we hit that and it aborted the JVM as a
+/// native exception). The real `NSWindow` API is `setFrame:display:` and
+/// `setFrameOrigin:`. Also, `setFrame:display:` posting both a size AND an origin
+/// change fires `windowDidResize:` but NOT `windowDidMove:`; the move notification
+/// only fires via `setFrameOrigin:`. Both behaviours are AppKit's own — they do not affect
+/// the DelegateProxy routing, which works for every registered selector.
+///
+/// `NSWindow` has no Java wrapper for either frame selector, so we go through the
+/// vocabulary escape hatch: `setFrame:display:` uses `(id, SEL, NSRect, BOOL) -> void`
+/// (`Sig#of(Sig.Ret.VOID, Sig.Arg.RECT, Sig.Arg.BOOL)`) and `setFrameOrigin:` uses
+/// `(id, SEL, NSPoint) -> void` (`Sig#of(Sig.Ret.VOID, Sig.Arg.POINT)`), each cached
+/// as a `MethodHandle` and invoked with `invokeExact` (the hot-path requirement).
+///
+/// Honesty about delivery: frame-change notifications are normally posted synchronously by
+/// `setFrame:display:`, but if the manual pump does not surface them the test iterates —
+/// pumping longer and calling `displayIfNeeded:` — and reports what ACTUALLY fired.
 public final class WindowDelegateTest {
-
-    
-
-    
 
     public static void main(String[] args) throws Throwable {
         System.out.println("=== WindowDelegateTest — void notifications + multi-selector routing on one delegate ===");

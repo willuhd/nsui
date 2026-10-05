@@ -1,9 +1,7 @@
 package nsui.tests;
 
 import java.lang.foreign.Arena;
-import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.Linker;
-import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.SymbolLookup;
 import java.lang.foreign.ValueLayout;
@@ -21,31 +19,25 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSEvent accessor test driven by a real left-mouse event.
- *
- * <p>Primary route (spec-faithful): a synthetic MOUSE DOWN is posted through the
- * window server via {@code CGEventCreateMouseEvent} + {@code CGEventPost}
- * (the pre-seeded CORE symbols), at the window's live frame origin + (300,200);
- * the run loop should hand back an NSEvent with {@code locationInWindow} ≈
- * (300,200), a real timestamp, and {@code windowNumber == window.windowNumber()}.
- *
- * <p>Delivery caveat (honesty): CGEventPost routes to the window that is genuinely
- * frontmost in the CURRENT interactive session. When the harness runs tests in a
- * non-interactive / non-frontmost (-XstartOnFirstThread but no real foreground UI)
- * context, the click may never reach the test window. In that case the test records
- * the evidence and falls back to converting the SAME CG event via
- * {@code [NSEvent eventWithCGEvent:]} and injecting it into the app queue with
- * {@code postEvent:atStart:} — a genuine NSEvent that still exercises every
- * accessor — asserting the fields valid for a non-window-routed event
- * (type, clickCount, buttonNumber, modifierFlags) and clearly labelling which
- * window-routed assertions could NOT be exercised.
- */
+/// NSEvent accessor test driven by a real left-mouse event.
+///
+/// Primary route (spec-faithful): a synthetic MOUSE DOWN is posted through the
+/// window server via `CGEventCreateMouseEvent` + `CGEventPost`
+/// (the pre-seeded CORE symbols), at the window's live frame origin + (300,200);
+/// the run loop should hand back an NSEvent with `locationInWindow` ≈
+/// (300,200), a real timestamp, and `windowNumber == window.windowNumber()`.
+///
+/// Delivery caveat (honesty): CGEventPost routes to the window that is genuinely
+/// frontmost in the CURRENT interactive session. When the harness runs tests in a
+/// non-interactive / non-frontmost (-XstartOnFirstThread but no real foreground UI)
+/// context, the click may never reach the test window. In that case the test records
+/// the evidence and falls back to converting the SAME CG event via
+/// `[NSEvent eventWithCGEvent:]` and injecting it into the app queue with
+/// `postEvent:atStart:` — a genuine NSEvent that still exercises every
+/// accessor — asserting the fields valid for a non-window-routed event
+/// (type, clickCount, buttonNumber, modifierFlags) and clearly labelling which
+/// window-routed assertions could NOT be exercised.
 public final class NSEventTest {
-
-    
-
-    
 
     public static void main(String[] args) throws Throwable {
         System.out.println("=== NSEventTest — synthetic click + accessors ===");
@@ -153,12 +145,10 @@ public final class NSEventTest {
                 + " timestamp=" + captured.timestamp());
     }
 
-    /**
-     * Fallback: convert a real CGEvent to an NSEvent, queue it into the app, and
-     * read it back via nextEvent to exercise the accessors. Only reads mouse
-     * accessors after confirming the event is a mouse type (AppKit raises a native
-     * ObjC exception otherwise, which would abort the process).
-     */
+/// Fallback: convert a real CGEvent to an NSEvent, queue it into the app, and
+/// read it back via nextEvent to exercise the accessors. Only reads mouse
+/// accessors after confirming the event is a mouse type (AppKit raises a native
+/// ObjC exception otherwise, which would abort the process).
     private static void assertQueuedEvent(MethodHandle hCreate, NSWindow window, NSApplication app) throws Throwable {
         NSRect fNow = window.frame();
         double tx = fNow.x() + 300;

@@ -14,7 +14,6 @@ import nsui.NSButton;
 import nsui.NSRect;
 import nsui.NSView;
 import nsui.NSWindow;
-import nsui.NSEvent;
 import nsui.objc.DelegateProxy;
 import nsui.objc.NsuiForeign;
 import nsui.objc.ObjC;
@@ -22,38 +21,30 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * ButtonTest — the real end-to-end NSButton control test.
- *
- * <p>Creates a window + content view, installs an {@code NSButton} whose action is a
- * {@code DelegateProxy.actionTarget}: a Java {@link Runnable}-style callback fired when
- * AppKit sends the registered action selector to the target. Two click paths are tried,
- * in order:
- *
- * <ol>
- *   <li><b>REAL click path</b>: a genuine {@code CGEvent} pair (leftMouseDown/leftMouseUp)
- *       is built with {@code CGEventCreateMouseEvent}, converted to a real {@code NSEvent}
- *       with {@code [NSEvent eventWithCGEvent:]}, and injected into the app's OWN event
- *       queue with {@code postEvent:atStart:}. Pumping the run loop dispatches it via
- *       {@code sendEvent}, which performs hit-testing against the key window — if the point
- *       lands on the button, NSButton performs its action and the handler fires with its
- *       sender == the button. This exercises the FULL native wiring: control -> window
- *       hit-test -> target/action -> DelegateProxy upcall -> Java.</li>
- *   <li><b>target-action fallback</b>: if the injected click does not reach the button on
- *       this session (e.g. non-frontmost, non-interactive, geometry), the action selector
- *       is sent DIRECTLY to the target ({@code [target pressed:button]}). This still proves
- *       button -> target -> action selector -> Java VoidArg, but does NOT exercise window
- *       hit-testing, which is honestly reported.</li>
- * </ol>
- *
- * <p>In both cases we additionally assert {@code title()}, {@code isEnabled()} and a sane
- * post-{@code sizeToFit} frame.
- */
+/// ButtonTest — the real end-to-end NSButton control test.
+///
+/// Creates a window + content view, installs an `NSButton` whose action is a
+/// `DelegateProxy.actionTarget`: a Java `Runnable`-style callback fired when
+/// AppKit sends the registered action selector to the target. Two click paths are tried,
+/// in order:
+///
+/// - **REAL click path**: a genuine `CGEvent` pair (leftMouseDown/leftMouseUp)
+/// is built with `CGEventCreateMouseEvent`, converted to a real `NSEvent`
+/// with `[NSEvent eventWithCGEvent:]`, and injected into the app's OWN event
+/// queue with `postEvent:atStart:`. Pumping the run loop dispatches it via
+/// `sendEvent`, which performs hit-testing against the key window — if the point
+/// lands on the button, NSButton performs its action and the handler fires with its
+/// sender == the button. This exercises the FULL native wiring: control -> window
+/// hit-test -> target/action -> DelegateProxy upcall -> Java.
+/// - **target-action fallback**: if the injected click does not reach the button on
+/// this session (e.g. non-frontmost, non-interactive, geometry), the action selector
+/// is sent DIRECTLY to the target (`[target pressed:button]`). This still proves
+/// button -> target -> action selector -> Java VoidArg, but does NOT exercise window
+/// hit-testing, which is honestly reported.
+///
+/// In both cases we additionally assert `title()`, `isEnabled()` and a sane
+/// post-`sizeToFit` frame.
 public final class ButtonTest {
-
-    
-
-    
 
     public static void main(String[] args) throws Throwable {
         System.out.println("=== ButtonTest — real NSButton control ===");
@@ -84,6 +75,8 @@ public final class ButtonTest {
 
         TestKit.check(DelegateProxy.registrySize() >= 1, "DelegateProxy registered the action target (size=" + DelegateProxy.registrySize() + ")");
 
+        // Onscreen AND key: the injected event carries screen coordinates, so the
+        // window must be under its click point. One of two onscreen tests.
         TestKit.showKey(window);
         app.finishLaunching();
         TestKit.pump(app, 600); // let the window settle
@@ -125,13 +118,11 @@ public final class ButtonTest {
         TestKit.end();
     }
 
-    /**
-     * Build a real CGEvent mouse-down + mouse-up pair, convert each to an NSEvent via
-     * {@code [NSEvent eventWithCGEvent:]}, and inject into the app's own queue with
-     * {@code postEvent:atStart:}, then pump so the run loop dispatches them. After this
-     * returns, the caller inspects the outer {@code clicked} flag to detect whether AppKit
-     * hit-tested the button and performed its action.
-     */
+/// Build a real CGEvent mouse-down + mouse-up pair, convert each to an NSEvent via
+/// `[NSEvent eventWithCGEvent:]`, and inject into the app's own queue with
+/// `postEvent:atStart:`, then pump so the run loop dispatches them. After this
+/// returns, the caller inspects the outer `clicked` flag to detect whether AppKit
+/// hit-tested the button and performed its action.
     private static void attemptQueuedClick(NSApplication app, NSButton button) throws Throwable {
         // Runtime-resolved CoreGraphics downcall handles (NEVER a static initializer; same
         // pattern as NSEventTest). Descriptors come from NsuiForeign (single source of truth).
@@ -172,7 +163,4 @@ public final class ButtonTest {
 
     // ------------------------------------------------------------------ helpers
 
-    
-
-    
 }

@@ -4,24 +4,16 @@ import nsui.NSColor;
 import nsui.NSFont;
 import nsui.objc.ObjC;
 
-/**
- * Color + font round-trip test.
- *
- * <ul>
- *   <li>{@code NSColor.create(r,g,b,a)} then {@code rgba()} must come back ≈ the
- *       input within 0.02 (sRGB extended colorspace round-trip channels are cheap).</li>
- *   <li>{@code description()} is non-null/non-empty.</li>
- *   <li>{@code setFill}/{@code setStroke} outside any graphics context must not crash
- *       (AppKit may warn; the assertion is "did not throw / did not crash the process").</li>
- *   <li>{@code NSFont.fontWithName("Helvetica", 12)} -> non-nil, name and size round-trip.</li>
- *   <li>{@code systemFontOfSize}/{@code boldSystemFontOfSize} -> non-nil.</li>
- * </ul>
- */
+/// Color + font round-trip test.
+///
+/// - `NSColor.create(r,g,b,a)` then `rgba()` must come back ≈ the
+/// input within 0.02 (sRGB extended colorspace round-trip channels are cheap).
+/// - `description()` is non-null/non-empty.
+/// - `setFill`/`setStroke` outside any graphics context must not crash
+/// (AppKit may warn; the assertion is "did not throw / did not crash the process").
+/// - `NSFont.fontWithName("Helvetica", 12)` -> non-nil, name and size round-trip.
+/// - `systemFontOfSize`/`boldSystemFontOfSize` -> non-nil.
 public final class ColorFontTest {
-
-    
-
-    
 
     private static boolean near(double a, double b, double tol) {
         return Math.abs(a - b) <= tol;

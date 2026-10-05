@@ -11,7 +11,6 @@ import nsui.NSDraggingDestination;
 import nsui.NSDraggingItem;
 import nsui.NSDraggingSession;
 import nsui.NSDraggingSource;
-import nsui.NSEvent;
 import nsui.NSPasteboardItem;
 import nsui.objc.DelegateProxy;
 import nsui.objc.ObjC;
@@ -19,13 +18,11 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * DraggingTest — verifies NSView dragging wiring and DelegateProxy for dragging.
- * - ObjC.init(); registerForDraggedTypes(List.of("public.plain-text")) no throw, unregister no throw
- * - if hasWindow: beginDraggingSession returns NSDraggingSession or null gracefully
- * - check DelegateProxy registry for dragging delegates
- * - Stress: 200 iterations register/unregister
- */
+/// DraggingTest — verifies NSView dragging wiring and DelegateProxy for dragging.
+/// - ObjC.init(); registerForDraggedTypes(List.of("public.plain-text")) no throw, unregister no throw
+/// - if hasWindow: beginDraggingSession returns NSDraggingSession or null gracefully
+/// - check DelegateProxy registry for dragging delegates
+/// - Stress: 200 iterations register/unregister
 public final class DraggingTest {
     
     private static int asserts;

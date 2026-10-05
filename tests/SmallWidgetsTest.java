@@ -14,26 +14,18 @@ import nsui.NSTabViewItem;
 import nsui.NSView;
 import nsui.objc.ObjC;
 
-/**
- * Small-widget batch: NSDatePicker, NSColorWell, NSBox, NSStepper, NSLevelIndicator,
- * NSTabView + NSTabViewItem.
- *
- * <ul>
- *   <li>NSDatePicker: style/elements/date round-trip, no crash;</li>
- *   <li>NSColorWell: setColor + color() reads back non-nil (raw NSColor id), activate/deactivate;</li>
- *   <li>NSBox: title round-trip, box/border/titlePosition setters;</li>
- *   <li>NSStepper: min/max/increment/value + value beyond max (AppKit clamps);</li>
- *   <li>NSLevelIndicator: style + range/value;</li>
- *   <li>NSTabView + NSTabViewItem: two labeled tabs with content views.</li>
- * </ul>
- *
- * All AppKit activity runs on the main thread ({@code -XstartOnFirstThread}).
- */
+/// Small-widget batch: NSDatePicker, NSColorWell, NSBox, NSStepper, NSLevelIndicator,
+/// NSTabView + NSTabViewItem.
+///
+/// - NSDatePicker: style/elements/date round-trip, no crash;
+/// - NSColorWell: setColor + color() reads back non-nil (raw NSColor id), activate/deactivate;
+/// - NSBox: title round-trip, box/border/titlePosition setters;
+/// - NSStepper: min/max/increment/value + value beyond max (AppKit clamps);
+/// - NSLevelIndicator: style + range/value;
+/// - NSTabView + NSTabViewItem: two labeled tabs with content views.
+///
+/// All AppKit activity runs on the main thread (`-XstartOnFirstThread`).
 public final class SmallWidgetsTest {
-
-    
-
-    
 
     public static void main(String[] args) {
         System.out.println("=== SmallWidgetsTest — NSDatePicker/NSColorWell/NSBox/NSStepper/NSLevelIndicator/NSTabView ===");

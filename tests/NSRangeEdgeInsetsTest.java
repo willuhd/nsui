@@ -5,19 +5,12 @@ import nsui.NSEdgeInsets;
 import nsui.NSPoint;
 import nsui.NSRange;
 import nsui.NSRect;
-import nsui.NSSize;
 import nsui.objc.ObjC;
 import nsui.objc.Scratch;
 
-/**
- * Tests for NSRange and NSEdgeInsets value types.
- * Pure-memory struct tests — no windows, no run loop — but still requires ObjC.init().
- */
+/// Tests for NSRange and NSEdgeInsets value types.
+/// Pure-memory struct tests — no windows, no run loop — but still requires ObjC.init().
 public final class NSRangeEdgeInsetsTest {
-
-    
-
-    
 
     private static boolean near(double a, double b, double eps) {
         return Math.abs(a - b) <= eps;

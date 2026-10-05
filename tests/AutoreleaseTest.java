@@ -7,7 +7,6 @@ import java.lang.foreign.MemorySegment;
 
 public class AutoreleaseTest {
 
-
     public static void main(String[] args) {
         ObjC.init();
         System.out.println("[AutoreleaseTest] begin");

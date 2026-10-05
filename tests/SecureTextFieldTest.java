@@ -1,32 +1,21 @@
 package nsui.tests;
 
-import java.lang.foreign.MemorySegment;
-
 import nsui.NSApplication;
 import nsui.NSRect;
 import nsui.NSSecureTextField;
 import nsui.NSView;
 import nsui.NSWindow;
-import nsui.NSEvent;
 import nsui.objc.ObjC;
 
-/**
- * SecureTextFieldTest — end-to-end NSSecureTextField control test.
- *
- * <p>Creates a window + content view, installs an {@code NSSecureTextField},
- * verifies:
- * <ul>
- *   <li>{@code stringValue()} round-trips the set text (pre-window deterministic);</li>
- *   <li>{@code echosBullets} / {@code isEchosBullets} / {@code setEchosBullets:} round-trip;</li>
- *   <li>in-window string still settles;</li>
- *   <li>frame is preserved.</li>
- * </ul>
- */
+/// SecureTextFieldTest — end-to-end NSSecureTextField control test.
+///
+/// Creates a window + content view, installs an `NSSecureTextField`,
+/// verifies:
+/// - `stringValue()` round-trips the set text (pre-window deterministic);
+/// - `echosBullets` / `isEchosBullets` / `setEchosBullets:` round-trip;
+/// - in-window string still settles;
+/// - frame is preserved.
 public final class SecureTextFieldTest {
-
-    
-
-    
 
     public static void main(String[] args) throws InterruptedException {
         System.out.println("=== SecureTextFieldTest — real NSSecureTextField control ===");
@@ -104,7 +93,4 @@ public final class SecureTextFieldTest {
         TestKit.end();
     }
 
-    
-
-    
 }

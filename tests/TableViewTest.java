@@ -19,21 +19,19 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * TableViewTest — a REAL data-source-driven {@code NSTableView} embedded in an
- * {@code NSScrollView}, proving the {@link DelegateProxy} data-source shapes:
- * {@code numberOfRowsInTableView:} (IntArg) and
- * {@code tableView:objectValueForTableColumn:row:} (IdIdIntArg) deliver real row
- * counts and cell values through the live AppKit display pass.
- *
- * <p>The table is shown in a real window (the ONLY way AppKit materializes cells),
- * so the assertions are the genuine callback counts AppKit performed while drawing:
- * {@link #N_ROWS} row-count queries and at least one cell query per row.
- *
- * <p>Also proves a {@code -(void)} delegate notification
- * ({@code tableViewSelectionDidChange:}) is accepted by routing the registered
- * selector through a check that the delegate {@code respondsToSelector:}.
- */
+/// TableViewTest — a REAL data-source-driven `NSTableView` embedded in an
+/// `NSScrollView`, proving the `DelegateProxy` data-source shapes:
+/// `numberOfRowsInTableView:` (IntArg) and
+/// `tableView:objectValueForTableColumn:row:` (IdIdIntArg) deliver real row
+/// counts and cell values through the live AppKit display pass.
+///
+/// The table is shown in a real window (the ONLY way AppKit materializes cells),
+/// so the assertions are the genuine callback counts AppKit performed while drawing:
+/// `#N_ROWS` row-count queries and at least one cell query per row.
+///
+/// Also proves a `-(void)` delegate notification
+/// (`tableViewSelectionDidChange:`) is accepted by routing the registered
+/// selector through a check that the delegate `respondsToSelector:`.
 public final class TableViewTest {
 
     /** Row count our data source reports. */
@@ -41,12 +39,8 @@ public final class TableViewTest {
     /** Number of columns we build. */
     private static final int N_COLS = 2;
 
-    
-
     // Resolved once after ObjC.init() — never in a static initializer.
     private static MethodHandle hBoolId;      // (id, SEL, id/SEL) -> bool [respondsToSelector:]
-
-    
 
     public static void main(String[] args) throws InterruptedException {
         System.out.println("=== TableViewTest — NSTableView + NSScrollView, live data source ===");

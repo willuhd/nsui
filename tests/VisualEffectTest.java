@@ -9,25 +9,17 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * NSVisualEffectView round-trip: isKindOfClass and material / blendingMode /
- * state / isEmphasized / maskingImage.
- *
- * <ul>
- *   <li>Creates a view via {@link NSVisualEffectView#create(NSRect)} and verifies
- *       it isKindOfClass NSVisualEffectView (and also NSView);</li>
- *   <li>Material round-trip: sets and reads back several NSVisualEffectMaterial values;</li>
- *   <li>Also verifies blendingMode, state, isEmphasized and maskingImage accessors
- *       do not crash and round-trip.</li>
- * </ul>
- *
- * All AppKit activity runs on the main thread ({@code -XstartOnFirstThread}).
- */
+/// NSVisualEffectView round-trip: isKindOfClass and material / blendingMode /
+/// state / isEmphasized / maskingImage.
+///
+/// - Creates a view via `NSVisualEffectView#create(NSRect)` and verifies
+/// it isKindOfClass NSVisualEffectView (and also NSView);
+/// - Material round-trip: sets and reads back several NSVisualEffectMaterial values;
+/// - Also verifies blendingMode, state, isEmphasized and maskingImage accessors
+/// do not crash and round-trip.
+///
+/// All AppKit activity runs on the main thread (`-XstartOnFirstThread`).
 public final class VisualEffectTest {
-
-    
-
-    
 
     public static void main(String[] args) {
         System.out.println("=== VisualEffectTest — isKindOfClass + material round-trip ===");

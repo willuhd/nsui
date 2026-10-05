@@ -1,33 +1,22 @@
 package nsui.tests;
 
-import java.lang.foreign.MemorySegment;
-
 import nsui.NSApplication;
 import nsui.NSFont;
 import nsui.NSRect;
 import nsui.NSTextField;
 import nsui.NSView;
 import nsui.NSWindow;
-import nsui.NSEvent;
 import nsui.objc.ObjC;
 
-/**
- * TextFieldTest — end-to-end NSTextField control test.
- *
- * <p>Creates a window + content view, installs an {@code NSTextField}, sets its value,
- * font, bezel/background/editability, pumps briefly, then asserts:
- * <ul>
- *   <li>{@code stringValue()} round-trips the set text;</li>
- *   <li>the font round-trips — {@code [field font] fontName} is the PostScript name we
- *       requested (read directly via ObjC to avoid wrapping a transient NSFont peer);</li>
- *   <li>bezeling/editability/background flags are readable back.</li>
- * </ul>
- */
+/// TextFieldTest — end-to-end NSTextField control test.
+///
+/// Creates a window + content view, installs an `NSTextField`, sets its value,
+/// font, bezel/background/editability, pumps briefly, then asserts:
+/// - `stringValue()` round-trips the set text;
+/// - the font round-trips — `[field font] fontName` is the PostScript name we
+/// requested (read directly via ObjC to avoid wrapping a transient NSFont peer);
+/// - bezeling/editability/background flags are readable back.
 public final class TextFieldTest {
-
-    
-
-    
 
     public static void main(String[] args) throws InterruptedException {
         System.out.println("=== TextFieldTest — real NSTextField control ===");
@@ -109,7 +98,4 @@ public final class TextFieldTest {
 
     // ------------------------------------------------------------------ helpers
 
-    
-
-    
 }

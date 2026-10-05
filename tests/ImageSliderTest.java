@@ -9,7 +9,6 @@ import java.lang.invoke.MethodHandle;
 import javax.imageio.ImageIO;
 
 import nsui.NSApplication;
-import nsui.NSEvent;
 import nsui.NSImage;
 import nsui.NSImageView;
 import nsui.NSProgressIndicator;
@@ -22,23 +21,15 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * Image + value-widget wrappers, verified end to end:
- * <ul>
- *   <li>NSImage: load a 64x64 solid-RED PNG written with javax.imageio (headless),
- *       assert isValid() and size()==(64,64);</li>
- *   <li>draw it through a Java NSView.drawRect: via [image drawInRect:], render the
- *       view to a bitmap and assert a pixel inside the draw region is RED;</li>
- *   <li>NSImageView: set image + scaling on a view, no crash;</li>
- *   <li>NSSlider: min/max/value round-trip, tick marks, tick-only snapping, disable;</li>
- *   <li>NSProgressIndicator: determinate state, range/value, start/stop animation.</li>
- * </ul>
- */
+/// Image + value-widget wrappers, verified end to end:
+/// - NSImage: load a 64x64 solid-RED PNG written with javax.imageio (headless),
+/// assert isValid() and size()==(64,64);
+/// - draw it through a Java NSView.drawRect: via [image drawInRect:], render the
+/// view to a bitmap and assert a pixel inside the draw region is RED;
+/// - NSImageView: set image + scaling on a view, no crash;
+/// - NSSlider: min/max/value round-trip, tick marks, tick-only snapping, disable;
+/// - NSProgressIndicator: determinate state, range/value, start/stop animation.
 public final class ImageSliderTest {
-
-    
-
-    
 
     public static void main(String[] args) throws Throwable {
         System.out.println("=== ImageSliderTest — NSImage/NSImageView/NSSlider/NSProgressIndicator ===");
@@ -136,7 +127,6 @@ public final class ImageSliderTest {
     }
 
     /** Pump the run loop for ~1.5s so the window draws on the main thread. */
-    
 
     /** Write a solid-color PNG file with javax.imageio (headless, not AWT UI). */
     private static void writeRedPng(String path, int w, int h) throws Exception {

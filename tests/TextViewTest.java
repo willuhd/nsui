@@ -11,26 +11,19 @@ import nsui.NSScrollView;
 import nsui.NSTextView;
 import nsui.NSView;
 import nsui.NSWindow;
-import nsui.NSEvent;
 import nsui.objc.ObjC;
 import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * TextViewTest — end-to-end NSTextView control test.
- *
- * <p>Creates an {@code NSTextView} via {@code alloc/initWithFrame:}, verifies
- * {@code isKindOfClass:} for NSTextView/NSText/NSView, then checks string
- * round-trip via a scroll view (the canonical AppKit embedding).
- * Also covers isRichText, importsGraphics, usesFontPanel, isEditable/isSelectable,
- * font, textColor, backgroundColor.
- */
+/// TextViewTest — end-to-end NSTextView control test.
+///
+/// Creates an `NSTextView` via `alloc/initWithFrame:`, verifies
+/// `isKindOfClass:` for NSTextView/NSText/NSView, then checks string
+/// round-trip via a scroll view (the canonical AppKit embedding).
+/// Also covers isRichText, importsGraphics, usesFontPanel, isEditable/isSelectable,
+/// font, textColor, backgroundColor.
 public final class TextViewTest {
-
-    
-
-    
 
     private static boolean isKindOf(MemorySegment obj, String className) {
         try {
@@ -167,7 +160,4 @@ public final class TextViewTest {
         TestKit.end();
     }
 
-    
-
-    
 }

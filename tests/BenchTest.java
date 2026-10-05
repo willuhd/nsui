@@ -7,29 +7,25 @@ import nsui.NSWindow;
 import nsui.objc.ObjC;
 import nsui.objc.Scratch;
 
-/**
- * Benchmarks for the toolkit's hottest paths.
- *
- * <p>Deliberately NOT JMH: plain {@code nanoTime} loops driven by
- * {@link TestKit}'s timing helpers. The budgets are generous fixed tripwires
- * (10x+ headroom over the dev machine) — they catch order-of-magnitude
- * regressions such as a hot path going quadratic, not 20% noise. Timing
- * lines are always printed so trends are visible even when everything passes.
- *
- * <p>Covered paths (the audit's worst offenders first):
- * <ol>
- *   <li>{@code ObjC.toString} at 0.5k/5k/20k chars — per-character
- *       {@code reinterpret} cost lives here.</li>
- *   <li>{@code frame()} in a tight loop — the immortal-arena struct-return
- *       path ({@code msgSendRect}).</li>
- *   <li>By-value INPUT marshalling ({@code rect} + {@code cstring}) inside
- *       one {@code Scratch} turn — must stay time-bounded AND memory-bounded
- *       ({@code used() < 1 MiB}, reset to 0).</li>
- *   <li>CALayer tree build/teardown — the compositing workload's unit cost.</li>
- * </ol>
- *
- * <p>Uses a hidden window only; never activates, never orders front.
- */
+/// Benchmarks for the toolkit's hottest paths.
+///
+/// Deliberately NOT JMH: plain `nanoTime` loops driven by
+/// `TestKit`'s timing helpers. The budgets are generous fixed tripwires
+/// (10x+ headroom over the dev machine) — they catch order-of-magnitude
+/// regressions such as a hot path going quadratic, not 20% noise. Timing
+/// lines are always printed so trends are visible even when everything passes.
+///
+/// Covered paths (the audit's worst offenders first):
+/// - `ObjC.toString` at 0.5k/5k/20k chars — per-character
+/// `reinterpret` cost lives here.
+/// - `frame()` in a tight loop — the immortal-arena struct-return
+/// path (`msgSendRect`).
+/// - By-value INPUT marshalling (`rect` + `cstring`) inside
+/// one `Scratch` turn — must stay time-bounded AND memory-bounded
+/// (`used() < 1 MiB`, reset to 0).
+/// - CALayer tree build/teardown — the compositing workload's unit cost.
+///
+/// Uses a hidden window only; never activates, never orders front.
 public final class BenchTest {
 
     public static void main(String[] args) {

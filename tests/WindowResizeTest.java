@@ -8,7 +8,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import nsui.NSApplication;
-import nsui.NSEvent;
 import nsui.NSObject;
 import nsui.NSRect;
 import nsui.NSSize;
@@ -16,20 +15,12 @@ import nsui.objc.DelegateProxy;
 import nsui.objc.ObjC;
 import nsui.objc.Sig;
 
-/**
- * WindowResizeTest — proves the windowWillResize:toSize: plumbing:
- * <ul>
- *   <li>{@link Sig} vocabulary contains {@code (SIZE, ID, SIZE)} shape</li>
- *   <li>{@link DelegateProxy.WindowSizeArg} routes through the selector dispatch</li>
- *   <li>Direct objc_msgSend to the delegate returns clamped size (veto)</li>
- *   <li>NSWindow delegate integration: a delegate that clamps to 500x400 vetoes a 900x700 resize attempt</li>
- * </ul>
- */
+/// WindowResizeTest — proves the windowWillResize:toSize: plumbing:
+/// - `Sig` vocabulary contains `(SIZE, ID, SIZE)` shape
+/// - `DelegateProxy.WindowSizeArg` routes through the selector dispatch
+/// - Direct objc_msgSend to the delegate returns clamped size (veto)
+/// - NSWindow delegate integration: a delegate that clamps to 500x400 vetoes a 900x700 resize attempt
 public final class WindowResizeTest {
-
-    
-
-    
 
     public static void main(String[] args) throws Throwable {
         System.out.println("=== WindowResizeTest — windowWillResize:toSize: delegate veto (clamp size) ===");
@@ -187,5 +178,4 @@ public final class WindowResizeTest {
         TestKit.end();
     }
 
-    
 }

@@ -42,6 +42,8 @@ public final class NSSegmentedControl extends NSControl {
     private static MethodHandle hSetTag; // (id, SEL, long, long) -> void [setTag:forSegment:]
     private static MethodHandle hShowsMenuIndicator; // (id, SEL, long) -> bool [showsMenuIndicatorForSegment:]
     private static MethodHandle hSetShowsMenuIndicator; // (id, SEL, bool, long) -> void [setShowsMenuIndicator:forSegment:]
+    private static MethodHandle hBoolInt; // (id, SEL, long) -> bool [selectSegmentWithTag:]
+    private static MethodHandle hDouble; // (id, SEL) -> double [doubleValueForSelectedSegment]
 
     private NSSegmentedControl(MemorySegment peer) {
         super(peer);
@@ -71,6 +73,8 @@ public final class NSSegmentedControl extends NSControl {
         hSetTag = ObjC.handle(Sig.of(Ret.VOID, Arg.INT, Arg.INT));
         hShowsMenuIndicator = ObjC.handle(Sig.of(Ret.BOOL, Arg.INT));
         hSetShowsMenuIndicator = ObjC.handle(Sig.of(Ret.VOID, Arg.BOOL, Arg.INT));
+        hBoolInt = ObjC.handle(Sig.of(Ret.BOOL, Arg.INT));
+        hDouble = ObjC.handle(Sig.of(Ret.DOUBLE));
         initialized = true;
     }
 
@@ -245,7 +249,15 @@ public final class NSSegmentedControl extends NSControl {
     // SDK: $(xcrun --show-sdk-path)/System/Library/Frameworks/AppKit.framework/Headers/NSSegmentedControl.h
     //   NSSegmentSwitchTracking: SelectOne 0, SelectAny 1, Momentary 2, MomentaryAccelerator 3
     //   NSSegmentStyle: Automatic 0, Rounded 1, RoundRect 3, TexturedSquare 4, SmallSquare 6, Separated 8, etc.
+    //   NSSegmentDistribution (10.13+): Fit 0, Fill 1, FillEqually 2, FillProportionally 3
+    //   NSControlBorderShape (26.0, from NSControl.h): Automatic 0, Capsule 1, RoundedRectangle 2, Circle 3
     // Docs: https://developer.apple.com/documentation/appkit/nssegmentedcontrol/trackingmode
+    // OMITTED: +segmentedControlWithLabels:trackingMode:target:action: and
+    // +segmentedControlWithImages:trackingMode:target:action: — their (ID,ID,INT,ID,ID) shape
+    // (two object args around an INT trackingMode plus target/action) is NOT in the Sig vocabulary
+    // (grep Sig.java: no of(Ret.ID, Arg.ID, Arg.INT, Arg.ID, Arg.ID)); use create()+setSegmentCount()+setLabel
+    // instead. -minimumSizeWithPrioritizedCompressionOptions: returns NSSize taking NSArray*,
+    // shape (SIZE,ID) is NOT in the vocabulary (only SIZE,SIZE and SIZE,ID,SIZE are).
 
     /// `NSSegmentSwitchTracking` — 0=SelectOne, 1=SelectAny, 2=Momentary, 3=MomentaryAccelerator.
     public enum TrackingMode {
@@ -325,6 +337,142 @@ public final class NSSegmentedControl extends NSControl {
         } catch (Throwable t) {
             throw new RuntimeException("setShowsMenuIndicator:forSegment: failed", t);
         }
+    }
+
+    // ---- completeness: all remaining header API in registered shapes (grep Sig.java per shape) ----
+    /// [control selectSegmentWithTag:] — select the segment with the given tag.
+    /// Shape (BOOL,INT) is in the vocabulary (grep: of(Ret.BOOL, Arg.INT)).
+    public boolean selectSegmentWithTag(long tag) {
+        try {
+            return (boolean) hBoolInt.invokeExact(peer, ObjC.sel("selectSegmentWithTag:"), tag);
+        } catch (Throwable t) {
+            throw new RuntimeException("selectSegmentWithTag: failed", t);
+        }
+    }
+
+    /// [control setImageScaling:forSegment:] — NSImageScaling for the segment.
+    /// Shape (VOID,INT,INT) is in the vocabulary (grep: of(Ret.VOID, Arg.INT, Arg.INT));
+    /// reuses the hSetTag handle (same shape as setTag:forSegment:).
+    public void setImageScalingForSegment(long scaling, long segment) {
+        try {
+            hSetTag.invokeExact(peer, ObjC.sel("setImageScaling:forSegment:"), scaling, segment);
+        } catch (Throwable t) {
+            throw new RuntimeException("setImageScaling:forSegment: failed", t);
+        }
+    }
+
+    /// [control imageScalingForSegment:] — NSImageScaling for the segment.
+    /// Shape (INT,INT) is in the vocabulary (grep: of(Ret.INT, Arg.INT));
+    /// reuses the hTagForSegment handle (same shape as tagForSegment:).
+    public long imageScalingForSegment(long segment) {
+        try {
+            return (long) hTagForSegment.invokeExact(peer, ObjC.sel("imageScalingForSegment:"), segment);
+        } catch (Throwable t) {
+            throw new RuntimeException("imageScalingForSegment: failed", t);
+        }
+    }
+
+    /// [control isSpringLoaded] — deep-press/hover action delivery (10.10.3+).
+    /// Shapes (BOOL ()) / (VOID,BOOL) are in the vocabulary.
+    public boolean isSpringLoaded() {
+        return ObjC.msgSendBool(peer, ObjC.sel("isSpringLoaded"));
+    }
+    /// [control setSpringLoaded:].
+    public void setSpringLoaded(boolean flag) {
+        ObjC.msgSendVoidBool(peer, ObjC.sel("setSpringLoaded:"), flag);
+    }
+
+    /// [control doubleValueForSelectedSegment] — double value for the selected segment
+    /// (valid only for trackingMode MomentaryAccelerator).
+    /// Shape (DOUBLE ()) is in the vocabulary (grep: of(Ret.DOUBLE)).
+    public double doubleValueForSelectedSegment() {
+        try {
+            return (double) hDouble.invokeExact(peer, ObjC.sel("doubleValueForSelectedSegment"));
+        } catch (Throwable t) {
+            throw new RuntimeException("doubleValueForSelectedSegment failed", t);
+        }
+    }
+
+    /// [control selectedSegmentBezelColor] — color of the selected segment's bevel, or nil.
+    /// Shapes (ID ()) / (VOID,ID) are in the vocabulary.
+    public NSColor selectedSegmentBezelColor() {
+        return NSColor.wrap(ObjC.msgSendId(peer, ObjC.sel("selectedSegmentBezelColor")));
+    }
+    /// [control setSelectedSegmentBezelColor:] — nil clears.
+    public void setSelectedSegmentBezelColor(NSColor color) {
+        ObjC.msgSendVoidId(peer, ObjC.sel("setSelectedSegmentBezelColor:"),
+                (MemorySegment) (color == null ? MemorySegment.NULL : color.peer()));
+    }
+
+    /// [control indexOfSelectedItem] — same as selectedSegment (for NSTabView wiring).
+    /// Shape (INT ()) is in the vocabulary.
+    public long indexOfSelectedItem() {
+        return ObjC.msgSendLong(peer, ObjC.sel("indexOfSelectedItem"));
+    }
+
+    /// [control setAlignment:forSegment:] — content alignment of the segment (10.13+).
+    /// Shape (VOID,INT,INT) is in the vocabulary; reuses hSetTag (same shape).
+    public void setAlignmentForSegment(long alignment, long segment) {
+        try {
+            hSetTag.invokeExact(peer, ObjC.sel("setAlignment:forSegment:"), alignment, segment);
+        } catch (Throwable t) {
+            throw new RuntimeException("setAlignment:forSegment: failed", t);
+        }
+    }
+
+    /// [control alignmentForSegment:] — NSTextAlignment of the segment (10.13+).
+    /// Shape (INT,INT) is in the vocabulary; reuses hTagForSegment (same shape).
+    public long alignmentForSegment(long segment) {
+        try {
+            return (long) hTagForSegment.invokeExact(peer, ObjC.sel("alignmentForSegment:"), segment);
+        } catch (Throwable t) {
+            throw new RuntimeException("alignmentForSegment: failed", t);
+        }
+    }
+
+    /// NSSegmentDistribution — Fit 0, Fill 1, FillEqually 2, FillProportionally 3 (10.13+).
+    public enum SegmentDistribution {
+        fit(0), fill(1), fillEqually(2), fillProportionally(3);
+        public final long value;
+        SegmentDistribution(long v) { this.value = v; }
+        public static SegmentDistribution fromValue(long v) { for (var e : values()) if (e.value == v) return e; return null; }
+    }
+
+    /// [control segmentDistribution] — how dynamic segments fill space (10.13+).
+    /// Shapes (INT ()) / (VOID,INT) are in the vocabulary.
+    public long segmentDistribution() {
+        return ObjC.msgSendLong(peer, ObjC.sel("segmentDistribution"));
+    }
+    /// Typed getter.
+    public SegmentDistribution segmentDistributionEnum() { return SegmentDistribution.fromValue(segmentDistribution()); }
+    /// [control setSegmentDistribution:].
+    public void setSegmentDistribution(long dist) {
+        ObjC.msgSendVoidLong(peer, ObjC.sel("setSegmentDistribution:"), dist);
+    }
+    /// Typed overload.
+    public void setSegmentDistribution(SegmentDistribution d) { setSegmentDistribution(d.value); }
+
+    /// [control compressWithPrioritizedCompressionOptions:] — compress per options (10.13+).
+    /// Shape (VOID,ID) is in the vocabulary.
+    public void compressWithPrioritizedCompressionOptions(NSArray options) {
+        ObjC.msgSendVoidId(peer, ObjC.sel("compressWithPrioritizedCompressionOptions:"),
+                (MemorySegment) (options == null ? MemorySegment.NULL : options.peer()));
+    }
+
+    /// [control activeCompressionOptions] — current compression options (10.13+), or nil.
+    /// Shape (ID ()) is in the vocabulary.
+    public MemorySegment activeCompressionOptions() {
+        return ObjC.msgSendId(peer, ObjC.sel("activeCompressionOptions"));
+    }
+
+    /// [control borderShape] — NSControlBorderShape (26.0+; Automatic 0, Capsule 1, RoundedRectangle 2, Circle 3).
+    /// Shapes (INT ()) / (VOID,INT) are in the vocabulary.
+    public long borderShape() {
+        return ObjC.msgSendLong(peer, ObjC.sel("borderShape"));
+    }
+    /// [control setBorderShape:].
+    public void setBorderShape(long shape) {
+        ObjC.msgSendVoidLong(peer, ObjC.sel("setBorderShape:"), shape);
     }
 
 }

@@ -10,6 +10,12 @@ import static nsui.objc.Sig.Ret;
 
 /// NSTouchBarItem — minimal wrap over AppKit NSTouchBarItem.
 /// Thin 1:1, stateless.
+/// SDK: $(xcrun --show-sdk-path)/System/Library/Frameworks/AppKit.framework/Headers/NSTouchBarItem.h
+/// Coverage: COMPLETE after this batch — identifier/visibilityPriority/view/viewController/
+/// customizationLabel/visible plus the four NSTouchBarItemIdentifier* extern constants below.
+/// All shapes are the registered (ID ())/(VOID,ID)/(INT ())/(VOID,INT)/(BOOL ())/(VOID,BOOL) family
+/// (grep Sig.java per shape). OMITTED: -initWithCoder: (NSCoding archiving, out of scope for a
+/// stateless wrapper); -init is NS_UNAVAILABLE by design (use create(identifier)).
 public class NSTouchBarItem extends NSObject {
 
             private record Handles(MethodHandle hInitId, MethodHandle hId, MethodHandle hVoidId, MethodHandle hBool, MethodHandle hVoidBool) {}
@@ -116,4 +122,41 @@ public class NSTouchBarItem extends NSObject {
             handles.hVoidId().invokeExact(peer, sel, (MemorySegment) (view == null ? MemorySegment.NULL : view.peer()));
         } catch (Throwable t) { /* no-op if absent */ }
     }
+
+    // ---- completeness: remaining header API in registered shapes ----
+    /// viewController — the item's view controller (or nil; subclass override point).
+    /// Shape (ID ()) is in the vocabulary; guarded like view (not all items expose it).
+    public NSViewController viewController() {
+        ensureInit();
+        try {
+            MemorySegment sel = ObjC.sel("viewController");
+            MethodHandle hResp = ObjC.handle(Sig.of(Ret.BOOL, Arg.ID));
+            boolean resp = (boolean) hResp.invokeExact(peer, ObjC.sel("respondsToSelector:"), sel);
+            if (!resp) return null;
+            MemorySegment v = (MemorySegment) handles.hId().invokeExact(peer, sel);
+            return NSViewController.wrap(v);
+        } catch (Throwable t) { return null; }
+    }
+
+    /// customizationLabel — user-visible string during customization (empty string by default).
+    /// Shape (ID ()) is in the vocabulary.
+    public String customizationLabel() {
+        ensureInit();
+        try {
+            MemorySegment s = (MemorySegment) handles.hId().invokeExact(peer, ObjC.sel("customizationLabel"));
+            return ObjC.toString(s);
+        } catch (Throwable t) {
+            throw new RuntimeException("customizationLabel failed", t);
+        }
+    }
+
+    // ---- NSTouchBarItemIdentifier* extern constants (not selectors; plain strings) ----
+    /// Identifier for a small fixed space in an NSTouchBar.
+    public static final String FIXED_SPACE_SMALL = "NSTouchBarItemIdentifierFixedSpaceSmall";
+    /// Identifier for a large fixed space in an NSTouchBar.
+    public static final String FIXED_SPACE_LARGE = "NSTouchBarItemIdentifierFixedSpaceLarge";
+    /// Identifier for a flexible space in an NSTouchBar.
+    public static final String FLEXIBLE_SPACE = "NSTouchBarItemIdentifierFlexibleSpace";
+    /// Identifier for the special "other items proxy" (nests nearer-to-first-responder bars).
+    public static final String OTHER_ITEMS_PROXY = "NSTouchBarItemIdentifierOtherItemsProxy";
 }

@@ -75,7 +75,10 @@ public final class NSSwitch extends NSControl {
         ObjC.msgSendSuperVoid(superStruct, sel);
     }
 
-    /// `[[NSSwitch alloc] initWithFrame:frame]` — a new switch at the given rect.
+    /// `NSSwitch.h` declares only `state` (covered below); target/action come from
+/// `NSControl`, so this wrapper is already complete against the header.
+///
+/// `[[NSSwitch alloc] initWithFrame:frame]` — a new switch at the given rect.
     public static NSSwitch create(NSRect frame) {
         ensureInit();
         MemorySegment s = ObjC.msgSendId(switchClass, ObjC.sel("alloc"));

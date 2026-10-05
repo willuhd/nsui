@@ -18,10 +18,16 @@ import static nsui.objc.Sig.Ret;
 /// `sizeToFit` and a `setFrame:` with the fitted size. The action target is
 /// an ObjC instance built by `DelegateProxy.actionTarget` — passing raw selector
 /// names into `setAction:` on the native side.
+///
+/// Omitted from `NSButton.h`: `getPeriodicDelay:interval:` (float* out-params,
+/// no registered shape); `minimumSizeWithPrioritizedCompressionOptions:`
+/// (no `size(id)` shape — requested); deprecated `setTitleWithMnemonic:`.
+/// The 4- and 5-argument all-object factories use the documented AOT-safe
+/// `ObjC.invoke` escape hatch (NULL-padded to the registered 6-object shape).
 public final class NSButton extends NSControl {
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
-    private record Handles(MethodHandle hInitFrame, MethodHandle hSetPeriodicDelay) {}
+    private record Handles(MethodHandle hInitFrame, MethodHandle hSetPeriodicDelay, MethodHandle hResponds, MethodHandle hBoolId) {}
     private static volatile Handles H;
 
     private NSButton(MemorySegment peer) {
@@ -38,7 +44,9 @@ public final class NSButton extends NSControl {
         if (H != null) return;
         H = new Handles(
                 ObjC.handle(Sig.of(Ret.ID, Arg.RECT)),
-                ObjC.handle(Sig.of(Ret.VOID, Arg.FLOAT, Arg.FLOAT)));
+                ObjC.handle(Sig.of(Ret.VOID, Arg.FLOAT, Arg.FLOAT)),
+                ObjC.handle(Sig.of(Ret.BOOL, Arg.ID)),
+                ObjC.handle(Sig.of(Ret.BOOL, Arg.ID)));
     }
 
     /// `[[NSButton alloc] initWithFrame:frame]` then configure bezel/type and
@@ -306,5 +314,129 @@ public final class NSButton extends NSControl {
     }
     public void setHasDestructiveAction(boolean flag) {
         ObjC.msgSendVoidBool(peer, ObjC.sel("setHasDestructiveAction:"), flag);
+    }
+
+    // ---- standard factories (NSButton.h "Creating Standard Buttons") ----
+    /// `+buttonWithTitle:target:action:` — a standard push button (nil-safe target/action).
+    public static NSButton buttonWithTitle(String title, MemorySegment target, String actionSelector) {
+        ensureInit();
+        MemorySegment b = ObjC.msgSendIdIdSelId(ObjC.cls("NSButton"), ObjC.sel("buttonWithTitle:target:action:"),
+                ObjC.nsstring(title == null ? "" : title),
+                target == null ? MemorySegment.NULL : target,
+                (actionSelector == null || actionSelector.isEmpty()) ? MemorySegment.NULL : ObjC.sel(actionSelector));
+        if (b == null || b.address() == 0) throw new IllegalStateException("buttonWithTitle:target:action: returned nil");
+        return new NSButton(b);
+    }
+    /// `+buttonWithImage:target:action:` — a standard image button (nil-safe image/target/action).
+    public static NSButton buttonWithImage(NSImage image, MemorySegment target, String actionSelector) {
+        ensureInit();
+        MemorySegment b = ObjC.msgSendIdIdSelId(ObjC.cls("NSButton"), ObjC.sel("buttonWithImage:target:action:"),
+                (MemorySegment) (image == null ? MemorySegment.NULL : image.peer()),
+                target == null ? MemorySegment.NULL : target,
+                (actionSelector == null || actionSelector.isEmpty()) ? MemorySegment.NULL : ObjC.sel(actionSelector));
+        if (b == null || b.address() == 0) throw new IllegalStateException("buttonWithImage:target:action: returned nil");
+        return new NSButton(b);
+    }
+    /// `+checkboxWithTitle:target:action:` — a standard checkbox (nil-safe target/action).
+    public static NSButton checkboxWithTitle(String title, MemorySegment target, String actionSelector) {
+        ensureInit();
+        MemorySegment b = ObjC.msgSendIdIdSelId(ObjC.cls("NSButton"), ObjC.sel("checkboxWithTitle:target:action:"),
+                ObjC.nsstring(title == null ? "" : title),
+                target == null ? MemorySegment.NULL : target,
+                (actionSelector == null || actionSelector.isEmpty()) ? MemorySegment.NULL : ObjC.sel(actionSelector));
+        if (b == null || b.address() == 0) throw new IllegalStateException("checkboxWithTitle:target:action: returned nil");
+        return new NSButton(b);
+    }
+    /// `+radioButtonWithTitle:target:action:` — a standard radio button (nil-safe target/action).
+    public static NSButton radioButtonWithTitle(String title, MemorySegment target, String actionSelector) {
+        ensureInit();
+        MemorySegment b = ObjC.msgSendIdIdSelId(ObjC.cls("NSButton"), ObjC.sel("radioButtonWithTitle:target:action:"),
+                ObjC.nsstring(title == null ? "" : title),
+                target == null ? MemorySegment.NULL : target,
+                (actionSelector == null || actionSelector.isEmpty()) ? MemorySegment.NULL : ObjC.sel(actionSelector));
+        if (b == null || b.address() == 0) throw new IllegalStateException("radioButtonWithTitle:target:action: returned nil");
+        return new NSButton(b);
+    }
+    /// `+buttonWithTitle:image:target:action:` — title plus image (all object args; via `ObjC.invoke`).
+    public static NSButton buttonWithTitleImage(String title, NSImage image, MemorySegment target, String actionSelector) {
+        ensureInit();
+        MemorySegment b = ObjC.invoke(ObjC.cls("NSButton"), ObjC.sel("buttonWithTitle:image:target:action:"),
+                ObjC.nsstring(title == null ? "" : title),
+                (MemorySegment) (image == null ? MemorySegment.NULL : image.peer()),
+                target == null ? MemorySegment.NULL : target,
+                (actionSelector == null || actionSelector.isEmpty()) ? MemorySegment.NULL : ObjC.sel(actionSelector));
+        if (b == null || b.address() == 0) throw new IllegalStateException("buttonWithTitle:image:target:action: returned nil");
+        return new NSButton(b);
+    }
+
+    // ---- accelerator / symbol ----
+    /// [button maxAcceleratorLevel] — max level for multi-level accelerator buttons (default 2).
+    public long maxAcceleratorLevel() {
+        return ObjC.msgSendLong(peer, ObjC.sel("maxAcceleratorLevel"));
+    }
+    /// [button setMaxAcceleratorLevel:] — allowed values 1..5.
+    public void setMaxAcceleratorLevel(long level) {
+        ObjC.msgSendVoidLong(peer, ObjC.sel("setMaxAcceleratorLevel:"), level);
+    }
+    /// [button symbolConfiguration] — sizing for symbol images (raw id; nil becomes NULL).
+    public MemorySegment symbolConfiguration() {
+        return ObjC.msgSendId(peer, ObjC.sel("symbolConfiguration"));
+    }
+    /// [button setSymbolConfiguration:] — pass `MemorySegment.NULL` for nil.
+    public void setSymbolConfiguration(MemorySegment config) {
+        ObjC.msgSendVoidId(peer, ObjC.sel("setSymbolConfiguration:"), config);
+    }
+
+    // ---- macOS 26 tint / border shape (guarded: 0 / no-op where absent) ----
+    /// [button tintProminence] — macOS 26+; 0 when the selector is absent.
+    public long tintProminence() {
+        ensureInit();
+        try {
+            boolean responds = (boolean) H.hResponds().invokeExact(peer, ObjC.sel("respondsToSelector:"), ObjC.sel("tintProminence"));
+            if (!responds) return 0L;
+            return ObjC.msgSendLong(peer, ObjC.sel("tintProminence"));
+        } catch (Throwable t) { throw new RuntimeException("tintProminence failed", t); }
+    }
+    /// [button setTintProminence:] — macOS 26+; no-op when absent.
+    public void setTintProminence(long prominence) {
+        ensureInit();
+        try {
+            boolean responds = (boolean) H.hResponds().invokeExact(peer, ObjC.sel("respondsToSelector:"), ObjC.sel("setTintProminence:"));
+            if (!responds) return;
+            ObjC.msgSendVoidLong(peer, ObjC.sel("setTintProminence:"), prominence);
+        } catch (Throwable t) { throw new RuntimeException("setTintProminence: failed", t); }
+    }
+    /// [button borderShape] — NSControlBorderShape (0=Automatic); macOS 26+, 0 when absent.
+    public long borderShape() {
+        ensureInit();
+        try {
+            boolean responds = (boolean) H.hResponds().invokeExact(peer, ObjC.sel("respondsToSelector:"), ObjC.sel("borderShape"));
+            if (!responds) return 0L;
+            return ObjC.msgSendLong(peer, ObjC.sel("borderShape"));
+        } catch (Throwable t) { throw new RuntimeException("borderShape failed", t); }
+    }
+    /// [button setBorderShape:] — macOS 26+; no-op when absent.
+    public void setBorderShape(long shape) {
+        ensureInit();
+        try {
+            boolean responds = (boolean) H.hResponds().invokeExact(peer, ObjC.sel("respondsToSelector:"), ObjC.sel("setBorderShape:"));
+            if (!responds) return;
+            ObjC.msgSendVoidLong(peer, ObjC.sel("setBorderShape:"), shape);
+        } catch (Throwable t) { throw new RuntimeException("setBorderShape: failed", t); }
+    }
+
+    // ---- keyboard / compression ----
+    /// [button performKeyEquivalent:] — YES when the event matches (nil-safe event).
+    public boolean performKeyEquivalent(NSEvent event) {
+        ensureInit();
+        try { return (boolean) H.hBoolId().invokeExact(peer, ObjC.sel("performKeyEquivalent:"), (MemorySegment) (event == null ? MemorySegment.NULL : event.peer())); } catch (Throwable t) { throw new RuntimeException("performKeyEquivalent: failed", t); }
+    }
+    /// [button compressWithPrioritizedCompressionOptions:] — compress per prioritized options.
+    public void compressWithPrioritizedCompressionOptions(NSArray options) {
+        ObjC.msgSendVoidId(peer, ObjC.sel("compressWithPrioritizedCompressionOptions:"), (MemorySegment) (options == null ? MemorySegment.NULL : options.peer()));
+    }
+    /// [button activeCompressionOptions] — options currently applied (raw id; nil becomes NULL).
+    public MemorySegment activeCompressionOptions() {
+        return ObjC.msgSendId(peer, ObjC.sel("activeCompressionOptions"));
     }
 }

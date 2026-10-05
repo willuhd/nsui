@@ -21,6 +21,13 @@ import static nsui.objc.Sig.Ret;
 /// the `minValue()`/`maxValue()` accessors here forward through the wrapped
 /// slider peer, exactly as the header recommends ("doubleValue, minValue,
 /// maxValue, etc can all be read and set through the slider").
+/// SDK: $(xcrun --show-sdk-path)/System/Library/Frameworks/AppKit.framework/Headers/NSSliderTouchBarItem.h
+/// Coverage: COMPLETE after this batch — view/slider/doubleValue/minimumSliderWidth/
+/// maximumSliderWidth/label/minimumValueAccessory/maximumValueAccessory/valueAccessoryWidth/
+/// target/action/customizationLabel. No NSSliderAccessory wrapper exists in this slice
+/// (grep src/nsui/NSSliderAccessory.java: miss), so accessories stay raw MemorySegment
+/// (shapes ID ()/VOID,ID are in the vocabulary). OMITTED: nothing — view is inherited from
+/// NSTouchBarItem but re-exposed here for discoverability (same guarded shape).
 public class NSSliderTouchBarItem extends NSTouchBarItem {
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
@@ -179,6 +186,170 @@ public class NSSliderTouchBarItem extends NSTouchBarItem {
             handles.hVoidDouble().invokeExact(peer, ObjC.sel("setDoubleValue:"), v);
         } catch (Throwable t) {
             throw new RuntimeException("setDoubleValue: failed", t);
+        }
+    }
+
+    /// view — the item's view (readonly, nonnull on macOS; guarded like the base).
+    /// Shape (ID ()) is in the vocabulary; re-exposed for discoverability.
+    @Override
+    public NSView view() {
+        return super.view();
+    }
+
+    /// minimumSliderWidth — lower bound of the slider track width (CGFloat double).
+    /// Shapes (DOUBLE ()) / (VOID,DOUBLE) are in the vocabulary (reuse hDouble/hVoidDouble).
+    public double minimumSliderWidth() {
+        ensureInit();
+        if (!responds("minimumSliderWidth")) return 0.0;
+        try {
+            return (double) handles.hDouble().invokeExact(peer, ObjC.sel("minimumSliderWidth"));
+        } catch (Throwable t) {
+            throw new RuntimeException("minimumSliderWidth failed", t);
+        }
+    }
+    /// setMinimumSliderWidth:.
+    public void setMinimumSliderWidth(double w) {
+        ensureInit();
+        if (!responds("setMinimumSliderWidth:")) return;
+        try {
+            handles.hVoidDouble().invokeExact(peer, ObjC.sel("setMinimumSliderWidth:"), w);
+        } catch (Throwable t) {
+            throw new RuntimeException("setMinimumSliderWidth: failed", t);
+        }
+    }
+
+    /// maximumSliderWidth — upper bound of the slider track width (defaults to MAXFLOAT).
+    public double maximumSliderWidth() {
+        ensureInit();
+        if (!responds("maximumSliderWidth")) return 0.0;
+        try {
+            return (double) handles.hDouble().invokeExact(peer, ObjC.sel("maximumSliderWidth"));
+        } catch (Throwable t) {
+            throw new RuntimeException("maximumSliderWidth failed", t);
+        }
+    }
+    /// setMaximumSliderWidth:.
+    public void setMaximumSliderWidth(double w) {
+        ensureInit();
+        if (!responds("setMaximumSliderWidth:")) return;
+        try {
+            handles.hVoidDouble().invokeExact(peer, ObjC.sel("setMaximumSliderWidth:"), w);
+        } catch (Throwable t) {
+            throw new RuntimeException("setMaximumSliderWidth: failed", t);
+        }
+    }
+
+    /// label — text label shown with the slider (nil reserves no space).
+    /// Shapes (ID ()) / (VOID,ID) are in the vocabulary.
+    public String label() {
+        ensureInit();
+        if (!responds("label")) return null;
+        try {
+            MemorySegment s = (MemorySegment) handles.hId().invokeExact(peer, ObjC.sel("label"));
+            return ObjC.toString(s);
+        } catch (Throwable t) {
+            throw new RuntimeException("label failed", t);
+        }
+    }
+    /// setLabel:.
+    public void setLabel(String label) {
+        ensureInit();
+        if (!responds("setLabel:")) return;
+        try {
+            MemorySegment s = label == null ? MemorySegment.NULL : ObjC.nsstring(label);
+            handles.hVoidId().invokeExact(peer, ObjC.sel("setLabel:"), s);
+        } catch (Throwable t) {
+            throw new RuntimeException("setLabel: failed", t);
+        }
+    }
+
+    /// minimumValueAccessory — accessory at the minimum end (raw id; no NSSliderAccessory wrapper).
+    public MemorySegment minimumValueAccessory() {
+        ensureInit();
+        if (!responds("minimumValueAccessory")) return null;
+        try {
+            MemorySegment a = (MemorySegment) handles.hId().invokeExact(peer, ObjC.sel("minimumValueAccessory"));
+            return (a == null || a.address() == 0) ? null : a;
+        } catch (Throwable t) {
+            throw new RuntimeException("minimumValueAccessory failed", t);
+        }
+    }
+    /// setMinimumValueAccessory:.
+    public void setMinimumValueAccessory(MemorySegment accessory) {
+        ensureInit();
+        if (!responds("setMinimumValueAccessory:")) return;
+        try {
+            handles.hVoidId().invokeExact(peer, ObjC.sel("setMinimumValueAccessory:"),
+                    (MemorySegment) (accessory == null ? MemorySegment.NULL : accessory));
+        } catch (Throwable t) {
+            throw new RuntimeException("setMinimumValueAccessory: failed", t);
+        }
+    }
+
+    /// maximumValueAccessory — accessory at the maximum end (raw id).
+    public MemorySegment maximumValueAccessory() {
+        ensureInit();
+        if (!responds("maximumValueAccessory")) return null;
+        try {
+            MemorySegment a = (MemorySegment) handles.hId().invokeExact(peer, ObjC.sel("maximumValueAccessory"));
+            return (a == null || a.address() == 0) ? null : a;
+        } catch (Throwable t) {
+            throw new RuntimeException("maximumValueAccessory failed", t);
+        }
+    }
+    /// setMaximumValueAccessory:.
+    public void setMaximumValueAccessory(MemorySegment accessory) {
+        ensureInit();
+        if (!responds("setMaximumValueAccessory:")) return;
+        try {
+            handles.hVoidId().invokeExact(peer, ObjC.sel("setMaximumValueAccessory:"),
+                    (MemorySegment) (accessory == null ? MemorySegment.NULL : accessory));
+        } catch (Throwable t) {
+            throw new RuntimeException("setMaximumValueAccessory: failed", t);
+        }
+    }
+
+    /// valueAccessoryWidth — width of the value accessories (CGFloat double; .default/.wide/ custom).
+    public double valueAccessoryWidth() {
+        ensureInit();
+        if (!responds("valueAccessoryWidth")) return 0.0;
+        try {
+            return (double) handles.hDouble().invokeExact(peer, ObjC.sel("valueAccessoryWidth"));
+        } catch (Throwable t) {
+            throw new RuntimeException("valueAccessoryWidth failed", t);
+        }
+    }
+    /// setValueAccessoryWidth:.
+    public void setValueAccessoryWidth(double w) {
+        ensureInit();
+        if (!responds("setValueAccessoryWidth:")) return;
+        try {
+            handles.hVoidDouble().invokeExact(peer, ObjC.sel("setValueAccessoryWidth:"), w);
+        } catch (Throwable t) {
+            throw new RuntimeException("setValueAccessoryWidth: failed", t);
+        }
+    }
+
+    /// customizationLabel — string shown during Touch Bar customization.
+    public String customizationLabel() {
+        ensureInit();
+        if (!responds("customizationLabel")) return null;
+        try {
+            MemorySegment s = (MemorySegment) handles.hId().invokeExact(peer, ObjC.sel("customizationLabel"));
+            return ObjC.toString(s);
+        } catch (Throwable t) {
+            throw new RuntimeException("customizationLabel failed", t);
+        }
+    }
+    /// setCustomizationLabel:.
+    public void setCustomizationLabel(String label) {
+        ensureInit();
+        if (!responds("setCustomizationLabel:")) return;
+        try {
+            MemorySegment s = label == null ? MemorySegment.NULL : ObjC.nsstring(label);
+            handles.hVoidId().invokeExact(peer, ObjC.sel("setCustomizationLabel:"), s);
+        } catch (Throwable t) {
+            throw new RuntimeException("setCustomizationLabel: failed", t);
         }
     }
 

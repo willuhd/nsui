@@ -16,6 +16,10 @@ import static nsui.objc.Sig.Ret;
 /// Style 0 is `NSLevelIndicatorStyleRelevancy`; other styles include
 /// `NSLevelIndicatorStyleContinuousCapacity` and
 /// `NSLevelIndicatorStyleDiscreteCapacity`.
+///
+/// Omitted from `NSLevelIndicator.h`: `rectOfTickMarkAtIndex:` (no `rect(int)`
+/// shape — requested); `-initWithLevelIndicatorStyle:` (init overload covered
+/// by `create()`).
 public final class NSLevelIndicator extends NSControl {
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
@@ -24,6 +28,7 @@ public final class NSLevelIndicator extends NSControl {
     private static MethodHandle hSetStyle;    // (id, SEL, int) -> void   [setLevelIndicatorStyle:]
     private static MethodHandle hSetDouble;   // (id, SEL, double) -> void  [setMinValue:/setMaxValue:/setDoubleValue:]
     private static MethodHandle hDouble;      // (id, SEL) -> double        [doubleValue]
+    private static MethodHandle hTickValue;   // (id, SEL, long) -> double  [tickMarkValueAtIndex:]
 
     private NSLevelIndicator(MemorySegment peer) {
         super(peer);
@@ -36,6 +41,7 @@ public final class NSLevelIndicator extends NSControl {
         hSetStyle = ObjC.handle(Sig.of(Ret.VOID, Arg.INT));
         hSetDouble = ObjC.handle(Sig.of(Ret.VOID, Arg.DOUBLE));
         hDouble = ObjC.handle(Sig.of(Ret.DOUBLE));
+        hTickValue = ObjC.handle(Sig.of(Ret.DOUBLE, Arg.INT));
         initialized = true;
     }
 
@@ -257,5 +263,75 @@ public final class NSLevelIndicator extends NSControl {
     public void setCriticalFillColor(NSColor color) {
         MemorySegment p = (color == null) ? MemorySegment.NULL : color.peer();
         ObjC.msgSendVoidId(peer, ObjC.sel("setCriticalFillColor:"), p);
+    }
+
+    /// [indicator tickMarkValueAtIndex:] — value of the tick at index (valid only below the tick count).
+    public double tickMarkValueAtIndex(long index) {
+        ensureInit();
+        try {
+            return (double) hTickValue.invokeExact(peer, ObjC.sel("tickMarkValueAtIndex:"), index);
+        } catch (Throwable t) {
+            throw new RuntimeException("tickMarkValueAtIndex: failed", t);
+        }
+    }
+
+    /// [indicator drawsTieredCapacityLevels] — whether capacity draws tiered levels.
+    public boolean drawsTieredCapacityLevels() {
+        return ObjC.msgSendBool(peer, ObjC.sel("drawsTieredCapacityLevels"));
+    }
+
+    /// [indicator setDrawsTieredCapacityLevels:] — set tiered capacity drawing.
+    public void setDrawsTieredCapacityLevels(boolean flag) {
+        ObjC.msgSendVoidBool(peer, ObjC.sel("setDrawsTieredCapacityLevels:"), flag);
+    }
+
+    // ---------------------------------------------------------------- nested enum — verified against local SDK headers
+    // SDK: $(xcrun --show-sdk-path)/System/Library/Frameworks/AppKit.framework/Headers/NSLevelIndicator.h
+    //   NSLevelIndicatorPlaceholderVisibility: Automatic 0, Always 1, WhileEditing 2
+    // Docs: https://developer.apple.com/documentation/appkit/nslevelindicator/placeholdervisibility
+
+    /// `NSLevelIndicatorPlaceholderVisibility` — 0=Automatic, 1=Always, 2=WhileEditing.
+    public enum PlaceholderVisibility {
+        automatic(0), always(1), whileEditing(2);
+        public final long value;
+        PlaceholderVisibility(long v) { this.value = v; }
+        public static PlaceholderVisibility fromValue(long v) { for (var e : values()) if (e.value == v) return e; return null; }
+    }
+
+    /// [indicator placeholderVisibility] — when rating placeholders draw (rating style only).
+    public long placeholderVisibility() {
+        return ObjC.msgSendLong(peer, ObjC.sel("placeholderVisibility"));
+    }
+    /// Typed getter.
+    public PlaceholderVisibility placeholderVisibilityEnum() { return PlaceholderVisibility.fromValue(placeholderVisibility()); }
+    /// [indicator setPlaceholderVisibility:] — set placeholder conditions.
+    public void setPlaceholderVisibility(long visibility) {
+        ObjC.msgSendVoidLong(peer, ObjC.sel("setPlaceholderVisibility:"), visibility);
+    }
+    /// Typed overload.
+    public void setPlaceholderVisibility(PlaceholderVisibility v) { setPlaceholderVisibility(v.value); }
+
+    /// [indicator ratingImage] — custom star image for the rating style (nil-safe; nil by default).
+    public NSImage ratingImage() {
+        MemorySegment p = ObjC.msgSendId(peer, ObjC.sel("ratingImage"));
+        return (p == null || p.address() == 0) ? null : NSImage.wrap(p);
+    }
+
+    /// [indicator setRatingImage:] — nil-safe (nil restores the default star).
+    public void setRatingImage(NSImage image) {
+        MemorySegment p = (image == null) ? MemorySegment.NULL : image.peer();
+        ObjC.msgSendVoidId(peer, ObjC.sel("setRatingImage:"), p);
+    }
+
+    /// [indicator ratingPlaceholderImage] — custom faded placeholder (nil-safe; nil by default).
+    public NSImage ratingPlaceholderImage() {
+        MemorySegment p = ObjC.msgSendId(peer, ObjC.sel("ratingPlaceholderImage"));
+        return (p == null || p.address() == 0) ? null : NSImage.wrap(p);
+    }
+
+    /// [indicator setRatingPlaceholderImage:] — nil-safe.
+    public void setRatingPlaceholderImage(NSImage image) {
+        MemorySegment p = (image == null) ? MemorySegment.NULL : image.peer();
+        ObjC.msgSendVoidId(peer, ObjC.sel("setRatingPlaceholderImage:"), p);
     }
 }

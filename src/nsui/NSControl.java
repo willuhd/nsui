@@ -10,10 +10,16 @@ import static nsui.objc.Sig.Ret;
 /// NSControl — the base of interactive controls (NSButton, NSTextField, ...).
 /// Mirrors the native hierarchy: NSControl is an NSView, so controls can be
 /// added to view hierarchies and positioned like any view.
+///
+/// Omitted from `NSControl.h`: `editWithFrame:editor:delegate:event:` and
+/// `selectWithFrame:editor:delegate:start:length:` (no `void(rect,id,id,id)` /
+/// `void(rect,id,id,int,int)` shape — requested); the
+/// `NSControlTextEditingDelegate` protocol (needs upcall machinery);
+/// deprecated `setFloatingPointFormat:left:right:`, `setNeedsDisplay`, `calcSize`.
 public class NSControl extends NSView {
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
-    private record Handles(MethodHandle hSendActionOn, MethodHandle hSizeThatFits, MethodHandle hDouble, MethodHandle hSetDouble, MethodHandle hSendActionTo) {}
+    private record Handles(MethodHandle hSendActionOn, MethodHandle hSizeThatFits, MethodHandle hDouble, MethodHandle hSetDouble, MethodHandle hSendActionTo, MethodHandle hBool, MethodHandle hExpansionFrame, MethodHandle hDrawExpansion) {}
     private static volatile Handles H;
 
     protected NSControl(MemorySegment peer) {
@@ -28,7 +34,10 @@ public class NSControl extends NSView {
                 ObjC.handle(Sig.of(Ret.SIZE, Arg.SIZE)),
                 ObjC.handle(Sig.of(Ret.DOUBLE)),
                 ObjC.handle(Sig.of(Ret.VOID, Arg.DOUBLE)),
-                ObjC.handle(Sig.of(Ret.BOOL, Arg.ID, Arg.ID)));
+                ObjC.handle(Sig.of(Ret.BOOL, Arg.ID, Arg.ID)),
+                ObjC.handle(Sig.of(Ret.BOOL)),
+                ObjC.handle(Sig.of(Ret.RECT, Arg.RECT)),
+                ObjC.handle(Sig.of(Ret.VOID, Arg.RECT, Arg.ID)));
     }
 
     // ---- existing API (kept) ----
@@ -252,4 +261,62 @@ public class NSControl extends NSView {
     public void setCell(MemorySegment cell) {
         ObjC.msgSendVoidId(peer, ObjC.sel("setCell:"), cell);
     }
+
+    // ---- field editor ----
+    /// [control currentEditor] — the field editor editing this control (nil-safe; null when idle).
+    public NSText currentEditor() {
+        return NSText.wrap(ObjC.msgSendId(peer, ObjC.sel("currentEditor")));
+    }
+    /// [control abortEditing] — discard uncommitted edits.
+    public boolean abortEditing() {
+        ensureInit();
+        try { return (boolean) H.hBool().invokeExact(peer, ObjC.sel("abortEditing")); } catch (Throwable t) { throw new RuntimeException("abortEditing failed", t); }
+    }
+    /// [control validateEditing] — commit the editor value through the formatter.
+    public void validateEditing() {
+        ObjC.msgSendVoid(peer, ObjC.sel("validateEditing"));
+    }
+    /// [control endEditing:] — end the given editor's session (nil-safe).
+    public void endEditing(NSText editor) {
+        ObjC.msgSendVoidId(peer, ObjC.sel("endEditing:"), (MemorySegment) (editor == null ? MemorySegment.NULL : editor.peer()));
+    }
+
+    // ---- expansion tool tips ----
+    /// [control expansionFrameWithFrame:] — expansion tool tip frame (NSZeroRect when content fits).
+    public NSRect expansionFrameWithFrame(NSRect contentFrame) {
+        ensureInit();
+        try {
+            MemorySegment seg = (MemorySegment) H.hExpansionFrame().invokeExact(ObjC.structSlot(), peer, ObjC.sel("expansionFrameWithFrame:"), contentFrame.toSegment());
+            return NSRect.fromSegment(seg);
+        } catch (Throwable t) { throw new RuntimeException("expansionFrameWithFrame: failed", t); }
+    }
+    /// [control drawWithExpansionFrame:inView:] — draw the expansion tool tip content.
+    public void drawWithExpansionFrameInView(NSRect contentFrame, NSView view) {
+        ensureInit();
+        try { H.hDrawExpansion().invokeExact(peer, ObjC.sel("drawWithExpansionFrame:inView:"), contentFrame.toSegment(), (MemorySegment) (view == null ? MemorySegment.NULL : view.peer())); } catch (Throwable t) { throw new RuntimeException("drawWithExpansionFrame:inView: failed", t); }
+    }
+
+    // ---- cell queries ----
+    /// [NSControl cellClass] — the default cell class for controls (a Class id, never nil).
+    public static MemorySegment cellClass() {
+        return ObjC.msgSendId(ObjC.cls("NSControl"), ObjC.sel("cellClass"));
+    }
+    /// [control selectedCell] — the selected cell (raw id; nil becomes NULL segment).
+    public MemorySegment selectedCell() {
+        return ObjC.msgSendId(peer, ObjC.sel("selectedCell"));
+    }
+    /// [control selectedTag] — tag of the selected cell (-1 when none).
+    public long selectedTag() {
+        return ObjC.msgSendLong(peer, ObjC.sel("selectedTag"));
+    }
+    /// [control updateCell:] — mark the cell dirty (pass `MemorySegment.NULL` for nil).
+    public void updateCell(MemorySegment cell) { ObjC.msgSendVoidId(peer, ObjC.sel("updateCell:"), cell); }
+    /// [control updateCellInside:] — mark the cell's interior dirty.
+    public void updateCellInside(MemorySegment cell) { ObjC.msgSendVoidId(peer, ObjC.sel("updateCellInside:"), cell); }
+    /// [control drawCellInside:] — draw the cell's interior immediately.
+    public void drawCellInside(MemorySegment cell) { ObjC.msgSendVoidId(peer, ObjC.sel("drawCellInside:"), cell); }
+    /// [control drawCell:] — draw the cell immediately.
+    public void drawCell(MemorySegment cell) { ObjC.msgSendVoidId(peer, ObjC.sel("drawCell:"), cell); }
+    /// [control selectCell:] — select the cell.
+    public void selectCell(MemorySegment cell) { ObjC.msgSendVoidId(peer, ObjC.sel("selectCell:"), cell); }
 }

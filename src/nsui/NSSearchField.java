@@ -13,6 +13,13 @@ import static nsui.objc.Sig.Ret;
 /// `objc_msgSend` selector, no cached Java state beyond the peer.
 /// Mirrors the native hierarchy: NSSearchField is an NSTextField is an
 /// NSControl is an NSView.
+/// SDK: $(xcrun --show-sdk-path)/System/Library/Frameworks/AppKit.framework/Headers/NSSearchField.h
+/// OMITTED: rectForSearchTextWhenCentered:/rectForSearchButtonWhenCentered:/
+/// rectForCancelButtonWhenCentered: — each returns NSRect taking BOOL, shape
+/// (RECT,BOOL) is NOT in the Sig vocabulary (grep Sig.java: no of(Ret.RECT, Arg.BOOL));
+/// NSSearchFieldDelegate (searchFieldDidStartSearching:/searchFieldDidEndSearching:) —
+/// delegate callbacks need upcall delegate-proxy machinery; delegate property itself is
+/// inherited from NSTextField (same selectors delegate/setDelegate:).
 public class NSSearchField extends NSTextField {
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
@@ -205,6 +212,31 @@ public class NSSearchField extends NSTextField {
         ensureInit();
         try { hVoidBool.invokeExact(peer, ObjC.sel("setCentersPlaceholder:"), flag); }
         catch (Throwable t) { throw new RuntimeException("setCentersPlaceholder: failed", t); }
+    }
+
+    // ---------------------------------------------------------------- search/recent typed conveniences (ID shapes in vocabulary)
+    /// [field recentSearches] as NSArray wrapper (elements are NSString).
+    public NSArray recentSearchesArray() {
+        return NSArray.wrap(recentSearches());
+    }
+    /// [field setRecentSearches:] from NSArray wrapper.
+    public void setRecentSearches(NSArray array) {
+        setRecentSearches((MemorySegment) (array == null ? MemorySegment.NULL : array.peer()));
+    }
+
+    // ---------------------------------------------------------------- layout bounds (RECT () in vocabulary)
+    /// [field searchTextBounds] — rect for the search text (macOS 11+).
+    /// Shape (RECT ()) is in the Sig vocabulary (grep Sig.java: of(Ret.RECT)).
+    public NSRect searchTextBounds() {
+        return NSRect.fromSegment(ObjC.msgSendRect(peer, ObjC.sel("searchTextBounds")));
+    }
+    /// [field searchButtonBounds] — rect for the search button (macOS 11+).
+    public NSRect searchButtonBounds() {
+        return NSRect.fromSegment(ObjC.msgSendRect(peer, ObjC.sel("searchButtonBounds")));
+    }
+    /// [field cancelButtonBounds] — rect for the cancel button (macOS 11+).
+    public NSRect cancelButtonBounds() {
+        return NSRect.fromSegment(ObjC.msgSendRect(peer, ObjC.sel("cancelButtonBounds")));
     }
 
     // ---------------------------------------------------------------- searchFieldCell convenience (if needed)

@@ -22,6 +22,16 @@ import static nsui.objc.Sig.Ret;
 ///   class factory `+buttonTouchBarItemWithIdentifier:title:target:action:`
 ///   (four object arguments, sent through the all-object-args escape hatch,
 ///   NULL-padded).
+/// - `createWithImage(identifier, image, target, actionSelector)` —
+///   `+buttonTouchBarItemWithIdentifier:image:target:action:` via the same escape hatch.
+/// - `createWithTitleImage(identifier, title, image, target, actionSelector)` —
+///   `+buttonTouchBarItemWithIdentifier:title:image:target:action:` (five object args,
+///   NULL-padded to the 6-arg escape shape).
+/// SDK: $(xcrun --show-sdk-path)/System/Library/Frameworks/AppKit.framework/Headers/NSButtonTouchBarItem.h
+/// Coverage: COMPLETE after this batch — title/image/bezelColor/target/action/enabled/
+/// customizationLabel plus all three class factories. All shapes are the registered
+/// (ID ()) / (VOID,ID) pair or the 6-arg all-object escape hatch (grep Sig.java:
+/// of(Ret.ID, Arg.ID) / of(Ret.VOID, Arg.ID) / of(Ret.ID, Arg.ID x6)). No omissions.
 public class NSButtonTouchBarItem extends NSTouchBarItem {
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
@@ -73,6 +83,42 @@ public class NSButtonTouchBarItem extends NSTouchBarItem {
                 ident, titleSeg, targetSeg, actionSeg);
         if (p == null || p.address() == 0) {
             throw new IllegalStateException("buttonTouchBarItemWithIdentifier:title:target:action: returned nil");
+        }
+        return new NSButtonTouchBarItem(p);
+    }
+
+    /// +buttonTouchBarItemWithIdentifier:image:target:action: — image button item.
+    /// Sent through the all-object-args escape hatch (shapes ID x6 in the vocabulary),
+    /// NULL-padded like the title factory above.
+    public static NSButtonTouchBarItem createWithImage(String identifier, NSImage image, MemorySegment target, String actionSelector) {
+        ensureInit();
+        MemorySegment ident = ObjC.nsstring(identifier);
+        MemorySegment imgSeg = (MemorySegment) (image == null ? MemorySegment.NULL : image.peer());
+        MemorySegment targetSeg = (MemorySegment) (target == null ? MemorySegment.NULL : target);
+        MemorySegment actionSeg = (actionSelector == null) ? MemorySegment.NULL : ObjC.sel(actionSelector);
+        MemorySegment p = ObjC.invoke(ObjC.cls("NSButtonTouchBarItem"),
+                ObjC.sel("buttonTouchBarItemWithIdentifier:image:target:action:"),
+                ident, imgSeg, targetSeg, actionSeg);
+        if (p == null || p.address() == 0) {
+            throw new IllegalStateException("buttonTouchBarItemWithIdentifier:image:target:action: returned nil");
+        }
+        return new NSButtonTouchBarItem(p);
+    }
+
+    /// +buttonTouchBarItemWithIdentifier:title:image:target:action: — titled image button.
+    /// Five object args via the same escape hatch (NULL-padded to six).
+    public static NSButtonTouchBarItem createWithTitleImage(String identifier, String title, NSImage image, MemorySegment target, String actionSelector) {
+        ensureInit();
+        MemorySegment ident = ObjC.nsstring(identifier);
+        MemorySegment titleSeg = (title == null) ? MemorySegment.NULL : ObjC.nsstring(title);
+        MemorySegment imgSeg = (MemorySegment) (image == null ? MemorySegment.NULL : image.peer());
+        MemorySegment targetSeg = (MemorySegment) (target == null ? MemorySegment.NULL : target);
+        MemorySegment actionSeg = (actionSelector == null) ? MemorySegment.NULL : ObjC.sel(actionSelector);
+        MemorySegment p = ObjC.invoke(ObjC.cls("NSButtonTouchBarItem"),
+                ObjC.sel("buttonTouchBarItemWithIdentifier:title:image:target:action:"),
+                ident, titleSeg, imgSeg, targetSeg, actionSeg);
+        if (p == null || p.address() == 0) {
+            throw new IllegalStateException("buttonTouchBarItemWithIdentifier:title:image:target:action: returned nil");
         }
         return new NSButtonTouchBarItem(p);
     }
@@ -143,6 +189,72 @@ public class NSButtonTouchBarItem extends NSTouchBarItem {
         ensureInit();
         if (!responds("action")) return null;
         return ObjC.msgSendId(peer, ObjC.sel("action"));
+    }
+
+    /// image — the button's icon (or nil).
+    /// Shapes (ID ()) / (VOID,ID) are in the vocabulary.
+    public NSImage image() {
+        ensureInit();
+        try {
+            MemorySegment p = (MemorySegment) handles.hId().invokeExact(peer, ObjC.sel("image"));
+            return NSImage.wrap(p);
+        } catch (Throwable t) {
+            throw new RuntimeException("image failed", t);
+        }
+    }
+    /// setImage: — replace the icon (nil clears).
+    public void setImage(NSImage image) {
+        ensureInit();
+        try {
+            handles.hVoidId().invokeExact(peer, ObjC.sel("setImage:"),
+                    (MemorySegment) (image == null ? MemorySegment.NULL : image.peer()));
+        } catch (Throwable t) {
+            throw new RuntimeException("setImage: failed", t);
+        }
+    }
+
+    /// bezelColor — the button bezel tint (or nil).
+    /// Shapes (ID ()) / (VOID,ID) are in the vocabulary.
+    public NSColor bezelColor() {
+        ensureInit();
+        try {
+            MemorySegment p = (MemorySegment) handles.hId().invokeExact(peer, ObjC.sel("bezelColor"));
+            return NSColor.wrap(p);
+        } catch (Throwable t) {
+            throw new RuntimeException("bezelColor failed", t);
+        }
+    }
+    /// setBezelColor: — nil clears.
+    public void setBezelColor(NSColor color) {
+        ensureInit();
+        try {
+            handles.hVoidId().invokeExact(peer, ObjC.sel("setBezelColor:"),
+                    (MemorySegment) (color == null ? MemorySegment.NULL : color.peer()));
+        } catch (Throwable t) {
+            throw new RuntimeException("setBezelColor: failed", t);
+        }
+    }
+
+    /// customizationLabel — string shown during Touch Bar customization.
+    /// Shapes (ID ()) / (VOID,ID) are in the vocabulary.
+    public String customizationLabel() {
+        ensureInit();
+        try {
+            MemorySegment s = (MemorySegment) handles.hId().invokeExact(peer, ObjC.sel("customizationLabel"));
+            return ObjC.toString(s);
+        } catch (Throwable t) {
+            throw new RuntimeException("customizationLabel failed", t);
+        }
+    }
+    /// setCustomizationLabel:.
+    public void setCustomizationLabel(String label) {
+        ensureInit();
+        try {
+            MemorySegment s = label == null ? MemorySegment.NULL : ObjC.nsstring(label);
+            handles.hVoidId().invokeExact(peer, ObjC.sel("setCustomizationLabel:"), s);
+        } catch (Throwable t) {
+            throw new RuntimeException("setCustomizationLabel: failed", t);
+        }
     }
 
     /// isEnabled — whether the button responds to taps (guarded).

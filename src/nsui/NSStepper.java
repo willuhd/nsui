@@ -11,6 +11,10 @@ import static nsui.objc.Sig.Ret;
 /// NSStepper — an AppKit small up/down stepper control. Thin, 1:1, stateless wrapper
 /// over a native `NSStepper`: every method maps to one `objc_msgSend`
 /// selector. It is an `NSControl` (an `NSView`), so it fits any view hierarchy.
+/// SDK: $(xcrun --show-sdk-path)/System/Library/Frameworks/AppKit.framework/Headers/NSStepper.h
+/// Coverage: COMPLETE — minValue/maxValue/increment/valueWraps/autorepeat are all wrapped;
+/// controlSize is inherited from NSControl (re-exposed here for discoverability);
+/// incrementBy: is a Java convenience (no such selector; implemented via setDoubleValue).
 ///
 /// Value semantics: like `NSSlider`, AppKit clamps `doubleValue` to
 /// `[min, max]` and steps by `increment`; a value set beyond the range is

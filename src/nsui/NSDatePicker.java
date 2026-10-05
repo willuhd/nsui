@@ -16,6 +16,9 @@ import static nsui.objc.Sig.Ret;
 /// Dates are passed as raw `NSDate` ids (a `MemorySegment`); this
 /// toolkit does not yet own an `NSDate` wrapper, so callers build them via
 /// `[[NSDate dateWithTimeIntervalSinceNow:]]` (see the test).
+///
+/// Omitted from `NSDatePicker.h`: the `delegate`
+/// (`id<NSDatePickerCellDelegate>` — needs upcall machinery).
 public final class NSDatePicker extends NSControl {
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
@@ -25,6 +28,8 @@ public final class NSDatePicker extends NSControl {
     private static MethodHandle hDate;        // (id, SEL) -> id           [dateValue]
     private static MethodHandle hSetInt;      // (id, SEL, int) -> void    [setDatePickerStyle: / setDatePickerElements:]
     private static MethodHandle hSetId;       // (id, SEL, id) -> void     [setTimeZone:/setLocale:/setCalendar:/setMinDate:/setMaxDate: etc]
+    private static MethodHandle hDouble;      // (id, SEL) -> double       [timeInterval]
+    private static MethodHandle hSetDouble;   // (id, SEL, double) -> void [setTimeInterval:]
 
     private NSDatePicker(MemorySegment peer) {
         super(peer);
@@ -38,6 +43,8 @@ public final class NSDatePicker extends NSControl {
         hDate = ObjC.handle(Sig.of(Ret.ID));
         hSetInt = ObjC.handle(Sig.of(Ret.VOID, Arg.INT));
         hSetId = ObjC.handle(Sig.of(Ret.VOID, Arg.ID));
+        hDouble = ObjC.handle(Sig.of(Ret.DOUBLE));
+        hSetDouble = ObjC.handle(Sig.of(Ret.VOID, Arg.DOUBLE));
         initialized = true;
     }
 
@@ -245,5 +252,35 @@ public final class NSDatePicker extends NSControl {
     /// [picker setDatePickerMode:] — set mode.
     public void setDatePickerMode(long mode) {
         ObjC.msgSendVoidLong(peer, ObjC.sel("setDatePickerMode:"), mode);
+    }
+
+    /// [picker timeInterval] — seconds since the reference date for the selected date.
+    public double timeInterval() {
+        ensureInit();
+        try {
+            return (double) hDouble.invokeExact(peer, ObjC.sel("timeInterval"));
+        } catch (Throwable t) {
+            throw new RuntimeException("timeInterval failed", t);
+        }
+    }
+
+    /// [picker setTimeInterval:] — set the selected date as seconds since the reference date.
+    public void setTimeInterval(double interval) {
+        ensureInit();
+        try {
+            hSetDouble.invokeExact(peer, ObjC.sel("setTimeInterval:"), interval);
+        } catch (Throwable t) {
+            throw new RuntimeException("setTimeInterval: failed", t);
+        }
+    }
+
+    /// [picker presentsCalendarOverlay] — whether a calendar overlay is shown (10.15.4+).
+    public boolean presentsCalendarOverlay() {
+        return ObjC.msgSendBool(peer, ObjC.sel("presentsCalendarOverlay"));
+    }
+
+    /// [picker setPresentsCalendarOverlay:] — set calendar overlay presentation.
+    public void setPresentsCalendarOverlay(boolean flag) {
+        ObjC.msgSendVoidBool(peer, ObjC.sel("setPresentsCalendarOverlay:"), flag);
     }
 }

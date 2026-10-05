@@ -12,6 +12,11 @@ import static nsui.objc.Sig.Ret;
 /// stateless wrapper over a native `NSProgressIndicator`: every method maps
 /// to one `objc_msgSend` selector. It is an `NSControl` (an
 /// `NSView`), so it fits any view hierarchy.
+///
+/// Omitted from `NSProgressIndicator.h`: deprecated `animationDelay`,
+/// `setAnimationDelay:`, `animate:`, `bezeled`/`setBezeled:` (and the
+/// `NSProgressIndicatorThickness` constants); `controlTint`/`setControlTint:`
+/// are kept although deprecated — they predate this pass.
 public final class NSProgressIndicator extends NSControl {
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
@@ -194,5 +199,16 @@ public final class NSProgressIndicator extends NSControl {
     /// [indicator sizeToFit] — size to recommended dimensions.
     public void sizeToFit() {
         ObjC.msgSendVoid(peer, ObjC.sel("sizeToFit"));
+    }
+
+    /// [indicator observedProgress] — the NSProgress driving the bar (raw id; macOS 14+; nil becomes NULL).
+    public MemorySegment observedProgress() {
+        return ObjC.msgSendId(peer, ObjC.sel("observedProgress"));
+    }
+
+    /// [indicator setObservedProgress:] — track an NSProgress (nil-safe; pass `MemorySegment.NULL` for nil).
+    public void setObservedProgress(MemorySegment progress) {
+        ObjC.msgSendVoidId(peer, ObjC.sel("setObservedProgress:"),
+                (MemorySegment) (progress == null ? MemorySegment.NULL : progress));
     }
 }

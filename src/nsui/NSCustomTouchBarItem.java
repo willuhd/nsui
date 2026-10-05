@@ -19,6 +19,10 @@ import static nsui.objc.Sig.Ret;
 /// NSItalicTemplate via NSImage.imageNamed), and arbitrary custom NSView
 /// (layer-backed) — all installed via `setView:` and returned from
 /// `touchBar:makeItemForIdentifier:` delegate.
+/// SDK: $(xcrun --show-sdk-path)/System/Library/Frameworks/AppKit.framework/Headers/NSCustomTouchBarItem.h
+/// Coverage: COMPLETE after this batch — view/viewController/customizationLabel.
+/// Shapes (ID ()) / (VOID,ID) are in the vocabulary (grep Sig.java:
+/// of(Ret.ID) / of(Ret.VOID, Arg.ID)). No omissions.
 public class NSCustomTouchBarItem extends NSTouchBarItem {
 
             private record Handles(MethodHandle hInitId, MethodHandle hId, MethodHandle hVoidId) {}
@@ -87,6 +91,32 @@ public class NSCustomTouchBarItem extends NSTouchBarItem {
             boolean resp = (boolean) hResp.invokeExact(peer, ObjC.sel("respondsToSelector:"), sel);
             if (!resp) return;
             handles.hVoidId().invokeExact(peer, sel, (MemorySegment) (view == null ? MemorySegment.NULL : view.peer()));
+        } catch (Throwable t) { /* no-op if absent */ }
+    }
+
+    /// viewController — the view controller whose view is displayed (or nil).
+    /// Shapes (ID ()) / (VOID,ID) are in the vocabulary.
+    public NSViewController viewController() {
+        ensureInit();
+        try {
+            MemorySegment sel = ObjC.sel("viewController");
+            MethodHandle hResp = ObjC.handle(Sig.of(Ret.BOOL, Arg.ID));
+            boolean resp = (boolean) hResp.invokeExact(peer, ObjC.sel("respondsToSelector:"), sel);
+            if (!resp) return null;
+            MemorySegment v = (MemorySegment) handles.hId().invokeExact(peer, sel);
+            return NSViewController.wrap(v);
+        } catch (Throwable t) { return null; }
+    }
+    /// setViewController: — nil clears (view then returns the explicit view).
+    public void setViewController(NSViewController vc) {
+        ensureInit();
+        try {
+            MemorySegment sel = ObjC.sel("setViewController:");
+            MethodHandle hResp = ObjC.handle(Sig.of(Ret.BOOL, Arg.ID));
+            boolean resp = (boolean) hResp.invokeExact(peer, ObjC.sel("respondsToSelector:"), sel);
+            if (!resp) return;
+            handles.hVoidId().invokeExact(peer, sel,
+                    (MemorySegment) (vc == null ? MemorySegment.NULL : vc.peer()));
         } catch (Throwable t) { /* no-op if absent */ }
     }
 

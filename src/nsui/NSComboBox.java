@@ -13,6 +13,10 @@ import static nsui.objc.Sig.Ret;
 /// every method maps to one `objc_msgSend` selector, no cached Java state
 /// beyond the peer. It is an `NSControl` (an `NSView`), so it fits
 /// any view hierarchy and supports enable/disable via `setEnabled`.
+///
+/// Omitted from `NSComboBox.h`: the `NSComboBoxDataSource` / `NSComboBoxDelegate`
+/// protocols (need upcall machinery — `usesDataSource` stays settable, but no
+/// Java data source can be vended).
 public final class NSComboBox extends NSControl {
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
@@ -23,6 +27,8 @@ public final class NSComboBox extends NSControl {
     private static MethodHandle hInsert;      // (id, SEL, id, long) -> void [insertItemWithObjectValue:atIndex:]
     private static MethodHandle hIndexOf;     // (id, SEL, id) -> long     [indexOfItemWithObjectValue:]
     private static MethodHandle hItemValue;   // (id, SEL, long) -> id     [itemObjectValueAtIndex:]
+    private static MethodHandle hSizeGet;     // (id, SEL) -> NSSize       [intercellSpacing]
+    private static MethodHandle hSizeSet;     // (id, SEL, NSSize) -> void [setIntercellSpacing:]
 
     private NSComboBox(MemorySegment peer) {
         super(peer);
@@ -37,6 +43,8 @@ public final class NSComboBox extends NSControl {
         hInsert = ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.INT));
         hIndexOf = ObjC.handle(Sig.of(Ret.INT, Arg.ID));
         hItemValue = ObjC.handle(Sig.of(Ret.ID, Arg.INT));
+        hSizeGet = ObjC.handle(Sig.of(Ret.SIZE));
+        hSizeSet = ObjC.handle(Sig.of(Ret.VOID, Arg.SIZE));
         initialized = true;
     }
 
@@ -258,5 +266,54 @@ public final class NSComboBox extends NSControl {
     /// [combo objectValues] — copy of object values array id.
     public MemorySegment objectValues() {
         return ObjC.msgSendId(peer, ObjC.sel("objectValues"));
+    }
+
+    /// [combo addItemsWithObjectValues:] — append several values at once.
+    public void addItemsWithObjectValues(String... values) {
+        ensureInit();
+        NSArray array = NSArray.mutableArray();
+        if (values != null) {
+            for (String v : values) array.addObject(ObjC.nsstring(v == null ? "" : v));
+        }
+        ObjC.msgSendVoidId(peer, ObjC.sel("addItemsWithObjectValues:"), array.peer());
+    }
+
+    /// [combo scrollItemAtIndexToTop:] — scroll so the item sits at the top of the list.
+    public void scrollItemAtIndexToTop(long index) {
+        try {
+            hSelect.invokeExact(peer, ObjC.sel("scrollItemAtIndexToTop:"), index);
+        } catch (Throwable t) {
+            throw new RuntimeException("scrollItemAtIndexToTop: failed", t);
+        }
+    }
+
+    /// [combo scrollItemAtIndexToVisible:] — scroll the minimum needed to reveal the item.
+    public void scrollItemAtIndexToVisible(long index) {
+        try {
+            hSelect.invokeExact(peer, ObjC.sel("scrollItemAtIndexToVisible:"), index);
+        } catch (Throwable t) {
+            throw new RuntimeException("scrollItemAtIndexToVisible: failed", t);
+        }
+    }
+
+    /// [combo intercellSpacing] — padding between items.
+    public NSSize intercellSpacing() {
+        ensureInit();
+        try {
+            MemorySegment seg = (MemorySegment) hSizeGet.invokeExact(ObjC.structSlot(), peer, ObjC.sel("intercellSpacing"));
+            return NSSize.fromSegment(seg);
+        } catch (Throwable t) {
+            throw new RuntimeException("intercellSpacing failed", t);
+        }
+    }
+
+    /// [combo setIntercellSpacing:] — set item padding.
+    public void setIntercellSpacing(NSSize spacing) {
+        ensureInit();
+        try {
+            hSizeSet.invokeExact(peer, ObjC.sel("setIntercellSpacing:"), spacing.toSegment());
+        } catch (Throwable t) {
+            throw new RuntimeException("setIntercellSpacing: failed", t);
+        }
     }
 }

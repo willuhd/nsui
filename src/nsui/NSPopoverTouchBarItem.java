@@ -21,6 +21,13 @@ import static nsui.objc.Sig.Ret;
 /// `popoverTouchBar`/`setPopoverTouchBar:` (the property type is NSTouchBar*;
 /// there is no `setPopover:` method on this class). All selectors are guarded
 /// with `respondsToSelector:` like `NSCustomTouchBarItem`.
+/// SDK: $(xcrun --show-sdk-path)/System/Library/Frameworks/AppKit.framework/Headers/NSPopoverTouchBarItem.h
+/// Coverage: COMPLETE after this batch — popoverTouchBar/customizationLabel/collapsedRepresentation/
+/// collapsedRepresentationImage/collapsedRepresentationLabel/pressAndHoldTouchBar/showsCloseButton/
+/// showPopover:/dismissPopover: (both arities)/makeStandardActivatePopoverGestureRecognizer.
+/// All shapes are the registered (ID ())/(VOID,ID)/(BOOL ())/(VOID,BOOL) pair or the guarded
+/// optional-selector pattern. No omissions (makeStandardActivatePopoverGestureRecognizer is iOS-unavailable
+/// per header, but the selector is still guarded like the rest; on macOS it returns a recognizer).
 public class NSPopoverTouchBarItem extends NSTouchBarItem {
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
@@ -102,16 +109,180 @@ public class NSPopoverTouchBarItem extends NSTouchBarItem {
     /// showPopover: — replace the main NSTouchBar with this item's popover
     /// bar. No effect while the item is not visible (guarded).
     public void showPopover() {
+        showPopover((MemorySegment) null);
+    }
+    /// showPopover: with an explicit sender (nullable id; shapes VOID,ID in the vocabulary).
+    public void showPopover(MemorySegment sender) {
         ensureInit();
         if (!responds("showPopover:")) return;
-        ObjC.msgSendVoidId(peer, ObjC.sel("showPopover:"), MemorySegment.NULL);
+        ObjC.msgSendVoidId(peer, ObjC.sel("showPopover:"),
+                (MemorySegment) (sender == null ? MemorySegment.NULL : sender));
+    }
+    /// Typed sender overload.
+    public void showPopover(NSObject sender) {
+        showPopover(sender == null ? null : sender.peer());
     }
 
     /// dismissPopover: — order out the popover bar and restore the previously
     /// visible main bar (guarded).
     public void dismissPopover() {
+        dismissPopover((MemorySegment) null);
+    }
+    /// dismissPopover: with an explicit sender (nullable id; shapes VOID,ID in the vocabulary).
+    public void dismissPopover(MemorySegment sender) {
         ensureInit();
         if (!responds("dismissPopover:")) return;
-        ObjC.msgSendVoidId(peer, ObjC.sel("dismissPopover:"), MemorySegment.NULL);
+        ObjC.msgSendVoidId(peer, ObjC.sel("dismissPopover:"),
+                (MemorySegment) (sender == null ? MemorySegment.NULL : sender));
+    }
+    /// Typed sender overload.
+    public void dismissPopover(NSObject sender) {
+        dismissPopover(sender == null ? null : sender.peer());
+    }
+
+    // ---- completeness: remaining header API in registered shapes (all guarded) ----
+    /// customizationLabel — string shown during Touch Bar customization.
+    /// Shapes (ID ()) / (VOID,ID) are in the vocabulary.
+    public String customizationLabel() {
+        ensureInit();
+        if (!responds("customizationLabel")) return null;
+        try {
+            MemorySegment s = (MemorySegment) handles.hId().invokeExact(peer, ObjC.sel("customizationLabel"));
+            return ObjC.toString(s);
+        } catch (Throwable t) {
+            throw new RuntimeException("customizationLabel failed", t);
+        }
+    }
+    /// setCustomizationLabel:.
+    public void setCustomizationLabel(String label) {
+        ensureInit();
+        if (!responds("setCustomizationLabel:")) return;
+        try {
+            MemorySegment s = label == null ? MemorySegment.NULL : ObjC.nsstring(label);
+            handles.hVoidId().invokeExact(peer, ObjC.sel("setCustomizationLabel:"), s);
+        } catch (Throwable t) {
+            throw new RuntimeException("setCustomizationLabel: failed", t);
+        }
+    }
+
+    /// collapsedRepresentation — view shown in the hosted bar (or nil for the default button).
+    /// Shapes (ID ()) / (VOID,ID) are in the vocabulary.
+    public NSView collapsedRepresentation() {
+        ensureInit();
+        if (!responds("collapsedRepresentation")) return null;
+        try {
+            MemorySegment v = (MemorySegment) handles.hId().invokeExact(peer, ObjC.sel("collapsedRepresentation"));
+            return NSView.wrap(v);
+        } catch (Throwable t) {
+            throw new RuntimeException("collapsedRepresentation failed", t);
+        }
+    }
+    /// setCollapsedRepresentation: — nil restores the default button.
+    public void setCollapsedRepresentation(NSView view) {
+        ensureInit();
+        if (!responds("setCollapsedRepresentation:")) return;
+        try {
+            handles.hVoidId().invokeExact(peer, ObjC.sel("setCollapsedRepresentation:"),
+                    (MemorySegment) (view == null ? MemorySegment.NULL : view.peer()));
+        } catch (Throwable t) {
+            throw new RuntimeException("setCollapsedRepresentation: failed", t);
+        }
+    }
+
+    /// collapsedRepresentationImage — icon on the default collapsed button (or nil).
+    public NSImage collapsedRepresentationImage() {
+        ensureInit();
+        if (!responds("collapsedRepresentationImage")) return null;
+        try {
+            MemorySegment p = (MemorySegment) handles.hId().invokeExact(peer, ObjC.sel("collapsedRepresentationImage"));
+            return NSImage.wrap(p);
+        } catch (Throwable t) {
+            throw new RuntimeException("collapsedRepresentationImage failed", t);
+        }
+    }
+    /// setCollapsedRepresentationImage:.
+    public void setCollapsedRepresentationImage(NSImage image) {
+        ensureInit();
+        if (!responds("setCollapsedRepresentationImage:")) return;
+        try {
+            handles.hVoidId().invokeExact(peer, ObjC.sel("setCollapsedRepresentationImage:"),
+                    (MemorySegment) (image == null ? MemorySegment.NULL : image.peer()));
+        } catch (Throwable t) {
+            throw new RuntimeException("setCollapsedRepresentationImage: failed", t);
+        }
+    }
+
+    /// collapsedRepresentationLabel — text on the default collapsed button.
+    public String collapsedRepresentationLabel() {
+        ensureInit();
+        if (!responds("collapsedRepresentationLabel")) return null;
+        try {
+            MemorySegment s = (MemorySegment) handles.hId().invokeExact(peer, ObjC.sel("collapsedRepresentationLabel"));
+            return ObjC.toString(s);
+        } catch (Throwable t) {
+            throw new RuntimeException("collapsedRepresentationLabel failed", t);
+        }
+    }
+    /// setCollapsedRepresentationLabel:.
+    public void setCollapsedRepresentationLabel(String label) {
+        ensureInit();
+        if (!responds("setCollapsedRepresentationLabel:")) return;
+        try {
+            MemorySegment s = label == null ? MemorySegment.NULL : ObjC.nsstring(label);
+            handles.hVoidId().invokeExact(peer, ObjC.sel("setCollapsedRepresentationLabel:"), s);
+        } catch (Throwable t) {
+            throw new RuntimeException("setCollapsedRepresentationLabel: failed", t);
+        }
+    }
+
+    /// pressAndHoldTouchBar — bar shown while the finger holds the collapsed representation (or nil).
+    public NSTouchBar pressAndHoldTouchBar() {
+        ensureInit();
+        if (!responds("pressAndHoldTouchBar")) return null;
+        try {
+            MemorySegment b = (MemorySegment) handles.hId().invokeExact(peer, ObjC.sel("pressAndHoldTouchBar"));
+            return NSTouchBar.wrap(b);
+        } catch (Throwable t) {
+            throw new RuntimeException("pressAndHoldTouchBar failed", t);
+        }
+    }
+    /// setPressAndHoldTouchBar: — nil clears.
+    public void setPressAndHoldTouchBar(NSTouchBar bar) {
+        ensureInit();
+        if (!responds("setPressAndHoldTouchBar:")) return;
+        try {
+            handles.hVoidId().invokeExact(peer, ObjC.sel("setPressAndHoldTouchBar:"),
+                    (MemorySegment) (bar == null ? MemorySegment.NULL : bar.peer()));
+        } catch (Throwable t) {
+            throw new RuntimeException("setPressAndHoldTouchBar: failed", t);
+        }
+    }
+
+    /// showsCloseButton — whether the popover shows an automatic close button.
+    /// Shapes (BOOL ()) / (VOID,BOOL) need no handle (ObjC.msgSend helpers).
+    public boolean showsCloseButton() {
+        ensureInit();
+        if (!responds("showsCloseButton")) return false;
+        return ObjC.msgSendBool(peer, ObjC.sel("showsCloseButton"));
+    }
+    /// setShowsCloseButton:.
+    public void setShowsCloseButton(boolean flag) {
+        ensureInit();
+        if (!responds("setShowsCloseButton:")) return;
+        ObjC.msgSendVoidBool(peer, ObjC.sel("setShowsCloseButton:"), flag);
+    }
+
+    /// makeStandardActivatePopoverGestureRecognizer — wired recognizer that sends showPopover:.
+    /// Shape (ID ()) is in the vocabulary; guarded (API_UNAVAILABLE(ios) in the header).
+    public NSGestureRecognizer makeStandardActivatePopoverGestureRecognizer() {
+        ensureInit();
+        if (!responds("makeStandardActivatePopoverGestureRecognizer")) return null;
+        try {
+            MemorySegment g = (MemorySegment) handles.hId().invokeExact(peer,
+                    ObjC.sel("makeStandardActivatePopoverGestureRecognizer"));
+            return NSGestureRecognizer.wrap(g);
+        } catch (Throwable t) {
+            throw new RuntimeException("makeStandardActivatePopoverGestureRecognizer failed", t);
+        }
     }
 }

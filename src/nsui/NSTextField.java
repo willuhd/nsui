@@ -12,10 +12,16 @@ import static nsui.objc.Sig.Ret;
 /// over a native `NSTextField`: every method maps to one `objc_msgSend`
 /// selector, no cached Java state beyond the peer. Mirrors the native hierarchy:
 /// NSTextField is an NSControl is an NSView.
+/// SDK: $(xcrun --show-sdk-path)/System/Library/Frameworks/AppKit.framework/Headers/NSTextField.h
+/// OMITTED: NSTextFieldDelegate candidate methods (textField:textView:candidatesForSelectedRange:,
+/// candidates:forSelectedRange:, shouldSelectCandidateAtIndex:) — their (ID,ID,RANGE)/(ID,ID,ID,RANGE)/
+/// (BOOL,ID,ID,INT) shapes are NOT in the Sig vocabulary and they need upcall delegate-proxy
+/// machinery; setTitleWithMnemonic: (deprecated, use setStringValue:); acceptsFirstResponder
+/// (inherited from NSResponder, not redeclared).
 public class NSTextField extends NSControl {
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
-    private record Handles(MethodHandle hDouble, MethodHandle hSetDouble) {}
+    private record Handles(MethodHandle hDouble, MethodHandle hSetDouble, MethodHandle hBoolId) {}
     private static volatile Handles H;
 
     protected NSTextField(MemorySegment peer) {
@@ -27,7 +33,8 @@ public class NSTextField extends NSControl {
         if (H != null) return;
         H = new Handles(
                 ObjC.handle(Sig.of(Ret.DOUBLE)),
-                ObjC.handle(Sig.of(Ret.VOID, Arg.DOUBLE)));
+                ObjC.handle(Sig.of(Ret.VOID, Arg.DOUBLE)),
+                ObjC.handle(Sig.of(Ret.BOOL, Arg.ID)));
     }
 
     /// `[[NSTextField alloc] initWithFrame:frame]` — a new text field at the given rect.
@@ -48,6 +55,14 @@ public class NSTextField extends NSControl {
     }
     public static NSTextField textFieldWithString(String s) {
         MemorySegment p = ObjC.msgSendIdId(ObjC.cls("NSTextField"), ObjC.sel("textFieldWithString:"), ObjC.nsstring(s));
+        return new NSTextField(p);
+    }
+    /// +labelWithAttributedString: — non-editable field showing attributed text.
+    /// Shape (ID,ID) is in the Sig vocabulary (grep Sig.java: of(Ret.ID, Arg.ID)).
+    public static NSTextField labelWithAttributedString(NSAttributedString attr) {
+        ensureInit();
+        MemorySegment p = ObjC.msgSendIdId(ObjC.cls("NSTextField"), ObjC.sel("labelWithAttributedString:"),
+                (MemorySegment) (attr == null ? MemorySegment.NULL : attr.peer()));
         return new NSTextField(p);
     }
 
@@ -218,5 +233,102 @@ public class NSTextField extends NSControl {
     }
     public void setAutomaticTextCompletionEnabled(boolean flag) {
         ObjC.msgSendVoidBool(peer, ObjC.sel("setAutomaticTextCompletionEnabled:"), flag);
+    }
+
+    // ---- lineBreakStrategy setter (getter above; shapes VOID,INT / INT () in vocabulary) ----
+    /// [field setLineBreakStrategy:] — line break strategies for layout.
+    public void setLineBreakStrategy(long strategy) {
+        ObjC.msgSendVoidLong(peer, ObjC.sel("setLineBreakStrategy:"), strategy);
+    }
+
+    // ---- allowsWritingTools / allowsWritingToolsAffordance (BOOL shapes in vocabulary) ----
+    /// [field allowsWritingTools] — field editor works with Writing Tools (15.2+).
+    public boolean allowsWritingTools() {
+        return ObjC.msgSendBool(peer, ObjC.sel("allowsWritingTools"));
+    }
+    /// [field setAllowsWritingTools:].
+    public void setAllowsWritingTools(boolean flag) {
+        ObjC.msgSendVoidBool(peer, ObjC.sel("setAllowsWritingTools:"), flag);
+    }
+    /// [field allowsWritingToolsAffordance] (15.4+).
+    public boolean allowsWritingToolsAffordance() {
+        return ObjC.msgSendBool(peer, ObjC.sel("allowsWritingToolsAffordance"));
+    }
+    /// [field setAllowsWritingToolsAffordance:].
+    public void setAllowsWritingToolsAffordance(boolean flag) {
+        ObjC.msgSendVoidBool(peer, ObjC.sel("setAllowsWritingToolsAffordance:"), flag);
+    }
+
+    // ---- allowsCharacterPickerTouchBarItem (NSTouchBar category, BOOL shapes) ----
+    /// [field allowsCharacterPickerTouchBarItem].
+    public boolean allowsCharacterPickerTouchBarItem() {
+        return ObjC.msgSendBool(peer, ObjC.sel("allowsCharacterPickerTouchBarItem"));
+    }
+    /// [field setAllowsCharacterPickerTouchBarItem:].
+    public void setAllowsCharacterPickerTouchBarItem(boolean flag) {
+        ObjC.msgSendVoidBool(peer, ObjC.sel("setAllowsCharacterPickerTouchBarItem:"), flag);
+    }
+
+    // ---- placeholderStrings / placeholderAttributedStrings (ID shapes in vocabulary) ----
+    /// [field placeholderStrings] — animated cycling placeholders (macOS 26+), or nil.
+    public NSArray placeholderStrings() {
+        return NSArray.wrap(ObjC.msgSendId(peer, ObjC.sel("placeholderStrings")));
+    }
+    /// [field setPlaceholderStrings:] — pass null to clear.
+    public void setPlaceholderStrings(NSArray strings) {
+        ObjC.msgSendVoidId(peer, ObjC.sel("setPlaceholderStrings:"),
+                (MemorySegment) (strings == null ? MemorySegment.NULL : strings.peer()));
+    }
+    /// [field placeholderAttributedStrings] — attributed variant (macOS 26+), or nil.
+    public NSArray placeholderAttributedStrings() {
+        return NSArray.wrap(ObjC.msgSendId(peer, ObjC.sel("placeholderAttributedStrings")));
+    }
+    /// [field setPlaceholderAttributedStrings:].
+    public void setPlaceholderAttributedStrings(NSArray strings) {
+        ObjC.msgSendVoidId(peer, ObjC.sel("setPlaceholderAttributedStrings:"),
+                (MemorySegment) (strings == null ? MemorySegment.NULL : strings.peer()));
+    }
+
+    // ---- resolvesNaturalAlignmentWithBaseWritingDirection (BOOL shapes) ----
+    /// [field resolvesNaturalAlignmentWithBaseWritingDirection] (macOS 26+).
+    public boolean resolvesNaturalAlignmentWithBaseWritingDirection() {
+        return ObjC.msgSendBool(peer, ObjC.sel("resolvesNaturalAlignmentWithBaseWritingDirection"));
+    }
+    /// [field setResolvesNaturalAlignmentWithBaseWritingDirection:].
+    public void setResolvesNaturalAlignmentWithBaseWritingDirection(boolean flag) {
+        ObjC.msgSendVoidBool(peer, ObjC.sel("setResolvesNaturalAlignmentWithBaseWritingDirection:"), flag);
+    }
+
+    // ---- editing notifications (shapes BOOL,ID / VOID,ID in vocabulary) ----
+    /// [field textShouldBeginEditing:] — consult the field before editing starts.
+    public boolean textShouldBeginEditing(MemorySegment textObject) {
+        ensureInit();
+        try {
+            return (boolean) H.hBoolId().invokeExact(peer, ObjC.sel("textShouldBeginEditing:"),
+                    (MemorySegment) (textObject == null ? MemorySegment.NULL : textObject));
+        } catch (Throwable t) { throw new RuntimeException("textShouldBeginEditing: failed", t); }
+    }
+    /// [field textShouldEndEditing:].
+    public boolean textShouldEndEditing(MemorySegment textObject) {
+        ensureInit();
+        try {
+            return (boolean) H.hBoolId().invokeExact(peer, ObjC.sel("textShouldEndEditing:"),
+                    (MemorySegment) (textObject == null ? MemorySegment.NULL : textObject));
+        } catch (Throwable t) { throw new RuntimeException("textShouldEndEditing: failed", t); }
+    }
+    /// [field textDidBeginEditing:] — notification post.
+    public void textDidBeginEditing(MemorySegment notification) {
+        ObjC.msgSendVoidId(peer, ObjC.sel("textDidBeginEditing:"),
+                (MemorySegment) (notification == null ? MemorySegment.NULL : notification));
+    }
+    /// [field textDidEndEditing:].
+    public void textDidEndEditing(MemorySegment notification) {
+        ObjC.msgSendVoidId(peer, ObjC.sel("textDidEndEditing:"),
+                (MemorySegment) (notification == null ? MemorySegment.NULL : notification));
+    }
+    /// [field textDidChange:].
+    public void textDidChange(MemorySegment notification) {
+        ObjC.msgSendVoidId(peer, ObjC.sel("textDidChange:"),
+                (MemorySegment) (notification == null ? MemorySegment.NULL : notification));
     }
 }

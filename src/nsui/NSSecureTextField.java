@@ -12,6 +12,10 @@ import static nsui.objc.Sig.Ret;
 /// Thin 1:1 wrapper over a native `NSSecureTextField`: every method maps
 /// to one `objc_msgSend` selector, no cached Java state beyond the peer.
 /// Mirrors the native hierarchy: NSSecureTextField is an NSTextField is an NSControl is an NSView.
+/// SDK: $(xcrun --show-sdk-path)/System/Library/Frameworks/AppKit.framework/Headers/NSSecureTextField.h
+/// Coverage: NSSecureTextField itself declares NO methods in the header — all text API is
+/// inherited from NSTextField/NSControl; echosBullets lives on NSSecureTextFieldCell and is
+/// already covered here via the cell peer (guarded respondsToSelector:). No omissions.
 public class NSSecureTextField extends NSTextField {
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----

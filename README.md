@@ -56,6 +56,6 @@ If a signature is missing, the build succeeds but the binary fails at runtime wi
 
 ### Project status
 
-Library package is `nsui`. Coverage includes core AppKit classes, controls, menus, status items, popovers, QuartzCore layers and animations, Liquid Glass views, preferences, speech, haptics, table cell/row views, run loops, view controllers, token fields, help, color lists, fonts, spelling, and sharing. In development (currently at 152 NS classes, 22 Core Animation classes).
+Library package is `nsui`. Coverage includes core AppKit classes, controls, menus, status items, popovers, QuartzCore layers and animations, Liquid Glass views, preferences, speech, haptics, table cell/row views, run loops, view controllers, token fields, help, color lists, fonts, spelling, and sharing. In development (currently at 152 NS classes, 23 Core Animation classes).
 
 More support expected in the near future, with the goal of having full `NS.*` coverage and potential Metal integration.

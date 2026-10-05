@@ -147,6 +147,8 @@ public final class Sig {
         of(Ret.DOUBLE, Arg.INT), of(Ret.VOID, Arg.DOUBLE, Arg.INT), // widthForSegment: / setWidth:forSegment:
         of(Ret.ID, Arg.ID, Arg.DOUBLE),                 // fontWithName:size:
         of(Ret.ID, Arg.FLOAT, Arg.FLOAT, Arg.FLOAT, Arg.FLOAT), // timingFunctionWithControlPoints::::
+        of(Ret.ID, Arg.ID, Arg.ID, Arg.FLOAT),        // HDR10MetadataWithDisplayInfo:contentInfo:scale:
+        of(Ret.ID, Arg.FLOAT, Arg.FLOAT, Arg.FLOAT),  // HDR10MetadataWithMinLuminance:...
         of(Ret.VOID, Arg.INT, Arg.ID),                 // getControlPointAtIndex:values: (out-param)
         of(Ret.ID, Arg.INT, Arg.ID, Arg.INT, Arg.DOUBLE, Arg.DOUBLE), // constraintWithAttribute:scale:offset:
         of(Ret.ID, Arg.INT, Arg.ID, Arg.INT, Arg.DOUBLE), // constraintWithAttribute:offset:

@@ -156,4 +156,119 @@ public class NSClipView extends NSView {
             throw new RuntimeException("setBackgroundColor: failed", t);
         }
     }
+
+    // ---------------------------------------------------------------- header-completeness batch (NSClipView.h)
+    //
+    // Omitted:
+    // - deprecated constrainScrollPoint: (use constrainBoundsRect: instead) and copiesOnScroll is already
+    //   wrapped (deprecated no-op setter, kept for source compatibility).
+    // - inexpressible (absent from Sig vocabulary, requested): scrollClipView:toPoint: (NSView category) needs
+    //   of(VOID,ID,POINT).
+
+    /// [clip documentCursor] — NSCursor (may be nil).
+    public NSCursor documentCursor() {
+        ensureInit();
+        try {
+            MemorySegment c = (MemorySegment) handles.hId().invokeExact(peer, ObjC.sel("documentCursor"));
+            return NSCursor.wrap(c);
+        } catch (Throwable t) {
+            throw new RuntimeException("documentCursor failed", t);
+        }
+    }
+
+    /// [clip setDocumentCursor:] (nil clears).
+    public void setDocumentCursor(NSCursor cursor) {
+        ensureInit();
+        try {
+            handles.hVoidId().invokeExact(peer, ObjC.sel("setDocumentCursor:"), (MemorySegment) (cursor == null ? MemorySegment.NULL : cursor.peer()));
+        } catch (Throwable t) {
+            throw new RuntimeException("setDocumentCursor: failed", t);
+        }
+    }
+
+    /// [clip viewFrameChanged:] — notification that the frame changed.
+    public void viewFrameChanged(NSObject notification) {
+        ensureInit();
+        try {
+            handles.hVoidId().invokeExact(peer, ObjC.sel("viewFrameChanged:"), notification.peer());
+        } catch (Throwable t) {
+            throw new RuntimeException("viewFrameChanged: failed", t);
+        }
+    }
+
+    /// [clip viewBoundsChanged:] — notification that the bounds changed.
+    public void viewBoundsChanged(NSObject notification) {
+        ensureInit();
+        try {
+            handles.hVoidId().invokeExact(peer, ObjC.sel("viewBoundsChanged:"), notification.peer());
+        } catch (Throwable t) {
+            throw new RuntimeException("viewBoundsChanged: failed", t);
+        }
+    }
+
+    /// [clip autoscroll:] — auto-scroll given an event.
+    public boolean autoscroll(NSEvent event) {
+        ensureInit();
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.BOOL, Arg.ID));
+            return (boolean) h.invokeExact(peer, ObjC.sel("autoscroll:"), event.peer());
+        } catch (Throwable t) {
+            throw new RuntimeException("autoscroll: failed", t);
+        }
+    }
+
+    /// [clip constrainBoundsRect:] — constrain a proposed bounds rect.
+    public NSRect constrainBoundsRect(NSRect proposedBounds) {
+        ensureInit();
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.RECT, Arg.RECT));
+            MemorySegment r = (MemorySegment) h.invokeExact(ObjC.structSlot(), peer, ObjC.sel("constrainBoundsRect:"), proposedBounds.toSegment());
+            return NSRect.fromSegment(r);
+        } catch (Throwable t) {
+            throw new RuntimeException("constrainBoundsRect: failed", t);
+        }
+    }
+
+    /// [clip contentInsets] — NSEdgeInsets (32-byte struct, same ABI class as NSRect).
+    public NSEdgeInsets contentInsets() {
+        ensureInit();
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.RECT));
+            MemorySegment s = (MemorySegment) h.invokeExact(ObjC.structSlot(), peer, ObjC.sel("contentInsets"));
+            return NSEdgeInsets.fromSegment(s);
+        } catch (Throwable t) {
+            throw new RuntimeException("contentInsets failed", t);
+        }
+    }
+
+    /// [clip setContentInsets:] — NSEdgeInsets by value (RECT shape).
+    public void setContentInsets(NSEdgeInsets insets) {
+        ensureInit();
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.RECT));
+            h.invokeExact(peer, ObjC.sel("setContentInsets:"), insets.toSegment());
+        } catch (Throwable t) {
+            throw new RuntimeException("setContentInsets: failed", t);
+        }
+    }
+
+    /// [clip automaticallyAdjustsContentInsets].
+    public boolean automaticallyAdjustsContentInsets() {
+        ensureInit();
+        try {
+            return (boolean) handles.hBool().invokeExact(peer, ObjC.sel("automaticallyAdjustsContentInsets"));
+        } catch (Throwable t) {
+            throw new RuntimeException("automaticallyAdjustsContentInsets failed", t);
+        }
+    }
+
+    /// [clip setAutomaticallyAdjustsContentInsets:].
+    public void setAutomaticallyAdjustsContentInsets(boolean flag) {
+        ensureInit();
+        try {
+            handles.hVoidBool().invokeExact(peer, ObjC.sel("setAutomaticallyAdjustsContentInsets:"), flag);
+        } catch (Throwable t) {
+            throw new RuntimeException("setAutomaticallyAdjustsContentInsets: failed", t);
+        }
+    }
 }

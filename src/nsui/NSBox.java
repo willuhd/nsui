@@ -259,4 +259,39 @@ public final class NSBox extends NSView {
     public void sizeToFit() {
         ObjC.msgSendVoid(peer, ObjC.sel("sizeToFit"));
     }
+
+    // ---------------------------------------------------------------- header-completeness batch (NSBox.h)
+    //
+    // Omitted:
+    // - deprecated: setTitleWithMnemonic:, borderType is already wrapped (kept for source compatibility
+    //   though deprecated since 10.15), NSBoxSecondary/NSBoxOldStyle constants (deprecated aliases).
+    // - fully covered elsewhere: boxType/titlePosition/title/titleFont/contentView/contentViewMargins/
+    //   transparent/borderWidth/cornerRadius/borderColor/fillColor.
+    // - no inexpressible shapes remain: every non-deprecated NSBox selector fits the registered vocabulary.
+
+    /// [box borderRect] — the border rect (readonly).
+    public NSRect borderRect() {
+        return NSRect.fromSegment(ObjC.msgSendRect(peer, ObjC.sel("borderRect")));
+    }
+
+    /// [box titleRect] — the title rect (readonly).
+    public NSRect titleRect() {
+        return NSRect.fromSegment(ObjC.msgSendRect(peer, ObjC.sel("titleRect")));
+    }
+
+    /// [box titleCell] — the title cell (unwrapped; NSCell has no dedicated wrapper).
+    public NSObject titleCell() {
+        return NSObject.wrap(ObjC.msgSendId(peer, ObjC.sel("titleCell")));
+    }
+
+    /// [box setFrameFromContentFrame:] — resize the box so its content area equals the rect.
+    public void setFrameFromContentFrame(NSRect contentFrame) {
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.RECT));
+            h.invokeExact(peer, ObjC.sel("setFrameFromContentFrame:"), contentFrame.toSegment());
+        } catch (Throwable t) {
+            throw new RuntimeException("setFrameFromContentFrame: failed", t);
+        }
+    }
+
 }

@@ -205,4 +205,118 @@ public class NSStackView extends NSView {
     public boolean translatesAutoresizingMaskIntoConstraints() {
         return ObjC.msgSendBool(peer, ObjC.sel("translatesAutoresizingMaskIntoConstraints"));
     }
+
+    // ---------------------------------------------------------------- header-completeness batch (NSStackView.h)
+    //
+    // Omitted:
+    // - delegate property + NSStackViewDelegate protocol methods — need upcall machinery.
+    // - deprecated hasEqualSpacing (use distribution instead).
+    // - inexpressible shapes (absent from Sig vocabulary, requested): visibilityPriorityForView: needs
+    //   of(FLOAT,ID); setVisibilityPriority:forView: needs of(VOID,FLOAT,ID). NSLayoutPriority is float,
+    //   so clippingResistancePriorityForOrientation:/huggingPriorityForOrientation: need of(FLOAT,INT) and
+    //   their setters need of(VOID,FLOAT,INT) — omitted rather than sent with a wrong shape.
+    // Note: insertView:atIndex:inGravity: shares the registered of(VOID,ID,INT,INT) descriptor
+    // (listed in Sig as setVertexBytes:length:atIndex: — descriptors are keyed by shape, not selector).
+
+    /// NSStackViewSpacingUseDefault (FLT_MAX) — pass to setCustomSpacing:afterView: to restore default spacing.
+    public static final float SPACING_USE_DEFAULT = Float.MAX_VALUE;
+
+    /// +[NSStackView stackViewWithViews:] — horizontal stack of the given views.
+    public static NSStackView stackViewWithViews(NSArray views) {
+        ensureInit();
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.ID));
+            MemorySegment p = (MemorySegment) h.invokeExact(ObjC.cls("NSStackView"), ObjC.sel("stackViewWithViews:"), views.peer());
+            if (p == null || p.address() == 0) throw new IllegalStateException("stackViewWithViews: returned nil");
+            return new NSStackView(p);
+        } catch (Throwable t) {
+            throw new RuntimeException("stackViewWithViews: failed", t);
+        }
+    }
+
+    /// [stack insertArrangedSubview:atIndex:].
+    public void insertArrangedSubview(NSView view, long index) {
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.INT));
+            h.invokeExact(peer, ObjC.sel("insertArrangedSubview:atIndex:"), view.peer(), index);
+        } catch (Throwable t) {
+            throw new RuntimeException("insertArrangedSubview:atIndex: failed", t);
+        }
+    }
+
+    /// [stack detachedViews] — arranged views currently detached/hidden.
+    public NSArray detachedViews() {
+        return NSArray.wrap(ObjC.msgSendId(peer, ObjC.sel("detachedViews")));
+    }
+
+    /// [stack setCustomSpacing:afterView:].
+    public void setCustomSpacingAfterView(double spacing, NSView view) {
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.DOUBLE, Arg.ID));
+            h.invokeExact(peer, ObjC.sel("setCustomSpacing:afterView:"), spacing, view.peer());
+        } catch (Throwable t) {
+            throw new RuntimeException("setCustomSpacing:afterView: failed", t);
+        }
+    }
+
+    /// [stack customSpacingAfterView:].
+    public double customSpacingAfterView(NSView view) {
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.DOUBLE, Arg.ID));
+            return (double) h.invokeExact(peer, ObjC.sel("customSpacingAfterView:"), view.peer());
+        } catch (Throwable t) {
+            throw new RuntimeException("customSpacingAfterView: failed", t);
+        }
+    }
+
+    /// [stack addView:inGravity:] — gravity-area placement (distribution gravityAreas mode).
+    public void addViewInGravity(NSView view, long gravity) {
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.INT));
+            h.invokeExact(peer, ObjC.sel("addView:inGravity:"), view.peer(), gravity);
+        } catch (Throwable t) {
+            throw new RuntimeException("addView:inGravity: failed", t);
+        }
+    }
+
+    /// [stack insertView:atIndex:inGravity:] — shares the registered (VOID,ID,INT,INT) shape.
+    public void insertViewAtIndexInGravity(NSView view, long index, long gravity) {
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.INT, Arg.INT));
+            h.invokeExact(peer, ObjC.sel("insertView:atIndex:inGravity:"), view.peer(), index, gravity);
+        } catch (Throwable t) {
+            throw new RuntimeException("insertView:atIndex:inGravity: failed", t);
+        }
+    }
+
+    /// [stack removeView:] — remove a gravity-managed view.
+    public void removeView(NSView view) {
+        ObjC.msgSendVoidId(peer, ObjC.sel("removeView:"), view.peer());
+    }
+
+    /// [stack viewsInGravity:] — views in one gravity area.
+    public NSArray viewsInGravity(long gravity) {
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.INT));
+            return NSArray.wrap((MemorySegment) h.invokeExact(peer, ObjC.sel("viewsInGravity:"), gravity));
+        } catch (Throwable t) {
+            throw new RuntimeException("viewsInGravity: failed", t);
+        }
+    }
+
+    /// [stack setViews:inGravity:].
+    public void setViewsInGravity(NSArray views, long gravity) {
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.INT));
+            h.invokeExact(peer, ObjC.sel("setViews:inGravity:"), views.peer(), gravity);
+        } catch (Throwable t) {
+            throw new RuntimeException("setViews:inGravity: failed", t);
+        }
+    }
+
+    /// [stack views] — all managed views regardless of gravity/detach state.
+    public NSArray views() {
+        return NSArray.wrap(ObjC.msgSendId(peer, ObjC.sel("views")));
+    }
+
 }

@@ -13,7 +13,10 @@ import static nsui.objc.Sig.Ret;
 /// `NSView`, so it fits any view hierarchy.
 ///
 /// Tabs are added as `NSTabViewItem`s, each with a `label` and an
-/// optional content `NSView`. Only the minimal add/count surface is wrapped here.
+/// optional content `NSView`.
+///
+/// Omitted from NSTabView.h: delegate property + NSTabViewDelegate protocol methods (need upcall
+/// machinery); deprecated controlTint; takeSelectedTabViewItemFromSender: IS wrapped (plain action).
 public final class NSTabView extends NSView {
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
@@ -217,4 +220,121 @@ public final class NSTabView extends NSView {
     public NSRect contentRect() {
         return NSRect.fromSegment(ObjC.msgSendRect(peer, ObjC.sel("contentRect")));
     }
+
+    // ---------------------------------------------------------------- header-completeness batch (NSTabView.h)
+
+    /// [tabView takeSelectedTabViewItemFromSender:] (sender may be nil).
+    public void takeSelectedTabViewItemFromSender(NSObject sender) {
+        try {
+            hVoidId.invokeExact(peer, ObjC.sel("takeSelectedTabViewItemFromSender:"), (MemorySegment) (sender == null ? MemorySegment.NULL : sender.peer()));
+        } catch (Throwable t) {
+            throw new RuntimeException("takeSelectedTabViewItemFromSender: failed", t);
+        }
+    }
+
+    /// [tabView selectFirstTabViewItem:] (sender may be nil).
+    public void selectFirstTabViewItem(NSObject sender) {
+        try {
+            hVoidId.invokeExact(peer, ObjC.sel("selectFirstTabViewItem:"), (MemorySegment) (sender == null ? MemorySegment.NULL : sender.peer()));
+        } catch (Throwable t) {
+            throw new RuntimeException("selectFirstTabViewItem: failed", t);
+        }
+    }
+
+    /// [tabView selectLastTabViewItem:] (sender may be nil).
+    public void selectLastTabViewItem(NSObject sender) {
+        try {
+            hVoidId.invokeExact(peer, ObjC.sel("selectLastTabViewItem:"), (MemorySegment) (sender == null ? MemorySegment.NULL : sender.peer()));
+        } catch (Throwable t) {
+            throw new RuntimeException("selectLastTabViewItem: failed", t);
+        }
+    }
+
+    /// [tabView selectNextTabViewItem:] (sender may be nil).
+    public void selectNextTabViewItem(NSObject sender) {
+        try {
+            hVoidId.invokeExact(peer, ObjC.sel("selectNextTabViewItem:"), (MemorySegment) (sender == null ? MemorySegment.NULL : sender.peer()));
+        } catch (Throwable t) {
+            throw new RuntimeException("selectNextTabViewItem: failed", t);
+        }
+    }
+
+    /// [tabView selectPreviousTabViewItem:] (sender may be nil).
+    public void selectPreviousTabViewItem(NSObject sender) {
+        try {
+            hVoidId.invokeExact(peer, ObjC.sel("selectPreviousTabViewItem:"), (MemorySegment) (sender == null ? MemorySegment.NULL : sender.peer()));
+        } catch (Throwable t) {
+            throw new RuntimeException("selectPreviousTabViewItem: failed", t);
+        }
+    }
+
+    /// [tabView font] — font used for all tab labels.
+    public NSFont font() {
+        try {
+            MemorySegment p = (MemorySegment) hId.invokeExact(peer, ObjC.sel("font"));
+            return NSFont.wrap(p);
+        } catch (Throwable t) {
+            throw new RuntimeException("font failed", t);
+        }
+    }
+
+    /// [tabView setFont:].
+    public void setFont(NSFont font) {
+        try {
+            hVoidId.invokeExact(peer, ObjC.sel("setFont:"), (MemorySegment) (font == null ? MemorySegment.NULL : font.peer()));
+        } catch (Throwable t) {
+            throw new RuntimeException("setFont: failed", t);
+        }
+    }
+
+    /// [tabView tabViewItems] — all tab items.
+    public NSArray tabViewItems() {
+        try {
+            MemorySegment p = (MemorySegment) hId.invokeExact(peer, ObjC.sel("tabViewItems"));
+            return NSArray.wrap(p);
+        } catch (Throwable t) {
+            throw new RuntimeException("tabViewItems failed", t);
+        }
+    }
+
+    /// [tabView setTabViewItems:].
+    public void setTabViewItems(NSArray items) {
+        try {
+            hVoidId.invokeExact(peer, ObjC.sel("setTabViewItems:"), items.peer());
+        } catch (Throwable t) {
+            throw new RuntimeException("setTabViewItems: failed", t);
+        }
+    }
+
+    /// [tabView controlSize] — NSControlSize.
+    public long controlSize() {
+        return ObjC.msgSendLong(peer, ObjC.sel("controlSize"));
+    }
+
+    /// [tabView setControlSize:].
+    public void setControlSize(long size) {
+        ObjC.msgSendVoidLong(peer, ObjC.sel("setControlSize:"), size);
+    }
+
+    /// [tabView tabViewItemAtPoint:] — item at local point (nil-safe).
+    public NSTabViewItem tabViewItemAtPoint(NSPoint point) {
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.POINT));
+            MemorySegment p = (MemorySegment) h.invokeExact(peer, ObjC.sel("tabViewItemAtPoint:"), point.toSegment());
+            return NSTabViewItem.wrap(p);
+        } catch (Throwable t) {
+            throw new RuntimeException("tabViewItemAtPoint: failed", t);
+        }
+    }
+
+    /// [tabView indexOfTabViewItemWithIdentifier:] — NSNotFound when absent.
+    public long indexOfTabViewItemWithIdentifier(String identifier) {
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.INT, Arg.ID));
+            return (long) h.invokeExact(peer, ObjC.sel("indexOfTabViewItemWithIdentifier:"), ObjC.nsstring(identifier));
+        } catch (Throwable t) {
+            throw new RuntimeException("indexOfTabViewItemWithIdentifier: failed", t);
+        }
+    }
+
 }

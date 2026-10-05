@@ -146,6 +146,11 @@ public final class Sig {
         of(Ret.BOOL, Arg.INT), of(Ret.VOID, Arg.BOOL, Arg.INT),  // isEnabledForSegment: / setEnabled:forSegment:
         of(Ret.DOUBLE, Arg.INT), of(Ret.VOID, Arg.DOUBLE, Arg.INT), // widthForSegment: / setWidth:forSegment:
         of(Ret.ID, Arg.ID, Arg.DOUBLE),                 // fontWithName:size:
+        of(Ret.ID, Arg.FLOAT, Arg.FLOAT, Arg.FLOAT, Arg.FLOAT), // timingFunctionWithControlPoints::::
+        of(Ret.VOID, Arg.INT, Arg.ID),                 // getControlPointAtIndex:values: (out-param)
+        of(Ret.ID, Arg.INT, Arg.ID, Arg.INT, Arg.DOUBLE, Arg.DOUBLE), // constraintWithAttribute:scale:offset:
+        of(Ret.ID, Arg.INT, Arg.ID, Arg.INT, Arg.DOUBLE), // constraintWithAttribute:offset:
+        of(Ret.ID, Arg.INT, Arg.ID, Arg.INT),          // constraintWithAttribute: (source-relative)
         of(Ret.ID, Arg.DOUBLE, Arg.DOUBLE, Arg.DOUBLE, Arg.DOUBLE),  // colorWithSRGBRed:green:blue:alpha:
         of(Ret.ID, Arg.INT, Arg.BOOL),                  // standardWindowButton:forFlag:
         of(Ret.ID, Arg.ID, Arg.ID, Arg.INT),            // dictionaryWithObjects:forKeys:count:

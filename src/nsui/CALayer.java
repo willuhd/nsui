@@ -510,6 +510,32 @@ public class CALayer extends NSObject {
         } catch (Throwable t) { throw new RuntimeException("sublayers failed", t); }
     }
 
+    /// [layer constraints] — CAConstraints driving CAConstraintLayoutManager.
+    public NSArray constraints() {
+        ensureInit();
+        try {
+            return NSArray.wrap((MemorySegment) handles.hGetId().invokeExact(peer, ObjC.sel("constraints")));
+        } catch (Throwable t) { throw new RuntimeException("constraints failed", t); }
+    }
+
+    /// [layer setConstraints:] — install constraints (needs a layout manager).
+    public void setConstraints(NSArray constraints) {
+        ensureInit();
+        try {
+            handles.hSetId().invokeExact(peer, ObjC.sel("setConstraints:"),
+                    (MemorySegment) (constraints == null ? MemorySegment.NULL : constraints.peer()));
+        } catch (Throwable t) { throw new RuntimeException("setConstraints: failed", t); }
+    }
+
+    /// [layer addConstraint:] — append one CAConstraint.
+    public void addConstraint(CAConstraint constraint) {
+        ensureInit();
+        try {
+            handles.hSetId().invokeExact(peer, ObjC.sel("addConstraint:"),
+                    (MemorySegment) (constraint == null ? MemorySegment.NULL : constraint.peer()));
+        } catch (Throwable t) { throw new RuntimeException("addConstraint: failed", t); }
+    }
+
     /// [CALayer needsDisplay] helper via CATransaction
     public static void transaction(Runnable block, double duration) {
         ensureInit();

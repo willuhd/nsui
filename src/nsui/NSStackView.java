@@ -129,7 +129,7 @@ public class NSStackView extends NSView {
     public NSEdgeInsets edgeInsets() {
         try {
             MemorySegment s = (MemorySegment) hGetInsets.invokeExact(
-                    (java.lang.foreign.SegmentAllocator) java.lang.foreign.Arena.global(),
+                    ObjC.structSlot(),
                     peer, ObjC.sel("edgeInsets"));
             return NSEdgeInsets.fromSegment(s);
         } catch (Throwable t) {

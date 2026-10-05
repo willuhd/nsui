@@ -62,7 +62,7 @@ public final class NSTrackingArea extends NSObject {
     public NSRect rect() {
         ensureInit();
         try {
-            MemorySegment r = (MemorySegment) handles.hRect().invokeExact((java.lang.foreign.SegmentAllocator) java.lang.foreign.Arena.global(), peer, ObjC.sel("rect"));
+            MemorySegment r = (MemorySegment) handles.hRect().invokeExact(ObjC.structSlot(), peer, ObjC.sel("rect"));
             return NSRect.fromSegment(r);
         } catch (Throwable t) {
             throw new RuntimeException("rect failed", t);

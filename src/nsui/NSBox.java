@@ -160,7 +160,7 @@ public final class NSBox extends NSView {
     /// [box contentViewMargins] — NSSize.
     public NSSize contentViewMargins() {
         try {
-            MemorySegment s = (MemorySegment) hGetSize.invokeExact((java.lang.foreign.SegmentAllocator) java.lang.foreign.Arena.global(), peer, ObjC.sel("contentViewMargins"));
+            MemorySegment s = (MemorySegment) hGetSize.invokeExact(ObjC.structSlot(), peer, ObjC.sel("contentViewMargins"));
             return NSSize.fromSegment(s);
         } catch (Throwable t) {
             throw new RuntimeException("contentViewMargins failed", t);

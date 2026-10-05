@@ -1,8 +1,5 @@
 package nsui;
-
-import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.SegmentAllocator;
 import java.lang.invoke.MethodHandle;
 
 import nsui.objc.ObjC;
@@ -130,7 +127,7 @@ public class CAEmitterLayer extends CALayer {
     /// emitterPosition / setEmitterPosition:.
     public NSPoint emitterPosition() {
         try {
-            return NSPoint.fromSegment((MemorySegment) handles.hGetPoint().invokeExact((SegmentAllocator) Arena.global(), peer, ObjC.sel("emitterPosition")));
+            return NSPoint.fromSegment((MemorySegment) handles.hGetPoint().invokeExact(ObjC.structSlot(), peer, ObjC.sel("emitterPosition")));
         } catch (Throwable t) {
             throw new RuntimeException("emitterPosition failed", t);
         }
@@ -152,7 +149,7 @@ public class CAEmitterLayer extends CALayer {
     /// emitterSize / setEmitterSize:.
     public NSSize emitterSize() {
         try {
-            return NSSize.fromSegment((MemorySegment) handles.hGetSize().invokeExact((SegmentAllocator) Arena.global(), peer, ObjC.sel("emitterSize")));
+            return NSSize.fromSegment((MemorySegment) handles.hGetSize().invokeExact(ObjC.structSlot(), peer, ObjC.sel("emitterSize")));
         } catch (Throwable t) {
             throw new RuntimeException("emitterSize failed", t);
         }

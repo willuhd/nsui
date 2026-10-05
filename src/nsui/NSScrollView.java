@@ -230,7 +230,7 @@ public final class NSScrollView extends NSView {
     /// [scroll contentSize] — NSSize readonly.
     public NSSize contentSize() {
         try {
-            MemorySegment s = (MemorySegment) hGetSize.invokeExact((java.lang.foreign.SegmentAllocator) java.lang.foreign.Arena.global(), peer, ObjC.sel("contentSize"));
+            MemorySegment s = (MemorySegment) hGetSize.invokeExact(ObjC.structSlot(), peer, ObjC.sel("contentSize"));
             return NSSize.fromSegment(s);
         } catch (Throwable t) {
             throw new RuntimeException("contentSize failed", t);
@@ -240,7 +240,7 @@ public final class NSScrollView extends NSView {
     /// [scroll documentVisibleRect] — NSRect readonly.
     public NSRect documentVisibleRect() {
         try {
-            MemorySegment r = (MemorySegment) hGetRect.invokeExact((java.lang.foreign.SegmentAllocator) java.lang.foreign.Arena.global(), peer, ObjC.sel("documentVisibleRect"));
+            MemorySegment r = (MemorySegment) hGetRect.invokeExact(ObjC.structSlot(), peer, ObjC.sel("documentVisibleRect"));
             return NSRect.fromSegment(r);
         } catch (Throwable t) {
             throw new RuntimeException("documentVisibleRect failed", t);

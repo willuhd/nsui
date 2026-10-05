@@ -57,7 +57,7 @@ public final class NSPrintInfo extends NSObject {
     public NSSize paperSize() {
         ensureInit();
         try {
-            MemorySegment seg = (MemorySegment) handles.hPaperSize().invokeExact((java.lang.foreign.SegmentAllocator) java.lang.foreign.Arena.global(), peer, ObjC.sel("paperSize"));
+            MemorySegment seg = (MemorySegment) handles.hPaperSize().invokeExact(ObjC.structSlot(), peer, ObjC.sel("paperSize"));
             return NSSize.fromSegment(seg);
         } catch (Throwable t) { throw new RuntimeException("paperSize failed", t); }
     }

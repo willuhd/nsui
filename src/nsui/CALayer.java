@@ -1,8 +1,5 @@
 package nsui;
-
-import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.SegmentAllocator;
 import java.lang.invoke.MethodHandle;
 
 import nsui.objc.ObjC;
@@ -266,7 +263,7 @@ public class CALayer extends NSObject {
     public NSPoint position() {
         ensureInit();
         try {
-            MemorySegment s = (MemorySegment) handles.hGetPoint().invokeExact((SegmentAllocator) Arena.global(), peer, ObjC.sel("position"));
+            MemorySegment s = (MemorySegment) handles.hGetPoint().invokeExact(ObjC.structSlot(), peer, ObjC.sel("position"));
             return NSPoint.fromSegment(s);
         } catch (Throwable t) { throw new RuntimeException("position failed", t); }
     }
@@ -283,7 +280,7 @@ public class CALayer extends NSObject {
     public NSPoint anchorPoint() {
         ensureInit();
         try {
-            MemorySegment s = (MemorySegment) handles.hGetPoint().invokeExact((SegmentAllocator) Arena.global(), peer, ObjC.sel("anchorPoint"));
+            MemorySegment s = (MemorySegment) handles.hGetPoint().invokeExact(ObjC.structSlot(), peer, ObjC.sel("anchorPoint"));
             return NSPoint.fromSegment(s);
         } catch (Throwable t) { throw new RuntimeException("anchorPoint failed", t); }
     }
@@ -300,7 +297,7 @@ public class CALayer extends NSObject {
     public NSRect bounds() {
         ensureInit();
         try {
-            MemorySegment s = (MemorySegment) handles.hGetRect().invokeExact((SegmentAllocator) Arena.global(), peer, ObjC.sel("bounds"));
+            MemorySegment s = (MemorySegment) handles.hGetRect().invokeExact(ObjC.structSlot(), peer, ObjC.sel("bounds"));
             return NSRect.fromSegment(s);
         } catch (Throwable t) { throw new RuntimeException("bounds failed", t); }
     }
@@ -317,7 +314,7 @@ public class CALayer extends NSObject {
     public NSRect frame() {
         ensureInit();
         try {
-            MemorySegment s = (MemorySegment) handles.hGetRect().invokeExact((SegmentAllocator) Arena.global(), peer, ObjC.sel("frame"));
+            MemorySegment s = (MemorySegment) handles.hGetRect().invokeExact(ObjC.structSlot(), peer, ObjC.sel("frame"));
             return NSRect.fromSegment(s);
         } catch (Throwable t) { throw new RuntimeException("frame failed", t); }
     }
@@ -467,7 +464,7 @@ public class CALayer extends NSObject {
     public NSSize shadowOffset() {
         ensureInit();
         try {
-            MemorySegment s = (MemorySegment) handles.hGetSize().invokeExact((SegmentAllocator) Arena.global(), peer, ObjC.sel("shadowOffset"));
+            MemorySegment s = (MemorySegment) handles.hGetSize().invokeExact(ObjC.structSlot(), peer, ObjC.sel("shadowOffset"));
             return NSSize.fromSegment(s);
         } catch (Throwable t) { throw new RuntimeException("shadowOffset failed", t); }
     }

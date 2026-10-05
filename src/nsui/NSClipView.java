@@ -68,7 +68,7 @@ public class NSClipView extends NSView {
     public NSRect documentRect() {
         ensureInit();
         try {
-            MemorySegment r = (MemorySegment) handles.hGetRect().invokeExact((java.lang.foreign.SegmentAllocator) java.lang.foreign.Arena.global(), peer, ObjC.sel("documentRect"));
+            MemorySegment r = (MemorySegment) handles.hGetRect().invokeExact(ObjC.structSlot(), peer, ObjC.sel("documentRect"));
             return NSRect.fromSegment(r);
         } catch (Throwable t) {
             throw new RuntimeException("documentRect failed", t);
@@ -79,7 +79,7 @@ public class NSClipView extends NSView {
     public NSRect documentVisibleRect() {
         ensureInit();
         try {
-            MemorySegment r = (MemorySegment) handles.hGetRect().invokeExact((java.lang.foreign.SegmentAllocator) java.lang.foreign.Arena.global(), peer, ObjC.sel("documentVisibleRect"));
+            MemorySegment r = (MemorySegment) handles.hGetRect().invokeExact(ObjC.structSlot(), peer, ObjC.sel("documentVisibleRect"));
             return NSRect.fromSegment(r);
         } catch (Throwable t) {
             throw new RuntimeException("documentVisibleRect failed", t);

@@ -58,7 +58,7 @@ public final class NSDraggingSession extends NSObject {
         ensureInit();
         if (handles.hDraggingLocation() == null) return NSPoint.ZERO;
         try {
-            MemorySegment seg = (MemorySegment) handles.hDraggingLocation().invokeExact((java.lang.foreign.SegmentAllocator) java.lang.foreign.Arena.global(), peer, ObjC.sel("draggingLocation"));
+            MemorySegment seg = (MemorySegment) handles.hDraggingLocation().invokeExact(ObjC.structSlot(), peer, ObjC.sel("draggingLocation"));
             return NSPoint.fromSegment(seg);
         } catch (Throwable t) { return NSPoint.ZERO; }
     }

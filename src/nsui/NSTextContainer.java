@@ -1,6 +1,4 @@
 package nsui;
-
-import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodHandle;
 
@@ -91,7 +89,7 @@ public final class NSTextContainer extends NSObject {
     public NSSize containerSize() {
         ensureInit();
         try {
-            MemorySegment s = (MemorySegment) handles.hGetSize().invokeExact((java.lang.foreign.SegmentAllocator) Arena.global(), peer, ObjC.sel("containerSize"));
+            MemorySegment s = (MemorySegment) handles.hGetSize().invokeExact(ObjC.structSlot(), peer, ObjC.sel("containerSize"));
             return NSSize.fromSegment(s);
         } catch (Throwable t) {
             throw new RuntimeException("containerSize failed", t);

@@ -1,8 +1,5 @@
 package nsui;
-
-import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.SegmentAllocator;
 import java.lang.invoke.MethodHandle;
 
 import nsui.objc.ObjC;
@@ -63,7 +60,7 @@ public class CATiledLayer extends CALayer {
     /// tileSize.
     public NSSize tileSize() {
         try {
-            return NSSize.fromSegment((MemorySegment) handles.hGetSize().invokeExact((SegmentAllocator) Arena.global(), peer, ObjC.sel("tileSize")));
+            return NSSize.fromSegment((MemorySegment) handles.hGetSize().invokeExact(ObjC.structSlot(), peer, ObjC.sel("tileSize")));
         } catch (Throwable t) {
             throw new RuntimeException("tileSize failed", t);
         }

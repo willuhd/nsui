@@ -1,8 +1,5 @@
 package nsui;
-
-import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.SegmentAllocator;
 import java.lang.invoke.MethodHandle;
 
 import nsui.objc.ObjC;
@@ -85,7 +82,7 @@ public class CAGradientLayer extends CALayer {
     public NSPoint startPoint() {
         ensureInit();
         try {
-            MemorySegment s = (MemorySegment) handles.hGetPoint().invokeExact((SegmentAllocator) Arena.global(), peer, ObjC.sel("startPoint"));
+            MemorySegment s = (MemorySegment) handles.hGetPoint().invokeExact(ObjC.structSlot(), peer, ObjC.sel("startPoint"));
             return NSPoint.fromSegment(s);
         } catch (Throwable t) { throw new RuntimeException("startPoint failed", t); }
     }
@@ -102,7 +99,7 @@ public class CAGradientLayer extends CALayer {
     public NSPoint endPoint() {
         ensureInit();
         try {
-            MemorySegment s = (MemorySegment) handles.hGetPoint().invokeExact((SegmentAllocator) Arena.global(), peer, ObjC.sel("endPoint"));
+            MemorySegment s = (MemorySegment) handles.hGetPoint().invokeExact(ObjC.structSlot(), peer, ObjC.sel("endPoint"));
             return NSPoint.fromSegment(s);
         } catch (Throwable t) { throw new RuntimeException("endPoint failed", t); }
     }

@@ -108,7 +108,7 @@ public final class NSString extends NSObject {
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.RANGE, Arg.ID));
             MemorySegment seg = (MemorySegment) h.invokeExact(
-                    (java.lang.foreign.SegmentAllocator) java.lang.foreign.Arena.global(),
+                    ObjC.structSlot(),
                     peer, ObjC.sel("rangeOfString:"), ObjC.nsstring(substring));
             return NSRange.fromSegment(seg);
         } catch (Throwable t) {

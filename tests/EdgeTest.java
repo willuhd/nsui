@@ -191,6 +191,13 @@ public final class EdgeTest {
         try {
             CALayer layer = CALayer.create();
             TestKit.check(layer != null, "CALayer.create non-null");
+            // 16-byte struct returns share the reusable slot too: consecutive
+            // position() reads must each see fresh values (no cross-talk).
+            layer.setPosition(new NSPoint(11, 22));
+            TestKit.check(layer.position().equals(new NSPoint(11, 22)), "CALayer position round-trip");
+            layer.setPosition(new NSPoint(33, 44));
+            TestKit.check(layer.position().equals(new NSPoint(33, 44)),
+                    "CALayer position rewrite reads fresh (slot overwrite sound)");
             layer.setBounds(new NSRect(10, 20, 300, 400));
             TestKit.check(layer.bounds().equals(new NSRect(10, 20, 300, 400)),
                     "CALayer bounds round-trip (got " + layer.bounds() + ")");

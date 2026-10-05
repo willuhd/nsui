@@ -93,13 +93,20 @@ public final class ObjC {
     private static MethodHandle hEscapeId;    // (id, SEL, id x6) -> id
     private static MethodHandle hEscapeVoid;  // (id, SEL, id x6) -> void
 
-    /// Reusable per-thread destination for struct returns (one 32-byte NSRect).
-    /// Lazily allocated from the global arena on first use per thread; never
-    /// rewound, just overwritten by the next `msgSendRect` on the same thread.
-    /// Safe because every caller (`NSView.frame`, `NSWindow.frame`, ...) copies
-    /// the doubles out via `NSRect.fromSegment` before any subsequent call.
+    /// Reusable per-thread destination for ALL struct returns up to 32 bytes
+    /// (RECT 32, POINT/SIZE/RANGE 16). Lazily allocated from the global arena
+    /// on first use per thread; never rewound, just overwritten by the next
+    /// struct call on the same thread. Safe because every caller copies the
+    /// values out immediately — never hold the segment across another call
+    /// (see contentOriginOffsetY for the one place that order matters).
     private static final ThreadLocal<MemorySegment> RECT_SLOT =
             ThreadLocal.withInitial(() -> ARENA.allocate(NS_RECT));
+
+    /// The shared struct-return slot as an allocator. Replaces per-call
+    /// `Arena.global()` at every struct-return downcall site.
+    public static SegmentAllocator structSlot() {
+        return (SegmentAllocator) RECT_SLOT.get();
+    }
 
     private ObjC() {}
 

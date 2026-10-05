@@ -216,7 +216,7 @@ public final class NSFont extends NSObject {
     /// [font boundingRectForFont] — NSRect
     public NSRect boundingRectForFont() {
         try {
-            MemorySegment r = (MemorySegment) ObjC.handle(Sig.of(Ret.RECT)).invokeExact((java.lang.foreign.SegmentAllocator) java.lang.foreign.Arena.global(), peer, ObjC.sel("boundingRectForFont"));
+            MemorySegment r = (MemorySegment) ObjC.handle(Sig.of(Ret.RECT)).invokeExact(ObjC.structSlot(), peer, ObjC.sel("boundingRectForFont"));
             return NSRect.fromSegment(r);
         } catch (Throwable t) { throw new RuntimeException("boundingRectForFont failed", t); }
     }
@@ -224,7 +224,7 @@ public final class NSFont extends NSObject {
     /// [font maximumAdvancement] — NSSize
     public NSSize maximumAdvancement() {
         try {
-            MemorySegment s = (MemorySegment) ObjC.handle(Sig.of(Ret.SIZE)).invokeExact((java.lang.foreign.SegmentAllocator) java.lang.foreign.Arena.global(), peer, ObjC.sel("maximumAdvancement"));
+            MemorySegment s = (MemorySegment) ObjC.handle(Sig.of(Ret.SIZE)).invokeExact(ObjC.structSlot(), peer, ObjC.sel("maximumAdvancement"));
             return NSSize.fromSegment(s);
         } catch (Throwable t) { throw new RuntimeException("maximumAdvancement failed", t); }
     }

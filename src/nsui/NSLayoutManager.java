@@ -1,6 +1,4 @@
 package nsui;
-
-import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodHandle;
 
@@ -194,7 +192,7 @@ public final class NSLayoutManager extends NSObject {
         ensureInit();
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.RECT, Arg.ID));
-            MemorySegment r = (MemorySegment) h.invokeExact((java.lang.foreign.SegmentAllocator) Arena.global(), peer, ObjC.sel("usedRectForTextContainer:"), (MemorySegment) (container == null ? MemorySegment.NULL : container.peer()));
+            MemorySegment r = (MemorySegment) h.invokeExact(ObjC.structSlot(), peer, ObjC.sel("usedRectForTextContainer:"), (MemorySegment) (container == null ? MemorySegment.NULL : container.peer()));
             return NSRect.fromSegment(r);
         } catch (Throwable t) {
             throw new RuntimeException("usedRectForTextContainer: failed", t);

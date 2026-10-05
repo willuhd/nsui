@@ -1,6 +1,4 @@
 package nsui;
-
-import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodHandle;
 import java.util.concurrent.ConcurrentHashMap;
@@ -108,7 +106,7 @@ public class NSValue extends NSObject {
         if (cached instanceof NSPoint p) return p;
         ensureInit();
         try {
-            MemorySegment seg = (MemorySegment) handles.hPointValue().invokeExact((java.lang.foreign.SegmentAllocator) Arena.global(), peer, ObjC.sel("pointValue"));
+            MemorySegment seg = (MemorySegment) handles.hPointValue().invokeExact(ObjC.structSlot(), peer, ObjC.sel("pointValue"));
             return NSPoint.fromSegment(seg);
         } catch (Throwable t) { throw new RuntimeException("pointValue failed", t); }
     }
@@ -119,7 +117,7 @@ public class NSValue extends NSObject {
         if (cached instanceof NSSize s) return s;
         ensureInit();
         try {
-            MemorySegment seg = (MemorySegment) handles.hSizeValue().invokeExact((java.lang.foreign.SegmentAllocator) Arena.global(), peer, ObjC.sel("sizeValue"));
+            MemorySegment seg = (MemorySegment) handles.hSizeValue().invokeExact(ObjC.structSlot(), peer, ObjC.sel("sizeValue"));
             return NSSize.fromSegment(seg);
         } catch (Throwable t) { throw new RuntimeException("sizeValue failed", t); }
     }
@@ -130,7 +128,7 @@ public class NSValue extends NSObject {
         if (cached instanceof NSRect r) return r;
         ensureInit();
         try {
-            MemorySegment seg = (MemorySegment) handles.hRectValue().invokeExact((java.lang.foreign.SegmentAllocator) Arena.global(), peer, ObjC.sel("rectValue"));
+            MemorySegment seg = (MemorySegment) handles.hRectValue().invokeExact(ObjC.structSlot(), peer, ObjC.sel("rectValue"));
             return NSRect.fromSegment(seg);
         } catch (Throwable t) { throw new RuntimeException("rectValue failed", t); }
     }
@@ -141,7 +139,7 @@ public class NSValue extends NSObject {
         if (cached instanceof NSRange r) return r;
         ensureInit();
         try {
-            MemorySegment seg = (MemorySegment) handles.hRangeValue().invokeExact((java.lang.foreign.SegmentAllocator) Arena.global(), peer, ObjC.sel("rangeValue"));
+            MemorySegment seg = (MemorySegment) handles.hRangeValue().invokeExact(ObjC.structSlot(), peer, ObjC.sel("rangeValue"));
             return NSRange.fromSegment(seg);
         } catch (Throwable t) { throw new RuntimeException("rangeValue failed", t); }
     }

@@ -154,8 +154,10 @@ public class NSWindow extends NSResponder {
     /// Equals the title-bar height (+ borders); x maps 1:1.
     public double contentOriginOffsetY() {
         MemorySegment cv = ObjC.msgSendId(peer, ObjC.sel("contentView"));
-        MemorySegment cb = ObjC.msgSendRect(cv, ObjC.sel("bounds"));
-        return frame().height() - ObjC.rectH(cb);
+        // Read the slot BEFORE frame(): struct returns share one per-thread
+        // slot, so the second call would overwrite cb unread.
+        double boundsH = ObjC.rectH(ObjC.msgSendRect(cv, ObjC.sel("bounds")));
+        return frame().height() - boundsH;
     }
 
     /// setFrame:display: — resize/reposition (and optionally redraw immediately).
@@ -509,7 +511,7 @@ public class NSWindow extends NSResponder {
     /// [window minSize] — NSSize.
     public NSSize minSize() {
         try {
-            MemorySegment s = (MemorySegment) H.hGetSize().invokeExact((java.lang.foreign.SegmentAllocator) java.lang.foreign.Arena.global(), peer, ObjC.sel("minSize"));
+            MemorySegment s = (MemorySegment) H.hGetSize().invokeExact(ObjC.structSlot(), peer, ObjC.sel("minSize"));
             return NSSize.fromSegment(s);
         } catch (Throwable t) {
             throw new RuntimeException("minSize failed", t);
@@ -528,7 +530,7 @@ public class NSWindow extends NSResponder {
     /// [window maxSize] — NSSize.
     public NSSize maxSize() {
         try {
-            MemorySegment s = (MemorySegment) H.hGetSize().invokeExact((java.lang.foreign.SegmentAllocator) java.lang.foreign.Arena.global(), peer, ObjC.sel("maxSize"));
+            MemorySegment s = (MemorySegment) H.hGetSize().invokeExact(ObjC.structSlot(), peer, ObjC.sel("maxSize"));
             return NSSize.fromSegment(s);
         } catch (Throwable t) {
             throw new RuntimeException("maxSize failed", t);

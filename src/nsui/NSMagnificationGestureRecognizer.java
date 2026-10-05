@@ -10,6 +10,11 @@ import static nsui.objc.Sig.Ret;
 
 /// NSMagnificationGestureRecognizer — pinch magnification (KVO-observable live value).
 /// Thin stateless wrapper; follows the NSClickGestureRecognizer template.
+///
+/// Coverage notes (header: NSMagnificationGestureRecognizer.h wins on API
+/// truth): complete — `magnification` (+ setter) plus the inherited
+/// NSGestureRecognizer surface cover every non-delegate member. Omitted:
+/// nothing (no blocks, no NSError**, no delegate protocol members here).
 public final class NSMagnificationGestureRecognizer extends NSGestureRecognizer {
 
     private record Handles(MethodHandle hInitTargetAction, MethodHandle hGetDouble, MethodHandle hSetDouble) {}

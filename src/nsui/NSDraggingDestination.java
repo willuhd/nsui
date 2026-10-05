@@ -7,6 +7,18 @@ import java.util.Map;
 import nsui.objc.DelegateProxy;
 
 /// NSDraggingDestination — minimal protocol marker for drop targets.
+///
+/// Coverage notes (header: NSDragging.h, destination section, wins on API truth):
+/// - Wired: draggingEntered:/Updated:/Exited:, prepare/perform/conclude,
+///   draggingEnded:, updateDraggingItemsForDrag: and the spring-loading
+///   trio, all via the exact DelegateProxy single-sender shapes.
+/// - Omitted: slideDraggedImageTo: (NSPoint argument has no DelegateProxy
+///   dispatch shape — requested `of(Ret.VOID, Arg.POINT)` delegate form);
+///   enumerateDraggingItemsWithOptions:… (block); springLoadingActivated:/
+///   springLoadingHighlightChanged: (two-sender shapes have no DelegateProxy
+///   form); namesOfPromisedFilesDroppedAtDestination: (deprecated).
+///   `wantsPeriodicDraggingUpdates` is a no-arg BOOL with no DelegateProxy
+///   shape, so it stays a documented default and is intentionally unwired.
 public interface NSDraggingDestination {
 
     /// draggingEntered: — return NSDragOperation.
@@ -29,6 +41,18 @@ public interface NSDraggingDestination {
 
     /// draggingEnded:
     default void draggingEnded(NSDraggingSession session) {}
+
+    /// updateDraggingItemsForDrag:.
+    default void updateDraggingItemsForDrag(NSDraggingSession session) {}
+
+    /// springLoadingEntered: — return NSSpringLoadingOptions.
+    default long springLoadingEntered(NSDraggingSession session) { return 0; }
+
+    /// springLoadingUpdated: — return NSSpringLoadingOptions.
+    default long springLoadingUpdated(NSDraggingSession session) { return 0; }
+
+    /// springLoadingExited:.
+    default void springLoadingExited(NSDraggingSession session) {}
 
     /// wantsPeriodicDraggingUpdates
     default boolean wantsPeriodicDraggingUpdates() { return true; }
@@ -74,6 +98,14 @@ public interface NSDraggingDestination {
         voids.put("draggingEnded:", sender -> {
             NSDraggingSession s = NSDraggingSession.wrap(sender);
             dest.draggingEnded(s);
+        });
+        voids.put("updateDraggingItemsForDrag:", sender -> {
+            dest.updateDraggingItemsForDrag(NSDraggingSession.wrap(sender));
+        });
+        ints.put("springLoadingEntered:", sender -> dest.springLoadingEntered(NSDraggingSession.wrap(sender)));
+        ints.put("springLoadingUpdated:", sender -> dest.springLoadingUpdated(NSDraggingSession.wrap(sender)));
+        voids.put("springLoadingExited:", sender -> {
+            dest.springLoadingExited(NSDraggingSession.wrap(sender));
         });
 
         return DelegateProxy.delegate(

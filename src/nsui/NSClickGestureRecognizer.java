@@ -13,6 +13,12 @@ import static nsui.objc.Sig.Ret;
 /// volatile initialized, synchronized ensureInit, ObjC.handle(Sig.of...),
 /// invokeExact, static create/wrap.
 ///
+/// Coverage notes (header: NSClickGestureRecognizer.h wins on API truth):
+/// complete — `buttonMask`, `numberOfClicksRequired` and
+/// `numberOfTouchesRequired` (+ setters) plus the inherited
+/// NSGestureRecognizer surface cover every non-delegate member. Omitted:
+/// nothing (no blocks, no NSError**, no delegate protocol members here).
+///
 /// Created via `[[NSClickGestureRecognizer alloc] initWithTarget:action:]`.
 /// Adds click-specific state: buttonMask, numberOfClicksRequired.
 public final class NSClickGestureRecognizer extends NSGestureRecognizer {

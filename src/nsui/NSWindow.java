@@ -585,6 +585,13 @@ public class NSWindow extends NSResponder {
         ObjC.msgSendVoidId(peer, ObjC.sel("makeKeyAndOrderFront:"), (MemorySegment) (sender == null ? MemorySegment.NULL : sender.peer()));
     }
 
+    /// orderFront: — show without making key: the window becomes visible but
+    /// never activates the app and never steals focus. The unobtrusive
+    /// counterpart to makeKeyAndOrderFront: (which keys + activates).
+    public void orderFront(NSObject sender) {
+        ObjC.msgSendVoidId(peer, ObjC.sel("orderFront:"), (MemorySegment) (sender == null ? MemorySegment.NULL : sender.peer()));
+    }
+
     public void performClose(NSObject sender) {
         ObjC.msgSendVoidId(peer, ObjC.sel("performClose:"), (MemorySegment) (sender == null ? MemorySegment.NULL : sender.peer()));
     }

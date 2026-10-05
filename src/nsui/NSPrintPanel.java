@@ -52,16 +52,17 @@ public final class NSPrintPanel extends NSObject {
         } catch (Throwable t) { throw new RuntimeException("runModalWithPrintInfo: failed", t); }
     }
 
-    /// beginSheetWithPrintInfo:modalForWindow:delegate:didEndSelector:contextInfo: — minimal sheet variant.
+    /// beginSheetWithPrintInfo:modalForWindow:delegate:didEndSelector:contextInfo: — deprecated sheet variant.
+    /// Kept for source compatibility; routes via the object-only escape hatch (no unregistered shape).
+    /// Never call from tests (starts a modal sheet loop).
     public void beginSheetWithPrintInfo(NSPrintInfo printInfo, NSWindow window, NSObject delegate, String didEndSelector, MemorySegment contextInfo) {
         ensureInit();
         try {
-            MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.ID, Arg.ID, Arg.ID));
-            // selector string -> SEL
+            // 5 object-class args (SEL and void* both pass as pointers) -> escape hatch void (6-id shape).
+            // Grep-before-use: Sig.java has of(VOID, ID x6) (escape hatch) — verified; the exact 5-arg shape
+            // of(VOID, ID, ID, ID, ID, ID) is NOT in the vocabulary, so the escape hatch is required here.
             MemorySegment sel = didEndSelector == null ? MemorySegment.NULL : ObjC.sel(didEndSelector);
-            // This is 4 object args + SEL is already separate? Actually signature is (id,SEL, id, id, id, SEL, void*) -> use escape? For minimal, use invoke with 5 args.
-            // Fallback to generic invoke for complex signature.
-            ObjC.invoke(peer, ObjC.sel("beginSheetWithPrintInfo:modalForWindow:delegate:didEndSelector:contextInfo:"),
+            ObjC.invokeVoid(peer, ObjC.sel("beginSheetWithPrintInfo:modalForWindow:delegate:didEndSelector:contextInfo:"),
                     printInfo == null ? MemorySegment.NULL : printInfo.peer(),
                     window == null ? MemorySegment.NULL : window.peer(),
                     delegate == null ? MemorySegment.NULL : delegate.peer(),
@@ -86,4 +87,129 @@ public final class NSPrintPanel extends NSObject {
             h.invokeExact(peer, ObjC.sel("setOptions:"), options);
         } catch (Throwable t) { throw new RuntimeException("setOptions: failed", t); }
     }
+
+    // ---------------------------------------------------------------- nested types — verified against local SDK headers
+    // SDK: $(xcrun --show-sdk-path)/System/Library/Frameworks/AppKit.framework/Headers/NSPrintPanel.h
+    //   NSPrintPanelResult: Cancelled 0, Printed 1 (macOS 14)
+    //   NSPrintPanelOptions: ShowsCopies 1<<0, ShowsPageRange 1<<1, ShowsPaperSize 1<<2,
+    //     ShowsOrientation 1<<3, ShowsScaling 1<<4, ShowsPrintSelection 1<<5 (10.6),
+    //     ShowsPageSetupAccessory 1<<8, ShowsPreview 1<<17
+    // Docs: https://developer.apple.com/documentation/appkit/nsprintpanel
+    /// `NSPrintPanelResult` — 0=Cancelled, 1=Printed.
+    public enum Result {
+        cancelled(0), printed(1);
+        public final long value;
+        Result(long v) { this.value = v; }
+        public static Result fromValue(long v) { for (var e : values()) if (e.value == v) return e; return null; }
+    }
+    /// `NSPrintPanelOptions` bitfield constants.
+    public static final long SHOWS_COPIES = 1L << 0;
+    public static final long SHOWS_PAGE_RANGE = 1L << 1;
+    public static final long SHOWS_PAPER_SIZE = 1L << 2;
+    public static final long SHOWS_ORIENTATION = 1L << 3;
+    public static final long SHOWS_SCALING = 1L << 4;
+    public static final long SHOWS_PRINT_SELECTION = 1L << 5;
+    public static final long SHOWS_PAGE_SETUP_ACCESSORY = 1L << 8;
+    public static final long SHOWS_PREVIEW = 1L << 17;
+    /// `NSPrintPanelJobStyleHint` stock values (NSString).
+    public static final String PHOTO_JOB_STYLE_HINT = "NSPrintPhotoJobStyleHint";
+
+    // ---- accessory controllers (macOS 10.5; NSViewController<NSPrintPanelAccessorizing>) ----
+    /// addAccessoryController:.
+    public void addAccessoryController(NSViewController controller) {
+        ObjC.msgSendVoidId(peer, ObjC.sel("addAccessoryController:"), (MemorySegment) (controller == null ? MemorySegment.NULL : controller.peer()));
+    }
+    /// addAccessoryController: with raw id.
+    public void addAccessoryController(MemorySegment controller) {
+        ObjC.msgSendVoidId(peer, ObjC.sel("addAccessoryController:"), (MemorySegment) (controller == null ? MemorySegment.NULL : controller));
+    }
+    /// removeAccessoryController:.
+    public void removeAccessoryController(NSViewController controller) {
+        ObjC.msgSendVoidId(peer, ObjC.sel("removeAccessoryController:"), (MemorySegment) (controller == null ? MemorySegment.NULL : controller.peer()));
+    }
+    /// removeAccessoryController: with raw id.
+    public void removeAccessoryController(MemorySegment controller) {
+        ObjC.msgSendVoidId(peer, ObjC.sel("removeAccessoryController:"), (MemorySegment) (controller == null ? MemorySegment.NULL : controller));
+    }
+    /// accessoryControllersPeer — raw NSArray id.
+    public MemorySegment accessoryControllersPeer() {
+        return ObjC.msgSendId(peer, ObjC.sel("accessoryControllers"));
+    }
+    /// accessoryControllers — wrapped controllers (may be empty).
+    public java.util.List<NSViewController> accessoryControllers() {
+        MemorySegment arr = accessoryControllersPeer();
+        if (arr == null || arr.address() == 0) return java.util.List.of();
+        long count = ObjC.msgSendLong(arr, ObjC.sel("count"));
+        java.util.List<NSViewController> out = new java.util.ArrayList<>((int) count);
+        try {
+            MethodHandle hAt = ObjC.handle(Sig.of(Ret.ID, Arg.INT));
+            for (long i = 0; i < count; i++) {
+                MemorySegment c = (MemorySegment) hAt.invokeExact(arr, ObjC.sel("objectAtIndex:"), i);
+                NSViewController w = NSViewController.wrap(c);
+                if (w != null) out.add(w);
+            }
+        } catch (Throwable t) { throw new RuntimeException("accessoryControllers failed", t); }
+        return java.util.Collections.unmodifiableList(out);
+    }
+
+    // ---- defaultButtonTitle (NSString, macOS 10.5) ----
+    /// defaultButtonTitle.
+    public String defaultButtonTitle() {
+        return ObjC.toString(ObjC.msgSendId(peer, ObjC.sel("defaultButtonTitle")));
+    }
+    /// setDefaultButtonTitle:.
+    public void setDefaultButtonTitle(String title) {
+        ObjC.msgSendVoidId(peer, ObjC.sel("setDefaultButtonTitle:"), title == null ? MemorySegment.NULL : ObjC.nsstring(title));
+    }
+
+    // ---- helpAnchor (NSHelpAnchorName, macOS 10.5) ----
+    /// helpAnchor.
+    public String helpAnchor() {
+        return ObjC.toString(ObjC.msgSendId(peer, ObjC.sel("helpAnchor")));
+    }
+    /// setHelpAnchor:.
+    public void setHelpAnchor(String anchor) {
+        ObjC.msgSendVoidId(peer, ObjC.sel("setHelpAnchor:"), anchor == null ? MemorySegment.NULL : ObjC.nsstring(anchor));
+    }
+
+    // ---- jobStyleHint (NSPrintPanelJobStyleHint NSString) ----
+    /// jobStyleHint.
+    public String jobStyleHint() {
+        return ObjC.toString(ObjC.msgSendId(peer, ObjC.sel("jobStyleHint")));
+    }
+    /// setJobStyleHint:.
+    public void setJobStyleHint(String hint) {
+        ObjC.msgSendVoidId(peer, ObjC.sel("setJobStyleHint:"), hint == null ? MemorySegment.NULL : ObjC.nsstring(hint));
+    }
+
+    // ---- beginSheetUsingPrintInfo:onWindow:completionHandler: (macOS 14, block as id) ----
+    /// beginSheetUsingPrintInfo:onWindow:completionHandler: — sheet with block handler (NULL probes shape).
+    /// Never call from tests (starts a sheet loop).
+    public void beginSheetUsingPrintInfo(NSPrintInfo printInfo, NSWindow window, MemorySegment handler) {
+        ensureInit();
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.ID, Arg.ID));
+            h.invokeExact(peer, ObjC.sel("beginSheetUsingPrintInfo:onWindow:completionHandler:"),
+                    (MemorySegment) (printInfo == null ? MemorySegment.NULL : printInfo.peer()),
+                    (MemorySegment) (window == null ? MemorySegment.NULL : window.peer()),
+                    (MemorySegment) (handler == null ? MemorySegment.NULL : handler));
+        } catch (Throwable t) { throw new RuntimeException("beginSheetUsingPrintInfo:onWindow:completionHandler: failed", t); }
+    }
+
+    // ---- printInfo (readonly, macOS 10.5) ----
+    /// printInfo — panel\u0027s print settings.
+    public NSPrintInfo printInfo() {
+        return NSPrintInfo.wrap(ObjC.msgSendId(peer, ObjC.sel("printInfo")));
+    }
+
+    // ---------------------------------------------------------------- omissions (documented, not oversights)
+    // - -localizedSummaryItems / -keyPathsForValuesAffectingPreview — NSPrintPanelAccessorizing PROTOCOL methods
+    //   (on accessory controllers, not on NSPrintPanel itself); an earlier draft wrapped them on the panel and
+    //   crashed with NSInvalidArgumentException (unrecognized selector). Wire them on accessory controllers via
+    //   DelegateProxy IdArg shapes if needed; the panel side (add/remove/accessoryControllers) is kept above.
+    // - -printPanelDidEnd:returnCode:contextInfo: — delegate callback, not an NSPrintPanel selector.
+    // - Deprecated -setAccessoryView:/-accessoryView/-updateFromPrintInfo/-finalWritePrintInfo (all deprecated
+    //   10.0-10.5) — omitted; use addAccessoryController:/removeAccessoryController:/accessoryControllers.
+    // - Deprecated -beginSheetWithPrintInfo:modalForWindow:delegate:didEndSelector:contextInfo: is KEPT above
+    //   for source compatibility (escape-hatch routing) but never called from tests.
 }

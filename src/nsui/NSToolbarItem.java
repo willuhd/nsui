@@ -266,6 +266,163 @@ public final class NSToolbarItem extends NSObject implements NSUserInterfaceItem
         }
     }
 
+    // ---- toolbar (readonly weak NSToolbar*) ----
+    /// toolbar — the toolbar displaying this item (nil when not in a toolbar).
+    public NSToolbar toolbar() {
+        return NSToolbar.wrap(ObjC.msgSendId(peer, ObjC.sel("toolbar")));
+    }
+    /// toolbarPeer — raw id.
+    public MemorySegment toolbarPeer() {
+        return ObjC.msgSendId(peer, ObjC.sel("toolbar"));
+    }
+
+    // ---- possibleLabels (NSSet<NSString*>, macOS 13) ----
+    /// possibleLabelsPeer — raw NSSet id.
+    public MemorySegment possibleLabelsPeer() {
+        return ObjC.msgSendId(peer, ObjC.sel("possibleLabels"));
+    }
+    /// setPossibleLabels: with NSSet id.
+    public void setPossibleLabels(MemorySegment labels) {
+        try {
+            handles.hSetLabel().invokeExact(peer, ObjC.sel("setPossibleLabels:"), (MemorySegment) (labels == null ? MemorySegment.NULL : labels));
+        } catch (Throwable t) { throw new RuntimeException("setPossibleLabels: failed", t); }
+    }
+
+    // ---- menuFormRepresentation (NSMenuItem*) ----
+    /// menuFormRepresentation.
+    public NSMenuItem menuFormRepresentation() {
+        return NSMenuItem.wrap(ObjC.msgSendId(peer, ObjC.sel("menuFormRepresentation")));
+    }
+    /// setMenuFormRepresentation:.
+    public void setMenuFormRepresentation(NSMenuItem item) {
+        try {
+            handles.hSetLabel().invokeExact(peer, ObjC.sel("setMenuFormRepresentation:"), (MemorySegment) (item == null ? MemorySegment.NULL : item.peer()));
+        } catch (Throwable t) { throw new RuntimeException("setMenuFormRepresentation: failed", t); }
+    }
+    /// setMenuFormRepresentation: with raw id.
+    public void setMenuFormRepresentation(MemorySegment item) {
+        try {
+            handles.hSetLabel().invokeExact(peer, ObjC.sel("setMenuFormRepresentation:"), (MemorySegment) (item == null ? MemorySegment.NULL : item));
+        } catch (Throwable t) { throw new RuntimeException("setMenuFormRepresentation: failed", t); }
+    }
+
+    // ---- title (NSString, macOS 10.15) ----
+    /// title.
+    public String title() {
+        return ObjC.toString(ObjC.msgSendId(peer, ObjC.sel("title")));
+    }
+    /// setTitle:.
+    public void setTitle(String title) {
+        try {
+            handles.hSetLabel().invokeExact(peer, ObjC.sel("setTitle:"), (MemorySegment) (title == null ? MemorySegment.NULL : ObjC.nsstring(title)));
+        } catch (Throwable t) { throw new RuntimeException("setTitle: failed", t); }
+    }
+
+    // ---- bordered (macOS 10.15, getter isBordered) ----
+    /// isBordered.
+    public boolean isBordered() {
+        return ObjC.msgSendBool(peer, ObjC.sel("isBordered"));
+    }
+    /// setBordered:.
+    public void setBordered(boolean flag) {
+        try { handles.hSetEnabled().invokeExact(peer, ObjC.sel("setBordered:"), flag); }
+        catch (Throwable t) { throw new RuntimeException("setBordered: failed", t); }
+    }
+
+    // ---- backgroundTintColor (NSColor, macOS 26) ----
+    /// backgroundTintColor.
+    public NSColor backgroundTintColor() {
+        return NSColor.wrap(ObjC.msgSendId(peer, ObjC.sel("backgroundTintColor")));
+    }
+    /// setBackgroundTintColor:.
+    public void setBackgroundTintColor(NSColor color) {
+        try {
+            handles.hSetLabel().invokeExact(peer, ObjC.sel("setBackgroundTintColor:"), (MemorySegment) (color == null ? MemorySegment.NULL : color.peer()));
+        } catch (Throwable t) { throw new RuntimeException("setBackgroundTintColor: failed", t); }
+    }
+
+    // ---------------------------------------------------------------- nested types — verified against local SDK headers
+    // SDK: $(xcrun --show-sdk-path)/System/Library/Frameworks/AppKit.framework/Headers/NSToolbarItem.h
+    //   NSToolbarItemStyle: Plain 0, Prominent 1 (macOS 26)
+    //   NSToolbarItemVisibilityPriority: Standard 0, Low -1000, High 1000, User 2000
+    /// `NSToolbarItemStyle` — 0=Plain, 1=Prominent (macOS 26).
+    public enum ItemStyle {
+        plain(0), prominent(1);
+        public final long value;
+        ItemStyle(long v) { this.value = v; }
+        public static ItemStyle fromValue(long v) { for (var e : values()) if (e.value == v) return e; return null; }
+    }
+    /// Visibility-priority constants (NSToolbarItemVisibilityPriority).
+    public static final long VISIBILITY_STANDARD = 0L;
+    public static final long VISIBILITY_LOW = -1000L;
+    public static final long VISIBILITY_HIGH = 1000L;
+    public static final long VISIBILITY_USER = 2000L;
+
+    // ---- style (NSToolbarItemStyle long, macOS 26) ----
+    /// style.
+    public long style() {
+        return ObjC.msgSendLong(peer, ObjC.sel("style"));
+    }
+    /// setStyle:.
+    public void setStyle(long style) {
+        try { handles.hSetTag().invokeExact(peer, ObjC.sel("setStyle:"), style); }
+        catch (Throwable t) { throw new RuntimeException("setStyle: failed", t); }
+    }
+    /// Typed overload.
+    public void setStyle(ItemStyle s) { setStyle(s.value); }
+    /// Typed getter.
+    public ItemStyle styleEnum() { return ItemStyle.fromValue(style()); }
+
+    // ---- navigational (macOS 11, getter isNavigational) ----
+    /// isNavigational.
+    public boolean isNavigational() {
+        return ObjC.msgSendBool(peer, ObjC.sel("isNavigational"));
+    }
+    /// setNavigational:.
+    public void setNavigational(boolean flag) {
+        try { handles.hSetEnabled().invokeExact(peer, ObjC.sel("setNavigational:"), flag); }
+        catch (Throwable t) { throw new RuntimeException("setNavigational: failed", t); }
+    }
+
+    // ---- visible (readonly, macOS 12, getter isVisible) ----
+    /// isVisible.
+    public boolean isVisible() {
+        return ObjC.msgSendBool(peer, ObjC.sel("isVisible"));
+    }
+
+    // ---- hidden (macOS 15, getter isHidden) ----
+    /// isHidden.
+    public boolean isHidden() {
+        return ObjC.msgSendBool(peer, ObjC.sel("isHidden"));
+    }
+    /// setHidden:.
+    public void setHidden(boolean flag) {
+        try { handles.hSetEnabled().invokeExact(peer, ObjC.sel("setHidden:"), flag); }
+        catch (Throwable t) { throw new RuntimeException("setHidden: failed", t); }
+    }
+
+    // ---- badge (NSItemBadge*, macOS 26; no wrapper — id peer) ----
+    /// badgePeer — raw NSItemBadge id (may be NULL).
+    public MemorySegment badgePeer() {
+        return ObjC.msgSendId(peer, ObjC.sel("badge"));
+    }
+    /// setBadge: with raw id.
+    public void setBadge(MemorySegment badge) {
+        try {
+            handles.hSetLabel().invokeExact(peer, ObjC.sel("setBadge:"), (MemorySegment) (badge == null ? MemorySegment.NULL : badge));
+        } catch (Throwable t) { throw new RuntimeException("setBadge: failed", t); }
+    }
+
+    // ---------------------------------------------------------------- omissions (documented, not oversights)
+    // - -validate / autovalidates (both API_AVAILABLE(ios 13.0) only) — omitted: iOS-only surface.
+    // - allowsDuplicatesInToolbar (deprecated 10.0-15.0) — omitted: deprecated, always NO on modern AppKit.
+    // - -validateToolbarItem: (both current and deprecated) / -cloudShareForUserInterfaceItem: — validation/cloud
+    //   protocol methods, not NSToolbarItem selectors; wire via NSUserInterfaceValidation if needed.
+    // - minSize/maxSize are KEPT (deprecated 10.0-12.0 but still the working NSSize API; the replacement is
+    //   auto-layout constraints, not a new selector).
+    // - UIImage image overload (iOS) — omitted: iOS-only; NSImage overload kept.
+    // - UIColor backgroundTintColor overload (iOS) — omitted: iOS-only; NSColor overload kept.
+
     // ---- NSUserInterfaceItemIdentification (identifier / setIdentifier:) ----
     // Fallback map for runtimes where NSToolbarItem doesn't implement identifier (itemIdentifier is readonly)
     private static final ConcurrentHashMap<Long, String> identifierFallback = new ConcurrentHashMap<>();

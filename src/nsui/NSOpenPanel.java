@@ -99,7 +99,7 @@ public final class NSOpenPanel extends NSSavePanel {
     @Override
     public MemorySegment directoryURL() { return super.directoryURL(); }
 
-    // ---- resolvesAliases / canDownloadUbiquitousContents etc ----
+    // ---- resolvesAliases ----
     public boolean resolvesAliases() {
         ensureInitOpen();
         try { return (boolean) hBool.invokeExact(peer, ObjC.sel("resolvesAliases")); } catch (Throwable t) { throw new RuntimeException("resolvesAliases failed", t); }
@@ -108,4 +108,44 @@ public final class NSOpenPanel extends NSSavePanel {
         ensureInitOpen();
         try { hSetBool.invokeExact(peer, ObjC.sel("setResolvesAliases:"), flag); } catch (Throwable t) { throw new RuntimeException("setResolvesAliases: failed", t); }
     }
+
+    // ---- canResolveUbiquitousConflicts (macOS 10.10) ----
+    /// canResolveUbiquitousConflicts.
+    public boolean canResolveUbiquitousConflicts() {
+        ensureInitOpen();
+        try { return (boolean) hBool.invokeExact(peer, ObjC.sel("canResolveUbiquitousConflicts")); } catch (Throwable t) { throw new RuntimeException("canResolveUbiquitousConflicts failed", t); }
+    }
+    public void setCanResolveUbiquitousConflicts(boolean flag) {
+        ensureInitOpen();
+        try { hSetBool.invokeExact(peer, ObjC.sel("setCanResolveUbiquitousConflicts:"), flag); } catch (Throwable t) { throw new RuntimeException("setCanResolveUbiquitousConflicts: failed", t); }
+    }
+
+    // ---- canDownloadUbiquitousContents (macOS 10.10) ----
+    /// canDownloadUbiquitousContents.
+    public boolean canDownloadUbiquitousContents() {
+        ensureInitOpen();
+        try { return (boolean) hBool.invokeExact(peer, ObjC.sel("canDownloadUbiquitousContents")); } catch (Throwable t) { throw new RuntimeException("canDownloadUbiquitousContents failed", t); }
+    }
+    public void setCanDownloadUbiquitousContents(boolean flag) {
+        ensureInitOpen();
+        try { hSetBool.invokeExact(peer, ObjC.sel("setCanDownloadUbiquitousContents:"), flag); } catch (Throwable t) { throw new RuntimeException("setCanDownloadUbiquitousContents: failed", t); }
+    }
+
+    // ---- accessoryViewDisclosed (macOS 10.11, getter isAccessoryViewDisclosed) ----
+    /// isAccessoryViewDisclosed.
+    public boolean isAccessoryViewDisclosed() {
+        ensureInitOpen();
+        try { return (boolean) hBool.invokeExact(peer, ObjC.sel("isAccessoryViewDisclosed")); } catch (Throwable t) { throw new RuntimeException("isAccessoryViewDisclosed failed", t); }
+    }
+    public void setAccessoryViewDisclosed(boolean flag) {
+        ensureInitOpen();
+        try { hSetBool.invokeExact(peer, ObjC.sel("setAccessoryViewDisclosed:"), flag); } catch (Throwable t) { throw new RuntimeException("setAccessoryViewDisclosed: failed", t); }
+    }
+
+    // ---------------------------------------------------------------- omissions (documented, not oversights)
+    // SDK: $(xcrun --show-sdk-path)/System/Library/Frameworks/AppKit.framework/Headers/NSOpenPanel.h
+    // - showsContentTypes is NS_UNAVAILABLE on NSOpenPanel — intentionally absent (compile-time unavailable).
+    // - -filenames / -beginSheetForDirectory:file:types:modalForWindow:modalDelegate:didEndSelector:contextInfo: /
+    //   -beginForDirectory:... / -runModalForDirectory:... / -runModalForTypes: (all deprecated 10.0-10.6,
+    //   path+types+delegate+SEL+void*) — omitted: deprecated and no registered shape; use openPanel() + properties.
 }

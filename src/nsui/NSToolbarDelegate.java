@@ -15,8 +15,11 @@ import nsui.objc.ObjC;
 ///  - toolbarDefaultItemIdentifiers:          "@@:" -> IdArg
 ///  - toolbarAllowedItemIdentifiers:          "@@:" -> IdArg
 ///  - toolbarSelectableItemIdentifiers:       "@@:" -> IdArg
+///  - toolbarImmovableItemIdentifiers:        "@@:" -> IdArg (macOS 13, NSSet)
+///  - toolbarWillAddItem: / toolbarDidRemoveItem: "@@:" -> VoidArg (NSNotification* as id)
 ///
-/// No new upcall shapes are introduced; reuses dispatchId / dispatchIdId.
+/// No new upcall shapes are introduced; reuses dispatchId / dispatchIdId / dispatchVoid.
+/// SDK: $(xcrun --show-sdk-path)/System/Library/Frameworks/AppKit.framework/Headers/NSToolbar.h (@protocol NSToolbarDelegate)
 public final class NSToolbarDelegate {
 
     private NSToolbarDelegate() {}
@@ -38,6 +41,20 @@ public final class NSToolbarDelegate {
         default List<String> toolbarSelectableIdentifiers(NSToolbar toolbar) {
             return toolbarDefaultIdentifiers(toolbar);
         }
+
+        /// Optional override for immovable identifiers (macOS 13); default empty set.
+        /// toolbarImmovableItemIdentifiers: -> set of identifiers that cannot be moved.
+        default java.util.Set<String> toolbarImmovableIdentifiers(NSToolbar toolbar) {
+            return java.util.Set.of();
+        }
+
+        /// Optional notification hook; default no-op.
+        /// toolbarWillAddItem: — posted before an item is added (notification as id).
+        default void toolbarWillAddItem(MemorySegment notification) {}
+
+        /// Optional notification hook; default no-op.
+        /// toolbarDidRemoveItem: — posted after an item is removed (notification as id).
+        default void toolbarDidRemoveItem(MemorySegment notification) {}
     }
 
     /// Build a DelegateProxy delegate for NSToolbar. The returned MemorySegment is a retained
@@ -48,6 +65,7 @@ public final class NSToolbarDelegate {
 
         Map<String, DelegateProxy.IdIdArg> idIds = new HashMap<>();
         Map<String, DelegateProxy.IdArg> ids = new HashMap<>();
+        Map<String, DelegateProxy.VoidArg> voids = new HashMap<>();
 
         // toolbar:itemForItemIdentifier:willBeInsertedIntoToolbar: — signature "@@:@@"
         // Note: native has 3 args (toolbar, identifier, BOOL willInsert) but we reuse
@@ -115,11 +133,41 @@ public final class NSToolbarDelegate {
             return arr;
         });
 
-        // Use the full overload with 7 maps (bool, void, int, idIdInt, windowSize, idIds, ids)
-        // First five are empty; last two carry toolbar wiring. Reuse existing handles.
+        // toolbarImmovableItemIdentifiers: (macOS 13) — "@@:" -> id (NSSet of NSString).
+        // Reuses the IdArg shape; builds an NSSet (empty set when the delegate returns none).
+        ids.put("toolbarImmovableItemIdentifiers:", sender -> {
+            NSToolbar tb = NSToolbar.wrap(sender);
+            java.util.Set<String> set = d.toolbarImmovableIdentifiers(tb);
+            MemorySegment nsSet = ObjC.msgSendId(ObjC.cls("NSMutableSet"), ObjC.sel("set"));
+            if (set != null) for (String s : set) {
+                if (s == null) continue;
+                ObjC.msgSendVoidId(nsSet, ObjC.sel("addObject:"), ObjC.nsstring(s));
+            }
+            return (nsSet == null || nsSet.address() == 0) ? MemorySegment.NULL : nsSet;
+        });
+
+        // toolbarWillAddItem: / toolbarDidRemoveItem: — "@@:" -> void (NSNotification* as id).
+        // Reuses the existing VoidArg shape; default delegate methods are no-ops.
+        voids.put("toolbarWillAddItem:", notification -> {
+            d.toolbarWillAddItem(notification == null ? MemorySegment.NULL : notification);
+        });
+        voids.put("toolbarDidRemoveItem:", notification -> {
+            d.toolbarDidRemoveItem(notification == null ? MemorySegment.NULL : notification);
+        });
+
+        // Use the full overload with 7 maps (bool, void, int, idIdInt, windowSize, idIds, ids).
+        // Bool/int/idIdInt/windowSize stay empty; void + idId + id carry toolbar wiring.
+        // No new upcall shape: immovable reuses IdArg, willAdd/didRemove reuse VoidArg.
         return DelegateProxy.delegate(
                 "NSObject", "NSUIToolbarDelegate",
-                Map.of(), Map.of(), Map.of(), Map.of(), Map.of(),
+                Map.of(), voids, Map.of(), Map.of(), Map.of(),
                 idIds, ids);
     }
+
+    // ---------------------------------------------------------------- omissions (documented, not oversights)
+    // - -toolbar:itemIdentifier:canBeInsertedAtIndex: (macOS 13, (id,id,long)->BOOL) — omitted: needs a new
+    //   BOOL(id,id,long) upcall shape; DelegateProxy has BoolArg (BOOL(id)), IntArg (long(id)), and
+    //   IdIdIntArg (id(id,id,long)) but no BOOL-returning 3-arg shape. Introducing one is out of scope for
+    //   this batch (no new upcall shapes per spec); the delegate still covers the required
+    //   itemForIdentifier/default/allowed/selectable set.
 }

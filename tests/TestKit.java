@@ -179,6 +179,7 @@ public final class TestKit {
 
     /// One pump iteration: useful for settle-wait loops with custom exits.
     public static void pumpOnce(NSApplication app) {
+        MemorySegment pool = nsui.objc.Autorelease.push();
         try {
             MemorySegment dateCls = ObjC.cls("NSDate");
             MemorySegment until = ObjC.msgSendIdDouble(dateCls, ObjC.sel("dateWithTimeIntervalSinceNow:"), 0.05);
@@ -187,6 +188,8 @@ public final class TestKit {
             app.updateWindows();
         } catch (Throwable t) {
             System.out.println("NOTE: pumpOnce failed: " + t.getMessage());
+        } finally {
+            try { nsui.objc.Autorelease.pop(pool); } catch (Throwable ignore) {}
         }
     }
 

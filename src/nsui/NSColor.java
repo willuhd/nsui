@@ -1,11 +1,11 @@
 package nsui;
 
-import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
 
 import nsui.objc.ObjC;
+import nsui.objc.Scratch;
 import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
@@ -203,10 +203,13 @@ public final class NSColor extends NSObject {
     /// CGFloat* out-params). Goes through the `ObjC.invokeVoid` escape hatch
     /// (6-object-arg descriptor, NULL-padded) with four 8-byte out-buffers.
     public double[] rgba() {
-        MemorySegment b0 = Arena.global().allocate(8);
-        MemorySegment b1 = Arena.global().allocate(8);
-        MemorySegment b2 = Arena.global().allocate(8);
-        MemorySegment b3 = Arena.global().allocate(8);
+        // One 32-byte bump slice (not 4 immortal allocs): the callee fills the
+        // out-params synchronously, so call-scoped scratch is exact.
+        MemorySegment out = Scratch.allocInput(32);
+        MemorySegment b0 = out.asSlice(0, 8);
+        MemorySegment b1 = out.asSlice(8, 8);
+        MemorySegment b2 = out.asSlice(16, 8);
+        MemorySegment b3 = out.asSlice(24, 8);
         ObjC.invokeVoid(peer, ObjC.sel("getRed:green:blue:alpha:"), b0, b1, b2, b3);
         return new double[]{
             b0.get(ValueLayout.JAVA_DOUBLE, 0),

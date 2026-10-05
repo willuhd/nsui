@@ -70,6 +70,7 @@ public final class Dispatch {
     /// The body is enqueued and a `void(^)(void)` block is dispatched; when
     /// the main run loop drains the queue, `runBody` pops the body and runs it.
     /// The test's main thread must pump the run loop for the block to be drained.
+    /// CONTRACT: a throwing body aborts the VM at the upcall stub (fail-fast).
     public static void onMain(Runnable body) {
         ensureInit();
         PENDING.add(body);

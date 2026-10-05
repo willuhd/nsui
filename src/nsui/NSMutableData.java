@@ -63,7 +63,7 @@ public final class NSMutableData extends NSData {
         if (bytes == null || bytes.length == 0) return;
         ensureMutInit();
         try {
-            java.lang.foreign.MemorySegment cBytes = java.lang.foreign.Arena.global().allocate(bytes.length);
+            java.lang.foreign.MemorySegment cBytes = nsui.objc.Scratch.allocInput(bytes.length);
             java.lang.foreign.MemorySegment.copy(bytes, 0, cBytes, java.lang.foreign.ValueLayout.JAVA_BYTE, 0, bytes.length);
             hAppendBytes.invokeExact(peer, ObjC.sel("appendBytes:length:"), cBytes, (long) bytes.length);
         } catch (Throwable t) { throw new RuntimeException("appendBytes:length: failed", t); }

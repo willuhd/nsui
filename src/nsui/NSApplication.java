@@ -2,6 +2,7 @@ package nsui;
 
 import java.lang.foreign.MemorySegment;
 
+import nsui.objc.Autorelease;
 import nsui.objc.ObjC;
 
 /// NSApplication — the app shell (SWT Display-equivalent). Owns the run loop,
@@ -130,12 +131,11 @@ public final class NSApplication extends NSObject {
 
     // ------------------------------------------------------- event dispatch
 
-    /// Cached NSStrings per run-loop mode (plain Java map; nsstring created lazily at runtime).
-    private static final java.util.concurrent.ConcurrentHashMap<String, MemorySegment> MODE_NS = new java.util.concurrent.ConcurrentHashMap<>();
-
     /// nextEventMatchingMask:untilDate:inMode:dequeue: — the run-loop turn primitive.
+    /// Mode string resolved per call (not cached): nsstring is autoreleased, so
+    /// holding its peer across pool drains would dangle; per-call cost is trivial.
     public NSEvent nextEvent(long mask, MemorySegment untilDate, String mode, boolean dequeue) {
-        MemorySegment modeSeg = MODE_NS.computeIfAbsent(mode, ObjC::nsstring);
+        MemorySegment modeSeg = ObjC.nsstring(mode);
         MemorySegment ev = ObjC.msgSendIdLongIdIdBool(peer,
                 ObjC.sel("nextEventMatchingMask:untilDate:inMode:dequeue:"),
                 mask, untilDate, modeSeg, dequeue);
@@ -179,10 +179,17 @@ public final class NSApplication extends NSObject {
         MemorySegment dateCls = ObjC.cls("NSDate");
         long deadline = System.currentTimeMillis() + millis;
         while (System.currentTimeMillis() < deadline) {
-            MemorySegment until = ObjC.msgSendIdDouble(dateCls, ObjC.sel("dateWithTimeIntervalSinceNow:"), 0.05);
-            NSEvent ev = nextEvent(-1L /* NSEventMaskAny */, until, "kCFRunLoopDefaultMode", true);
-            if (ev != null) sendEvent(ev);
-            updateWindows();
+            // Per-turn pool: this loop creates autoreleased NSDate/NSEvent objects
+            // and Java owns no AppKit pool here (production run() has its own).
+            MemorySegment pool = Autorelease.push();
+            try {
+                MemorySegment until = ObjC.msgSendIdDouble(dateCls, ObjC.sel("dateWithTimeIntervalSinceNow:"), 0.05);
+                NSEvent ev = nextEvent(-1L /* NSEventMaskAny */, until, "kCFRunLoopDefaultMode", true);
+                if (ev != null) sendEvent(ev);
+                updateWindows();
+            } finally {
+                Autorelease.pop(pool);
+            }
             Thread.sleep(10);
         }
     }

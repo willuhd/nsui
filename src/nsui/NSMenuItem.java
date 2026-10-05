@@ -9,6 +9,8 @@ import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
 /// NSMenuItem — a menu entry with title, action selector and key equivalent.
+/// OMITTED: initWithCoder: (NSCoder); deprecated mnemonic methods
+/// (setMnemonicLocation:/mnemonicLocation/mnemonic/setTitleWithMnemonic:).
 public final class NSMenuItem extends NSObject {
 
     private record Handles(MethodHandle hIdInt) {}
@@ -50,7 +52,7 @@ public final class NSMenuItem extends NSObject {
     public MemorySegment target() { return ObjC.msgSendId(peer, ObjC.sel("target")); }
     public void setTarget(MemorySegment t) { ObjC.msgSendVoidId(peer, ObjC.sel("setTarget:"), (MemorySegment) (t == null ? MemorySegment.NULL : t)); }
     public MemorySegment action() { return ObjC.msgSendId(peer, ObjC.sel("action")); }
-    public void setAction(String sel) { ObjC.msgSendVoidId(peer, ObjC.sel("setAction:"), sel == null ? MemorySegment.NULL : ObjC.sel(sel)); }
+    public void setAction(String sel) { ObjC.msgSendVoidId(peer, ObjC.sel("setAction:"), (MemorySegment) (sel == null ? MemorySegment.NULL : ObjC.sel(sel))); }
     public void setAction(MemorySegment sel) { ObjC.msgSendVoidId(peer, ObjC.sel("setAction:"), (MemorySegment) (sel == null ? MemorySegment.NULL : sel)); }
 
     // ---- title ----
@@ -59,7 +61,7 @@ public final class NSMenuItem extends NSObject {
     public MemorySegment attributedTitle() { return ObjC.msgSendId(peer, ObjC.sel("attributedTitle")); }
     public void setAttributedTitle(MemorySegment a) { ObjC.msgSendVoidId(peer, ObjC.sel("setAttributedTitle:"), (MemorySegment) (a == null ? MemorySegment.NULL : a)); }
     public String subtitle() { return ObjC.toString(ObjC.msgSendId(peer, ObjC.sel("subtitle"))); }
-    public void setSubtitle(String s) { ObjC.msgSendVoidId(peer, ObjC.sel("setSubtitle:"), s == null ? MemorySegment.NULL : ObjC.nsstring(s)); }
+    public void setSubtitle(String s) { ObjC.msgSendVoidId(peer, ObjC.sel("setSubtitle:"), (MemorySegment) (s == null ? MemorySegment.NULL : ObjC.nsstring(s))); }
 
     // ---- state / enabled ----
     public long state() { return ObjC.msgSendLong(peer, ObjC.sel("state")); }
@@ -78,7 +80,7 @@ public final class NSMenuItem extends NSObject {
 
     // ---- keyEquivalent ----
     public String keyEquivalent() { return ObjC.toString(ObjC.msgSendId(peer, ObjC.sel("keyEquivalent"))); }
-    public void setKeyEquivalent(String k) { ObjC.msgSendVoidId(peer, ObjC.sel("setKeyEquivalent:"), k == null ? MemorySegment.NULL : ObjC.nsstring(k)); }
+    public void setKeyEquivalent(String k) { ObjC.msgSendVoidId(peer, ObjC.sel("setKeyEquivalent:"), (MemorySegment) (k == null ? MemorySegment.NULL : ObjC.nsstring(k))); }
     public long keyEquivalentModifierMask() { return ObjC.msgSendLong(peer, ObjC.sel("keyEquivalentModifierMask")); }
     public void setKeyEquivalentModifierMask(long m) { ObjC.msgSendVoidLong(peer, ObjC.sel("setKeyEquivalentModifierMask:"), m); }
 
@@ -124,7 +126,7 @@ public final class NSMenuItem extends NSObject {
     public MemorySegment view() { return ObjC.msgSendId(peer, ObjC.sel("view")); }
     public void setView(MemorySegment v) { ObjC.msgSendVoidId(peer, ObjC.sel("setView:"), (MemorySegment) (v == null ? MemorySegment.NULL : v)); }
     /// Typed overload: embed any NSView (including NSSearchField) as the menu item's custom view.
-    public void setView(NSView view) { setView(view == null ? MemorySegment.NULL : view.peer()); }
+    public void setView(NSView view) { setView((MemorySegment) (view == null ? MemorySegment.NULL : view.peer())); }
     /// Convenience for NSSearchField embedding: typed helper.
     public void setSearchFieldView(NSSearchField field) { setView((NSView) field); }
     /// If the item's view is an NSSearchField, wrap it; otherwise null (also null if view is nil).
@@ -153,7 +155,7 @@ public final class NSMenuItem extends NSObject {
     public long indentationLevel() { return ObjC.msgSendLong(peer, ObjC.sel("indentationLevel")); }
     public void setIndentationLevel(long l) { ObjC.msgSendVoidLong(peer, ObjC.sel("setIndentationLevel:"), l); }
     public String toolTip() { return ObjC.toString(ObjC.msgSendId(peer, ObjC.sel("toolTip"))); }
-    public void setToolTip(String t) { ObjC.msgSendVoidId(peer, ObjC.sel("setToolTip:"), t == null ? MemorySegment.NULL : ObjC.nsstring(t)); }
+    public void setToolTip(String t) { ObjC.msgSendVoidId(peer, ObjC.sel("setToolTip:"), (MemorySegment) (t == null ? MemorySegment.NULL : ObjC.nsstring(t))); }
     public MemorySegment representedObject() { return ObjC.msgSendId(peer, ObjC.sel("representedObject")); }
     public void setRepresentedObject(MemorySegment o) { ObjC.msgSendVoidId(peer, ObjC.sel("setRepresentedObject:"), (MemorySegment) (o == null ? MemorySegment.NULL : o)); }
     public MemorySegment badge() { return ObjC.msgSendId(peer, ObjC.sel("badge")); }
@@ -162,4 +164,63 @@ public final class NSMenuItem extends NSObject {
     // ---- allowsKeyEquivalentWhenHidden etc ----
     public boolean allowsKeyEquivalentWhenHidden() { return ObjC.msgSendBool(peer, ObjC.sel("allowsKeyEquivalentWhenHidden")); }
     public void setAllowsKeyEquivalentWhenHidden(boolean f) { ObjC.msgSendVoidBool(peer, ObjC.sel("setAllowsKeyEquivalentWhenHidden:"), f); }
+
+    /// usesUserKeyEquivalents (class).
+    public static boolean usesUserKeyEquivalents() {
+        return ObjC.msgSendBool(ObjC.cls("NSMenuItem"), ObjC.sel("usesUserKeyEquivalents"));
+    }
+    public static void setUsesUserKeyEquivalents(boolean flag) {
+        ObjC.msgSendVoidBool(ObjC.cls("NSMenuItem"), ObjC.sel("setUsesUserKeyEquivalents:"), flag);
+    }
+
+    /// sectionHeaderWithTitle: (macOS 14+; guarded).
+    public static NSMenuItem sectionHeaderWithTitle(String title) {
+        try {
+            MemorySegment p = ObjC.msgSendIdId(ObjC.cls("NSMenuItem"), ObjC.sel("sectionHeaderWithTitle:"),
+                    (MemorySegment) (title == null ? MemorySegment.NULL : ObjC.nsstring(title)));
+            return wrap(p);
+        } catch (Throwable t) { return null; }
+    }
+
+    /// writingToolsItems (macOS 15.2+; guarded, nil when absent).
+    public static NSArray writingToolsItems() {
+        try {
+            return NSArray.wrap(ObjC.msgSendId(ObjC.cls("NSMenuItem"), ObjC.sel("writingToolsItems")));
+        } catch (Throwable t) { return null; }
+    }
+
+    /// userKeyEquivalent (nil-safe).
+    public String userKeyEquivalent() {
+        return ObjC.toString(ObjC.msgSendId(peer, ObjC.sel("userKeyEquivalent")));
+    }
+
+    /// allowsAutomaticKeyEquivalentLocalization / Mirroring (macOS 12+; guarded).
+    public boolean allowsAutomaticKeyEquivalentLocalization() {
+        try { return ObjC.msgSendBool(peer, ObjC.sel("allowsAutomaticKeyEquivalentLocalization")); }
+        catch (Throwable t) { return true; }
+    }
+    public void setAllowsAutomaticKeyEquivalentLocalization(boolean flag) {
+        try { ObjC.msgSendVoidBool(peer, ObjC.sel("setAllowsAutomaticKeyEquivalentLocalization:"), flag); }
+        catch (Throwable ignored) {}
+    }
+    public boolean allowsAutomaticKeyEquivalentMirroring() {
+        try { return ObjC.msgSendBool(peer, ObjC.sel("allowsAutomaticKeyEquivalentMirroring")); }
+        catch (Throwable t) { return true; }
+    }
+    public void setAllowsAutomaticKeyEquivalentMirroring(boolean flag) {
+        try { ObjC.msgSendVoidBool(peer, ObjC.sel("setAllowsAutomaticKeyEquivalentMirroring:"), flag); }
+        catch (Throwable ignored) {}
+    }
+
+    /// isHighlighted / isHiddenOrHasHiddenAncestor / isSectionHeader.
+    public boolean isHighlighted() {
+        return ObjC.msgSendBool(peer, ObjC.sel("isHighlighted"));
+    }
+    public boolean isHiddenOrHasHiddenAncestor() {
+        return ObjC.msgSendBool(peer, ObjC.sel("isHiddenOrHasHiddenAncestor"));
+    }
+    public boolean isSectionHeader() {
+        try { return ObjC.msgSendBool(peer, ObjC.sel("isSectionHeader")); }
+        catch (Throwable t) { return false; }
+    }
 }

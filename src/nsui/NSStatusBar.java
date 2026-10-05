@@ -9,6 +9,8 @@ import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
 /// NSStatusBar — the system menu bar. Thin 1:1 wrapper.
+/// Nothing omitted: every non-deprecated NSStatusBar header member is wrapped
+/// (systemStatusBar, statusItemWithLength:, removeStatusItem:, vertical, thickness).
 public final class NSStatusBar extends NSObject {
 
             private record Handles(MethodHandle hId, MethodHandle hWithLength, MethodHandle hThickness, MethodHandle hIsVertical) {}

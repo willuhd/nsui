@@ -4,9 +4,17 @@ import java.lang.foreign.MemorySegment;
 
 import nsui.objc.Autorelease;
 import nsui.objc.ObjC;
+import nsui.objc.Sig;
+import static nsui.objc.Sig.Arg;
+import static nsui.objc.Sig.Ret;
 
 /// NSApplication — the app shell (SWT Display-equivalent). Owns the run loop,
 /// activation policy, main menu, and event dispatch.
+/// OMITTED: sendAction:to:from: (shape BOOL,ID,ID,ID NOT in vocabulary — verified
+/// by grep); enumerateWindowsWithOptions:usingBlock: (block, no registered shape);
+/// addWindowsItem:/changeWindowsItem: (shape VOID,ID,ID,BOOL NOT in vocabulary);
+/// deprecated beginSheet/endSheet/makeWindowsPerform/context; NSApplicationDelegate
+/// protocol methods (use DelegateProxy, not this wrapper).
 public final class NSApplication extends NSObject {
 
     private static NSApplication shared;
@@ -208,4 +216,258 @@ public final class NSApplication extends NSObject {
 
     public NSAppearance effectiveAppearance() { return NSAppearance.wrap(ObjC.msgSendId(peer, ObjC.sel("effectiveAppearance"))); }
     public void setAppearance(NSAppearance ap) { ObjC.msgSendVoidId(peer, ObjC.sel("setAppearance:"), ap==null?MemorySegment.NULL:ap.peer()); }
+
+    /// setActivationPolicy: returning BOOL per header (YES on success).
+    public boolean trySetActivationPolicy(long policy) {
+        try {
+            return (boolean) ObjC.handle(Sig.of(Ret.BOOL, Arg.INT)).invokeExact(peer,
+                    ObjC.sel("setActivationPolicy:"), policy);
+        } catch (Throwable t) { throw new RuntimeException("setActivationPolicy: failed", t); }
+    }
+
+    /// unhideWithoutActivation.
+    public void unhideWithoutActivation() {
+        ObjC.msgSendVoid(peer, ObjC.sel("unhideWithoutActivation"));
+    }
+
+    /// windowWithWindowNumber: (nil when absent).
+    public NSWindow windowWithWindowNumber(long windowNum) {
+        try {
+            MemorySegment w = (MemorySegment) ObjC.handle(Sig.of(Ret.ID, Arg.INT)).invokeExact(peer,
+                    ObjC.sel("windowWithWindowNumber:"), windowNum);
+            return NSWindow.wrap(w);
+        } catch (Throwable t) { throw new RuntimeException("windowWithWindowNumber: failed", t); }
+    }
+
+    /// hideOtherApplications: / unhideAllApplications:.
+    public void hideOtherApplications(MemorySegment sender) {
+        ObjC.msgSendVoidId(peer, ObjC.sel("hideOtherApplications:"),
+                (MemorySegment) (sender == null ? MemorySegment.NULL : sender));
+    }
+    public void unhideAllApplications(MemorySegment sender) {
+        ObjC.msgSendVoidId(peer, ObjC.sel("unhideAllApplications:"),
+                (MemorySegment) (sender == null ? MemorySegment.NULL : sender));
+    }
+
+    /// runModalForWindow: (NSModalResponse).
+    public long runModalForWindow(NSWindow window) {
+        try {
+            return (long) ObjC.handle(Sig.of(Ret.INT, Arg.ID)).invokeExact(peer,
+                    ObjC.sel("runModalForWindow:"),
+                    (MemorySegment) (window == null ? MemorySegment.NULL : window.peer()));
+        } catch (Throwable t) { throw new RuntimeException("runModalForWindow: failed", t); }
+    }
+
+    /// stopModal / stopModalWithCode: / abortModal.
+    public void stopModal() {
+        ObjC.msgSendVoid(peer, ObjC.sel("stopModal"));
+    }
+    public void stopModalWithCode(long code) {
+        ObjC.msgSendVoidLong(peer, ObjC.sel("stopModalWithCode:"), code);
+    }
+    public void abortModal() {
+        ObjC.msgSendVoid(peer, ObjC.sel("abortModal"));
+    }
+
+    /// beginModalSessionForWindow: (NSModalSession as generic id).
+    public MemorySegment beginModalSessionForWindow(NSWindow window) {
+        return ObjC.msgSendIdId(peer, ObjC.sel("beginModalSessionForWindow:"),
+                (MemorySegment) (window == null ? MemorySegment.NULL : window.peer()));
+    }
+
+    /// runModalSession: (NSModalSession as generic id).
+    public long runModalSession(MemorySegment session) {
+        try {
+            return (long) ObjC.handle(Sig.of(Ret.INT, Arg.ID)).invokeExact(peer,
+                    ObjC.sel("runModalSession:"), (MemorySegment) (session == null ? MemorySegment.NULL : session));
+        } catch (Throwable t) { throw new RuntimeException("runModalSession: failed", t); }
+    }
+
+    /// endModalSession:.
+    public void endModalSession(MemorySegment session) {
+        ObjC.msgSendVoidId(peer, ObjC.sel("endModalSession:"),
+                (MemorySegment) (session == null ? MemorySegment.NULL : session));
+    }
+
+    /// requestUserAttention: / cancelUserAttentionRequest:.
+    public long requestUserAttention(long type) {
+        try {
+            return (long) ObjC.handle(Sig.of(Ret.INT, Arg.INT)).invokeExact(peer,
+                    ObjC.sel("requestUserAttention:"), type);
+        } catch (Throwable t) { throw new RuntimeException("requestUserAttention: failed", t); }
+    }
+    public void cancelUserAttentionRequest(long request) {
+        ObjC.msgSendVoidLong(peer, ObjC.sel("cancelUserAttentionRequest:"), request);
+    }
+
+    /// preventWindowOrdering / setWindowsNeedUpdate:.
+    public void preventWindowOrdering() {
+        ObjC.msgSendVoid(peer, ObjC.sel("preventWindowOrdering"));
+    }
+    public void setWindowsNeedUpdate(boolean flag) {
+        ObjC.msgSendVoidBool(peer, ObjC.sel("setWindowsNeedUpdate:"), flag);
+    }
+
+    /// windowsMenu / servicesMenu.
+    public NSMenu windowsMenu() {
+        return NSMenu.wrap(ObjC.msgSendId(peer, ObjC.sel("windowsMenu")));
+    }
+    public void setWindowsMenu(NSMenu menu) {
+        ObjC.msgSendVoidId(peer, ObjC.sel("setWindowsMenu:"),
+                (MemorySegment) (menu == null ? MemorySegment.NULL : menu.peer()));
+    }
+    public NSMenu servicesMenu() {
+        return NSMenu.wrap(ObjC.msgSendId(peer, ObjC.sel("servicesMenu")));
+    }
+    public void setServicesMenu(NSMenu menu) {
+        ObjC.msgSendVoidId(peer, ObjC.sel("setServicesMenu:"),
+                (MemorySegment) (menu == null ? MemorySegment.NULL : menu.peer()));
+    }
+
+    /// servicesProvider (generic id).
+    public MemorySegment servicesProvider() {
+        return ObjC.msgSendId(peer, ObjC.sel("servicesProvider"));
+    }
+    public void setServicesProvider(MemorySegment provider) {
+        ObjC.msgSendVoidId(peer, ObjC.sel("setServicesProvider:"),
+                (MemorySegment) (provider == null ? MemorySegment.NULL : provider));
+    }
+
+    /// arrangeInFront: / miniaturizeAll: / removeWindowsItem: / updateWindowsItem:.
+    public void arrangeInFront(MemorySegment sender) {
+        ObjC.msgSendVoidId(peer, ObjC.sel("arrangeInFront:"),
+                (MemorySegment) (sender == null ? MemorySegment.NULL : sender));
+    }
+    public void miniaturizeAll(MemorySegment sender) {
+        ObjC.msgSendVoidId(peer, ObjC.sel("miniaturizeAll:"),
+                (MemorySegment) (sender == null ? MemorySegment.NULL : sender));
+    }
+    public void removeWindowsItem(NSWindow window) {
+        ObjC.msgSendVoidId(peer, ObjC.sel("removeWindowsItem:"),
+                (MemorySegment) (window == null ? MemorySegment.NULL : window.peer()));
+    }
+    public void updateWindowsItem(NSWindow window) {
+        ObjC.msgSendVoidId(peer, ObjC.sel("updateWindowsItem:"),
+                (MemorySegment) (window == null ? MemorySegment.NULL : window.peer()));
+    }
+
+    /// tryToPerform:with: (SEL as string).
+    public boolean tryToPerform(String action, MemorySegment object) {
+        try {
+            return (boolean) ObjC.handle(Sig.of(Ret.BOOL, Arg.ID, Arg.ID)).invokeExact(peer,
+                    ObjC.sel("tryToPerform:with:"),
+                    (MemorySegment) (action == null ? MemorySegment.NULL : ObjC.sel(action)),
+                    (MemorySegment) (object == null ? MemorySegment.NULL : object));
+        } catch (Throwable t) { throw new RuntimeException("tryToPerform:with: failed", t); }
+    }
+
+    /// targetForAction: (SEL as string).
+    public MemorySegment targetForAction(String action) {
+        try {
+            return (MemorySegment) ObjC.handle(Sig.of(Ret.ID, Arg.ID)).invokeExact(peer,
+                    ObjC.sel("targetForAction:"),
+                    (MemorySegment) (action == null ? MemorySegment.NULL : ObjC.sel(action)));
+        } catch (Throwable t) { throw new RuntimeException("targetForAction: failed", t); }
+    }
+
+    /// targetForAction:to:from:.
+    public MemorySegment targetForActionToFrom(String action, MemorySegment target, MemorySegment sender) {
+        try {
+            return (MemorySegment) ObjC.handle(Sig.of(Ret.ID, Arg.ID, Arg.ID, Arg.ID)).invokeExact(peer,
+                    ObjC.sel("targetForAction:to:from:"),
+                    (MemorySegment) (action == null ? MemorySegment.NULL : ObjC.sel(action)),
+                    (MemorySegment) (target == null ? MemorySegment.NULL : target),
+                    (MemorySegment) (sender == null ? MemorySegment.NULL : sender));
+        } catch (Throwable t) { throw new RuntimeException("targetForAction:to:from: failed", t); }
+    }
+
+    /// validRequestorForSendType:returnType: (pasteboard types as strings).
+    public MemorySegment validRequestorForSendType(String sendType, String returnType) {
+        try {
+            return (MemorySegment) ObjC.handle(Sig.of(Ret.ID, Arg.ID, Arg.ID)).invokeExact(peer,
+                    ObjC.sel("validRequestorForSendType:returnType:"),
+                    (MemorySegment) (sendType == null ? MemorySegment.NULL : ObjC.nsstring(sendType)),
+                    (MemorySegment) (returnType == null ? MemorySegment.NULL : ObjC.nsstring(returnType)));
+        } catch (Throwable t) { throw new RuntimeException("validRequestorForSendType:returnType: failed", t); }
+    }
+
+    /// setPresentationOptions: / currentSystemPresentationOptions / occlusionState.
+    public void setPresentationOptions(long options) {
+        ObjC.msgSendVoidLong(peer, ObjC.sel("setPresentationOptions:"), options);
+    }
+    public long currentSystemPresentationOptions() {
+        return ObjC.msgSendLong(peer, ObjC.sel("currentSystemPresentationOptions"));
+    }
+    public long occlusionState() {
+        return ObjC.msgSendLong(peer, ObjC.sel("occlusionState"));
+    }
+
+    /// userInterfaceLayoutDirection.
+    public long userInterfaceLayoutDirection() {
+        return ObjC.msgSendLong(peer, ObjC.sel("userInterfaceLayoutDirection"));
+    }
+
+    /// reportException:.
+    public void reportException(MemorySegment exception) {
+        ObjC.msgSendVoidId(peer, ObjC.sel("reportException:"),
+                (MemorySegment) (exception == null ? MemorySegment.NULL : exception));
+    }
+
+    /// detachDrawingThread:toTarget:withObject: (class).
+    public static void detachDrawingThread(String selector, MemorySegment target, MemorySegment argument) {
+        try {
+            ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.ID, Arg.ID)).invokeExact(
+                    ObjC.cls("NSApplication"), ObjC.sel("detachDrawingThread:toTarget:withObject:"),
+                    (MemorySegment) (selector == null ? MemorySegment.NULL : ObjC.sel(selector)),
+                    (MemorySegment) (target == null ? MemorySegment.NULL : target),
+                    (MemorySegment) (argument == null ? MemorySegment.NULL : argument));
+        } catch (Throwable t) { throw new RuntimeException("detachDrawingThread:toTarget:withObject: failed", t); }
+    }
+
+    /// replyToApplicationShouldTerminate: / replyToOpenOrPrint:.
+    public void replyToApplicationShouldTerminate(boolean flag) {
+        ObjC.msgSendVoidBool(peer, ObjC.sel("replyToApplicationShouldTerminate:"), flag);
+    }
+    public void replyToOpenOrPrint(long reply) {
+        ObjC.msgSendVoidLong(peer, ObjC.sel("replyToOpenOrPrint:"), reply);
+    }
+
+    /// orderFrontCharacterPalette: / orderFrontStandardAboutPanel: / WithOptions:.
+    public void orderFrontCharacterPalette(MemorySegment sender) {
+        ObjC.msgSendVoidId(peer, ObjC.sel("orderFrontCharacterPalette:"),
+                (MemorySegment) (sender == null ? MemorySegment.NULL : sender));
+    }
+    public void orderFrontStandardAboutPanel(MemorySegment sender) {
+        ObjC.msgSendVoidId(peer, ObjC.sel("orderFrontStandardAboutPanel:"),
+                (MemorySegment) (sender == null ? MemorySegment.NULL : sender));
+    }
+    public void orderFrontStandardAboutPanelWithOptions(NSDictionary options) {
+        ObjC.msgSendVoidId(peer, ObjC.sel("orderFrontStandardAboutPanelWithOptions:"),
+                (MemorySegment) (options == null ? MemorySegment.NULL : options.peer()));
+    }
+
+    /// disableRelaunchOnLogin / enableRelaunchOnLogin.
+    public void disableRelaunchOnLogin() {
+        ObjC.msgSendVoid(peer, ObjC.sel("disableRelaunchOnLogin"));
+    }
+    public void enableRelaunchOnLogin() {
+        ObjC.msgSendVoid(peer, ObjC.sel("enableRelaunchOnLogin"));
+    }
+
+    /// Remote notifications.
+    public void registerForRemoteNotifications() {
+        ObjC.msgSendVoid(peer, ObjC.sel("registerForRemoteNotifications"));
+    }
+    public void unregisterForRemoteNotifications() {
+        ObjC.msgSendVoid(peer, ObjC.sel("unregisterForRemoteNotifications"));
+    }
+    public boolean isRegisteredForRemoteNotifications() {
+        return ObjC.msgSendBool(peer, ObjC.sel("isRegisteredForRemoteNotifications"));
+    }
+    public long enabledRemoteNotificationTypes() {
+        return ObjC.msgSendLong(peer, ObjC.sel("enabledRemoteNotificationTypes"));
+    }
+    public void registerForRemoteNotificationTypes(long types) {
+        ObjC.msgSendVoidLong(peer, ObjC.sel("registerForRemoteNotificationTypes:"), types);
+    }
 }

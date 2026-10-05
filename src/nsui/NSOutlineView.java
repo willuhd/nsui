@@ -197,4 +197,114 @@ public final class NSOutlineView extends NSTableView {
             throw new RuntimeException("setIndentationPerLevel: failed", t);
         }
     }
+
+    // ---- batch: Tables — item/row translation and outline options (all shapes already in Sig.VOCABULARY) ----
+    // Omitted here (documented, reported to coordinator):
+    // - frameOfOutlineCellAtRow: needs Ret.RECT with Arg.INT — no such vocabulary entry.
+    // - shouldCollapseAutoExpandedItemsForDeposited: needs Ret.BOOL with Arg.BOOL — no such entry.
+    // - insertItemsAtIndexes:inParent:withAnimation: / removeItemsAtIndexes:inParent:withAnimation:
+    //   need Ret.VOID with (ID, ID, INT) — no such entry.
+    // - moveItemAtIndex:inParent:toIndex:inParent: needs (INT, ID, INT, ID) — no such entry.
+    // - All NSOutlineViewDataSource/Delegate protocol methods — need upcall machinery.
+    // - insertRowsAtIndexes:/removeRowsAtIndexes:/moveRowAtIndex: — UNAVAILABLE on NSOutlineView by design.
+    // - userInterfaceLayoutDirection — inherited from NSView (identical selectors), not redeclared.
+
+    /// [outline reloadItem:] — reload a single item (no children).
+    public void reloadItem(MemorySegment item) {
+        try {
+            handles.hExpand().invokeExact(peer, ObjC.sel("reloadItem:"), (MemorySegment) ((MemorySegment) (item == null ? MemorySegment.NULL : item)));
+        } catch (Throwable t) {
+            throw new RuntimeException("reloadItem: failed", t);
+        }
+    }
+
+    /// [outline childIndexForItem:] — child index within its parent.
+    public long childIndexForItem(MemorySegment item) {
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.INT, Arg.ID));
+            return (long) h.invokeExact(peer, ObjC.sel("childIndexForItem:"), (MemorySegment) (item == null ? MemorySegment.NULL : item));
+        } catch (Throwable t) {
+            throw new RuntimeException("childIndexForItem: failed", t);
+        }
+    }
+
+    /// [outline itemAtRow:] — item for a row, or nil.
+    public MemorySegment itemAtRow(long row) {
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.INT));
+            return (MemorySegment) h.invokeExact(peer, ObjC.sel("itemAtRow:"), row);
+        } catch (Throwable t) {
+            throw new RuntimeException("itemAtRow: failed", t);
+        }
+    }
+
+    /// [outline rowForItem:] — row for an item, or -1.
+    public long rowForItem(MemorySegment item) {
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.INT, Arg.ID));
+            return (long) h.invokeExact(peer, ObjC.sel("rowForItem:"), (MemorySegment) (item == null ? MemorySegment.NULL : item));
+        } catch (Throwable t) {
+            throw new RuntimeException("rowForItem: failed", t);
+        }
+    }
+
+    /// [outline levelForRow:] — indentation level for a row (NSInteger).
+    public long levelForRow(long row) {
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.INT, Arg.INT));
+            return (long) h.invokeExact(peer, ObjC.sel("levelForRow:"), row);
+        } catch (Throwable t) {
+            throw new RuntimeException("levelForRow: failed", t);
+        }
+    }
+
+    /// [outline indentationMarkerFollowsCell]
+    public boolean indentationMarkerFollowsCell() {
+        return ObjC.msgSendBool(peer, ObjC.sel("indentationMarkerFollowsCell"));
+    }
+
+    /// [outline setIndentationMarkerFollowsCell:]
+    public void setIndentationMarkerFollowsCell(boolean flag) {
+        ObjC.msgSendVoidBool(peer, ObjC.sel("setIndentationMarkerFollowsCell:"), flag);
+    }
+
+    /// [outline autoresizesOutlineColumn]
+    public boolean autoresizesOutlineColumn() {
+        return ObjC.msgSendBool(peer, ObjC.sel("autoresizesOutlineColumn"));
+    }
+
+    /// [outline setAutoresizesOutlineColumn:]
+    public void setAutoresizesOutlineColumn(boolean flag) {
+        ObjC.msgSendVoidBool(peer, ObjC.sel("setAutoresizesOutlineColumn:"), flag);
+    }
+
+    /// [outline setDropItem:dropChildIndex:] — re-target a proposed drop.
+    public void setDropItem(MemorySegment item, long index) {
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.INT));
+            h.invokeExact(peer, ObjC.sel("setDropItem:dropChildIndex:"), (MemorySegment) (item == null ? MemorySegment.NULL : item), index);
+        } catch (Throwable t) {
+            throw new RuntimeException("setDropItem:dropChildIndex: failed", t);
+        }
+    }
+
+    /// [outline autosaveExpandedItems]
+    public boolean autosaveExpandedItems() {
+        return ObjC.msgSendBool(peer, ObjC.sel("autosaveExpandedItems"));
+    }
+
+    /// [outline setAutosaveExpandedItems:] — requires the persistent-object data-source methods.
+    public void setAutosaveExpandedItems(boolean flag) {
+        ObjC.msgSendVoidBool(peer, ObjC.sel("setAutosaveExpandedItems:"), flag);
+    }
+
+    /// [outline stronglyReferencesItems]
+    public boolean stronglyReferencesItems() {
+        return ObjC.msgSendBool(peer, ObjC.sel("stronglyReferencesItems"));
+    }
+
+    /// [outline setStronglyReferencesItems:]
+    public void setStronglyReferencesItems(boolean flag) {
+        ObjC.msgSendVoidBool(peer, ObjC.sel("setStronglyReferencesItems:"), flag);
+    }
 }

@@ -124,4 +124,46 @@ public final class NSCollectionViewItem extends NSObject {
     public void setHighlightState(long state) {
         ObjC.msgSendVoidLong(peer, ObjC.sel("setHighlightState:"), state);
     }
+
+    // ---- batch: Tables — container link, outlets and drag image (all shapes already in Sig.VOCABULARY) ----
+    // Omitted here (documented, reported to coordinator):
+    // - All NSCollectionViewElement protocol methods (prepareForReuse, applyLayoutAttributes:, …) — need upcall machinery.
+    // - representedObject/view come from the NSViewController superclass and are already wrapped above.
+
+    /// [item collectionView] — the containing collection view (non-retained) or nil.
+    public NSCollectionView collectionView() {
+        try {
+            MemorySegment v = (MemorySegment) handles.hInit().invokeExact(peer, ObjC.sel("collectionView"));
+            return NSCollectionView.wrap(v);
+        } catch (Throwable t) {
+            throw new RuntimeException("collectionView failed", t);
+        }
+    }
+
+    /// [item imageView] — convenience outlet (raw peer; NSImageView has no wrap — peer-compare).
+    public MemorySegment imageView() {
+        try {
+            return (MemorySegment) handles.hInit().invokeExact(peer, ObjC.sel("imageView"));
+        } catch (Throwable t) {
+            throw new RuntimeException("imageView failed", t);
+        }
+    }
+
+    /// [item textField] — convenience outlet (raw peer; NSTextField has no wrap — peer-compare).
+    public MemorySegment textField() {
+        try {
+            return (MemorySegment) handles.hInit().invokeExact(peer, ObjC.sel("textField"));
+        } catch (Throwable t) {
+            throw new RuntimeException("textField failed", t);
+        }
+    }
+
+    /// [item draggingImageComponents] — NSArray of NSDraggingImageComponent peers (id).
+    public MemorySegment draggingImageComponents() {
+        try {
+            return (MemorySegment) handles.hInit().invokeExact(peer, ObjC.sel("draggingImageComponents"));
+        } catch (Throwable t) {
+            throw new RuntimeException("draggingImageComponents failed", t);
+        }
+    }
 }

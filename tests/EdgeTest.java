@@ -18,8 +18,7 @@ import nsui.objc.ObjC;
 /// Edge cases the rest of the suite never pins down (all pre-existing gaps):
 ///
 /// - `ObjC.cstring` rejects embedded NUL bytes.
-/// - `ObjC.toString` 16 MB cap (disabled case: proven crash, see BUG
-/// note on truncationCap — re-enable with the src fix).
+/// - `ObjC.toString` 16 MB cap truncates exactly at cap.
 /// - `NSRect` geometry branches beyond the happy path (negative sizes,
 /// empty rects, non-overlap intersection, integral, area).
 /// - The `invoke` escape hatch enforces its documented 6-arg bound.
@@ -61,17 +60,21 @@ public final class EdgeTest {
         }
     }
 
-    /// 16 MB cap: PROVEN CRASH, case disabled until the src pass (no check
-    /// emitted on purpose — a failing-by-design assertion would hold the suite
-    /// red, and asserting the crash would bless it).
-    ///
-    /// What happens today: a >16M-char NSString makes ObjC.toString throw
-    /// IndexOutOfBoundsException ("No null terminator found") instead of
-    /// truncating — the strlen loop breaks at the cap without finding NUL and
-    /// getString(0) scans past the region (ObjC.java:237). Verified live with
-    /// a 17M-char string. Re-enable this case when src is fixed; the intended
-    /// contract is truncate-at-cap and return.
+    /// 16 MB cap: truncate-at-cap and return. (Was a proven crash before the
+    /// chunked-probing fix: the loop broke at the cap without finding NUL and
+    /// getString scanned past the region. Now covered live.)
     private static void truncationCap() {
+        int big = 17_000_000;
+        String s = "y".repeat(big);
+        MemorySegment seg = ObjC.nsstring(s);
+        long t0 = System.nanoTime();
+        String back = ObjC.toString(seg);
+        long ms = (System.nanoTime() - t0) / 1_000_000;
+        TestKit.check(back != null && back.length() == 16_000_000,
+                "17M-char toString truncates exactly at cap (got " + (back == null ? "null" : back.length()) + ")");
+        TestKit.check(back != null && s.startsWith(back),
+                "truncated prefix matches original content");
+        TestKit.noteTime("17M-char toString (cap path)", ms, 1);
     }
 
     /// NSRect geometry: boundaries, empties, negatives, non-overlap, rounding.

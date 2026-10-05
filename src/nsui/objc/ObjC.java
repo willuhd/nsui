@@ -215,26 +215,29 @@ public final class ObjC {
         return (MemorySegment) invokeX(hIdId, cls("NSString"), sel("stringWithUTF8String:"), cstring(s));
     }
 
-    /// NSString -> Java String (via [NSString UTF8String]) — safe for arbitrary length (strlen loop, no 4096 truncation).
+    /// NSString -> Java String (via [NSString UTF8String]) — safe for arbitrary length.
+    /// Scans for the NUL terminator in 4096-byte windows (one reinterpret per
+    /// window, not per byte — a 500-char string costs 1), then copies exactly
+    /// the string bytes. Past the 16M cap the string truncates (a split
+    /// multi-byte tail decodes with a trailing replacement char) instead of
+    /// looping forever or throwing: getString would scan past the region.
     public static String toString(MemorySegment nsString) {
         if (nsString == null || nsString.address() == 0) return null;
         MemorySegment c = msgSendId(nsString, sel("UTF8String"));
         if (c.address() == 0) return null;
-        // Manual strlen: scan for NUL byte; avoids fixed 4096 cap.
-        // Reinterpret grows with len; handles strings of any length (tested via loop, not native strlen).
-        long len = 0;
-        // Fast path: probe in 4096-byte blocks to avoid per-byte reinterpret for long strings
+        long len = -1;
+        long base = 0;
         while (true) {
-            // Need len+1 bytes to read byte at len
-            byte b = c.reinterpret(len + 1).get(ValueLayout.JAVA_BYTE, len);
-            if (b == 0) break;
-            len++;
-            if (len > 16_000_000) {
-                // safety cap for pathological strings (16 MB); truncate rather than loop forever
-                break;
+            MemorySegment w = c.reinterpret(base + 4096);
+            for (long i = 0; i < 4096; i++) {
+                if (w.get(ValueLayout.JAVA_BYTE, base + i) == 0) { len = base + i; break; }
             }
+            if (len >= 0) break;
+            base += 4096;
+            if (base >= 16_000_000) { len = 16_000_000; break; }
         }
-        return c.reinterpret(len + 1).getString(0);
+        byte[] bytes = c.reinterpret(len).toArray(ValueLayout.JAVA_BYTE);
+        return new String(bytes, 0, (int) len, java.nio.charset.StandardCharsets.UTF_8);
     }
 
     /// Allocate an NSRect. When a turn is active the 32-byte struct comes from the per-turn

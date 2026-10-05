@@ -9,7 +9,6 @@ import java.lang.foreign.SegmentAllocator;
 import java.lang.foreign.SymbolLookup;
 import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -73,7 +72,10 @@ public final class ObjC {
     private static MethodHandle hMsgSuper;      // objc_msgSendSuper(struct objc_super*, SEL) -> void
 
     // ---- downcall handles: one per vocabulary signature (built in init()) ----
-    private static final Map<S, MethodHandle> HANDLES = new HashMap<>();
+    // ConcurrentHashMap (not HashMap): init() is guarded, but a concurrent map
+    // makes even an off-protocol concurrent init race-free instead of risking
+    // HashMap corruption mid-resize.
+    private static final Map<S, MethodHandle> HANDLES = new ConcurrentHashMap<>();
     private static MethodHandle hId;          // (id, SEL) -> id
     private static MethodHandle hIdId;        // (id, SEL, id) -> id
     private static MethodHandle hId3;         // (id, SEL, id, id, id) -> id
@@ -100,8 +102,13 @@ public final class ObjC {
 
     private ObjC() {}
 
+    private static boolean INIT;
+
     /// Must run at RUNTIME, from main() — not from a static initializer (native-image rule).
-    public static void init() {
+    /// Synchronized + idempotent like every other ensureInit in this package;
+    /// re-entry (EdgeTest double-init) is a harmless no-op.
+    public static synchronized void init() {
+        if (INIT) return;
         LINKER = Linker.nativeLinker();
         PTR = (ValueLayout) LINKER.canonicalLayouts().get("void*");
         LONG = (ValueLayout) LINKER.canonicalLayouts().get("long");
@@ -150,6 +157,7 @@ public final class ObjC {
         hRect = handle(Sig.of(Ret.RECT));
         hEscapeId = handle(Sig.of(Ret.ID, Arg.ID, Arg.ID, Arg.ID, Arg.ID, Arg.ID, Arg.ID));
         hEscapeVoid = handle(Sig.of(Ret.VOID, Arg.ID, Arg.ID, Arg.ID, Arg.ID, Arg.ID, Arg.ID));
+        INIT = true;
     }
 
     /// The downcall handle for a vocabulary signature. Fails loudly when the signature

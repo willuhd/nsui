@@ -1,12 +1,12 @@
 package nsui;
 
-import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
 import java.util.concurrent.ConcurrentHashMap;
 
 import nsui.objc.ObjC;
+import nsui.objc.Scratch;
 import nsui.objc.Sig;
 import static nsui.objc.Sig.Ret;
 
@@ -145,8 +145,9 @@ public class NSData extends NSObject {
         MemorySegment target = peer;
         byte[] cached = STORE.get(peer.address());
         if (cached != null) {
-            // Rebuild a real native NSData from the Java-side cache.
-            MemorySegment buf = Arena.global().allocate(Math.max(1, cached.length));
+            // Rebuild a real native NSData from the Java-side cache (call-scoped
+            // bump: dataWithBytes:length: copies synchronously).
+            MemorySegment buf = Scratch.allocInput(Math.max(1, cached.length));
             if (cached.length > 0) {
                 MemorySegment.copy(cached, 0, buf, ValueLayout.JAVA_BYTE, 0, cached.length);
             }

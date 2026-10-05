@@ -44,6 +44,8 @@ public class NSView extends NSResponder {
     /// draw at least the area bounded by `dirtyRect`; painting inside that rect is
     /// sufficient in practice.
     public interface Drawable {
+        /// CONTRACT: throwing aborts the VM (see DelegateProxy fail-fast policy).
+        /// Catch drawing errors inside draw() — there is no recovery past this boundary.
         void draw(MemorySegment ctx, NSRect dirtyRect);
     }
 

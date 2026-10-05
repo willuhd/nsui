@@ -51,6 +51,8 @@ public final class NsuiForeign {
     public static FunctionDescriptor registerClassPair() { return FunctionDescriptor.ofVoid(PTR); }
     /// class_addMethod(Class, SEL, IMP, char*) -> bool
     public static FunctionDescriptor addMethod() { return FunctionDescriptor.of(BOOL, PTR, PTR, PTR, PTR); }
+    /// MTLCreateSystemDefaultDevice(void) -> id<MTLDevice> (retained, nullable)
+    public static FunctionDescriptor mtlCreateSystemDefaultDevice() { return FunctionDescriptor.of(PTR); }
 
     // ------------------------------------- CoreGraphics / CoreFoundation (verification)
 
@@ -194,7 +196,8 @@ public final class NsuiForeign {
     /// libobjc + dlopen downcalls (registered by NsuiFeature — no tracing agent).
     public static final List<FunctionDescriptor> RUNTIME = List.of(
             dlopen(), objcGetClass(), selRegisterName(), allocateClassPair(), registerClassPair(), addMethod(),
-            classGetSuperclass(), msgSendSuperVoid(), msgSendSuperVoidId(), msgSendSuperBoolId());
+            classGetSuperclass(), msgSendSuperVoid(), msgSendSuperVoidId(), msgSendSuperBoolId(),
+            mtlCreateSystemDefaultDevice());
 
     /// CoreGraphics/CoreFoundation downcalls (window-server verification + synthetic events).
     public static final List<FunctionDescriptor> CORE = List.of(

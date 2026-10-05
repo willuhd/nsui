@@ -56,4 +56,14 @@ public final class NSTableHeaderView extends NSView {
             throw new RuntimeException("draggedDistance failed", t);
         }
     }
+
+    // ---- batch: Tables — resize state (shape already in Sig.VOCABULARY) ----
+    // Omitted here (documented, reported to coordinator):
+    // - headerRectOfColumn: needs Ret.RECT with Arg.INT — no such vocabulary entry.
+    // - columnAtPoint: needs Ret.INT with Arg.POINT — no such entry.
+
+    /// resizedColumn (-1 when no resize in flight).
+    public long resizedColumn() {
+        return ObjC.msgSendLong(peer, ObjC.sel("resizedColumn"));
+    }
 }

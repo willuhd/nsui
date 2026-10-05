@@ -62,4 +62,13 @@ public final class NSTableCellView extends NSView {
     public void setRowSizeStyle(long style) {
         ObjC.msgSendVoidLong(peer, ObjC.sel("setRowSizeStyle:"), style);
     }
+
+    // ---- batch: Tables — drag image (shape already in Sig.VOCABULARY) ----
+    // Omitted: nothing else — objectValue/textField/imageView/backgroundStyle/rowSizeStyle were already wrapped.
+    // (Multi-item drag *handling* — the delegate/data-source side — needs upcall machinery.)
+
+    /// draggingImageComponents — up to two NSDraggingImageComponent peers (imageView + textField), as an NSArray id.
+    public MemorySegment draggingImageComponents() {
+        return ObjC.msgSendId(peer, ObjC.sel("draggingImageComponents"));
+    }
 }

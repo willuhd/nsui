@@ -218,4 +218,18 @@ public final class NSTableColumn extends NSObject {
     public void sizeToFit() {
         try { ObjC.handle(Sig.of(Ret.VOID)).invokeExact(peer, ObjC.sel("sizeToFit")); } catch (Throwable t) { throw new RuntimeException("sizeToFit failed", t); }
     }
+
+    // ---- batch: Tables — owning-table link (shapes already in Sig.VOCABULARY) ----
+    // Omitted here (documented, reported to coordinator): initWithCoder: — no NSCoder precedent anywhere in the toolkit.
+    // NSTableView has no wrap, so the table is returned as a raw peer (same convention as NSTableHeaderView.tableView).
+
+    /// [column tableView] — the owning table (raw peer) or nil when detached.
+    public MemorySegment tableView() {
+        try { return (MemorySegment) hId.invokeExact(peer, ObjC.sel("tableView")); } catch (Throwable t) { throw new RuntimeException("tableView failed", t); }
+    }
+
+    /// [column setTableView:] — set automatically by addTableColumn:; direct sets are unusual.
+    public void setTableView(MemorySegment table) {
+        try { hVoidId.invokeExact(peer, ObjC.sel("setTableView:"), (MemorySegment) (table == null ? MemorySegment.NULL : table)); } catch (Throwable t) { throw new RuntimeException("setTableView: failed", t); }
+    }
 }

@@ -19,6 +19,16 @@ import nsui.objc.ObjC;
 /// Create with `create` — the very same
 /// `initWithContentRect:styleMask:backing:defer:` initializer
 /// `NSWindow.create` uses, sent to the `NSPanel` class instead.
+///
+/// Coverage notes (SDK: `NSPanel.h` — the interface declares exactly three
+/// properties; everything else is inherited from `NSWindow`):
+/// - `floatingPanel` / `becomesKeyOnlyIfNeeded` / `worksWhenModal` are all
+///   wrapped here (getter + setter); the `worksWhenModal` getter is inherited
+///   from `NSWindow`, the setter lives on `NSPanel`.
+/// - OMITTED: the deprecated C functions (`NSRunAlertPanel*`,
+///   `NSBeginAlertSheet*`, `NSGet*AlertPanel`, `NSReleaseAlertPanel`) and the
+///   `NSAlertDefaultReturn`/`NSOKButton` enums — deprecated, use `NSAlert`.
+///   No new Sig shape is requested for this file.
 public class NSPanel extends NSWindow {
 
     protected NSPanel(MemorySegment peer) {
@@ -62,5 +72,17 @@ public class NSPanel extends NSWindow {
     /// [panel setFloatingPanel:] — toggle the float-above-windows behavior.
     public void setFloatingPanel(boolean floating) {
         ObjC.msgSendVoidBool(peer, ObjC.sel("setFloatingPanel:"), floating);
+    }
+
+    /// [panel setBecomesKeyOnlyIfNeeded:] — canonical setter name (the existing
+    /// `becomesKeyOnlyIfNeeded(boolean)` setter is kept for compatibility).
+    public void setBecomesKeyOnlyIfNeeded(boolean onlyIfNeeded) {
+        ObjC.msgSendVoidBool(peer, ObjC.sel("setBecomesKeyOnlyIfNeeded:"), onlyIfNeeded);
+    }
+
+    /// [panel setWorksWhenModal:] — on `NSWindow` this property is readonly;
+    /// `NSPanel` redeclares it readwrite. The getter is inherited from `NSWindow`.
+    public void setWorksWhenModal(boolean works) {
+        ObjC.msgSendVoidBool(peer, ObjC.sel("setWorksWhenModal:"), works);
     }
 }

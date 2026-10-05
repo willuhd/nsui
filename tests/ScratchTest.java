@@ -21,6 +21,8 @@ import nsui.objc.Scratch;
 /// `endTurn` (it is neither scratch nor a fresh global slice per call).
 /// - SEL cache: two `sel("setTitle:")` calls return address-identical cached cstrings
 /// and both resolve to the same native SEL.
+/// - Default inputs: `rect`/`cstring` with NO turn bump exactly 40_000 B for
+/// 1000 pairs (no global-arena leak), read back correctly, rewind to 0.
 public final class ScratchTest {
 
     public static void main(String[] args) {
@@ -151,6 +153,25 @@ public final class ScratchTest {
         String gotTitle = ObjC.toString(got);
         TestKit.check("scratch-roundtrip-title".equals(gotTitle),
                 "cached SEL works for both setTitle: and title: via msgSend → got '" + gotTitle + "'");
+
+        // ---- 6. default inputs: rect/cstring with NO turn use the bump buffer ---------
+        System.out.println("\n-- 6. default inputs outside any turn --");
+        // 1000 x (32-byte rect + 8-byte cstring granule); used() reads 0 while
+        // inactive, so rewind first (drops dead residue from earlier sections),
+        // then open a turn afterwards to observe the bump offset: it must show
+        // exactly the spill-free 40_000 bytes, proving no-turn inputs bumped
+        // instead of leaking to the global arena.
+        Scratch.beginTurn(); Scratch.endTurn();
+        for (int i = 0; i < 1000; i++) { ObjC.rect(i, i, 1, 1); ObjC.cstring("edge"); }
+        Scratch.beginTurn();
+        TestKit.check(Scratch.used() == 40_000,
+                "1000 no-turn inputs bumped 40_000 B (used=" + Scratch.used() + ")");
+        // Values stay correct: the last rect reads back, the last cstring round-trips.
+        MemorySegment lr = ObjC.rect(7, 8, 9, 10);
+        TestKit.check(ObjC.rectX(lr) == 7 && ObjC.rectW(lr) == 9, "no-turn rect reads back");
+        TestKit.check("edge".equals(ObjC.toString(ObjC.nsstring("edge"))), "no-turn cstring round-trips");
+        Scratch.endTurn();
+        TestKit.check(Scratch.used() == 0, "used()==0 after rewinding default inputs");
 
         System.out.println("\n=== ScratchTest " + (TestKit.failures() == 0 ? "PASS" : "FAIL — " + TestKit.failures() + " failed") + " ===");
         TestKit.end();

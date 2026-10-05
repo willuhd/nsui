@@ -38,8 +38,9 @@ import static nsui.objc.Sig.S;
 ///   initializers — so everything is built by `init`, called from main().
 /// - Nothing is linked at build time: libobjc, AppKit & friends are dlopen'ed
 ///   at runtime via their absolute paths (works through the dyld shared cache).
-/// - By-value INPUT marshalling (`rect`, `cstring`) is routed through the
-///   per-turn `Scratch` arena so it does not leak immortal segments at 60fps.
+/// - By-value INPUT marshalling (`rect`, `cstring`) defaults to the thread-local
+///   `Scratch` bump buffer (rewound at turn end), so application code outside
+///   any turn no longer leaks immortal segments at 60fps.
 /// - Struct RETURNS (`msgSendRect`, one 32-byte NSRect) land in a per-thread
 ///   reusable slot, not a fresh arena slice per call: every caller copies
 ///   the four doubles out immediately, so overwriting on the next call is
@@ -191,23 +192,20 @@ public final class ObjC {
     private static final ConcurrentHashMap<String, MemorySegment> SEL_CACHE = new ConcurrentHashMap<>();
     private static final ConcurrentHashMap<String, MemorySegment> CLASS_CACHE = new ConcurrentHashMap<>();
 
-    /// NUL-terminated C string. During a turn the bytes are written into the per-turn
-    /// scratch buffer (`Scratch`), so the memory is only valid until the turn ends —
-    /// the callee MUST copy it before returning. With no turn active it falls back to the
-    /// global arena (as before). Prefer one of the cached paths (`sel`, `cls`)
-    /// for selector/class names that repeat.
+    /// NUL-terminated C string for call-scoped use. The bytes live in the
+    /// thread-local bump buffer (`Scratch.allocInput`) — valid only until the
+    /// next buffer rewind, so the callee MUST copy before returning (all
+    /// current callees do). Prefer the cached paths (`sel`, `cls`) for
+    /// selector/class names that repeat.
     public static MemorySegment cstring(String s) {
         if (s.indexOf(0) >= 0) {
             throw new IllegalArgumentException("cstring must not contain a NUL byte");
         }
-        if (Scratch.active()) {
-            byte[] bytes = s.getBytes(java.nio.charset.StandardCharsets.UTF_8);
-            MemorySegment seg = Scratch.alloc(bytes.length + 1);
-            MemorySegment.copy(bytes, 0, seg, ValueLayout.JAVA_BYTE, 0, bytes.length);
-            seg.set(ValueLayout.JAVA_BYTE, bytes.length, (byte) 0);
-            return seg;
-        }
-        return ARENA.allocateFrom(s);
+        byte[] bytes = s.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        MemorySegment seg = Scratch.allocInput(bytes.length + 1);
+        MemorySegment.copy(bytes, 0, seg, ValueLayout.JAVA_BYTE, 0, bytes.length);
+        seg.set(ValueLayout.JAVA_BYTE, bytes.length, (byte) 0);
+        return seg;
     }
 
     /// Global-arena cstring used by the SEL/CLASS caches (safe to hold forever).
@@ -258,15 +256,12 @@ public final class ObjC {
         return new String(bytes, 0, (int) len, java.nio.charset.StandardCharsets.UTF_8);
     }
 
-    /// Allocate an NSRect. When a turn is active the 32-byte struct comes from the per-turn
-    /// scratch buffer (`Scratch`) — safe because a rect is always a by-value INPUT
-    /// argument (the callee reads it during the call); when no turn is active it falls back
-    /// to the global arena, exactly as before. Struct RETURNS (`msgSendRect`) are never
-    /// scratch — they stay in the global arena.
+    /// Allocate an NSRect for call-scoped use. Always a by-value INPUT argument
+    /// (the callee reads it during the call), so it comes from the thread-local
+    /// bump buffer (`Scratch.allocInput`); struct RETURNS (`msgSendRect`) use
+    /// the separate reusable slot, never scratch.
     public static MemorySegment rect(double x, double y, double w, double h) {
-        MemorySegment r = Scratch.active()
-                ? Scratch.alloc(NS_RECT.byteSize())
-                : ARENA.allocate(NS_RECT);
+        MemorySegment r = Scratch.allocInput(NS_RECT.byteSize());
         r.set(ValueLayout.JAVA_DOUBLE, 0, x);
         r.set(ValueLayout.JAVA_DOUBLE, 8, y);
         r.set(ValueLayout.JAVA_DOUBLE, 16, w);

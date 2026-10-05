@@ -25,10 +25,17 @@ import java.lang.foreign.MemorySegment;
 ///
 /// SAFETY RULE (read this before using)
 ///
-/// Scratch memory is only valid DURING the turn. It must be used exclusively for
-/// *by-value INPUT marshalling*: struct arguments (`NSRect`, `NSPoint`,
-/// `objc_super`) and C strings that the callee copies before returning (e.g.
-/// `sel_registerName`, `objc_getClass`, `[NSString stringWithUTF8String:]`).
+/// ALLOCATION TIERS (read this before using)
+///
+/// - `allocInput` — the DEFAULT for call-scoped by-value INPUTS (`ObjC.rect`,
+///   `ObjC.cstring`): struct arguments and C strings the callee consumes
+///   synchronously (struct read / string copy, e.g. `sel_registerName`,
+///   `objc_getClass`, `[NSString stringWithUTF8String:]`). No turn required:
+///   bumps the thread-local buffer while there is room (rewound at the next
+///   outermost `endTurn`); that allocation spills to the global arena when
+///   full. Slices are valid only until the next rewind — pass them straight
+///   into the call, never stash them, never read them past a turn boundary.
+/// - `alloc` (turn-gated) — general scratch, valid only DURING the turn.
 /// Anything the caller reads AFTER the call returns — strings held across a
 /// turn, for example — MUST come from the global arena. Struct RETURNS are a
 /// separate case: the `NSRect` written by `objc_msgSend_stret` lands in a
@@ -106,6 +113,26 @@ public final class Scratch {
             return Arena.global().allocate(round, 8);
         }
         return Arena.global().allocate(roundUp(byteSize), 8);
+    }
+
+    /// Bump allocation for call-scoped by-value INPUTS with no turn required
+    /// (see ALLOCATION TIERS above). Bumps the thread-local buffer while there
+    /// is room — rewound at the next outermost `endTurn` — and falls back to
+    /// the global arena for that allocation when full. Never returns `null`.
+    public static MemorySegment allocInput(long byteSize) {
+        if (byteSize < 0) {
+            throw new IllegalArgumentException("negative alloc size: " + byteSize);
+        }
+        if (byteSize == 0) byteSize = 1; // keep an 8-byte granule
+        long round = (byteSize + 7) & ~7L;
+        Buffer b = BUFFERS.get();
+        if (round <= BUFFER_BYTES && (double) (b.offset + round) <= WARN_LEVEL * BUFFER_BYTES) {
+            long base = b.offset;
+            b.offset += round;
+            return b.seg.asSlice(base, round);
+        }
+        // outside the bump window: this single allocation goes to the global arena.
+        return Arena.global().allocate(round, 8);
     }
 
     private static long roundUp(long v) {

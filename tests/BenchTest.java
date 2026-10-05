@@ -1,11 +1,19 @@
 package nsui.tests;
 
+import java.lang.foreign.MemorySegment;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import nsui.CALayer;
 import nsui.NSApplication;
 import nsui.NSRect;
+import nsui.NSTableView;
 import nsui.NSWindow;
+import nsui.objc.DelegateProxy;
 import nsui.objc.ObjC;
 import nsui.objc.Scratch;
+import nsui.objc.Sig;
 
 /// Benchmarks for the toolkit's hottest paths.
 ///
@@ -24,6 +32,10 @@ import nsui.objc.Scratch;
 /// one `Scratch` turn — must stay time-bounded AND memory-bounded
 /// (`used() < 1 MiB`, reset to 0).
 /// - CALayer tree build/teardown — the compositing workload's unit cost.
+///
+/// - Data-source upcalls (`numberOfRowsInTableView:`) — the full Java ->
+/// AppKit -> Java round-trip per call: FFM downcall, upcall stub, registry
+/// dispatch, Java body. The slowest primitive per call by design.
 ///
 /// Uses a hidden window only; never activates, never orders front.
 public final class BenchTest {
@@ -53,6 +65,11 @@ public final class BenchTest {
             layerTree();
         } catch (Throwable t) {
             TestKit.check(false, "layerTree threw: " + t);
+        }
+        try {
+            upcalls();
+        } catch (Throwable t) {
+            TestKit.check(false, "upcalls threw: " + t);
         }
 
         TestKit.end();
@@ -155,5 +172,36 @@ public final class BenchTest {
         }
         CALayer sup = kids[3].superlayer();
         return sup != null && sup.peer().address() == root.peer().address();
+    }
+
+    /// Data-source upcall round-trips, sent DIRECTLY to the delegate: each call
+    /// crosses downcall stub -> ObjC dispatch -> upcall stub -> registry ->
+    /// lambda -> return marshaling. (Going through `[table numberOfRows]`
+    /// would let AppKit cache the answer and skip Java entirely — this
+    /// section measures the callback path itself, deterministically.)
+    private static void upcalls() throws Throwable {
+        System.out.println("--- data-source upcalls (direct send) ---");
+        NSTableView table = NSTableView.create(new NSRect(0, 0, 400, 200));
+        AtomicInteger fired = new AtomicInteger(0);
+        Map<String, DelegateProxy.IntArg> ints = new LinkedHashMap<>();
+        ints.put("numberOfRowsInTableView:", sender -> { fired.incrementAndGet(); return 50; });
+        MemorySegment ds = DelegateProxy.delegate("NSObject", "BenchTableDS",
+                new LinkedHashMap<>(), new LinkedHashMap<>(), ints, new LinkedHashMap<>());
+        java.lang.invoke.MethodHandle h = ObjC.handle(Sig.of(Sig.Ret.INT, Sig.Arg.ID));
+        MemorySegment sel = ObjC.sel("numberOfRowsInTableView:");
+        for (int i = 0; i < 100; i++) { long warm = (long) h.invokeExact(ds, sel, table.peer()); } // warmup
+        int base = fired.get();
+        int iters = 2000;
+        long bad = 0;
+        long t0 = System.nanoTime();
+        for (int i = 0; i < iters; i++) {
+            if ((long) h.invokeExact(ds, sel, table.peer()) != 50) bad++;
+        }
+        long ms = (System.nanoTime() - t0) / 1_000_000;
+        TestKit.check(fired.get() - base == iters,
+                "every direct send upcalled Java (" + (fired.get() - base) + "/" + iters + ")");
+        TestKit.check(bad == 0, "every upcall returned 50");
+        TestKit.noteTime("numberOfRowsInTableView: direct-send round-trip", ms, iters);
+        TestKit.checkTime("upcalls x" + iters, ms, 60000);
     }
 }

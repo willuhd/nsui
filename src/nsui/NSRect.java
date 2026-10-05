@@ -6,6 +6,15 @@ import nsui.objc.ObjC;
 
 /// NSRect as a Java value type: {x, y, width, height} in points.
 /// Marshals to/from the FFM struct segment only at the call boundary.
+/// SDK C-function coverage (pure Java): NSMaxX-Y/maxX-maxY, NSMidX-Y/midX-midY,
+/// NSMinX-Y/minX-minY, NSWidth-Height/size, NSEqualRects/equals, NSIsEmptyRect/isEmpty,
+/// NSInsetRect/inset, NSIntegralRect/integral, NSUnionRect/unionRect,
+/// NSIntersectionRect/intersection, NSOffsetRect/offset, NSDivideRect/divide,
+/// NSPointInRect/contains, NSContainsRect/contains, NSIntersectsRect/intersects,
+/// NSStringFromRect/toNSString, NSRectFromString/fromString. OMITTED — NSMouseInRect
+/// (flipped-screen hit-test context; use contains for geometry) and
+/// NSIntegralRectWithOptions exactness (integralWithOptions delegates to integral;
+/// alignment options are window-backing concerns, not geometry).
 public record NSRect(double x, double y, double width, double height) {
 
     public static final NSRect ZERO = new NSRect(0, 0, 0, 0);
@@ -127,6 +136,55 @@ public record NSRect(double x, double y, double width, double height) {
         double nw = width * scale;
         double nh = height * scale;
         return new NSRect(container.x + (container.width - nw) / 2, container.y + (container.height - nh) / 2, nw, nh);
+    }
+
+    /// NSRectEdge constants (match NSGeometry.h NSRectEdgeMinX..MaxY).
+    public static final int EDGE_MIN_X = 0;
+    public static final int EDGE_MIN_Y = 1;
+    public static final int EDGE_MAX_X = 2;
+    public static final int EDGE_MAX_Y = 3;
+
+    /// NSDivideRect — carve `amount` off `edge` as {slice, remainder}.
+    /// Amount clamps to [0, edge dimension] (negative carves nothing).
+    public NSRect[] divide(double amount, int edge) {
+        double a = Math.max(0, Math.min(amount, (edge == EDGE_MIN_X || edge == EDGE_MAX_X) ? width : height));
+        return switch (edge) {
+            case EDGE_MIN_X -> new NSRect[]{new NSRect(x, y, a, height), new NSRect(x + a, y, width - a, height)};
+            case EDGE_MAX_X -> new NSRect[]{new NSRect(x + width - a, y, a, height), new NSRect(x, y, width - a, height)};
+            case EDGE_MIN_Y -> new NSRect[]{new NSRect(x, y, width, a), new NSRect(x, y + a, width, height - a)};
+            default -> new NSRect[]{new NSRect(x, y + height - a, width, a), new NSRect(x, y, width, height - a)};
+        };
+    }
+
+    /// NSIntegralRectWithOptions simplified — full integral (options reserved for
+    /// window-backing alignment; geometry cannot honor them without a context).
+    public NSRect integralWithOptions(long options) {
+        return integral();
+    }
+
+    /// NSStringFromRect — Apple brace format `{{x, y}, {width, height}}`.
+    public NSString toNSString() {
+        return NSString.of("{{" + x + ", " + y + "}, {" + width + ", " + height + "}}");
+    }
+
+    /// NSRectFromString — parse `{{x, y}, {w, h}}` (whitespace tolerated). Null for null/bad input.
+    public static NSRect fromString(String s) {
+        if (s == null) return null;
+        String t = s.trim();
+        if (!t.startsWith("{{") || !t.endsWith("}}")) return null;
+        String inner = t.substring(1, t.length() - 1).trim();
+        int split = inner.indexOf("},");
+        if (split < 0) return null;
+        double[] o = NSPoint.parsePair(inner.substring(0, split + 1));
+        double[] z = NSPoint.parsePair(inner.substring(split + 2).trim());
+        if (o == null || z == null) return null;
+        return new NSRect(o[0], o[1], z[0], z[1]);
+    }
+
+    /// NSRectFromString from an NSString peer (null-safe).
+    public static NSRect fromNSString(NSString s) {
+        if (s == null) return null;
+        return fromString(s.string());
     }
 
     @Override public String toString() { return "NSRect{x=" + x + ", y=" + y + ", w=" + width + ", h=" + height + "}"; }

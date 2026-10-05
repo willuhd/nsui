@@ -9,6 +9,11 @@ import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
 /// NSDate — minimal wrapper over native `NSDate`.
+///
+/// Header-completeness (`NSDate.h`): every safe method whose shape is in the Sig vocabulary
+/// is wrapped below. OMITTED — addTimeInterval: (deprecated; use dateByAddingTimeInterval:);
+/// initWithTimeInterval.../initWithTimeInterval:...sinceDate: (covered by the dateWith*
+/// factories); initWithCoder: (needs NSCoder); description via inherited description().
 public final class NSDate extends NSObject {
 
             private record Handles(MethodHandle hTimeIntervalSince1970, MethodHandle hCompare) {}
@@ -119,5 +124,74 @@ public final class NSDate extends NSObject {
             MemorySegment s = (MemorySegment) h.invokeExact(peer, ObjC.sel("dateByAddingTimeInterval:"), seconds);
             return wrap(s);
         } catch (Throwable t) { throw new RuntimeException("dateByAddingTimeInterval: failed", t); }
+    }
+
+    /// timeIntervalSinceReferenceDate — seconds since 2001-01-01 GMT.
+    public double timeIntervalSinceReferenceDate() {
+        ensureInit();
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.DOUBLE));
+            return (double) h.invokeExact(peer, ObjC.sel("timeIntervalSinceReferenceDate"));
+        } catch (Throwable t) { throw new RuntimeException("timeIntervalSinceReferenceDate failed", t); }
+    }
+
+    /// [NSDate dateWithTimeIntervalSinceReferenceDate:].
+    public static NSDate dateWithTimeIntervalSinceReferenceDate(double seconds) {
+        ensureInit();
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.DOUBLE));
+            MemorySegment s = (MemorySegment) h.invokeExact(
+                    ObjC.cls("NSDate"), ObjC.sel("dateWithTimeIntervalSinceReferenceDate:"), seconds);
+            return wrap(s);
+        } catch (Throwable t) { throw new RuntimeException("dateWithTimeIntervalSinceReferenceDate: failed", t); }
+    }
+
+    /// [NSDate dateWithTimeInterval:sinceDate:].
+    public static NSDate dateWithTimeIntervalSinceDate(double seconds, NSDate date) {
+        ensureInit();
+        if (date == null) throw new IllegalArgumentException("dateWithTimeInterval:sinceDate: null");
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.DOUBLE, Arg.ID));
+            MemorySegment s = (MemorySegment) h.invokeExact(
+                    ObjC.cls("NSDate"), ObjC.sel("dateWithTimeInterval:sinceDate:"), seconds, date.peer());
+            return wrap(s);
+        } catch (Throwable t) { throw new RuntimeException("dateWithTimeInterval:sinceDate: failed", t); }
+    }
+
+    /// earlierDate: — the earlier of the two.
+    public NSDate earlierDate(NSDate other) {
+        ensureInit();
+        if (other == null) throw new IllegalArgumentException("earlierDate: null");
+        return wrap(ObjC.msgSendIdId(peer, ObjC.sel("earlierDate:"), other.peer()));
+    }
+
+    /// laterDate: — the later of the two.
+    public NSDate laterDate(NSDate other) {
+        ensureInit();
+        if (other == null) throw new IllegalArgumentException("laterDate: null");
+        return wrap(ObjC.msgSendIdId(peer, ObjC.sel("laterDate:"), other.peer()));
+    }
+
+    /// descriptionWithLocale: — NSLocale peer, or NULL for the canonical description.
+    public NSString descriptionWithLocale(MemorySegment locale) {
+        ensureInit();
+        return NSString.wrap(ObjC.msgSendIdId(peer, ObjC.sel("descriptionWithLocale:"),
+                (locale == null ? MemorySegment.NULL : locale)));
+    }
+
+    /// [NSDate now] — current date (10.15+).
+    public static NSDate now() {
+        ensureInit();
+        return wrap(ObjC.msgSendId(ObjC.cls("NSDate"), ObjC.sel("now")));
+    }
+
+    /// +timeIntervalSinceReferenceDate — current reference time. Named `system...` because
+    /// the instance property owns the plain name (Java forbids static/instance overloads).
+    public static double systemTimeIntervalSinceReferenceDate() {
+        ensureInit();
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.DOUBLE));
+            return (double) h.invokeExact(ObjC.cls("NSDate"), ObjC.sel("timeIntervalSinceReferenceDate"));
+        } catch (Throwable t) { throw new RuntimeException("timeIntervalSinceReferenceDate failed", t); }
     }
 }

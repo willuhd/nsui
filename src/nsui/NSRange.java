@@ -8,6 +8,9 @@ import nsui.objc.Scratch;
 /// NSRange as a Java value type: `{location, length`} (NSUInteger pair).
 /// Marshals to/from the FFM struct segment only at the call boundary.
 /// Layout: two longs (8 bytes each) — 16 bytes total.
+/// SDK C-function coverage: NSMaxRange/max, NSLocationInRange/contains, NSEqualRanges/equals,
+/// NSUnionRange/unionRange, NSIntersectionRange/intersection, NSStringFromRange/toNSString,
+/// NSRangeFromString/fromString — all mirrored (pure Java; the C functions need no msgSend).
 public record NSRange(long location, long length) {
 
     public static final NSRange ZERO = new NSRange(0, 0);
@@ -88,6 +91,32 @@ public record NSRange(long location, long length) {
     }
 
     /// Equality with exact match (record already provides equals).
+
+    /// NSStringFromRange — Apple brace format `{location, length}`.
+    public NSString toNSString() {
+        return NSString.of("{" + location + ", " + length + "}");
+    }
+
+    /// NSRangeFromString — parse `{location, length}` (whitespace tolerated).
+    /// Null for null input or unparseable text (never throws on shape).
+    public static NSRange fromString(String s) {
+        if (s == null) return null;
+        String t = s.trim();
+        if (!t.startsWith("{") || !t.endsWith("}")) return null;
+        String[] parts = t.substring(1, t.length() - 1).split(",");
+        if (parts.length != 2) return null;
+        try {
+            return new NSRange(Long.parseLong(parts[0].trim()), Long.parseLong(parts[1].trim()));
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    /// NSRangeFromString from an NSString peer (null-safe).
+    public static NSRange fromNSString(NSString s) {
+        if (s == null) return null;
+        return fromString(s.string());
+    }
 
     @Override public String toString() { return "NSRange{loc=" + location + ", len=" + length + "}"; }
 }

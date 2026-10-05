@@ -9,6 +9,17 @@ import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
 /// NSOrderedSet — minimal wrapper over native `NSOrderedSet` / `NSMutableOrderedSet`.
+///
+/// Header-completeness (`NSOrderedSet.h`, immutable): every safe method whose shape is in
+/// the Sig vocabulary is wrapped below. OMITTED — orderedSetWithOrderedSet:range:copyItems:,
+/// orderedSetWithArray:range:copyItems:, initWithOrderedSet:...range:copyItems:, initWithArray:...
+/// range:copyItems: (need of(ID,ID,RANGE,BOOL) / of(ID,ID,RANGE...), not in Sig);
+/// orderedSetWithObjects:count: and initWithObjects:count: (C object arrays; covered by
+/// orderedSetWithArray:/orderedSetWithObject:); getObjects:range: (out-buffer plumbing);
+/// enumerateObjects.../indexOfObject...PassingTest:/indexesOfObjects.../sortedArrayUsingComparator:/
+/// sortedArrayWithOptions:.../indexOfObject:inSortedRange:.../differenceFromOrderedSet:/
+/// orderedSetByApplyingDifference: (blocks / comparators / undiffable peers); init* otherwise
+/// (covered by the orderedSetWith* factories, except coder variants needing NSCoder).
 public class NSOrderedSet extends NSObject {
 
     private static volatile boolean initialized;
@@ -137,6 +148,128 @@ public class NSOrderedSet extends NSObject {
         } catch (Throwable t) { throw new RuntimeException("array failed", t); }
     }
 
-    /// objectAtIndexedSubscript: alias for objectAtIndex:.
-    public MemorySegment objectAtIndexedSubscript(long index) { return objectAtIndex(index); }
+    /// objectAtIndexedSubscript: — native subscript read (same element as objectAtIndex:).
+    public MemorySegment objectAtIndexedSubscript(long index) {
+        ensureInit();
+        try {
+            MemorySegment r = (MemorySegment) hObjectAt.invokeExact(peer, ObjC.sel("objectAtIndexedSubscript:"), index);
+            return (r == null || r.address() == 0) ? null : r;
+        } catch (Throwable t) { throw new RuntimeException("objectAtIndexedSubscript: failed", t); }
+    }
+
+    /// [NSOrderedSet orderedSetWithOrderedSet:].
+    public static NSOrderedSet orderedSetWithOrderedSet(NSOrderedSet other) {
+        ensureInit();
+        if (other == null) return orderedSet();
+        return wrap(ObjC.msgSendIdId(ObjC.cls("NSOrderedSet"), ObjC.sel("orderedSetWithOrderedSet:"), other.peer()));
+    }
+
+    /// [NSOrderedSet orderedSetWithSet:].
+    public static NSOrderedSet orderedSetWithSet(NSSet other) {
+        ensureInit();
+        if (other == null) return orderedSet();
+        return wrap(ObjC.msgSendIdId(ObjC.cls("NSOrderedSet"), ObjC.sel("orderedSetWithSet:"), other.peer()));
+    }
+
+    /// [NSOrderedSet orderedSetWithSet:copyItems:].
+    public static NSOrderedSet orderedSetWithSetCopyItems(NSSet other, boolean copyItems) {
+        ensureInit();
+        if (other == null) return orderedSet();
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.ID, Arg.BOOL));
+            MemorySegment s = (MemorySegment) h.invokeExact(
+                    ObjC.cls("NSOrderedSet"), ObjC.sel("orderedSetWithSet:copyItems:"), other.peer(), copyItems);
+            return wrap(s);
+        } catch (Throwable t) { throw new RuntimeException("orderedSetWithSet:copyItems: failed", t); }
+    }
+
+    /// objectsAtIndexes:.
+    public NSArray objectsAtIndexes(NSIndexSet indexes) {
+        ensureInit();
+        if (indexes == null) return NSArray.array();
+        return NSArray.wrap(ObjC.msgSendIdId(peer, ObjC.sel("objectsAtIndexes:"), indexes.peer()));
+    }
+
+    /// isEqualToOrderedSet:.
+    public boolean isEqualToOrderedSet(NSOrderedSet other) {
+        ensureInit();
+        if (other == null) return false;
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.BOOL, Arg.ID));
+            return (boolean) h.invokeExact(peer, ObjC.sel("isEqualToOrderedSet:"), other.peer());
+        } catch (Throwable t) { throw new RuntimeException("isEqualToOrderedSet: failed", t); }
+    }
+
+    /// intersectsOrderedSet:.
+    public boolean intersectsOrderedSet(NSOrderedSet other) {
+        ensureInit();
+        if (other == null) return false;
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.BOOL, Arg.ID));
+            return (boolean) h.invokeExact(peer, ObjC.sel("intersectsOrderedSet:"), other.peer());
+        } catch (Throwable t) { throw new RuntimeException("intersectsOrderedSet: failed", t); }
+    }
+
+    /// intersectsSet:.
+    public boolean intersectsSet(NSSet other) {
+        ensureInit();
+        if (other == null) return false;
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.BOOL, Arg.ID));
+            return (boolean) h.invokeExact(peer, ObjC.sel("intersectsSet:"), other.peer());
+        } catch (Throwable t) { throw new RuntimeException("intersectsSet: failed", t); }
+    }
+
+    /// isSubsetOfOrderedSet:.
+    public boolean isSubsetOfOrderedSet(NSOrderedSet other) {
+        ensureInit();
+        if (other == null) return false;
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.BOOL, Arg.ID));
+            return (boolean) h.invokeExact(peer, ObjC.sel("isSubsetOfOrderedSet:"), other.peer());
+        } catch (Throwable t) { throw new RuntimeException("isSubsetOfOrderedSet: failed", t); }
+    }
+
+    /// isSubsetOfSet:.
+    public boolean isSubsetOfSet(NSSet other) {
+        ensureInit();
+        if (other == null) return false;
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.BOOL, Arg.ID));
+            return (boolean) h.invokeExact(peer, ObjC.sel("isSubsetOfSet:"), other.peer());
+        } catch (Throwable t) { throw new RuntimeException("isSubsetOfSet: failed", t); }
+    }
+
+    /// objectEnumerator — NSEnumerator peer or null (no NSEnumerator wrapper in this batch).
+    public MemorySegment objectEnumerator() {
+        ensureInit();
+        MemorySegment r = ObjC.msgSendId(peer, ObjC.sel("objectEnumerator"));
+        return (r == null || r.address() == 0) ? null : r;
+    }
+
+    /// reverseObjectEnumerator — NSEnumerator peer or null.
+    public MemorySegment reverseObjectEnumerator() {
+        ensureInit();
+        MemorySegment r = ObjC.msgSendId(peer, ObjC.sel("reverseObjectEnumerator"));
+        return (r == null || r.address() == 0) ? null : r;
+    }
+
+    /// reversedOrderedSet.
+    public NSOrderedSet reversedOrderedSet() {
+        ensureInit();
+        return wrap(ObjC.msgSendId(peer, ObjC.sel("reversedOrderedSet")));
+    }
+
+    /// set — unordered facade (mutations to the receiver show through; not a copy).
+    public NSSet set() {
+        ensureInit();
+        return NSSet.wrap(ObjC.msgSendId(peer, ObjC.sel("set")));
+    }
+
+    /// descriptionWithLocale: — NSLocale peer, or NULL for the canonical description.
+    public NSString descriptionWithLocale(MemorySegment locale) {
+        ensureInit();
+        return NSString.wrap(ObjC.msgSendIdId(peer, ObjC.sel("descriptionWithLocale:"),
+                (locale == null ? MemorySegment.NULL : locale)));
+    }
 }

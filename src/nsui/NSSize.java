@@ -6,6 +6,8 @@ import java.lang.foreign.ValueLayout;
 import nsui.objc.Scratch;
 
 /// NSSize as a Java value type: {width, height} in points.
+/// SDK C-function coverage: NSEqualSizes/equals, NSStringFromSize/toNSString,
+/// NSSizeFromString/fromString — all mirrored (pure Java).
 public record NSSize(double width, double height) {
 
     public static final NSSize ZERO = new NSSize(0, 0);
@@ -76,6 +78,24 @@ public record NSSize(double width, double height) {
     /// Equality with epsilon.
     public boolean epsilonEquals(NSSize other, double eps) {
         return Math.abs(width - other.width) < eps && Math.abs(height - other.height) < eps;
+    }
+
+    /// NSStringFromSize — Apple brace format `{width, height}`.
+    public NSString toNSString() {
+        return NSString.of("{" + width + ", " + height + "}");
+    }
+
+    /// NSSizeFromString — parse `{width, height}` (whitespace tolerated). Null for null/bad input.
+    public static NSSize fromString(String s) {
+        if (s == null) return null;
+        double[] v = NSPoint.parsePair(s);
+        return v == null ? null : new NSSize(v[0], v[1]);
+    }
+
+    /// NSSizeFromString from an NSString peer (null-safe).
+    public static NSSize fromNSString(NSString s) {
+        if (s == null) return null;
+        return fromString(s.string());
     }
 
     @Override public String toString() { return "NSSize{w=" + width + ", h=" + height + "}"; }

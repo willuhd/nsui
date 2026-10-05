@@ -5,13 +5,27 @@ import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
 
 import nsui.objc.ObjC;
-import nsui.objc.Scratch;
 import nsui.objc.Sig;
 import static nsui.objc.Sig.Ret;
 
 /// NSData — minimal wrapper over native `NSData` / `NSMutableData`.
 /// Factories build real native data (retained: immortal by design), so AppKit
 /// APIs reading the peer see the bytes. No side map, no address keys.
+///
+/// Header-completeness (`NSData.h`, immutable): every safe method whose shape is in the
+/// Sig vocabulary is wrapped below. OMITTED — rangeOfData:options:range: (needs
+/// of(RANGE,ID,INT,RANGE), not in Sig); dataWithBytesNoCopy:.../initWithBytesNoCopy:.../
+/// initWithBytesNoCopy:...deallocator: (no-copy ownership; use the copying dataWithBytes:);
+/// dataWithBytes:length: NATIVE form needs of(ID,ID,INT), not in Sig — dataWithBytes(byte[])
+/// below composes NSMutableData.data + appendBytes:length: instead (same copy semantics);
+/// dataWithContentsOfFile:options:error:/dataWithContentsOfURL:options:error:/
+/// initWithContentsOf.../writeToFile:options:error:/writeToURL:options:error: and
+/// decompressedDataUsingAlgorithm:.../compressedDataUsingAlgorithm:... (NSError** out-params);
+/// getBytes:/getBytes:length:/getBytes:range:/getBytes: (out-buffer plumbing; use toByteArray());
+/// enumerateByteRangesUsingBlock: (block); initWithBase64EncodedString:options:/
+/// initWithBase64EncodedData:options: (need of(ID,ID,INT), not in Sig — encode side is kept);
+/// initWithData: (covered by dataWithData:); dataWithContentsOfMappedFile:/initWithContentsOfMappedFile:/
+/// base64Encoding/initWithBase64Encoding: (deprecated); NSPurgeableData (no wrapper in this batch).
 public class NSData extends NSObject {
 
     private static MemorySegment retain(MemorySegment v) { return ObjC.msgSendId(v, ObjC.sel("retain")); }
@@ -35,20 +49,14 @@ public class NSData extends NSObject {
     }
 
     /// Create NSData from Java bytes — real native data, retained.
+    /// Composed from NSMutableData.data + appendBytes:length: (same copying semantics):
+    /// the native dataWithBytes:length: needs of(ID,ID,INT), not in Sig (see class docs).
     public static NSData dataWithBytes(byte[] bytes) {
         if (bytes == null) bytes = new byte[0];
         ensureInit();
-        try {
-            // Call-scoped bump: dataWithBytes:length: copies synchronously.
-            MemorySegment buf = Scratch.allocInput(Math.max(1, bytes.length));
-            if (bytes.length > 0) {
-                MemorySegment.copy(bytes, 0, buf, ValueLayout.JAVA_BYTE, 0, bytes.length);
-            }
-            MethodHandle hBytes = ObjC.handle(Sig.of(Ret.ID, Sig.Arg.ID, Sig.Arg.INT));
-            MemorySegment peer = (MemorySegment) hBytes.invokeExact(
-                    ObjC.cls("NSData"), ObjC.sel("dataWithBytes:length:"), buf, (long) bytes.length);
-            return wrap(retain(peer));
-        } catch (Throwable t) { throw new RuntimeException("dataWithBytes:length: failed", t); }
+        NSMutableData md = NSMutableData.data();
+        md.appendBytes(bytes);
+        return wrap(retain(md.peer()));
     }
 
     /// dataWithBytesNoCopy variant — same as dataWithBytes for minimal.
@@ -130,4 +138,61 @@ public class NSData extends NSObject {
             return (boolean) h.invokeExact(target, ObjC.sel("writeToFile:atomically:"), ObjC.nsstring(path), atomically);
         } catch (Throwable t) { throw new RuntimeException("writeToFile:atomically: failed", t); }
     }
+
+    /// [NSData dataWithData:] — copy from another data object.
+    public static NSData dataWithData(NSData other) {
+        ensureInit();
+        if (other == null) return data();
+        return wrap(retain(ObjC.msgSendIdId(ObjC.cls("NSData"), ObjC.sel("dataWithData:"), other.peer())));
+    }
+
+    /// [NSData dataWithContentsOfFile:] — read a file (nil when missing/unreadable).
+    public static NSData dataWithContentsOfFile(String path) {
+        ensureInit();
+        if (path == null || path.isEmpty()) return null;
+        return wrap(retain(ObjC.msgSendIdId(ObjC.cls("NSData"), ObjC.sel("dataWithContentsOfFile:"), ObjC.nsstring(path))));
+    }
+
+    /// [NSData dataWithContentsOfURL:] — NSURL peer (nil-safe: null for nil).
+    /// Build file URLs via `ObjC.msgSendIdId(ObjC.cls("NSURL"), ObjC.sel("fileURLWithPath:"),
+    /// ObjC.nsstring(path))` (house NSURL idiom, e.g. NSPathControl).
+    public static NSData dataWithContentsOfURL(MemorySegment url) {
+        ensureInit();
+        if (url == null || url.address() == 0) return null;
+        return wrap(retain(ObjC.msgSendIdId(ObjC.cls("NSData"), ObjC.sel("dataWithContentsOfURL:"), url)));
+    }
+
+    /// [data writeToURL:atomically:] — NSURL peer (nil-safe: false for nil).
+    public boolean writeToURL(MemorySegment url, boolean atomically) {
+        ensureInit();
+        if (url == null || url.address() == 0) return false;
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.BOOL, Sig.Arg.ID, Sig.Arg.BOOL));
+            return (boolean) h.invokeExact(peer, ObjC.sel("writeToURL:atomically:"), url, atomically);
+        } catch (Throwable t) { throw new RuntimeException("writeToURL:atomically: failed", t); }
+    }
+
+    /// base64EncodedStringWithOptions: (0 for the default line-break-free form).
+    public NSString base64EncodedStringWithOptions(long options) {
+        ensureInit();
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Sig.Arg.INT));
+            MemorySegment r = (MemorySegment) h.invokeExact(peer, ObjC.sel("base64EncodedStringWithOptions:"), options);
+            return NSString.wrap(r);
+        } catch (Throwable t) { throw new RuntimeException("base64EncodedStringWithOptions: failed", t); }
+    }
+
+    /// base64EncodedDataWithOptions:.
+    public NSData base64EncodedDataWithOptions(long options) {
+        ensureInit();
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Sig.Arg.INT));
+            MemorySegment r = (MemorySegment) h.invokeExact(peer, ObjC.sel("base64EncodedDataWithOptions:"), options);
+            return wrap(retain(r));
+        } catch (Throwable t) { throw new RuntimeException("base64EncodedDataWithOptions: failed", t); }
+    }
+
+    // base64 decode (initWithBase64EncodedString:options:/initWithBase64EncodedData:options:)
+    // omitted: both need of(ID,ID,INT), not in Sig (see class docs). No decode path exists
+    // in the current vocabulary; the encode side above is fully testable.
 }

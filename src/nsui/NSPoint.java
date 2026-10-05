@@ -7,6 +7,8 @@ import nsui.objc.Scratch;
 
 /// NSPoint as a Java value type: `{x, y`} in points (CGFloat doubles).
 /// Marshals to/from the FFM struct segment only at the call boundary.
+/// SDK C-function coverage: NSEqualPoints/equals, NSStringFromPoint/toNSString,
+/// NSPointFromString/fromString — all mirrored (pure Java).
 public record NSPoint(double x, double y) {
 
     public static final NSPoint ZERO = new NSPoint(0, 0);
@@ -72,6 +74,37 @@ public record NSPoint(double x, double y) {
     /// Equality with epsilon.
     public boolean epsilonEquals(NSPoint other, double eps) {
         return Math.abs(x - other.x) < eps && Math.abs(y - other.y) < eps;
+    }
+
+    /// NSStringFromPoint — Apple brace format `{x, y}`.
+    public NSString toNSString() {
+        return NSString.of("{" + x + ", " + y + "}");
+    }
+
+    /// NSPointFromString — parse `{x, y}` (whitespace tolerated). Null for null/bad input.
+    public static NSPoint fromString(String s) {
+        if (s == null) return null;
+        double[] v = parsePair(s);
+        return v == null ? null : new NSPoint(v[0], v[1]);
+    }
+
+    /// NSPointFromString from an NSString peer (null-safe).
+    public static NSPoint fromNSString(NSString s) {
+        if (s == null) return null;
+        return fromString(s.string());
+    }
+
+    /// Parse `{a, b}` into doubles (null when the shape is wrong). Shared with NSSize.
+    static double[] parsePair(String s) {
+        String t = s.trim();
+        if (!t.startsWith("{") || !t.endsWith("}")) return null;
+        String[] parts = t.substring(1, t.length() - 1).split(",");
+        if (parts.length != 2) return null;
+        try {
+            return new double[]{Double.parseDouble(parts[0].trim()), Double.parseDouble(parts[1].trim())};
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 
     @Override public String toString() { return "NSPoint{x=" + x + ", y=" + y + "}"; }

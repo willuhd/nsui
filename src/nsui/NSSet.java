@@ -10,6 +10,14 @@ import static nsui.objc.Sig.Ret;
 
 /// NSSet — minimal typed wrapper over native `NSSet` / `NSMutableSet`.
 /// Thin, stateless: every method maps to one `objc_msgSend`.
+///
+/// Header-completeness (`NSSet.h`, immutable): every safe method whose shape is in the
+/// Sig vocabulary is wrapped below. OMITTED — setWithObjects:count: (C object array;
+/// covered by setWithObjects(NSObject...)); makeObjectsPerformSelector: KEPT (SEL is
+/// id-shaped; see NSArray); enumerateObjectsUsingBlock:/enumerateObjectsWithOptions:.../
+/// objectsPassingTest:/objectsWithOptions:... (blocks); getObjects:... (none; NSSet has no
+/// buffer getter); init* (covered by set()/setWithObject:/setWithArray:/setWithSet:, except
+/// coder variants needing NSCoder); NSCountedSet (no wrapper in this batch: needs a new file).
 public class NSSet extends NSObject {
 
             private record Handles(MethodHandle hCount, MethodHandle hContains, MethodHandle hMember, MethodHandle hAnyObject) {}
@@ -153,5 +161,70 @@ public class NSSet extends NSObject {
             MethodHandle h = ObjC.handle(Sig.of(Ret.BOOL, Arg.ID));
             return (boolean) h.invokeExact(peer, ObjC.sel("isSubsetOfSet:"), other.peer());
         } catch (Throwable t) { throw new RuntimeException("isSubsetOfSet: failed", t); }
+    }
+
+    /// [NSSet setWithSet:] — copy from another set (nil-safe: empty set for nil).
+    public static NSSet setWithSet(NSSet other) {
+        ensureInit();
+        if (other == null) return set();
+        return wrap(ObjC.msgSendIdId(ObjC.cls("NSSet"), ObjC.sel("setWithSet:"), other.peer()));
+    }
+
+    /// setByAddingObject:.
+    public NSSet setByAddingObject(NSObject object) {
+        ensureInit();
+        if (object == null) return wrap(peer);
+        return wrap(ObjC.msgSendIdId(peer, ObjC.sel("setByAddingObject:"), object.peer()));
+    }
+
+    /// setByAddingObjectsFromSet:.
+    public NSSet setByAddingObjectsFromSet(NSSet other) {
+        ensureInit();
+        if (other == null) return wrap(peer);
+        return wrap(ObjC.msgSendIdId(peer, ObjC.sel("setByAddingObjectsFromSet:"), other.peer()));
+    }
+
+    /// setByAddingObjectsFromArray:.
+    public NSSet setByAddingObjectsFromArray(NSArray other) {
+        ensureInit();
+        if (other == null) return wrap(peer);
+        return wrap(ObjC.msgSendIdId(peer, ObjC.sel("setByAddingObjectsFromArray:"), other.peer()));
+    }
+
+    /// descriptionWithLocale: — NSLocale peer, or NULL for the canonical description.
+    public NSString descriptionWithLocale(MemorySegment locale) {
+        ensureInit();
+        return NSString.wrap(ObjC.msgSendIdId(peer, ObjC.sel("descriptionWithLocale:"),
+                (locale == null ? MemorySegment.NULL : locale)));
+    }
+
+    /// objectEnumerator — NSEnumerator peer or null (no NSEnumerator wrapper in this batch).
+    public MemorySegment objectEnumerator() {
+        ensureInit();
+        MemorySegment r = ObjC.msgSendId(peer, ObjC.sel("objectEnumerator"));
+        return (r == null || r.address() == 0) ? null : r;
+    }
+
+    /// makeObjectsPerformSelector: — send SEL to every member (must take no args and
+    /// exist on every member; e.g. ObjC.sel("description")). Raises (fatal) otherwise.
+    public void makeObjectsPerformSelector(MemorySegment selector) {
+        ensureInit();
+        if (selector == null || selector.address() == 0)
+            throw new IllegalArgumentException("makeObjectsPerformSelector: null");
+        ObjC.msgSendVoidId(peer, ObjC.sel("makeObjectsPerformSelector:"), selector);
+    }
+
+    /// makeObjectsPerformSelector:withObject:.
+    public void makeObjectsPerformSelectorWithObject(MemorySegment selector, MemorySegment argument) {
+        ensureInit();
+        if (selector == null || selector.address() == 0)
+            throw new IllegalArgumentException("makeObjectsPerformSelector: null");
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.ID));
+            h.invokeExact(peer, ObjC.sel("makeObjectsPerformSelector:withObject:"),
+                    selector, (MemorySegment) (argument == null ? MemorySegment.NULL : argument));
+        } catch (Throwable t) {
+            throw new RuntimeException("makeObjectsPerformSelector:withObject: failed", t);
+        }
     }
 }

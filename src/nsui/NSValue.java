@@ -13,6 +13,13 @@ import static nsui.objc.Sig.Ret;
 /// AppKit APIs reading the peer see the value (dummy peers never could).
 /// no side map, no address keys, no ABA hazard.
 /// Getters read live values via struct-return msgSend.
+///
+/// Header-completeness (`NSValue.h` + `NSGeometry.h`/`NSRange.h` value categories): every
+/// safe method whose shape is in the Sig vocabulary is wrapped below. OMITTED —
+/// valueWithEdgeInsets:/edgeInsetsValue (need an NSEdgeInsets arg/return class in Sig;
+/// reusing of(ID,RECT)/of(RECT) would lie in the vocabulary accounting — flagged for the
+/// Sig owner); valueWithBytes:objCType:/value:withObjCType:/initWithBytes:objCType: and
+/// getValue:/getValue:size: (raw buffers + type strings; unsafe); initWithCoder: (needs NSCoder).
 public class NSValue extends NSObject {
 
     private static MemorySegment retain(MemorySegment v) { return ObjC.msgSendId(v, ObjC.sel("retain")); }
@@ -170,5 +177,15 @@ public class NSValue extends NSObject {
             MemorySegment r = (MemorySegment) h.invokeExact(peer, ObjC.sel("pointerValue"));
             return (r == null || r.address() == 0) ? null : r;
         } catch (Throwable t) { throw new RuntimeException("pointerValue failed", t); }
+    }
+
+    /// isEqualToValue:.
+    public boolean isEqualToValue(NSValue other) {
+        ensureInit();
+        if (other == null) return false;
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.BOOL, Arg.ID));
+            return (boolean) h.invokeExact(peer, ObjC.sel("isEqualToValue:"), other.peer());
+        } catch (Throwable t) { throw new RuntimeException("isEqualToValue: failed", t); }
     }
 }

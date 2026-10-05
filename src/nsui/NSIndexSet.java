@@ -9,6 +9,13 @@ import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
 /// NSIndexSet — minimal wrapper over native `NSIndexSet` / `NSMutableIndexSet`.
+///
+/// Header-completeness (`NSIndexSet.h`, immutable): every safe method whose shape is in
+/// the Sig vocabulary is wrapped below. OMITTED — getIndexes:maxCount:inIndexRange:
+/// (out-buffer + NSRangePointer plumbing); enumerateIndexesUsingBlock:/...WithOptions:/...
+/// InRange:.../enumerateRanges.../indexPassingTest:/indexWithOptions:.../indexInRange:.../
+/// indexesPassingTest:/... (blocks); initWithIndexSet:/initWithIndexesInRange:/initWithIndex:
+/// (covered by indexSet()/indexSetWithIndex:/indexSetWithIndexesInRange:).
 public class NSIndexSet extends NSObject {
 
     private static volatile boolean initialized;
@@ -109,6 +116,70 @@ public class NSIndexSet extends NSObject {
             MethodHandle h = ObjC.handle(Sig.of(Ret.BOOL, Arg.ID));
             return (boolean) h.invokeExact(peer, ObjC.sel("isEqualToIndexSet:"), other.peer());
         } catch (Throwable t) { throw new RuntimeException("isEqualToIndexSet: failed", t); }
+    }
+
+    /// indexGreaterThanIndex: — NSNotFound past the end.
+    public long indexGreaterThanIndex(long index) {
+        ensureInit();
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.INT, Arg.INT));
+            return (long) h.invokeExact(peer, ObjC.sel("indexGreaterThanIndex:"), index);
+        } catch (Throwable t) { throw new RuntimeException("indexGreaterThanIndex: failed", t); }
+    }
+
+    /// indexLessThanIndex: — NSNotFound before the start.
+    public long indexLessThanIndex(long index) {
+        ensureInit();
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.INT, Arg.INT));
+            return (long) h.invokeExact(peer, ObjC.sel("indexLessThanIndex:"), index);
+        } catch (Throwable t) { throw new RuntimeException("indexLessThanIndex: failed", t); }
+    }
+
+    /// indexGreaterThanOrEqualToIndex: — NSNotFound when none qualifies.
+    public long indexGreaterThanOrEqualToIndex(long index) {
+        ensureInit();
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.INT, Arg.INT));
+            return (long) h.invokeExact(peer, ObjC.sel("indexGreaterThanOrEqualToIndex:"), index);
+        } catch (Throwable t) { throw new RuntimeException("indexGreaterThanOrEqualToIndex: failed", t); }
+    }
+
+    /// indexLessThanOrEqualToIndex: — NSNotFound when none qualifies.
+    public long indexLessThanOrEqualToIndex(long index) {
+        ensureInit();
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.INT, Arg.INT));
+            return (long) h.invokeExact(peer, ObjC.sel("indexLessThanOrEqualToIndex:"), index);
+        } catch (Throwable t) { throw new RuntimeException("indexLessThanOrEqualToIndex: failed", t); }
+    }
+
+    /// countOfIndexesInRange:.
+    public long countOfIndexesInRange(NSRange range) {
+        ensureInit();
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.INT, Arg.RANGE));
+            return (long) h.invokeExact(peer, ObjC.sel("countOfIndexesInRange:"), range.toSegment());
+        } catch (Throwable t) { throw new RuntimeException("countOfIndexesInRange: failed", t); }
+    }
+
+    /// containsIndexes: — YES when every index of other is present (nil-safe: false).
+    public boolean containsIndexes(NSIndexSet other) {
+        ensureInit();
+        if (other == null) return false;
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.BOOL, Arg.ID));
+            return (boolean) h.invokeExact(peer, ObjC.sel("containsIndexes:"), other.peer());
+        } catch (Throwable t) { throw new RuntimeException("containsIndexes: failed", t); }
+    }
+
+    /// intersectsIndexesInRange:.
+    public boolean intersectsIndexesInRange(NSRange range) {
+        ensureInit();
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.BOOL, Arg.RANGE));
+            return (boolean) h.invokeExact(peer, ObjC.sel("intersectsIndexesInRange:"), range.toSegment());
+        } catch (Throwable t) { throw new RuntimeException("intersectsIndexesInRange: failed", t); }
     }
 
     /// enumerateIndexes — convenience callback for testing.

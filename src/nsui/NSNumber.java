@@ -10,6 +10,16 @@ import static nsui.objc.Sig.Ret;
 
 /// NSNumber — minimal wrapper over native `NSNumber` (subclass of NSValue).
 /// Provides wrap/create and numeric accessors.
+///
+/// Header-completeness (`NSValue.h`, NSNumber interface + creation): every safe method
+/// whose shape is in the Sig vocabulary is wrapped below. Narrow-width factories
+/// (numberWithChar:/UnsignedChar:/Short:/.../LongLong:/...) all ride of(ID,INT) — the
+/// FFM long fills the register the callee reads. OMITTED — numberWithFloat: NATIVE form
+/// (needs of(ID,FLOAT), not in Sig): numberWithFloat(float) below doubles through
+/// numberWithDouble (exact: every float is exactly representable as a double; objCType
+/// reports "d" instead of "f" — flagged for the Sig owner to add of(ID,FLOAT));
+/// initWithChar:/.../initWithInteger:/... (covered by the numberWith* factories);
+/// initWithCoder: (needs NSCoder).
 public final class NSNumber extends NSValue {
 
             private record Handles(MethodHandle hIntValue, MethodHandle hDoubleValue, MethodHandle hBoolValue, MethodHandle hFloatValue) {}
@@ -74,14 +84,59 @@ public final class NSNumber extends NSValue {
         }
     }
 
-    /// numberWithFloat:
+    /// numberWithFloat: — via numberWithDouble (of(ID,FLOAT) is not in Sig; see class docs).
     public static NSNumber numberWithFloat(float value) {
-        ensureNumInit();
-        try {
-            MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.FLOAT));
-            MemorySegment s = (MemorySegment) h.invokeExact(ObjC.cls("NSNumber"), ObjC.sel("numberWithFloat:"), value);
-            return wrap(s);
-        } catch (Throwable t) { throw new RuntimeException("numberWithFloat: failed", t); }
+        return numberWithDouble((double) value);
+    }
+
+    /// numberWithChar:.
+    public static NSNumber numberWithChar(long value) {
+        return numberWithInt(value);
+    }
+
+    /// numberWithUnsignedChar:.
+    public static NSNumber numberWithUnsignedChar(long value) {
+        return numberWithInt(value);
+    }
+
+    /// numberWithShort:.
+    public static NSNumber numberWithShort(long value) {
+        return numberWithInt(value);
+    }
+
+    /// numberWithUnsignedShort:.
+    public static NSNumber numberWithUnsignedShort(long value) {
+        return numberWithInt(value);
+    }
+
+    /// numberWithUnsignedInt:.
+    public static NSNumber numberWithUnsignedInt(long value) {
+        return numberWithInt(value);
+    }
+
+    /// numberWithLong:.
+    public static NSNumber numberWithLong(long value) {
+        return numberWithInt(value);
+    }
+
+    /// numberWithUnsignedLong:.
+    public static NSNumber numberWithUnsignedLong(long value) {
+        return numberWithInt(value);
+    }
+
+    /// numberWithLongLong:.
+    public static NSNumber numberWithLongLong(long value) {
+        return numberWithInt(value);
+    }
+
+    /// numberWithUnsignedLongLong: (bits preserved in the long).
+    public static NSNumber numberWithUnsignedLongLong(long value) {
+        return numberWithInt(value);
+    }
+
+    /// numberWithUnsignedInteger:.
+    public static NSNumber numberWithUnsignedInteger(long value) {
+        return numberWithInt(value);
     }
 
     /// intValue
@@ -136,5 +191,95 @@ public final class NSNumber extends NSValue {
             MemorySegment s = (MemorySegment) h.invokeExact(peer, ObjC.sel("stringValue"));
             return NSString.wrap(s);
         } catch (Throwable t) { throw new RuntimeException("stringValue failed", t); }
+    }
+
+    /// charValue.
+    public long charValue() {
+        ensureNumInit();
+        try { return (long) handles.hIntValue().invokeExact(peer, ObjC.sel("charValue")); }
+        catch (Throwable t) { throw new RuntimeException("charValue failed", t); }
+    }
+
+    /// unsignedCharValue.
+    public long unsignedCharValue() {
+        ensureNumInit();
+        try { return (long) handles.hIntValue().invokeExact(peer, ObjC.sel("unsignedCharValue")); }
+        catch (Throwable t) { throw new RuntimeException("unsignedCharValue failed", t); }
+    }
+
+    /// shortValue.
+    public long shortValue() {
+        ensureNumInit();
+        try { return (long) handles.hIntValue().invokeExact(peer, ObjC.sel("shortValue")); }
+        catch (Throwable t) { throw new RuntimeException("shortValue failed", t); }
+    }
+
+    /// unsignedShortValue.
+    public long unsignedShortValue() {
+        ensureNumInit();
+        try { return (long) handles.hIntValue().invokeExact(peer, ObjC.sel("unsignedShortValue")); }
+        catch (Throwable t) { throw new RuntimeException("unsignedShortValue failed", t); }
+    }
+
+    /// unsignedIntValue.
+    public long unsignedIntValue() {
+        ensureNumInit();
+        try { return (long) handles.hIntValue().invokeExact(peer, ObjC.sel("unsignedIntValue")); }
+        catch (Throwable t) { throw new RuntimeException("unsignedIntValue failed", t); }
+    }
+
+    /// unsignedLongValue.
+    public long unsignedLongValue() {
+        ensureNumInit();
+        try { return (long) handles.hIntValue().invokeExact(peer, ObjC.sel("unsignedLongValue")); }
+        catch (Throwable t) { throw new RuntimeException("unsignedLongValue failed", t); }
+    }
+
+    /// longLongValue.
+    public long longLongValue() {
+        ensureNumInit();
+        try { return (long) handles.hIntValue().invokeExact(peer, ObjC.sel("longLongValue")); }
+        catch (Throwable t) { throw new RuntimeException("longLongValue failed", t); }
+    }
+
+    /// unsignedLongLongValue (bits preserved in the long).
+    public long unsignedLongLongValue() {
+        ensureNumInit();
+        try { return (long) handles.hIntValue().invokeExact(peer, ObjC.sel("unsignedLongLongValue")); }
+        catch (Throwable t) { throw new RuntimeException("unsignedLongLongValue failed", t); }
+    }
+
+    /// unsignedIntegerValue.
+    public long unsignedIntegerValue() {
+        ensureNumInit();
+        try { return (long) handles.hIntValue().invokeExact(peer, ObjC.sel("unsignedIntegerValue")); }
+        catch (Throwable t) { throw new RuntimeException("unsignedIntegerValue failed", t); }
+    }
+
+    /// compare: — NSComparisonResult against another number.
+    public long compare(NSNumber other) {
+        ensureNumInit();
+        if (other == null) throw new IllegalArgumentException("compare: null");
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.INT, Arg.ID));
+            return (long) h.invokeExact(peer, ObjC.sel("compare:"), other.peer());
+        } catch (Throwable t) { throw new RuntimeException("compare: failed", t); }
+    }
+
+    /// isEqualToNumber:.
+    public boolean isEqualToNumber(NSNumber other) {
+        ensureNumInit();
+        if (other == null) return false;
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.BOOL, Arg.ID));
+            return (boolean) h.invokeExact(peer, ObjC.sel("isEqualToNumber:"), other.peer());
+        } catch (Throwable t) { throw new RuntimeException("isEqualToNumber: failed", t); }
+    }
+
+    /// descriptionWithLocale: — NSLocale peer, or NULL for the canonical description.
+    public NSString descriptionWithLocale(MemorySegment locale) {
+        ensureNumInit();
+        return NSString.wrap(ObjC.msgSendIdId(peer, ObjC.sel("descriptionWithLocale:"),
+                (locale == null ? MemorySegment.NULL : locale)));
     }
 }

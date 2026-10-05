@@ -15,7 +15,7 @@ import static nsui.objc.Sig.Ret;
 
 /**
  * TouchBarMenuTest — covers TouchBar and Menu paths that previously had no tests
- * and would have caught the prior failures.
+ * and would have caught the prior TestKit.failures().
  *
  * <ul>
  *   <li>NSTouchBar create, setDelegate, setCustomizationIdentifier</li>
@@ -28,14 +28,10 @@ import static nsui.objc.Sig.Ret;
  * </ul>
  */
 public final class TouchBarMenuTest {
-    private static int failures;
+    
     private static int asserts;
 
-    private static void check(boolean ok, String msg) {
-        asserts++;
-        System.out.println((ok ? "PASS" : "FAIL") + ": " + msg);
-        if (!ok) failures++;
-    }
+    private static void check(boolean ok, String msg) { asserts++; TestKit.check(ok, msg); }
 
     public static void main(String[] args) {
         System.out.println("=== TouchBarMenuTest ===");
@@ -44,9 +40,7 @@ public final class TouchBarMenuTest {
         } catch (Throwable t) {
             String m = String.valueOf(t.getMessage()).toLowerCase();
             if (m.contains("connection") || m.contains("dlopen") || m.contains("appkit")) {
-                System.out.println("SKIP: ObjC.init failed (not macOS / connection error): " + t);
-                System.out.println("RESULT: SKIP (connection error, continuing)");
-                System.exit(0);
+                TestKit.skip("ObjC.init failed (not macOS / connection error): : " + t);
             }
             System.out.println("FAIL: ObjC.init threw unexpected: " + t);
             t.printStackTrace(System.out);
@@ -379,8 +373,8 @@ public final class TouchBarMenuTest {
                 String msg = String.valueOf(t.getMessage()).toLowerCase();
                 if (msg.contains("main thread")) {
                     check(true, "SKIP NSStatusItem not on main thread (needs -XstartOnFirstThread): " + t.getMessage());
-                    System.out.println(failures == 0 ? "RESULT: ALL PASS (" + asserts + " assertions)" : "RESULT: " + failures + " of " + asserts + " assertions FAILED");
-                    System.exit(failures == 0 ? 0 : 1);
+                    System.out.println(TestKit.failures() == 0 ? "RESULT: ALL PASS (" + asserts + " assertions)" : "RESULT: " + TestKit.failures() + " of " + asserts + " assertions FAILED");
+                    TestKit.end();
                     return;
                 }
                 throw t;
@@ -485,9 +479,9 @@ public final class TouchBarMenuTest {
             t.printStackTrace(System.out);
         }
 
-        System.out.println(failures == 0
+        System.out.println(TestKit.failures() == 0
                 ? "RESULT: ALL PASS (" + asserts + " assertions)"
-                : "RESULT: " + failures + " of " + asserts + " assertions FAILED");
-        System.exit(failures == 0 ? 0 : 1);
+                : "RESULT: " + TestKit.failures() + " of " + asserts + " assertions FAILED");
+        TestKit.end();
     }
 }

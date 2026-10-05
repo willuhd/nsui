@@ -17,19 +17,16 @@ import nsui.objc.ObjC;
  */
 public final class SelectionWidgetsTest {
 
-    private static int failures;
+    
 
-    private static void check(boolean ok, String msg) {
-        System.out.println((ok ? "PASS" : "FAIL") + ": " + msg);
-        if (!ok) failures++;
-    }
+    
 
     private static void checkEq(long got, long expected, String msg) {
-        check(got == expected, msg + " [got " + got + ", expected " + expected + "]");
+        TestKit.check(got == expected, msg + " [got " + got + ", expected " + expected + "]");
     }
 
     private static void checkStr(String got, String expected, String msg) {
-        check(expected.equals(got), msg + " [got \"" + got + "\", expected \"" + expected + "\"]");
+        TestKit.check(expected.equals(got), msg + " [got \"" + got + "\", expected \"" + expected + "\"]");
     }
 
     public static void main(String[] args) {
@@ -39,7 +36,7 @@ public final class SelectionWidgetsTest {
 
         // ------------------------------------------------------------ NSPopUpButton
         NSPopUpButton popup = NSPopUpButton.create(new NSRect(0, 0, 180, 25));
-        check(popup != null, "NSPopUpButton.create returned a control");
+        TestKit.check(popup != null, "NSPopUpButton.create returned a control");
         popup.addItemWithTitle("One");
         popup.addItemWithTitle("Two");
         popup.addItemWithTitle("Three");
@@ -67,19 +64,19 @@ public final class SelectionWidgetsTest {
         popup.selectItemAtIndex(1);
         checkEq(popup.indexOfSelectedItem(), 1, "NSPopUpButton re-add + selectItemAtIndex(1) -> indexOfSelectedItem()==1");
         // AppKit only fires the action on USER interaction; a programmatic select is a no-op.
-        check(!fired[0], "programmatic selectItemAtIndex: did NOT fire the action (AppKit fires only on user interaction)");
+        TestKit.check(!fired[0], "programmatic selectItemAtIndex: did NOT fire the action (AppKit fires only on user interaction)");
 
         // Prove the wiring is live by sending the selector to the target directly
         // with the button as the sender — exactly what Cocoa dispatches on a click.
         ObjC.msgSendVoidId(target, ObjC.sel("selectionChanged:"), popup.peer());
-        check(fired[0], "direct send [target selectionChanged:(popup)] reached the Java handler -> action wiring verified");
+        TestKit.check(fired[0], "direct send [target selectionChanged:(popup)] reached the Java handler -> action wiring verified");
         // Also: an UNREGISTERED selector on the same target must not crash (proxy guard).
         ObjC.msgSendVoidId(target, ObjC.sel("selectionChanged:"), popup.peer());
-        check(true, "action target handles repeated sends without crashing");
+        TestKit.check(true, "action target handles repeated sends without crashing");
 
         // ------------------------------------------------------------ NSComboBox
         NSComboBox combo = NSComboBox.create(new NSRect(0, 30, 180, 25));
-        check(combo != null, "NSComboBox.create returned a control");
+        TestKit.check(combo != null, "NSComboBox.create returned a control");
         combo.addItemWithObjectValue("a");
         combo.addItemWithObjectValue("b");
         checkEq(combo.numberOfItems(), 2, "NSComboBox numberOfItems()==2 after 2 addItemWithObjectValue:");
@@ -87,11 +84,11 @@ public final class SelectionWidgetsTest {
         checkEq(combo.indexOfSelectedItem(), 1, "NSComboBox selectItemAtIndex(1) -> indexOfSelectedItem()==1");
         checkStr(combo.stringValue(), "b", "NSComboBox stringValue()=='b'");
         combo.setEditable(true);
-        check(true, "NSComboBox setEditable(true) without crash");
+        TestKit.check(true, "NSComboBox setEditable(true) without crash");
 
         // ------------------------------------------------------------ NSSegmentedControl
         NSSegmentedControl seg = NSSegmentedControl.create(new NSRect(0, 60, 240, 24));
-        check(seg != null, "NSSegmentedControl.create returned a control");
+        TestKit.check(seg != null, "NSSegmentedControl.create returned a control");
         seg.setSegmentCount(3);
         seg.setLabel("A", 0);
         seg.setLabel("B", 1);
@@ -99,9 +96,9 @@ public final class SelectionWidgetsTest {
         seg.setSelectedSegment(1);
         checkEq(seg.selectedSegment(), 1, "NSSegmentedControl setSelectedSegment(1) -> selectedSegment()==1");
         seg.setSegmentStyle(1);
-        check(true, "NSSegmentedControl setSegmentStyle(1) without crash");
+        TestKit.check(true, "NSSegmentedControl setSegmentStyle(1) without crash");
 
-        System.out.println(failures == 0 ? "RESULT: ALL PASS" : "RESULT: " + failures + " FAILURE(S)");
-        System.exit(failures == 0 ? 0 : 1);
+        System.out.println(TestKit.failures() == 0 ? "RESULT: ALL PASS" : "RESULT: " + TestKit.failures() + " FAILURE(S)");
+        TestKit.end();
     }
 }

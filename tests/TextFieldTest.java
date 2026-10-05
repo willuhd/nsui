@@ -25,12 +25,9 @@ import nsui.objc.ObjC;
  */
 public final class TextFieldTest {
 
-    private static int failures;
+    
 
-    private static void check(boolean ok, String msg) {
-        System.out.println((ok ? "PASS" : "FAIL") + ": " + msg);
-        if (!ok) failures++;
-    }
+    
 
     public static void main(String[] args) throws InterruptedException {
         System.out.println("=== TextFieldTest — real NSTextField control ===");
@@ -53,7 +50,7 @@ public final class TextFieldTest {
         // ---- value round-trip, DETERMINISTIC: read back before the field ever
         //      touches a window (pure object state — no window-server in the loop) ----
         String pre = field.stringValue();
-        check("hello NSUI3".equals(pre), "pre-window stringValue round-trip == \"hello NSUI3\" (got \"" + pre + "\")");
+        TestKit.check("hello NSUI3".equals(pre), "pre-window stringValue round-trip == \"hello NSUI3\" (got \"" + pre + "\")");
 
         field.setFont(NSFont.fontWithName("Helvetica", 14));
         field.setBezeled(true);
@@ -61,10 +58,8 @@ public final class TextFieldTest {
         field.setDrawsBackground(true);
 
         content.addSubview(field);   // controls are views now (NSControl extends NSView)
-        app.activateIgnoringOtherApps(true);
-        window.makeKeyAndOrderFront(null);
         app.finishLaunching();
-        pumpForMs(app, 600);
+        TestKit.pump(app, 600);
 
         // ---- in-window read: settle up to 3s. AppKit's field cell can briefly
         //      lag setStringValue: under window-server timing (observed garbage
@@ -74,10 +69,10 @@ public final class TextFieldTest {
         String value = null;
         for (int i = 0; i < 30 && !"hello NSUI3".equals(value); i++) {
             value = field.stringValue();
-            if (!"hello NSUI3".equals(value)) pumpForMs(app, 100);
+            if (!"hello NSUI3".equals(value)) TestKit.pump(app, 100);
         }
         if ("hello NSUI3".equals(value)) {
-            check(true, "in-window stringValue settled to \"hello NSUI3\"");
+            TestKit.check(true, "in-window stringValue settled to \"hello NSUI3\"");
         } else {
             System.out.println("NOTE: in-window stringValue never settled (got \"" + value
                     + "\") — AppKit cell timing race; wrapper round-trip already proven pre-window.");
@@ -88,45 +83,33 @@ public final class TextFieldTest {
         String fontName = ObjC.toString(
                 ObjC.msgSendId(ObjC.msgSendId(field.peer(), ObjC.sel("font")), ObjC.sel("fontName")));
         System.out.println("  [field font] fontName = \"" + fontName + "\"");
-        check("Helvetica".equals(fontName), "field font round-trip == \"Helvetica\" (got \"" + fontName + "\")");
+        TestKit.check("Helvetica".equals(fontName), "field font round-trip == \"Helvetica\" (got \"" + fontName + "\")");
 
         // Double-check the requested NSFont's own name matches (sanity on the fixture).
         String requestedName = NSFont.fontWithName("Helvetica", 14).fontName();
         System.out.println("  requested fontWithName(\"Helvetica\", 14).fontName = \"" + requestedName + "\"");
 
         // ---- editability / bezel / background flags are readable back ----
-        check(ObjC.msgSendBool(field.peer(), ObjC.sel("isEditable")),
+        TestKit.check(ObjC.msgSendBool(field.peer(), ObjC.sel("isEditable")),
                 "field isEditable after setEditable(true)");
-        check(ObjC.msgSendBool(field.peer(), ObjC.sel("isBezeled")),
+        TestKit.check(ObjC.msgSendBool(field.peer(), ObjC.sel("isBezeled")),
                 "field isBezeled after setBezeled(true)");
-        check(ObjC.msgSendBool(field.peer(), ObjC.sel("drawsBackground")),
+        TestKit.check(ObjC.msgSendBool(field.peer(), ObjC.sel("drawsBackground")),
                 "field drawsBackground after setDrawsBackground(true)");
 
         // ---- frame sanity ----
         NSRect f = field.frame();
-        check(Math.abs(f.x() - 100.0) <= 0.01, "field.frame().x preserved (got " + f.x() + ")");
-        check(Math.abs(f.width() - 300.0) <= 0.01, "field.frame().width preserved (got " + f.width() + ")");
+        TestKit.check(Math.abs(f.x() - 100.0) <= 0.01, "field.frame().x preserved (got " + f.x() + ")");
+        TestKit.check(Math.abs(f.width() - 300.0) <= 0.01, "field.frame().width preserved (got " + f.width() + ")");
 
-        System.out.println(failures == 0 ? "RESULT: ALL PASS" : "RESULT: " + failures + " FAILURE(S)");
-        window.performClose(null);
-        System.exit(failures == 0 ? 0 : 1);
+        System.out.println(TestKit.failures() == 0 ? "RESULT: ALL PASS" : "RESULT: " + TestKit.failures() + " FAILURE(S)");
+        TestKit.close(window);
+        TestKit.end();
     }
 
     // ------------------------------------------------------------------ helpers
 
-    private static void pumpOnce(NSApplication app) {
-        MemorySegment until = ObjC.msgSendIdDouble(
-                ObjC.cls("NSDate"), ObjC.sel("dateWithTimeIntervalSinceNow:"), 0.05);
-        NSEvent ev = app.nextEvent(-1L, until, "kCFRunLoopDefaultMode", true);
-        if (ev != null) app.sendEvent(ev);
-        app.updateWindows();
-    }
+    
 
-    private static void pumpForMs(NSApplication app, long ms) throws InterruptedException {
-        long deadline = System.currentTimeMillis() + ms;
-        while (System.currentTimeMillis() < deadline) {
-            pumpOnce(app);
-            Thread.sleep(10);
-        }
-    }
+    
 }

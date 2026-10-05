@@ -43,12 +43,9 @@ import static nsui.objc.Sig.Ret;
  */
 public final class NSEventTest {
 
-    private static int failures;
+    
 
-    private static void check(boolean ok, String msg) {
-        System.out.println((ok ? "PASS" : "FAIL") + ": " + msg);
-        if (!ok) failures++;
-    }
+    
 
     public static void main(String[] args) throws Throwable {
         System.out.println("=== NSEventTest — synthetic click + accessors ===");
@@ -65,8 +62,7 @@ public final class NSEventTest {
         NSView view = NSView.create(new NSRect(0, 0, 600, 400), (ctx, dirty) -> {});
         window.setContentView(view);
 
-        app.activateIgnoringOtherApps(true);
-        window.makeKeyAndOrderFront(null);
+        TestKit.showKey(window);
         app.finishLaunching();
 
         // ---- CoreGraphics downcall handles (runtime-resolved; NEVER static init) ----
@@ -87,8 +83,7 @@ public final class NSEventTest {
         while (attempts < 3 && captured == null) {
             int tap = attempts; // 0 = HID, 1 = Session, 2 = AnnotatedSession
             attempts++;
-            app.activateIgnoringOtherApps(true);
-            window.makeKeyAndOrderFront(null);
+            TestKit.showKey(window);
 
             // Wait for the window-server to make it key+visible, then let it settle.
             long ready = System.currentTimeMillis() + 3000;
@@ -117,10 +112,10 @@ public final class NSEventTest {
             // The event was posted at frame-origin + (300,200), so expect (300,200).
             assertCaptured(captured, window, new NSPoint(300, 200));
             // The windowNumber==window / exact-location / real-timestamp assertions ran:
-            boolean fullPass = failures == 0;
+            boolean fullPass = TestKit.failures() == 0;
             System.out.println(fullPass ? "RESULT: ALL PASS (window-server full spec)"
-                    : "RESULT: " + failures + " FAILURE(S)");
-            window.performClose(null);
+                    : "RESULT: " + TestKit.failures() + " FAILURE(S)");
+            TestKit.close(window);
             System.exit(fullPass ? 0 : 1);
         } else {
             System.out.println("NOTE: window server delivered no click (non-frontmost/headless-ish session "
@@ -128,11 +123,11 @@ public final class NSEventTest {
                     + "into the app (postEvent:atStart:). Window-routed fields (windowNumber==window, "
                     + "exact locationInWindow, real timestamp) cannot be asserted on this path.");
             assertQueuedEvent(hCreate, window, app);
-            System.out.println(failures == 0
+            System.out.println(TestKit.failures() == 0
                     ? "RESULT: PARTIAL PASS (accessor layer proven; window-routed assertions SKIPPED — environment could not deliver a window-server click)"
-                    : "RESULT: " + failures + " FAILURE(S)");
-            window.performClose(null);
-            System.exit(failures == 0 ? 0 : 1);
+                    : "RESULT: " + TestKit.failures() + " FAILURE(S)");
+            TestKit.close(window);
+            TestKit.end();
         }
     }
 
@@ -140,16 +135,16 @@ public final class NSEventTest {
     private static void assertCaptured(NSEvent captured, NSWindow window, NSPoint expect) {
         NSPoint loc = captured.locationInWindow();
         System.out.printf("locationInWindow=%.1f,%.1f expect≈%.1f,%.1f%n", loc.x(), loc.y(), expect.x(), expect.y());
-        check(Math.abs(loc.x() - expect.x()) <= 40, "locationInWindow().x within 40 of " + expect.x() + " (got " + loc.x() + ")");
-        check(Math.abs(loc.y() - expect.y()) <= 40, "locationInWindow().y within 40 of " + expect.y() + " (got " + loc.y() + ")");
-        check(captured.clickCount() >= 1, "clickCount() >= 1 (got " + captured.clickCount() + ")");
-        check(captured.timestamp() > 0, "timestamp() > 0 (got " + captured.timestamp() + ")");
-        check(captured.buttonNumber() == 0, "buttonNumber() == 0 (got " + captured.buttonNumber() + ")");
-        check(captured.windowNumber() == window.windowNumber(),
+        TestKit.check(Math.abs(loc.x() - expect.x()) <= 40, "locationInWindow().x within 40 of " + expect.x() + " (got " + loc.x() + ")");
+        TestKit.check(Math.abs(loc.y() - expect.y()) <= 40, "locationInWindow().y within 40 of " + expect.y() + " (got " + loc.y() + ")");
+        TestKit.check(captured.clickCount() >= 1, "clickCount() >= 1 (got " + captured.clickCount() + ")");
+        TestKit.check(captured.timestamp() > 0, "timestamp() > 0 (got " + captured.timestamp() + ")");
+        TestKit.check(captured.buttonNumber() == 0, "buttonNumber() == 0 (got " + captured.buttonNumber() + ")");
+        TestKit.check(captured.windowNumber() == window.windowNumber(),
                 "windowNumber() == window.windowNumber() (event=" + captured.windowNumber()
                         + " window=" + window.windowNumber() + ")");
         long mods = captured.modifierFlags();
-        check(mods >= 0, "modifierFlags() is a valid mask >= 0 (got " + mods + ")");
+        TestKit.check(mods >= 0, "modifierFlags() is a valid mask >= 0 (got " + mods + ")");
         System.out.println("  type=" + captured.type()
                 + " clickCount=" + captured.clickCount()
                 + " button=" + captured.buttonNumber()
@@ -175,23 +170,23 @@ public final class NSEventTest {
                 MemorySegment.NULL, (int) 1 /* kCGEventLeftMouseDown */, point, (int) 0);
 
         MemorySegment nsEv = ObjC.msgSendIdId(ObjC.cls("NSEvent"), ObjC.sel("eventWithCGEvent:"), cgEv);
-        check(nsEv != null && nsEv.address() != 0, "eventWithCGEvent: returned a real NSEvent");
+        TestKit.check(nsEv != null && nsEv.address() != 0, "eventWithCGEvent: returned a real NSEvent");
 
         // [NSApplication postEvent:atStart:] — (void, id, bool)
         ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.BOOL)).invokeExact(
                 app.peer(), ObjC.sel("postEvent:atStart:"), nsEv, true);
 
         NSEvent ev = captureDown(app, 1500);
-        check(ev != null, "queued NSEvent returned by nextEvent");
+        TestKit.check(ev != null, "queued NSEvent returned by nextEvent");
         if (ev == null) return;
 
-        check(ev.type() == 1, "type() == 1 (leftMouseDown) (got " + ev.type() + ")");
-        check(ev.clickCount() >= 1, "clickCount() >= 1 (got " + ev.clickCount() + ")");
-        check(ev.buttonNumber() == 0, "buttonNumber() == 0 (got " + ev.buttonNumber() + ")");
+        TestKit.check(ev.type() == 1, "type() == 1 (leftMouseDown) (got " + ev.type() + ")");
+        TestKit.check(ev.clickCount() >= 1, "clickCount() >= 1 (got " + ev.clickCount() + ")");
+        TestKit.check(ev.buttonNumber() == 0, "buttonNumber() == 0 (got " + ev.buttonNumber() + ")");
         long mods = ev.modifierFlags();
-        check(mods >= 0, "modifierFlags() is a valid mask >= 0 (got " + mods + ")");
+        TestKit.check(mods >= 0, "modifierFlags() is a valid mask >= 0 (got " + mods + ")");
         NSPoint loc = ev.locationInWindow();
-        check(!Double.isNaN(loc.x()) && !Double.isNaN(loc.y()), "locationInWindow() reads a finite point (" + loc + ")");
+        TestKit.check(!Double.isNaN(loc.x()) && !Double.isNaN(loc.y()), "locationInWindow() reads a finite point (" + loc + ")");
         System.out.println("  (fallback) type=" + ev.type() + " clickCount=" + ev.clickCount()
                 + " button=" + ev.buttonNumber() + " winNum=" + ev.windowNumber()
                 + " mods=" + mods + " timestamp=" + ev.timestamp()

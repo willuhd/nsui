@@ -14,13 +14,9 @@ import nsui.objc.*;
  */
 public final class FullCoverageTest {
 
-    private static int failures = 0;
     private static int passes = 0;
 
-    private static void check(boolean ok, String msg) {
-        System.out.println((ok ? "PASS" : "FAIL") + ": " + msg);
-        if (ok) passes++; else failures++;
-    }
+    private static void check(boolean ok, String msg) { if (ok) passes++; TestKit.check(ok, msg); }
     private static void section(String name) {
         System.out.println("\n=== " + name + " ===");
     }
@@ -56,8 +52,8 @@ public final class FullCoverageTest {
         }
 
         System.out.println("\n==============================");
-        System.out.println("FullCoverageTest SUMMARY: " + passes + " PASS, " + failures + " FAIL");
-        System.exit(failures == 0 ? 0 : 1);
+        System.out.println("FullCoverageTest SUMMARY: " + passes + " PASS, " + TestKit.failures() + " FAIL");
+        TestKit.end();
     }
 
     private static void testStructs() {
@@ -389,7 +385,7 @@ public final class FullCoverageTest {
             check(w.delegate()!=null, "delegate non-null");
             try { w.setDelegate((NSObject)null); check(true, "setDelegate null did not crash"); } catch (NullPointerException npe) { check(true, "setDelegate null NPE expected (no ternary)"); } catch (Throwable t) { check(true, "setDelegate null handled: "+t); }
             w.orderOut(null);
-            w.performClose(null);
+            TestKit.close(w);
             panel.orderOut(null);
             sheet.orderOut(null);
         } catch (Throwable t) {

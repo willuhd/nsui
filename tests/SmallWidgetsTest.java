@@ -31,12 +31,9 @@ import nsui.objc.ObjC;
  */
 public final class SmallWidgetsTest {
 
-    private static int failures;
+    
 
-    private static void check(boolean ok, String msg) {
-        System.out.println((ok ? "PASS" : "FAIL") + ": " + msg);
-        if (!ok) failures++;
-    }
+    
 
     public static void main(String[] args) {
         System.out.println("=== SmallWidgetsTest — NSDatePicker/NSColorWell/NSBox/NSStepper/NSLevelIndicator/NSTabView ===");
@@ -48,37 +45,37 @@ public final class SmallWidgetsTest {
         picker.setDatePickerStyle(1L);                      // NSDatePickerStyleTextFieldAndStepper
         MemorySegment now = ObjC.msgSendIdDouble(
                 ObjC.cls("NSDate"), ObjC.sel("dateWithTimeIntervalSinceNow:"), 0.0);
-        check(now != null && now.address() != 0, "NSDate created via dateWithTimeIntervalSinceNow: 0 (non-nil)");
+        TestKit.check(now != null && now.address() != 0, "NSDate created via dateWithTimeIntervalSinceNow: 0 (non-nil)");
         picker.setDateValue(now);
         MemorySegment gotDate = picker.dateValue();
-        check(gotDate != null && gotDate.address() != 0, "NSDatePicker.dateValue() non-nil after setDateValue(now)");
-        check(true, "NSDatePicker style(1)/elements(0x3)/setDateValue no crash");
+        TestKit.check(gotDate != null && gotDate.address() != 0, "NSDatePicker.dateValue() non-nil after setDateValue(now)");
+        TestKit.check(true, "NSDatePicker style(1)/elements(0x3)/setDateValue no crash");
 
         // ------------------------------------------------------------ NSColorWell
         NSColorWell well = NSColorWell.create(new NSRect(0, 0, 60, 24));
         NSColor c = NSColor.create(0.2, 0.4, 0.6, 1.0);
         well.setColor(c);
         NSColor gotColor = well.color();
-        check(gotColor != null && gotColor.peer().address() != 0, "NSColorWell.color() non-nil after setColor");
+        TestKit.check(gotColor != null && gotColor.peer().address() != 0, "NSColorWell.color() non-nil after setColor");
         if (gotColor != null && gotColor.peer().address() != 0) {
             System.out.println("  color() description = " + gotColor.description());
             // also verify raw segment accessor still works
             MemorySegment seg = well.colorSegment();
-            check(seg != null && seg.address() != 0, "NSColorWell.colorSegment() non-nil");
+            TestKit.check(seg != null && seg.address() != 0, "NSColorWell.colorSegment() non-nil");
         }
         well.activate(true);
         well.deactivate();
-        check(true, "NSColorWell activate(true)/deactivate() no crash");
+        TestKit.check(true, "NSColorWell activate(true)/deactivate() no crash");
 
         // ------------------------------------------------------------ NSBox
         NSBox box = NSBox.create(new NSRect(0, 0, 200, 120));
         box.setTitle("Group");
         String t = box.title();
-        check("Group".equals(t), "NSBox.title() == \"Group\" [got \"" + t + "\"]");
+        TestKit.check("Group".equals(t), "NSBox.title() == \"Group\" [got \"" + t + "\"]");
         box.setBoxType(0L);         // NSBoxPrimary
         box.setBorderType(0L);      // NSNoBorder
         box.setTitlePosition(0L);   // NSNoTitle
-        check(true, "NSBox boxType/borderType/titlePosition setters no crash");
+        TestKit.check(true, "NSBox boxType/borderType/titlePosition setters no crash");
         System.out.println("  NSBox title after setTitlePosition(0)/setBoxType(0) = \"" + box.title() + "\"");
 
         // ------------------------------------------------------------ NSStepper
@@ -88,11 +85,11 @@ public final class SmallWidgetsTest {
         stepper.setIncrement(1.0);
         stepper.setDoubleValue(5.0);
         double v = stepper.doubleValue();
-        check(Math.abs(v - 5.0) < 0.01, "NSStepper.doubleValue() == 5.0 [got " + v + "]");
+        TestKit.check(Math.abs(v - 5.0) < 0.01, "NSStepper.doubleValue() == 5.0 [got " + v + "]");
         stepper.setDoubleValue(11.0);
         double vClamp = stepper.doubleValue();
         boolean clamped = Math.abs(vClamp - 10.0) < 0.01;
-        check(clamped, "NSStepper clamps 11.0 -> 10.0 (max) [got " + vClamp + "]");
+        TestKit.check(clamped, "NSStepper clamps 11.0 -> 10.0 (max) [got " + vClamp + "]");
         if (!clamped) System.out.println("  NOTE: AppKit did NOT clamp — observed read-back " + vClamp + " documented as actual behavior");
 
         // ------------------------------------------------------------ NSLevelIndicator
@@ -102,7 +99,7 @@ public final class SmallWidgetsTest {
         ind.setMaxValue(5.0);
         ind.setDoubleValue(3.0);
         double lv = ind.doubleValue();
-        check(Math.abs(lv - 3.0) < 0.01, "NSLevelIndicator.doubleValue() == 3.0 [got " + lv + "]");
+        TestKit.check(Math.abs(lv - 3.0) < 0.01, "NSLevelIndicator.doubleValue() == 3.0 [got " + lv + "]");
 
         // ------------------------------------------------------------ NSTabView + NSTabViewItem
         NSTabView tabView = NSTabView.create(new NSRect(0, 0, 300, 200));
@@ -113,11 +110,11 @@ public final class SmallWidgetsTest {
         tabView.addTabViewItem(tab1);
         tabView.addTabViewItem(tab2);
         long n = tabView.numberOfTabViewItems();
-        check(n == 2L, "NSTabView.numberOfTabViewItems() == 2 [got " + n + "]");
+        TestKit.check(n == 2L, "NSTabView.numberOfTabViewItems() == 2 [got " + n + "]");
         String firstLabel = tab1.label();
-        check("First".equals(firstLabel), "NSTabViewItem.label() == \"First\" [got \"" + firstLabel + "\"]");
+        TestKit.check("First".equals(firstLabel), "NSTabViewItem.label() == \"First\" [got \"" + firstLabel + "\"]");
 
-        System.out.println(failures == 0 ? "RESULT: ALL PASS" : "RESULT: " + failures + " FAILURE(S)");
-        System.exit(failures == 0 ? 0 : 1);
+        System.out.println(TestKit.failures() == 0 ? "RESULT: ALL PASS" : "RESULT: " + TestKit.failures() + " FAILURE(S)");
+        TestKit.end();
     }
 }

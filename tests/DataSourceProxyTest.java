@@ -24,7 +24,7 @@ import nsui.objc.Sig;
  */
 public final class DataSourceProxyTest {
 
-    private static int failures;
+    
 
     // Resolved ONCE after ObjC.init() (never before). FFM handles need the init-ed tables.
     private static MethodHandle hIdRect;       // initWithFrame: (id, SEL, NSRect) -> id
@@ -32,10 +32,7 @@ public final class DataSourceProxyTest {
     private static MethodHandle hIdIdIdInt;    // tableView:objectValueForTableColumn:row: (id, SEL, id, id, long) -> id
     private static MethodHandle hVoidId;       // addSubview: / setFrameOrigin: (id, SEL, id) -> void
 
-    private static void check(boolean ok, String msg) {
-        System.out.println((ok ? "PASS" : "FAIL") + ": " + msg);
-        if (!ok) failures++;
-    }
+    
 
     public static void main(String[] args) throws Throwable {
         System.out.println("=== DataSourceProxyTest — table data-source via DelegateProxy ===");
@@ -84,16 +81,16 @@ public final class DataSourceProxyTest {
 
         MemorySegment dataSource = DelegateProxy.delegate(
                 "NSObject", "NSUITableDataSource", bools, voids, ints, idIdInts);
-        check(dataSource != null && dataSource.address() != 0, "data-source delegate created");
-        check(DelegateProxy.registrySize() >= 1, "registry non-empty after data-source (size=" + DelegateProxy.registrySize() + ")");
+        TestKit.check(dataSource != null && dataSource.address() != 0, "data-source delegate created");
+        TestKit.check(DelegateProxy.registrySize() >= 1, "registry non-empty after data-source (size=" + DelegateProxy.registrySize() + ")");
 
         ObjC.msgSendVoidId(table, ObjC.sel("setDataSource:"), dataSource);
 
         // ---------------- reloadData -> AppKit consults the dataSource ----------------
         ObjC.msgSendVoid(table, ObjC.sel("reloadData"));
         long rows = ObjC.msgSendLong(table, ObjC.sel("numberOfRows"));
-        check(rows == 3L, "tableView numberOfRows == 3 (got " + rows + ")");
-        check(rowsCalls[0] >= 1, "numberOfRowsInTableView: fired >= 1 time (got " + rowsCalls[0] + ")");
+        TestKit.check(rows == 3L, "tableView numberOfRows == 3 (got " + rows + ")");
+        TestKit.check(rowsCalls[0] >= 1, "numberOfRowsInTableView: fired >= 1 time (got " + rowsCalls[0] + ")");
 
         // A headless (never-displayed) NSTableView fetches the ROW COUNT on reloadData but
         // materializes CELL VALUES only when rows are actually displayed/drawn, so the cell
@@ -104,11 +101,11 @@ public final class DataSourceProxyTest {
             for (MemorySegment c : cols) {
                 directCells++;
                 MemorySegment cell = objectValueForRow(dataSource, table, c, r);
-                check(cell != null && cell.address() != 0,
+                TestKit.check(cell != null && cell.address() != 0,
                         "cell(" + r + "," + (r == 0 ? "c1" : "c2") + ") routed to Java, returned a live id");
             }
         }
-        check(cellCalls[0] == directCells, "IdIdIntArg callback ran on every direct send (got "
+        TestKit.check(cellCalls[0] == directCells, "IdIdIntArg callback ran on every direct send (got "
                 + cellCalls[0] + " for " + directCells + " sends)");
         System.out.println("direct cell sends: " + directCells + " (3 rows x 2 cols) -> callback fired " + cellCalls[0] + " times");
 
@@ -124,7 +121,7 @@ public final class DataSourceProxyTest {
             // loop order is row-outer, column-inner -> expected row for index i = i / numColumns
             if (cellRows[i] != i / 2L) rowsCorrect = false; // 2 columns
         }
-        check(rowsCorrect, "3-arg shape delivers the REAL row integer (0..2 per column) — ABI gap closed");
+        TestKit.check(rowsCorrect, "3-arg shape delivers the REAL row integer (0..2 per column) — ABI gap closed");
 
         // OPTIONAL extra proof: real NSTableView display pass routes cell lookups through the
         // live data-source (row count and upcall firing), even if the row VALUE is lost by the
@@ -141,13 +138,13 @@ public final class DataSourceProxyTest {
         } catch (Throwable t) {
             caught = true;
         }
-        check(!caught, "UNREGISTERED selector sent to dataSource is a safe no-op (no NSInvalidArgumentException)");
+        TestKit.check(!caught, "UNREGISTERED selector sent to dataSource is a safe no-op (no NSInvalidArgumentException)");
 
         // ---------------- regression: 4-arg delegate bool/void window veto ----------------
         regressionWindowVeto();
 
-        System.out.println(failures == 0 ? "RESULT: ALL PASS" : "RESULT: " + failures + " FAILURE(S)");
-        System.exit(failures == 0 ? 0 : 1);
+        System.out.println(TestKit.failures() == 0 ? "RESULT: ALL PASS" : "RESULT: " + TestKit.failures() + " FAILURE(S)");
+        TestKit.end();
     }
 
     /** Cache the non-vocabulary-helper handles we need, after {@code ObjC.init()}. */
@@ -191,13 +188,14 @@ public final class DataSourceProxyTest {
             MemorySegment content = ObjC.msgSendId(window, ObjC.sel("contentView"));
             // addSubview: is an (id, SEL, id) void message — use the cached vocabulary handle.
             MemAddSubview(content, table);
-            ObjC.msgSendVoidId(window, ObjC.sel("makeKeyAndOrderFront:"), MemorySegment.NULL);
+            // orderFront: (visible, not key) is enough for the display pass — no focus steal.
+            ObjC.msgSendVoidId(window, ObjC.sel("orderFront:"), MemorySegment.NULL);
             ObjC.msgSendVoid(table, ObjC.sel("reloadData"));
             pump(app, 600L);
             int pulled = cellCalls[0] - before;
             System.out.println("REAL-WINDOW DISPLAY: data-source cell callbacks during display pass = " + pulled);
             if (pulled > 0) {
-                check(true, "NSTableView display pass pulled " + pulled + " cell value(s) through the live dataSource");
+                TestKit.check(true, "NSTableView display pass pulled " + pulled + " cell value(s) through the live dataSource");
             } else {
                 System.out.println("NOTE: no cell callbacks during display pass (headless window server) — direct-send proof still holds");
             }
@@ -244,22 +242,23 @@ public final class DataSourceProxyTest {
         voids.put("windowWillClose:", sender -> willCloseFired[0] = true);  // must NOT fire
 
         MemorySegment del = DelegateProxy.delegate("NSObject", "DSDataSrcVetor", bools, voids);
-        check(del != null && del.address() != 0, "bool/void veto delegate created");
+        TestKit.check(del != null && del.address() != 0, "bool/void veto delegate created");
         ObjC.msgSendVoidId(window, ObjC.sel("setDelegate:"), del);
 
         // Make the window actually visible FIRST, so isVisible is meaningful: a veto must leave a
         // previously-visible window visible.
         ObjC.msgSendVoidLong(app, ObjC.sel("setActivationPolicy:"), 0L /* NSApplicationActivationPolicyRegular */);
-        ObjC.msgSendVoidId(window, ObjC.sel("makeKeyAndOrderFront:"), MemorySegment.NULL);
+        // Visible-but-not-key: veto assertions need isVisible true; key status is irrelevant.
+        ObjC.msgSendVoidId(window, ObjC.sel("orderFront:"), MemorySegment.NULL);
         boolean wasVisible = ObjC.msgSendBool(window, ObjC.sel("isVisible"));
-        check(wasVisible, "window visible before performClose (setup sanity)");
+        TestKit.check(wasVisible, "window visible before performClose (setup sanity)");
 
         ObjC.msgSendVoidId(window, ObjC.sel("performClose:"), MemorySegment.NULL);
         try { pump(app, 400L); } catch (InterruptedException ie) { Thread.currentThread().interrupt(); }
 
         boolean stillVisible = ObjC.msgSendBool(window, ObjC.sel("isVisible"));
-        check(stillVisible, "windowShouldClose:=false vetoed performClose: window still visible");
-        check(!willCloseFired[0], "windowWillClose: did NOT fire because veto blocked the close");
+        TestKit.check(stillVisible, "windowShouldClose:=false vetoed performClose: window still visible");
+        TestKit.check(!willCloseFired[0], "windowWillClose: did NOT fire because veto blocked the close");
         System.out.println("veto: isVisible=" + stillVisible + " windowWillClose=" + willCloseFired[0] + " (expected true / false)");
         System.out.println("--- regression done ---");
     }

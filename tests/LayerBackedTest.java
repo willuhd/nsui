@@ -29,12 +29,9 @@ import static nsui.objc.Sig.Ret;
  */
 public final class LayerBackedTest {
 
-    private static int failures;
+    
 
-    private static void check(boolean ok, String msg) {
-        System.out.println((ok ? "PASS" : "FAIL") + ": " + msg);
-        if (!ok) failures++;
-    }
+    
 
     public static void main(String[] args) throws Throwable {
         System.out.println("=== LayerBackedTest — layer-backed rendering + backingScaleFactor ===");
@@ -64,8 +61,6 @@ public final class LayerBackedTest {
         window.setContentView(view);
         view.setNeedsDisplay(true);
 
-        app.activateIgnoringOtherApps(true);
-        window.makeKeyAndOrderFront(null);
         app.finishLaunching();
 
         long deadline = System.currentTimeMillis() + 1500;
@@ -78,16 +73,16 @@ public final class LayerBackedTest {
             Thread.sleep(10);
         }
 
-        check(drawCount.get() >= 1, "layer-backed drawRect: fired at least once (count=" + drawCount.get() + ")");
+        TestKit.check(drawCount.get() >= 1, "layer-backed drawRect: fired at least once (count=" + drawCount.get() + ")");
         if (drawCount.get() == 0) {
             System.out.println("NOTE: forcing displayIfNeeded fallback after zero draws");
             ObjC.msgSendVoid(window.peer(), ObjC.sel("displayIfNeeded"));
-            check(drawCount.get() >= 1, "layer-backed drawRect: fired after displayIfNeeded (count=" + drawCount.get() + ")");
+            TestKit.check(drawCount.get() >= 1, "layer-backed drawRect: fired after displayIfNeeded (count=" + drawCount.get() + ")");
         }
 
         double scale = view.backingScaleFactor();
         System.out.printf("backingScaleFactor=%.3f%n", scale);
-        check(scale > 0, "backingScaleFactor() > 0 (" + scale + ")");
+        TestKit.check(scale > 0, "backingScaleFactor() > 0 (" + scale + ")");
 
         // ---- render the layer-backed view to a bitmap and read actual pixels ----
         MemPixels px = renderToBitmap(view);
@@ -106,12 +101,12 @@ public final class LayerBackedTest {
 
         boolean centerIsBlue = center[2] > 150 && center[0] < 100;
         boolean cornerIsRed  = corner[0] > 150 && corner[2] < 100;
-        check(centerIsBlue, "layer-backed center pixel is BLUE (b>150, r<100)");
-        check(cornerIsRed, "layer-backed corner pixel is RED (r>150, b<100)");
+        TestKit.check(centerIsBlue, "layer-backed center pixel is BLUE (b>150, r<100)");
+        TestKit.check(cornerIsRed, "layer-backed corner pixel is RED (r>150, b<100)");
 
-        window.performClose(null);
-        System.out.println(failures == 0 ? "RESULT: ALL PASS" : "RESULT: " + failures + " FAILURE(S)");
-        System.exit(failures == 0 ? 0 : 1);
+        TestKit.close(window);
+        System.out.println(TestKit.failures() == 0 ? "RESULT: ALL PASS" : "RESULT: " + TestKit.failures() + " FAILURE(S)");
+        TestKit.end();
     }
 
     /** Render the view's bounds into an NSBitmapImageRep and read its bitmap data. */

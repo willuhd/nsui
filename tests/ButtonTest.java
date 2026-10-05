@@ -51,12 +51,9 @@ import static nsui.objc.Sig.Ret;
  */
 public final class ButtonTest {
 
-    private static int failures;
+    
 
-    private static void check(boolean ok, String msg) {
-        System.out.println((ok ? "PASS" : "FAIL") + ": " + msg);
-        if (!ok) failures++;
-    }
+    
 
     public static void main(String[] args) throws Throwable {
         System.out.println("=== ButtonTest — real NSButton control ===");
@@ -85,27 +82,26 @@ public final class ButtonTest {
         NSButton button = NSButton.create(new NSRect(150, 130, 200, 44), "Click me", target, "pressed:");
         content.addSubview(button);   // controls are views now (NSControl extends NSView)
 
-        check(DelegateProxy.registrySize() >= 1, "DelegateProxy registered the action target (size=" + DelegateProxy.registrySize() + ")");
+        TestKit.check(DelegateProxy.registrySize() >= 1, "DelegateProxy registered the action target (size=" + DelegateProxy.registrySize() + ")");
 
-        app.activateIgnoringOtherApps(true);
-        window.makeKeyAndOrderFront(null);
+        TestKit.showKey(window);
         app.finishLaunching();
-        pumpForMs(app, 600); // let the window settle
+        TestKit.pump(app, 600); // let the window settle
 
         // ---- static button assertions ----
-        check("Click me".equals(button.title()), "button.title() == \"Click me\" (got \"" + button.title() + "\")");
-        check(button.isEnabled(), "button.isEnabled() == true");
+        TestKit.check("Click me".equals(button.title()), "button.title() == \"Click me\" (got \"" + button.title() + "\")");
+        TestKit.check(button.isEnabled(), "button.isEnabled() == true");
         NSRect f = button.frame();
         System.out.printf("  button frame after create+sizeToFit: (%.1f, %.1f) %s%n", f.x(), f.y(), f);
-        check(f.width() > 50, "button.frame() width > 50 after sizeToFit (got " + f.width() + ")");
-        check(f.height() > 10, "button.frame() height > 10 after sizeToFit (got " + f.height() + ")");
+        TestKit.check(f.width() > 50, "button.frame() width > 50 after sizeToFit (got " + f.width() + ")");
+        TestKit.check(f.height() > 10, "button.frame() height > 10 after sizeToFit (got " + f.height() + ")");
 
         // ---- attempt the REAL click path (queued CGEvent-derived NSEvent pair) ----
         attemptQueuedClick(app, button);
         boolean realPathHit = clicked.get();
         if (realPathHit) {
-            check(clicked.get(), "real click path: handler fired after injected CGEvent pair");
-            check(senderAddr.get() == button.peer().address(),
+            TestKit.check(clicked.get(), "real click path: handler fired after injected CGEvent pair");
+            TestKit.check(senderAddr.get() == button.peer().address(),
                     "real click path: handler sender == button (sender=" + Long.toHexString(senderAddr.get())
                             + " button=" + Long.toHexString(button.peer().address()) + ")");
             System.out.println("CLICK PATH: real (queued CGEvent-derived NSEvent -> window hit-test) exercised the button");
@@ -114,19 +110,19 @@ public final class ButtonTest {
                     + "(non-frontmost / geometry). Falling back to the DIRECT target-action send.");
             // Fallback: [target pressed:button] — calls the same action selector on the SAME target.
             ObjC.msgSendVoidId(target, ObjC.sel("pressed:"), button.peer());
-            check(clicked.get(), "target-action path: handler fired via direct [target pressed:button]");
-            check(senderAddr.get() == button.peer().address(),
+            TestKit.check(clicked.get(), "target-action path: handler fired via direct [target pressed:button]");
+            TestKit.check(senderAddr.get() == button.peer().address(),
                     "target-action path: handler sender == button (sender=" + Long.toHexString(senderAddr.get())
                             + " button=" + Long.toHexString(button.peer().address()) + ")");
             System.out.println("CLICK PATH: target-action (direct selector send; window hit-testing NOT exercised — honest)");
         }
 
-        System.out.println(failures == 0
+        System.out.println(TestKit.failures() == 0
                 ? (realPathHit ? "RESULT: ALL PASS (real click path exercised)"
                                : "RESULT: PARTIAL PASS (target-action wiring proven; window hit-test NOT exercised in this session)")
-                : "RESULT: " + failures + " FAILURE(S)");
-        window.performClose(null);
-        System.exit(failures == 0 ? 0 : 1);
+                : "RESULT: " + TestKit.failures() + " FAILURE(S)");
+        TestKit.close(window);
+        TestKit.end();
     }
 
     /**
@@ -157,7 +153,7 @@ public final class ButtonTest {
         postEvent(app, hCreate, bx, by, 2 /* kCGEventLeftMouseUp */);
 
         // The action may fire on the mouseUp when the down was pressed on the button.
-        pumpForMs(app, 2000);
+        TestKit.pump(app, 2000);
     }
 
     /** Convert a CGEvent mouse event to an NSEvent and append it to the app's queue. */
@@ -176,19 +172,7 @@ public final class ButtonTest {
 
     // ------------------------------------------------------------------ helpers
 
-    private static void pumpOnce(NSApplication app) {
-        MemorySegment until = ObjC.msgSendIdDouble(
-                ObjC.cls("NSDate"), ObjC.sel("dateWithTimeIntervalSinceNow:"), 0.05);
-        NSEvent ev = app.nextEvent(-1L, until, "kCFRunLoopDefaultMode", true);
-        if (ev != null) app.sendEvent(ev); // dispatch (triggers hit-test + button action)
-        app.updateWindows();
-    }
+    
 
-    private static void pumpForMs(NSApplication app, long ms) throws InterruptedException {
-        long deadline = System.currentTimeMillis() + ms;
-        while (System.currentTimeMillis() < deadline) {
-            pumpOnce(app);
-            Thread.sleep(10);
-        }
-    }
+    
 }

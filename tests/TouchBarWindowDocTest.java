@@ -12,24 +12,17 @@ import static nsui.objc.Sig.Ret;
  * Also covers NSMenu/NSSearchField searchMenuTemplate integration (Help menu).
  */
 public final class TouchBarWindowDocTest {
-    private static int failures;
+    
     private static int asserts;
 
-    private static void check(boolean ok, String msg) {
-        asserts++;
-        System.out.println((ok ? "PASS" : "FAIL") + ": " + msg);
-        if (!ok) failures++;
-    }
+    private static void check(boolean ok, String msg) { asserts++; TestKit.check(ok, msg); }
 
     public static void main(String[] args) {
         System.out.println("=== TouchBarWindowDocTest ===");
         try {
             ObjC.init();
         } catch (Throwable t) {
-            System.out.println("SKIP: ObjC.init failed (connection error or not macOS): " + t);
-            t.printStackTrace(System.out);
-            System.out.println("RESULT: SKIP (connection error, continuing)");
-            System.exit(0);
+            TestKit.skip("ObjC.init failed (connection error or not macOS): : " + t);
         }
 
         // ---------------- NSTouchBar ----------------
@@ -244,9 +237,9 @@ public final class TouchBarWindowDocTest {
             t.printStackTrace(System.out);
         }
 
-        System.out.println(failures == 0
+        System.out.println(TestKit.failures() == 0
                 ? "RESULT: ALL PASS (" + asserts + " assertions)"
-                : "RESULT: " + failures + " of " + asserts + " assertions FAILED");
-        System.exit(failures == 0 ? 0 : 1);
+                : "RESULT: " + TestKit.failures() + " of " + asserts + " assertions FAILED");
+        TestKit.end();
     }
 }

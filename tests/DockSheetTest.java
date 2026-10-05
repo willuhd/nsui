@@ -36,19 +36,15 @@ import nsui.objc.Sig;
  *   <li>Null guards: beginSheet(null)/endSheet(null) no throw.</li>
  * </ul>
  *
- * <p>Non-blocking: sheets are attached and dismissed synchronously with pump(100-300ms);
+ * <p>Non-blocking: sheets are attached and dismissed synchronously with TestKit.pump(100-300ms);
  * no run() or modal session is entered.
  */
 public final class DockSheetTest {
 
-    private static int failures;
+    
     private static int asserts;
 
-    private static void check(boolean ok, String msg) {
-        asserts++;
-        System.out.println((ok ? "PASS" : "FAIL") + ": " + msg);
-        if (!ok) failures++;
-    }
+    private static void check(boolean ok, String msg) { asserts++; TestKit.check(ok, msg); }
 
     public static void main(String[] args) throws Throwable {
         System.out.println("=== DockSheetTest — Dock tile + Sheet (beginSheet/endSheet) ===");
@@ -57,9 +53,7 @@ public final class DockSheetTest {
         } catch (Throwable t) {
             String m = String.valueOf(t.getMessage()).toLowerCase();
             if (m.contains("connection") || m.contains("dlopen") || m.contains("appkit") || m.contains("libsystem")) {
-                System.out.println("SKIP: ObjC.init failed (not macOS / connection error): " + t);
-                System.out.println("RESULT: SKIP (connection error, continuing)");
-                System.exit(0);
+                TestKit.skip("ObjC.init failed (not macOS / connection error): : " + t);
             }
             System.out.println("FAIL: ObjC.init threw unexpected: " + t);
             t.printStackTrace(System.out);
@@ -124,10 +118,10 @@ public final class DockSheetTest {
             t.printStackTrace(System.out);
         }
 
-        System.out.println(failures == 0
+        System.out.println(TestKit.failures() == 0
                 ? "RESULT: ALL PASS (" + asserts + " assertions)"
-                : "RESULT: " + failures + " of " + asserts + " assertions FAILED");
-        System.exit(failures == 0 ? 0 : 1);
+                : "RESULT: " + TestKit.failures() + " of " + asserts + " assertions FAILED");
+        TestKit.end();
     }
 
     // ------------------------------------------------------------------ dock tile
@@ -377,7 +371,7 @@ public final class DockSheetTest {
             check(dummy.attachedSheet() == null, "attachedSheet null when no sheet attached");
             check(!dummy.isSheet(), "isSheet false for normal window (dummy)");
             check(dummy.sheetParent() == null, "sheetParent null for normal window");
-            dummy.performClose(null);
+            TestKit.close(dummy);
             dummy.orderOut(null);
             try { Thread.sleep(50); } catch (InterruptedException ignore) {}
             check(true, "null-guard window cleanup no throw");
@@ -409,13 +403,12 @@ public final class DockSheetTest {
 
         // Make parent visible — required for AppKit sheet attachment to work correctly
         try {
-            parent.makeKeyAndOrderFront(null);
-            app.activateIgnoringOtherApps(true);
+            TestKit.show(parent);
             app.finishLaunching();
-            pump(app, 300);
-            check(parent.isVisible(), "parent isVisible after makeKeyAndOrderFront (got " + parent.isVisible() + ")");
+            TestKit.pump(app, 300);
+            check(parent.isVisible(), "parent isVisible after orderFront (got " + parent.isVisible() + ")");
         } catch (Throwable t) {
-            System.out.println("  NOTE parent makeKeyAndOrderFront threw/pump failed: " + t);
+            System.out.println("  NOTE parent orderFront threw/pump failed: " + t);
             check(true, "parent show guarded (headless window server)");
         }
 
@@ -437,14 +430,14 @@ public final class DockSheetTest {
                 System.out.println("  NOTE beginSheet NULL threw (guarded, may be window-server): " + t);
                 check(true, "beginSheet NULL guarded (no WrongMethodType)");
                 // Cannot continue sheet checks if attach failed due to headless
-                parent.orderOut(null); pump(app, 100);
-                sheet.orderOut(null); pump(app, 100);
+                parent.orderOut(null); TestKit.pump(app, 100);
+                sheet.orderOut(null); TestKit.pump(app, 100);
                 return;
             }
         }
 
         // Pump to let AppKit attach
-        pump(app, 300);
+        TestKit.pump(app, 300);
 
         // Verify attachment
         try {
@@ -474,13 +467,13 @@ public final class DockSheetTest {
             check(false, "endSheet threw: " + t);
         }
 
-        pump(app, 400);
+        TestKit.pump(app, 400);
         app.updateWindows();
 
         // After dismissal, attachment should be cleared (AppKit clears after next run-loop turn)
         try {
             // Pump again to let dismissal animate
-            pump(app, 300);
+            TestKit.pump(app, 300);
             NSWindow after = parent.attachedSheet();
             // AppKit may still report sheet briefly during animation; allow either null or non-null but not crash
             if (after == null || after.peer().address() == 0) {
@@ -488,12 +481,12 @@ public final class DockSheetTest {
             } else {
                 System.out.println("  NOTE attachedSheet still non-null after endSheet (animation in progress), ordering out");
                 // Force orderOut to detach
-                try { sheet.orderOut(null); parent.orderOut(null); pump(app, 200); } catch (Throwable ignore) {}
+                try { sheet.orderOut(null); parent.orderOut(null); TestKit.pump(app, 200); } catch (Throwable ignore) {}
                 NSWindow after2 = parent.attachedSheet();
                 check(after2 == null || after2.peer().address() == 0, "parent.attachedSheet null after orderOut fallback (got " + after2 + ")");
             }
             // isSheet should eventually be false
-            pump(app, 200);
+            TestKit.pump(app, 200);
             boolean isSheetAfter = false;
             try { isSheetAfter = sheet.isSheet(); } catch (Throwable ignore) { isSheetAfter = false; }
             check(!isSheetAfter || true, "sheet.isSheet after endSheet (guarded, got " + isSheetAfter + ") — may remain true until fully detached, no crash");
@@ -508,13 +501,13 @@ public final class DockSheetTest {
         // Clean sheets for next sub-test
         try { sheet.orderOut(null); } catch (Throwable ignore) {}
         try { parent.orderOut(null); } catch (Throwable ignore) {}
-        pump(app, 200);
+        TestKit.pump(app, 200);
 
         // ---- 2) beginSheet with raw MemorySegment NULL overload ----
         System.out.println("  -- beginSheet with raw MemorySegment.NULL --");
         NSWindow sheet2 = NSWindow.create(new NSRect(0, 0, 200, 100), 15L, 2L, false);
         sheet2.setTitle("SheetRaw"); sheet2.setReleasedWhenClosed(false);
-        parent.makeKeyAndOrderFront(null); pump(app, 200);
+        TestKit.show(parent); TestKit.pump(app, 200);
         try {
             parent.beginSheet(sheet2, MemorySegment.NULL);
             check(true, "beginSheet(sheet, MemorySegment.NULL) did not throw — raw overload handle correct");
@@ -525,16 +518,16 @@ public final class DockSheetTest {
             System.out.println("  NOTE beginSheet raw NULL threw guarded: " + t);
             check(true, "beginSheet raw NULL guarded");
         }
-        pump(app, 300);
+        TestKit.pump(app, 300);
         try {
             NSWindow at2 = parent.attachedSheet();
             check(at2 != null && at2.peer().address() != 0, "attachedSheet non-null after raw NULL beginSheet");
             parent.endSheet(sheet2);
             check(true, "endSheet after raw NULL no throw");
         } catch (Throwable t) { check(false, "raw sheet probe threw: " + t); }
-        pump(app, 400);
+        TestKit.pump(app, 400);
         try { sheet2.orderOut(null); } catch (Throwable ignore) {}
-        pump(app, 200);
+        TestKit.pump(app, 200);
 
         // ---- 3) beginSheet with IntConsumer non-null — THE CRITICAL PATH FOR WrongMethodType ----
         // This exercises the block creation: findStatic + insertArguments + Blocks.block + handle dispatch.
@@ -543,7 +536,7 @@ public final class DockSheetTest {
         System.out.println("  -- beginSheet with IntConsumer non-null (critical WrongMethodType path) --");
         NSWindow sheet3 = NSWindow.create(new NSRect(0, 0, 220, 110), 15L, 2L, false);
         sheet3.setTitle("SheetIntConsumer"); sheet3.setReleasedWhenClosed(false);
-        parent.makeKeyAndOrderFront(null); pump(app, 200);
+        TestKit.show(parent); TestKit.pump(app, 200);
 
         AtomicInteger callbackCode = new AtomicInteger(-999);
         AtomicBoolean callbackFired = new AtomicBoolean(false);
@@ -571,12 +564,12 @@ public final class DockSheetTest {
             System.out.println("  NOTE beginSheet IntConsumer threw guarded (window-server): " + t);
             t.printStackTrace(System.out);
             check(true, "beginSheet IntConsumer guarded (no WrongMethodType, may be headless)");
-            parent.orderOut(null); sheet3.orderOut(null); pump(app, 200);
+            parent.orderOut(null); sheet3.orderOut(null); TestKit.pump(app, 200);
             check(true, "SKIP IntConsumer callback verification (attach failed, but no WrongMethodType)");
             // Continue to endSheet:returnCode: vocabulary test via direct handle
         }
 
-        pump(app, 300);
+        TestKit.pump(app, 300);
 
         // Verify attached after IntConsumer beginSheet
         try {
@@ -607,7 +600,7 @@ public final class DockSheetTest {
         }
 
         // Pump to let AppKit call the completionHandler block
-        pump(app, 600);
+        TestKit.pump(app, 600);
         app.updateWindows();
         // The block should have fired with code 42 if AppKit dispatched it
         // On some AppKit paths the handler fires after the sheet is fully dismissed; allow 0 or 42 but not crash
@@ -615,7 +608,7 @@ public final class DockSheetTest {
             check(callbackCode.get() == 42 || callbackCode.get() == 1 /* NSModalResponseOK */, "IntConsumer handler fired with expected code (got " + callbackCode.get() + ", expect 42 or 1)");
         } else {
             System.out.println("  NOTE IntConsumer not yet fired (AppKit may defer until next run-loop); pumping more");
-            pump(app, 500);
+            TestKit.pump(app, 500);
             if (callbackFired.get()) {
                 check(true, "IntConsumer fired after extended pump (code=" + callbackCode.get() + ")");
             } else {
@@ -630,12 +623,12 @@ public final class DockSheetTest {
         // Final cleanup
         try { sheet3.orderOut(null); } catch (Throwable ignore) {}
         try { parent.orderOut(null); } catch (Throwable ignore) {}
-        pump(app, 300);
-        try { sheet3.performClose(null); } catch (Throwable ignore) {}
-        try { sheet.performClose(null); } catch (Throwable ignore) {}
-        try { sheet2.performClose(null); } catch (Throwable ignore) {}
-        try { parent.performClose(null); } catch (Throwable ignore) {}
-        pump(app, 200);
+        TestKit.pump(app, 300);
+        try { TestKit.close(sheet3); } catch (Throwable ignore) {}
+        try { TestKit.close(sheet); } catch (Throwable ignore) {}
+        try { TestKit.close(sheet2); } catch (Throwable ignore) {}
+        try { TestKit.close(parent); } catch (Throwable ignore) {}
+        TestKit.pump(app, 200);
 
         // Final sanity: sheetParent/attachedSheet after full cleanup should be null
         try {
@@ -684,20 +677,5 @@ public final class DockSheetTest {
 
     // ------------------------------------------------------------------ pump helper
 
-    private static void pump(NSApplication app, long millis) throws InterruptedException {
-        if (app == null) {
-            Thread.sleep(millis);
-            return;
-        }
-        MemorySegment dateCls = ObjC.cls("NSDate");
-        String mode = "kCFRunLoopDefaultMode";
-        long deadline = System.currentTimeMillis() + millis;
-        while (System.currentTimeMillis() < deadline) {
-            MemorySegment until = ObjC.msgSendIdDouble(dateCls, ObjC.sel("dateWithTimeIntervalSinceNow:"), 0.05);
-            NSEvent ev = app.nextEvent(-1L, until, mode, true);
-            if (ev != null) app.sendEvent(ev);
-            app.updateWindows();
-            Thread.sleep(10);
-        }
-    }
+    
 }

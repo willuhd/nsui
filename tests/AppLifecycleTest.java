@@ -47,12 +47,9 @@ import nsui.objc.ObjC;
  */
 public final class AppLifecycleTest {
 
-    private static int failures;
+    
 
-    private static void check(boolean ok, String msg) {
-        System.out.println((ok ? "PASS" : "FAIL") + ": " + msg);
-        if (!ok) failures++;
-    }
+    
 
     public static void main(String[] args) throws Throwable {
         System.out.println("=== AppLifecycleTest — Java app-delegate boolean controls NSApplication ===");
@@ -70,7 +67,7 @@ public final class AppLifecycleTest {
         appBools.put("applicationShouldTerminateAfterLastWindowClosed:",
                 sender -> { vetoFlag.set(true); return false; });   // Java says: do NOT auto-terminate
         MemorySegment delegate1 = DelegateProxy.delegate("NSObject", "NSUIAppDelegateVeto", appBools, new LinkedHashMap<>());
-        check(delegate1 != null && delegate1.address() != 0, "app delegate (veto) created");
+        TestKit.check(delegate1 != null && delegate1.address() != 0, "app delegate (veto) created");
         NSObject del1 = NSObject.wrap(delegate1);
         app.setDelegate(del1);
 
@@ -79,33 +76,33 @@ public final class AppLifecycleTest {
         Map<String, DelegateProxy.VoidArg> winVoids = new LinkedHashMap<>();
         winVoids.put("windowWillClose:", sender -> closedFlag.set(true));
         MemorySegment winDelegate = DelegateProxy.delegate("NSObject", "NSUIWinDelegate", winBools, winVoids);
-        check(winDelegate != null && winDelegate.address() != 0, "window delegate created");
+        TestKit.check(winDelegate != null && winDelegate.address() != 0, "window delegate created");
 
         NSWindow window = NSWindow.create(new NSRect(0, 0, 400, 250), 15L, 2L, false);
         window.setTitle("lifecycle");
         window.center();
         window.setReleasedWhenClosed(false);
+        // Phase 1 closes a real (visible, not key) window so "still alive" means something.
+        TestKit.show(window);
         window.setDelegate(NSObject.wrap(winDelegate));
-        app.activateIgnoringOtherApps(true);
-        window.makeKeyAndOrderFront(null);
         app.finishLaunching();
 
         // The app-delegate class really does respond to the lifecycle selector (method installed).
         MemorySegment responds = ObjC.msgSendIdId(del1.peer(), ObjC.sel("respondsToSelector:"),
                 ObjC.sel("applicationShouldTerminateAfterLastWindowClosed:"));
-        check(responds.address() != 0,
+        TestKit.check(responds.address() != 0,
                 "app delegate respondsToSelector: applicationShouldTerminateAfterLastWindowClosed: (method installed on runtime class)");
-        check(DelegateProxy.registrySize() == 2, "registry holds app + window delegates (size=" + DelegateProxy.registrySize() + ")");
+        TestKit.check(DelegateProxy.registrySize() == 2, "registry holds app + window delegates (size=" + DelegateProxy.registrySize() + ")");
 
-        pump(app, 200L);   // attach delegate + settle
+        TestKit.pump(app, 200L);   // attach delegate + settle
 
         // ---- Phase 1b: close the ONLY window; the process must stay alive ----
-        window.performClose(null);
-        pump(app, 1500L);
+        TestKit.close(window);
+        TestKit.pump(app, 1500L);
 
         boolean visible = window.isVisible();
-        check(!visible, "window closed: isVisible=false (got " + visible + ")");
-        check(closedFlag.get(), "windowWillClose: fired for the closing window");
+        TestKit.check(!visible, "window closed: isVisible=false (got " + visible + ")");
+        TestKit.check(closedFlag.get(), "windowWillClose: fired for the closing window");
         System.out.println("vetoes/notifications: windowWillCloseFired=" + closedFlag.get());
         System.out.println("   after closing the last window the process is STILL PUMPING (app did not terminate)");
 
@@ -116,7 +113,7 @@ public final class AppLifecycleTest {
                 + "\n         last-window-termination path; NSUI3's own Main uses windowWillClose:->terminate:"
                 + "\n         for exactly this reason. The Java app-delegate boolean is proven through the"
                 + "\n         real terminate: path in Phase 2 below.");
-        check(DelegateProxy.registrySize() >= 2, "delegates still registered after close (size=" + DelegateProxy.registrySize() + ")");
+        TestKit.check(DelegateProxy.registrySize() >= 2, "delegates still registered after close (size=" + DelegateProxy.registrySize() + ")");
 
         // ---- Phase 2: Java-controlled termination via the real terminate: path ----
         // Replace the app delegate with one that decides applicationShouldTerminate:. AppKit will
@@ -125,16 +122,16 @@ public final class AppLifecycleTest {
         Map<String, DelegateProxy.BoolArg> termBools = new LinkedHashMap<>();
         termBools.put("applicationShouldTerminate:", sender -> { shouldTerm.set(true); return false; }); // NSTerminateCancel
         MemorySegment delegate2 = DelegateProxy.delegate("NSObject", "NSUIAppTermVeto", termBools, new LinkedHashMap<>());
-        check(delegate2 != null && delegate2.address() != 0, "terminate-veto app delegate created");
+        TestKit.check(delegate2 != null && delegate2.address() != 0, "terminate-veto app delegate created");
         app.setDelegate(NSObject.wrap(delegate2));
-        check(DelegateProxy.registrySize() == 3,
+        TestKit.check(DelegateProxy.registrySize() == 3,
                 "registry grew to 3 with the terminate-veto delegate (size=" + DelegateProxy.registrySize() + ")");
 
         System.out.println("--- asking NSApp to terminate; Java's applicationShouldTerminate: decides ---");
         app.terminate(null);                       // synchronous: consults the delegate immediately
-        pump(app, 300L);                           // if Java had allowed, this JVM would be gone
+        TestKit.pump(app, 300L);                           // if Java had allowed, this JVM would be gone
 
-        check(shouldTerm.get(), "applicationShouldTerminate: WAS consulted by AppKit on terminate:");
+        TestKit.check(shouldTerm.get(), "applicationShouldTerminate: WAS consulted by AppKit on terminate:");
         System.out.println("applicationShouldTerminate: verdict was FALSE (cancel) — had Java returned true, this JVM would be gone");
         System.out.println("PASS (Phase 2): a Java BOOLEAN from a DelegateProxy app delegate decided the terminate"
                 + " request was CANCELLED — the process is alive and continues executing (last lines ran)");
@@ -149,26 +146,12 @@ public final class AppLifecycleTest {
         } catch (RuntimeException e) {
             delegateAllow = null;
         }
-        check(delegateAllow != null && delegateAllow.address() != 0,
+        TestKit.check(delegateAllow != null && delegateAllow.address() != 0,
                 "allow-case built (new class pair NSUIAppTermAllow; identical bool wiring, returns true)");
         System.out.println("NOTE: the allow-case is verified by construction only — calling terminate: with it");
         System.out.println("      attached would terminate this JVM, which is exactly what a green veto test cannot do.");
 
-        System.out.println(failures == 0 ? "RESULT: ALL PASS" : "RESULT: " + failures + " FAILURE(S)");
-        System.exit(failures == 0 ? 0 : 1);
-    }
-
-    /** Pump the AppKit run loop for {@code millis} ms (same pattern as Main.pumpEvents). */
-    private static void pump(NSApplication app, long millis) throws InterruptedException {
-        MemorySegment dateCls = ObjC.cls("NSDate");
-        String mode = "kCFRunLoopDefaultMode";
-        long deadline = System.currentTimeMillis() + millis;
-        while (System.currentTimeMillis() < deadline) {
-            MemorySegment until = ObjC.msgSendIdDouble(dateCls, ObjC.sel("dateWithTimeIntervalSinceNow:"), 0.05);
-            NSEvent ev = app.nextEvent(-1L /* NSEventMaskAny */, until, mode, true);
-            if (ev != null) app.sendEvent(ev);
-            app.updateWindows();
-            Thread.sleep(10);
-        }
+        System.out.println(TestKit.failures() == 0 ? "RESULT: ALL PASS" : "RESULT: " + TestKit.failures() + " FAILURE(S)");
+        TestKit.end();
     }
 }

@@ -35,14 +35,10 @@ import static nsui.objc.Sig.Ret;
  */
 public final class MenuBarStatusTest {
 
-    private static int failures;
+    
     private static int asserts;
 
-    private static void check(boolean ok, String msg) {
-        asserts++;
-        System.out.println((ok ? "PASS" : "FAIL") + ": " + msg);
-        if (!ok) failures++;
-    }
+    private static void check(boolean ok, String msg) { asserts++; TestKit.check(ok, msg); }
 
     private static boolean respondsTo(MemorySegment obj, String sel) {
         try {
@@ -55,10 +51,7 @@ public final class MenuBarStatusTest {
         try {
             ObjC.init();
         } catch (Throwable t) {
-            System.out.println("SKIP: ObjC.init failed (connection error or not macOS): " + t);
-            t.printStackTrace(System.out);
-            System.out.println("RESULT: SKIP (connection error, continuing)");
-            System.exit(0);
+            TestKit.skip("ObjC.init failed (connection error or not macOS): : " + t);
         }
         // NSStatusBar requires AppKit connection; ensure NSApplication is initialized
         try {
@@ -82,7 +75,7 @@ public final class MenuBarStatusTest {
         } catch (Throwable t) {
             check(false, "NSStatusBar section threw: " + t);
             t.printStackTrace(System.out);
-            System.out.println("RESULT: " + failures + " FAILED (bar init failed)");
+            System.out.println("RESULT: " + TestKit.failures() + " FAILED (bar init failed)");
             System.exit(1);
         }
 
@@ -333,9 +326,9 @@ public final class MenuBarStatusTest {
             } catch (Throwable t) { check(false, "removeStatusItem threw: " + t); }
         }
 
-        System.out.println(failures == 0
+        System.out.println(TestKit.failures() == 0
                 ? "RESULT: ALL PASS (" + asserts + " assertions)"
-                : "RESULT: " + failures + " of " + asserts + " assertions FAILED");
-        System.exit(failures == 0 ? 0 : 1);
+                : "RESULT: " + TestKit.failures() + " of " + asserts + " assertions FAILED");
+        TestKit.end();
     }
 }

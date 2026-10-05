@@ -46,14 +46,10 @@ import nsui.objc.ObjC;
  */
 public final class StackLayoutTest {
 
-    private static int failures;
+    
     private static int asserts;
 
-    private static void check(boolean ok, String msg) {
-        asserts++;
-        System.out.println((ok ? "PASS" : "FAIL") + ": " + msg);
-        if (!ok) failures++;
-    }
+    private static void check(boolean ok, String msg) { asserts++; TestKit.check(ok, msg); }
 
     public static void main(String[] args) throws Throwable {
         System.out.println("=== StackLayoutTest — NSStackView computes the layout ===");
@@ -110,12 +106,10 @@ public final class StackLayoutTest {
         content.addSubview(stack);
 
         window.center();
-        app.activateIgnoringOtherApps(true);
-        window.makeKeyAndOrderFront(null);
         app.finishLaunching();
-        pumpForMs(app, 1000); // 1s of non-blocking pumping so AppKit computes the layout
+        TestKit.pump(app, 1000); // 1s of non-blocking pumping so AppKit computes the layout
         ObjC.msgSendVoid(stack.peer(), ObjC.sel("layoutSubtreeIfNeeded"));
-        pumpForMs(app, 200);
+        TestKit.pump(app, 200);
 
         // ---- gather laid-out frames ----
         List<NSView> arranged = List.of(big, medium, small, field);
@@ -194,11 +188,11 @@ public final class StackLayoutTest {
         System.out.println("  widths = {" + wb + "}");
         check(widthsOk, "widths == " + (W - 2 * INSET) + " (± 1.0) for every arranged view");
 
-        System.out.println(failures == 0
+        System.out.println(TestKit.failures() == 0
                 ? "RESULT: ALL PASS (" + asserts + " assertions)"
-                : "RESULT: " + failures + " of " + asserts + " assertions FAILED");
-        window.performClose(null);
-        System.exit(failures == 0 ? 0 : 1);
+                : "RESULT: " + TestKit.failures() + " of " + asserts + " assertions FAILED");
+        TestKit.close(window);
+        TestKit.end();
     }
 
     /** A default NSTextField with the given font (intrinsic height tracks the font). */
@@ -210,19 +204,5 @@ public final class StackLayoutTest {
     }
 
     /** True non-blocking pump: past deadline drains the queue; sendEvent + updateWindows. */
-    private static void pumpForMs(NSApplication app, long ms) throws InterruptedException {
-        long deadline = System.currentTimeMillis() + ms;
-        while (System.currentTimeMillis() < deadline) {
-            MemorySegment until = ObjC.msgSendIdDouble(
-                    ObjC.cls("NSDate"), ObjC.sel("dateWithTimeIntervalSince1970:"), 0.0);
-            nsui.NSEvent ev;
-            int n = 0;
-            while ((ev = app.nextEvent(-1L, until, "kCFRunLoopDefaultMode", true)) != null) {
-                app.sendEvent(ev);
-                if (++n > 400) break;
-            }
-            app.updateWindows();
-            Thread.sleep(10);
-        }
-    }
+    
 }

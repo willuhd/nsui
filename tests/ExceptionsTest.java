@@ -24,7 +24,6 @@ import java.lang.foreign.MemorySegment;
  */
 public class ExceptionsTest {
 
-    private static int failures;
 
     public static void main(String[] args) {
         ObjC.init();
@@ -95,17 +94,8 @@ public class ExceptionsTest {
                 + "landing pad that a pure-FFM Java thread has none of — so 'catch and recover from an "
                 + "uncaught [NSException raise]' is NOT achievable on this platform.");
 
-        if (failures > 0) {
-            System.out.println("[ExceptionsTest] FAIL — " + failures + " check(s) failed");
-            System.exit(1);
-        }
-        System.out.println("[ExceptionsTest] PASS (interception scaffold verified; suppression "
-                + "of uncaught raises is a documented, verified blocker — see report)");
-        System.exit(0);
+        TestKit.end();
     }
 
-    private static void fail(String msg) {
-        failures++;
-        System.out.println("[ExceptionsTest] FAIL: " + msg);
-    }
+    private static void fail(String msg) { TestKit.check(false, msg); }
 }

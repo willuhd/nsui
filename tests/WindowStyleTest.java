@@ -46,6 +46,13 @@ public final class WindowStyleTest {
         win.setCollectionBehavior(0); // no behavior
         System.out.println("PASS: setCollectionBehavior(0) did not crash");
 
+        TestKit.check(win.sharingType() == NSWindow.SHARING_READ_ONLY,
+                "default sharingType is READ_ONLY (got " + win.sharingType() + ")");
+        win.setSharingType(NSWindow.SHARING_NONE);
+        TestKit.check(win.sharingType() == NSWindow.SHARING_NONE,
+                "setSharingType(NONE) sticks (got " + win.sharingType() + ")");
+        win.setSharingType(NSWindow.SHARING_READ_ONLY);
+
         NSObject closeBtn = win.standardWindowButton(0 /* NSWindowCloseButton */);
         TestKit.check(closeBtn != null && closeBtn.peer().address() != 0,
                 "standardWindowButton(close) returns a non-null object on a titled window");

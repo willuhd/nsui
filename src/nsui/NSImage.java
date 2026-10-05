@@ -10,13 +10,28 @@ import static nsui.objc.Sig.Ret;
 
 /// NSImage — an AppKit image. Thin, 1:1, stateless wrapper over a native
 /// `NSImage`: every method maps to one `objc_msgSend` selector and no
-/// Java state is cached beyond the peer. An NSImage lives independently of any
+/// Java state is cached beyond the peer.
+///
+/// OMITTED (shapes verified missing from Sig.VOCABULARY by grep, or out of
+/// scope): drawAtPoint:fromRect:operation:fraction: and the
+/// drawInRect:fromRect:operation:fraction:(:respectFlipped:hints:) family
+/// (multi-struct shapes); drawRepresentation:inRect: (BOOL,ID,RECT);
+/// TIFFRepresentationUsingCompression:factor: (ID,INT,FLOAT); initWithCGImage:
+/// size: (ID,ID,SIZE); CGImageForProposedRect:context:hints: (raw NSRect*);
+/// bestRepresentationForRect:context:hints: (ID,RECT,ID,ID); hitTestRect:…;
+/// recommendedLayerContentsScale: (DOUBLE,DOUBLE);
+/// imageWithSystemSymbolName:variableValue:… + imageWithSymbolName:…
+/// (ID,ID,DOUBLE,ID shapes); imageWithSize:flipped:drawingHandler: (block);
+/// delegate (needs delegate-proxy machinery); symbolConfiguration/locale
+/// (wrappers absent); the deprecated lockFocus/composite/dissolve/scalesWhen
+/// Resized/dataRetained/cachedSeparately family.
+/// An NSImage lives independently of any
 /// view; it is drawn either directly (via `drawInRect` from a
 /// `Drawable` callback) or through an `NSImageView` control.
 public final class NSImage extends NSObject {
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
-    private record Handles(MethodHandle hInitFromFile, MethodHandle hInitFromURL, MethodHandle hSize, MethodHandle hDrawRect, MethodHandle hTIFF, MethodHandle hName, MethodHandle hSetName, MethodHandle hCapInsets, MethodHandle hSetCapInsets, MethodHandle hTemplate, MethodHandle hSetTemplate, MethodHandle hResizingMode, MethodHandle hSetResizingMode, MethodHandle hAccDesc, MethodHandle hSetAccDesc) {}
+    private record Handles(MethodHandle hInitFromFile, MethodHandle hInitFromURL, MethodHandle hInitSize, MethodHandle hLayerContents, MethodHandle hSize, MethodHandle hDrawRect, MethodHandle hTIFF, MethodHandle hName, MethodHandle hSetName, MethodHandle hCapInsets, MethodHandle hSetCapInsets, MethodHandle hTemplate, MethodHandle hSetTemplate, MethodHandle hResizingMode, MethodHandle hSetResizingMode, MethodHandle hAccDesc, MethodHandle hSetAccDesc) {}
     private static volatile Handles H;
 
     private NSImage(MemorySegment peer) {
@@ -33,6 +48,8 @@ public final class NSImage extends NSObject {
         H = new Handles(
                 ObjC.handle(Sig.of(Ret.ID, Arg.ID)),
                 ObjC.handle(Sig.of(Ret.ID, Arg.ID)),
+                ObjC.handle(Sig.of(Ret.ID, Arg.SIZE)),
+                ObjC.handle(Sig.of(Ret.ID, Arg.DOUBLE)),
                 ObjC.handle(Sig.of(Ret.SIZE)),
                 ObjC.handle(Sig.of(Ret.VOID, Arg.RECT)),
                 ObjC.handle(Sig.of(Ret.ID)),
@@ -242,7 +259,7 @@ public final class NSImage extends NSObject {
         }
     }
 
-    /// [image resizingMode] — NSImageResizingMode (0=tile, 1=stretch).
+    /// [image resizingMode] — NSImageResizingMode (macOS: 0=stretch, 1=tile).
     public long resizingMode() {
         try {
             return (long) H.hResizingMode().invokeExact(peer, ObjC.sel("resizingMode"));
@@ -277,6 +294,214 @@ public final class NSImage extends NSObject {
             H.hSetAccDesc().invokeExact(peer, ObjC.sel("setAccessibilityDescription:"), ns);
         } catch (Throwable t) {
             throw new RuntimeException("setAccessibilityDescription: failed", t);
+        }
+    }
+
+    // ---------------------------------------------------------------- construction (more)
+
+    /// `[[NSImage alloc] initWithSize:size]` — blank image with the given size.
+    public static NSImage createWithSize(NSSize size) {
+        ensureInit();
+        MemorySegment img = ObjC.msgSendId(ObjC.cls("NSImage"), ObjC.sel("alloc"));
+        try {
+            img = (MemorySegment) H.hInitSize().invokeExact(img, ObjC.sel("initWithSize:"), size.toSegment());
+        } catch (Throwable t) {
+            throw new RuntimeException("initWithSize: failed for NSImage", t);
+        }
+        return (img == null || img.address() == 0) ? null : new NSImage(img);
+    }
+
+    private static NSImage initOneIdArg(String sel, MemorySegment arg) {
+        ensureInit();
+        MemorySegment img = ObjC.msgSendId(ObjC.cls("NSImage"), ObjC.sel("alloc"));
+        try {
+            img = (MemorySegment) H.hInitFromFile().invokeExact(img, ObjC.sel(sel), arg);
+        } catch (Throwable t) {
+            throw new RuntimeException(sel + " failed for NSImage", t);
+        }
+        return (img == null || img.address() == 0) ? null : new NSImage(img);
+    }
+
+    /// `[[NSImage alloc] initWithData:data]` — image from encoded bytes (nil on bad data).
+    public static NSImage createWithData(NSData data) {
+        if (data == null) return null;
+        return initOneIdArg("initWithData:", data.peer());
+    }
+
+    /// `[[NSImage alloc] initByReferencingFile:fileName]` — lazy file-backed image.
+    public static NSImage createByReferencingFile(String path) {
+        if (path == null) return null;
+        return initOneIdArg("initByReferencingFile:", ObjC.nsstring(path));
+    }
+
+    /// `[[NSImage alloc] initByReferencingURL:url]` — lazy URL-backed image
+    /// (raw NSURL peer; supports progressive loading).
+    public static NSImage createByReferencingURL(MemorySegment nsURL) {
+        if (nsURL == null || nsURL.address() == 0) return null;
+        return initOneIdArg("initByReferencingURL:", nsURL);
+    }
+
+    /// `[[NSImage alloc] initWithPasteboard:pasteboard]` — image from pasteboard data.
+    public static NSImage createWithPasteboard(NSPasteboard pasteboard) {
+        if (pasteboard == null) return null;
+        return initOneIdArg("initWithPasteboard:", pasteboard.peer());
+    }
+
+    /// `[[NSImage alloc] initWithDataIgnoringOrientation:data]` — ignores EXIF orientation.
+    public static NSImage createWithDataIgnoringOrientation(NSData data) {
+        if (data == null) return null;
+        return initOneIdArg("initWithDataIgnoringOrientation:", data.peer());
+    }
+
+    /// `+[NSImage imageTypes]` — all loadable type identifiers.
+    public static NSArray imageTypes() {
+        ensureInit();
+        return NSArray.wrap(ObjC.msgSendId(ObjC.cls("NSImage"), ObjC.sel("imageTypes")));
+    }
+
+    /// `+[NSImage imageUnfilteredTypes]` — unfiltered type identifiers.
+    public static NSArray imageUnfilteredTypes() {
+        ensureInit();
+        return NSArray.wrap(ObjC.msgSendId(ObjC.cls("NSImage"), ObjC.sel("imageUnfilteredTypes")));
+    }
+
+    /// `+[NSImage canInitWithPasteboard:]`.
+    public static boolean canInitWithPasteboard(NSPasteboard pasteboard) {
+        ensureInit();
+        if (pasteboard == null) return false;
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.BOOL, Arg.ID));
+            return (boolean) h.invokeExact(ObjC.cls("NSImage"), ObjC.sel("canInitWithPasteboard:"), pasteboard.peer());
+        } catch (Throwable t) {
+            throw new RuntimeException("canInitWithPasteboard: failed", t);
+        }
+    }
+
+    // ---------------------------------------------------------------- properties (more)
+
+    /// backgroundColor.
+    public NSColor backgroundColor() {
+        ensureInit();
+        return NSColor.wrap(ObjC.msgSendId(peer, ObjC.sel("backgroundColor")));
+    }
+
+    /// setBackgroundColor:.
+    public void setBackgroundColor(NSColor color) {
+        ensureInit();
+        ObjC.msgSendVoidId(peer, ObjC.sel("setBackgroundColor:"),
+                (MemorySegment) (color == null ? MemorySegment.NULL : color.peer()));
+    }
+
+    /// usesEPSOnResolutionMismatch.
+    public boolean usesEPSOnResolutionMismatch() {
+        return ObjC.msgSendBool(peer, ObjC.sel("usesEPSOnResolutionMismatch"));
+    }
+
+    /// setUsesEPSOnResolutionMismatch:.
+    public void setUsesEPSOnResolutionMismatch(boolean flag) {
+        ObjC.msgSendVoidBool(peer, ObjC.sel("setUsesEPSOnResolutionMismatch:"), flag);
+    }
+
+    /// prefersColorMatch.
+    public boolean prefersColorMatch() {
+        return ObjC.msgSendBool(peer, ObjC.sel("prefersColorMatch"));
+    }
+
+    /// setPrefersColorMatch:.
+    public void setPrefersColorMatch(boolean flag) {
+        ObjC.msgSendVoidBool(peer, ObjC.sel("setPrefersColorMatch:"), flag);
+    }
+
+    /// matchesOnMultipleResolution.
+    public boolean matchesOnMultipleResolution() {
+        return ObjC.msgSendBool(peer, ObjC.sel("matchesOnMultipleResolution"));
+    }
+
+    /// setMatchesOnMultipleResolution:.
+    public void setMatchesOnMultipleResolution(boolean flag) {
+        ObjC.msgSendVoidBool(peer, ObjC.sel("setMatchesOnMultipleResolution:"), flag);
+    }
+
+    /// matchesOnlyOnBestFittingAxis.
+    public boolean matchesOnlyOnBestFittingAxis() {
+        return ObjC.msgSendBool(peer, ObjC.sel("matchesOnlyOnBestFittingAxis"));
+    }
+
+    /// setMatchesOnlyOnBestFittingAxis:.
+    public void setMatchesOnlyOnBestFittingAxis(boolean flag) {
+        ObjC.msgSendVoidBool(peer, ObjC.sel("setMatchesOnlyOnBestFittingAxis:"), flag);
+    }
+
+    /// recache — drop caches; the image re-decodes on next draw.
+    public void recache() {
+        ObjC.msgSendVoid(peer, ObjC.sel("recache"));
+    }
+
+    /// representations — the image reps (nil-safe).
+    public NSArray representations() {
+        ensureInit();
+        return NSArray.wrap(ObjC.msgSendId(peer, ObjC.sel("representations")));
+    }
+
+    /// addRepresentations:.
+    public void addRepresentations(NSArray reps) {
+        ensureInit();
+        ObjC.msgSendVoidId(peer, ObjC.sel("addRepresentations:"),
+                (MemorySegment) (reps == null ? MemorySegment.NULL : reps.peer()));
+    }
+
+    /// addRepresentation:.
+    public void addRepresentation(NSBitmapImageRep rep) {
+        ensureInit();
+        ObjC.msgSendVoidId(peer, ObjC.sel("addRepresentation:"),
+                (MemorySegment) (rep == null ? MemorySegment.NULL : rep.peer()));
+    }
+
+    /// removeRepresentation:.
+    public void removeRepresentation(NSBitmapImageRep rep) {
+        ensureInit();
+        ObjC.msgSendVoidId(peer, ObjC.sel("removeRepresentation:"),
+                (MemorySegment) (rep == null ? MemorySegment.NULL : rep.peer()));
+    }
+
+    /// cacheMode / setCacheMode: (NSImageCacheMode 0..3).
+    public long cacheMode() {
+        return ObjC.msgSendLong(peer, ObjC.sel("cacheMode"));
+    }
+    public void setCacheMode(long mode) {
+        ObjC.msgSendVoidLong(peer, ObjC.sel("setCacheMode:"), mode);
+    }
+
+    /// alignmentRect — layout metadata (default {{0,0},size}).
+    public NSRect alignmentRect() {
+        ensureInit();
+        try {
+            MemorySegment s = (MemorySegment) H.hCapInsets().invokeExact(ObjC.structSlot(), peer, ObjC.sel("alignmentRect"));
+            return NSRect.fromSegment(s);
+        } catch (Throwable t) {
+            throw new RuntimeException("alignmentRect failed", t);
+        }
+    }
+
+    /// setAlignmentRect:.
+    public void setAlignmentRect(NSRect rect) {
+        ensureInit();
+        try {
+            H.hSetCapInsets().invokeExact(peer, ObjC.sel("setAlignmentRect:"), rect.toSegment());
+        } catch (Throwable t) {
+            throw new RuntimeException("setAlignmentRect: failed", t);
+        }
+    }
+
+    /// layerContentsForContentsScale: — layer content id for the scale (raw peer).
+    public MemorySegment layerContentsForContentsScale(double scale) {
+        ensureInit();
+        try {
+            MemorySegment c = (MemorySegment) H.hLayerContents().invokeExact(peer,
+                    ObjC.sel("layerContentsForContentsScale:"), scale);
+            return (c == null || c.address() == 0) ? null : c;
+        } catch (Throwable t) {
+            throw new RuntimeException("layerContentsForContentsScale: failed", t);
         }
     }
 

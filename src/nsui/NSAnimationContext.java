@@ -8,11 +8,14 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/// NSAnimationContext — minimal wrapper over AppKit NSAnimationContext.
-/// Provides currentContext, duration, and grouping.
+/// NSAnimationContext — groups implicit animations (duration, timing, completion).
+/// Thin stateless wrapper: each method maps to one objc_msgSend selector.
+/// OMITTED: runAnimationGroup:completionHandler: + runAnimationGroup: (block
+/// handlers need upcall block machinery — use the Runnable runAnimationGroup
+/// helpers instead) and the completionHandler block property (same reason).
 public final class NSAnimationContext extends NSObject {
 
-            private record Handles(MethodHandle hCurrent, MethodHandle hGetDouble, MethodHandle hSetDouble, MethodHandle hVoid, MethodHandle hBool, MethodHandle hVoidBool) {}
+            private record Handles(MethodHandle hCurrent, MethodHandle hGetDouble, MethodHandle hSetDouble, MethodHandle hVoid, MethodHandle hBool, MethodHandle hVoidBool, MethodHandle hSetId) {}
     private static volatile Handles handles;
 
     private NSAnimationContext(MemorySegment peer) {
@@ -32,7 +35,8 @@ public final class NSAnimationContext extends NSObject {
                 ObjC.handle(Sig.of(Ret.VOID, Arg.DOUBLE)),
                 ObjC.handle(Sig.of(Ret.VOID)),
                 ObjC.handle(Sig.of(Ret.BOOL)),
-                ObjC.handle(Sig.of(Ret.VOID, Arg.BOOL))
+                ObjC.handle(Sig.of(Ret.VOID, Arg.BOOL)),
+                ObjC.handle(Sig.of(Ret.VOID, Arg.ID))
         );
     }
 
@@ -105,6 +109,28 @@ public final class NSAnimationContext extends NSObject {
             handles.hVoidBool().invokeExact(peer, ObjC.sel("setAllowsImplicitAnimation:"), flag);
         } catch (Throwable t) {
             throw new RuntimeException("setAllowsImplicitAnimation: failed", t);
+        }
+    }
+
+    /// timingFunction — the easing curve for animations in this group (nil-safe).
+    public CAMediaTimingFunction timingFunction() {
+        ensureInit();
+        try {
+            MemorySegment p = (MemorySegment) handles.hCurrent().invokeExact(peer, ObjC.sel("timingFunction"));
+            return CAMediaTimingFunction.wrap(p);
+        } catch (Throwable t) {
+            throw new RuntimeException("timingFunction failed", t);
+        }
+    }
+
+    /// setTimingFunction: — easing curve for animations in this group (null clears).
+    public void setTimingFunction(CAMediaTimingFunction fn) {
+        ensureInit();
+        try {
+            handles.hSetId().invokeExact(peer, ObjC.sel("setTimingFunction:"),
+                    (MemorySegment) (fn == null ? MemorySegment.NULL : fn.peer()));
+        } catch (Throwable t) {
+            throw new RuntimeException("setTimingFunction: failed", t);
         }
     }
 

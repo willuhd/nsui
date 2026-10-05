@@ -8,8 +8,9 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/// NSShadow — minimal wrapper over AppKit NSShadow.
-/// Provides offset, blur radius, color, and set.
+/// NSShadow — the drop-shadow drawing parameters (offset, blur, color).
+/// Thin stateless wrapper: each method maps to one objc_msgSend selector.
+/// Nothing omitted: NSShadow.h declares only init, the three properties, and set.
 public final class NSShadow extends NSObject {
 
             private record Handles(MethodHandle hCreate, MethodHandle hGetDouble, MethodHandle hSetDouble, MethodHandle hSetId, MethodHandle hGetSize, MethodHandle hSetSize, MethodHandle hVoid) {}

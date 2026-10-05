@@ -12,6 +12,11 @@ import static nsui.objc.Sig.Ret;
 /// stateless wrapper over a native `NSImageView`. It is an `NSControl`
 /// (an `NSView`), so it drops into any view hierarchy and can be positioned
 /// with `setFrame`.
+///
+/// OMITTED: symbolConfiguration (no NSImageSymbolConfiguration wrapper) and
+/// the NSSymbolEffect/NSSymbolContentTransition methods (no NSSymbolEffect
+/// wrapper; multi-object shapes) — same foreign-type rationale as the
+/// CAKeyframeAnimation CGPath omission.
 public final class NSImageView extends NSControl {
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
@@ -192,6 +197,95 @@ public final class NSImageView extends NSControl {
             hSetFrameStyle.invokeExact(peer, ObjC.sel("setImageFrameStyle:"), style);
         } catch (Throwable t) {
             throw new RuntimeException("setImageFrameStyle: failed", t);
+        }
+    }
+
+    /// +imageViewWithImage: — non-editable view showing `image`.
+    /// NOTE (measured): AppKit raises NSInternalInconsistencyException for a nil
+    /// image (process-killing, uncatchable), so nil is rejected here with
+    /// IllegalArgumentException instead of reaching the native call.
+    public static NSImageView imageViewWithImage(NSImage image) {
+        ensureInit();
+        if (image == null || image.peer() == null || image.peer().address() == 0)
+            throw new IllegalArgumentException("imageViewWithImage: null image (AppKit requires non-nil)");
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.ID));
+            MemorySegment p = (MemorySegment) h.invokeExact(ObjC.cls("NSImageView"),
+                    ObjC.sel("imageViewWithImage:"),
+                    (MemorySegment) (image == null ? MemorySegment.NULL : image.peer()));
+            return (p == null || p.address() == 0) ? null : new NSImageView(p);
+        } catch (Throwable t) {
+            throw new RuntimeException("imageViewWithImage: failed", t);
+        }
+    }
+
+    /// contentTintColor — tint for template image content (nil-safe).
+    public NSColor contentTintColor() {
+        ensureInit();
+        try {
+            MemorySegment c = (MemorySegment) hImage.invokeExact(peer, ObjC.sel("contentTintColor"));
+            return NSColor.wrap(c);
+        } catch (Throwable t) {
+            throw new RuntimeException("contentTintColor failed", t);
+        }
+    }
+
+    /// setContentTintColor: (null clears).
+    public void setContentTintColor(NSColor color) {
+        ensureInit();
+        try {
+            hSetImage.invokeExact(peer, ObjC.sel("setContentTintColor:"),
+                    (MemorySegment) (color == null ? MemorySegment.NULL : color.peer()));
+        } catch (Throwable t) {
+            throw new RuntimeException("setContentTintColor: failed", t);
+        }
+    }
+
+    /// defaultPreferredImageDynamicRange (class; NSImageDynamicRange).
+    public static long defaultPreferredImageDynamicRange() {
+        ensureInit();
+        try {
+            return (long) hAlign.invokeExact(ObjC.cls("NSImageView"), ObjC.sel("defaultPreferredImageDynamicRange"));
+        } catch (Throwable t) {
+            throw new RuntimeException("defaultPreferredImageDynamicRange failed", t);
+        }
+    }
+
+    /// setDefaultPreferredImageDynamicRange: (class).
+    public static void setDefaultPreferredImageDynamicRange(long range) {
+        ensureInit();
+        try {
+            hSetAlign.invokeExact(ObjC.cls("NSImageView"), ObjC.sel("setDefaultPreferredImageDynamicRange:"), range);
+        } catch (Throwable t) {
+            throw new RuntimeException("setDefaultPreferredImageDynamicRange: failed", t);
+        }
+    }
+
+    /// preferredImageDynamicRange / setPreferredImageDynamicRange:.
+    public long preferredImageDynamicRange() {
+        ensureInit();
+        try {
+            return (long) hAlign.invokeExact(peer, ObjC.sel("preferredImageDynamicRange"));
+        } catch (Throwable t) {
+            throw new RuntimeException("preferredImageDynamicRange failed", t);
+        }
+    }
+    public void setPreferredImageDynamicRange(long range) {
+        ensureInit();
+        try {
+            hSetAlign.invokeExact(peer, ObjC.sel("setPreferredImageDynamicRange:"), range);
+        } catch (Throwable t) {
+            throw new RuntimeException("setPreferredImageDynamicRange: failed", t);
+        }
+    }
+
+    /// imageDynamicRange — resolved range (may be -1 = unspecified when unresolved).
+    public long imageDynamicRange() {
+        ensureInit();
+        try {
+            return (long) hAlign.invokeExact(peer, ObjC.sel("imageDynamicRange"));
+        } catch (Throwable t) {
+            throw new RuntimeException("imageDynamicRange failed", t);
         }
     }
 

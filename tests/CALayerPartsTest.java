@@ -3,6 +3,7 @@ package nsui.tests;
 import nsui.CAConstraint;
 import nsui.CAConstraintLayoutManager;
 import nsui.CADisplayLink;
+import nsui.CAEDRMetadata;
 import nsui.CAEmitterCell;
 import nsui.CAEmitterLayer;
 import nsui.CALayer;
@@ -118,6 +119,14 @@ public final class CALayerPartsTest {
                     "constraint installed on layer");
         } catch (Throwable t) {
             TestKit.check(false, "constraint section threw: " + t);
+        }
+
+        try {
+            TestKit.check(CAEDRMetadata.hdr10(0.5f, 4000.0f, 1.0f) != null, "EDR nits factory");
+            TestKit.check(CAEDRMetadata.hdr10(null, null, 1.0f) != null, "EDR SEI factory (nil blobs)");
+            TestKit.check(CAEDRMetadata.hlg(null) != null, "EDR hlg factory");
+        } catch (Throwable t) {
+            TestKit.check(false, "EDR section threw: " + t);
         }
 
         try {

@@ -26,6 +26,7 @@ import nsui.objc.ObjC;
 /// double `ObjC.init()` is idempotent. Concurrent *init*
 /// itself stays untested on purpose (unguarded initializer — the audit's
 /// latent race; this test refuses to deliberately hang the JVM).
+/// - `sel`/`cls` results stable process-wide (result-caching invariant).
 /// - Studio-era typed wrappers (`CALayer` bounds/frame,
 /// `CAAnimation` fillMode/autoreverses/repeatCount), previously
 /// called only by the untracked demo.
@@ -44,6 +45,7 @@ public final class EdgeTest {
         cacheConcurrency();
         doubleInit();
         typedWrappers();
+        cacheIdentity();
 
         TestKit.end();
     }
@@ -170,6 +172,16 @@ public final class EdgeTest {
         } catch (Throwable t) {
             TestKit.check(false, "double ObjC.init() threw: " + t);
         }
+    }
+
+    /// sel/cls results stable process-wide (the invariant result caching relies on).
+    private static void cacheIdentity() {
+        MemorySegment s1 = ObjC.sel("setTitle:");
+        MemorySegment s2 = ObjC.sel("setTitle:");
+        TestKit.check(s1.address() != 0 && s1.address() == s2.address(), "sel stable across calls");
+        MemorySegment c1 = ObjC.cls("NSString");
+        MemorySegment c2 = ObjC.cls("NSString");
+        TestKit.check(c1.address() != 0 && c1.address() == c2.address(), "cls stable across calls");
     }
 
     /// Studio-era typed wrappers, proven through round-trips (previously only

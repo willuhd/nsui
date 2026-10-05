@@ -16,7 +16,7 @@ public record NSRange(long location, long length) {
 
     /// 16-byte segment: location at offset 0, length at offset 8.
     public MemorySegment toSegment() {
-        MemorySegment s = Scratch.alloc(16);
+        MemorySegment s = Scratch.allocInput(16);
         s.set(ValueLayout.JAVA_LONG, 0, location);
         s.set(ValueLayout.JAVA_LONG, 8, length);
         return s;

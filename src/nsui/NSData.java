@@ -42,19 +42,10 @@ public class NSData extends NSObject {
         // Create native empty data then cache Java bytes.
         MemorySegment peer = ObjC.msgSendId(ObjC.cls("NSData"), ObjC.sel("alloc"));
         peer = ObjC.msgSendId(peer, ObjC.sel("init"));
-        // If bytes non-empty, try to create native NSData with bytes via dataWithBytes:length:
-        // signature is (id,SEL,const void*,long) — use handle ID, INT with pointer as ID.
-        // We attempt; if unavailable we keep dummy peer.
-        if (bytes.length > 0) {
-            try {
-                // Allocate C memory for bytes and call dataWithBytes:length: as ID,INT where first arg is pointer
-                MemorySegment cBytes = Arena.global().allocate(bytes.length);
-                MemorySegment.copy(bytes, 0, cBytes, ValueLayout.JAVA_BYTE, 0, bytes.length);
-                // Use generic escape hatch? Instead use handle ID, INT but first arg is pointer treated as ID.
-                // Sig.of(ID, ID, INT) exists? Check: we have ID, ID, ID, INT etc. Use 2-arg version ID,INT is not pointer.
-                // We'll try invoke with ID, ID, INT via hEscape? Simpler: just keep cache.
-            } catch (Exception ignored) {}
-        }
+        // NOTE: a previous revision allocated a native copy here and discarded
+        // it (dead store leaking bytes.length immortal per call). The Java-side
+        // clone below is the payload; native bytes go through allocInput at
+        // the use sites that actually pass them to AppKit.
         NSData d = new NSData(peer);
         STORE.put(peer.address(), bytes.clone());
         return d;

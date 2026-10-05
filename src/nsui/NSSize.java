@@ -11,7 +11,7 @@ public record NSSize(double width, double height) {
     public static final NSSize ZERO = new NSSize(0, 0);
 
     public MemorySegment toSegment() {
-        MemorySegment s = Scratch.alloc(16);
+        MemorySegment s = Scratch.allocInput(16);
         s.set(ValueLayout.JAVA_DOUBLE, 0, width);
         s.set(ValueLayout.JAVA_DOUBLE, 8, height);
         return s;

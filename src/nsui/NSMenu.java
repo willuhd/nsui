@@ -169,9 +169,10 @@ public final class NSMenu extends NSObject {
         long count = ObjC.msgSendLong(arr, ObjC.sel("count"));
         java.util.List<NSMenuItem> out = new java.util.ArrayList<>((int) count);
         MethodHandle hAt = ObjC.handle(Sig.of(Ret.ID, Arg.INT));
+        MemorySegment atSel = ObjC.sel("objectAtIndex:");
         for (long i = 0; i < count; i++) {
             try {
-                MemorySegment it = (MemorySegment) hAt.invokeExact(arr, ObjC.sel("objectAtIndex:"), i);
+                MemorySegment it = (MemorySegment) hAt.invokeExact(arr, atSel, i);
                 out.add(it == null || it.address()==0 ? null : NSMenuItem.wrap(it));
             } catch (Throwable t) { throw new RuntimeException("objectAtIndex: failed", t); }
         }

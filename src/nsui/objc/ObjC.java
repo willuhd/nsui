@@ -213,22 +213,34 @@ public final class ObjC {
         return ARENA.allocateFrom(s);
     }
 
-    /// objc_getClass(name) — cstring is cached in the global arena per distinct name.
+    /// Registered SEL / class pointer per distinct name, forever. `sel_registerName`
+    /// is idempotent (same name always yields the same SEL) and classes live for
+    /// the process (nothing here is ever unloaded), so caching the RESULT — not
+    /// just the cstring input — collapses every repeat call to one map lookup:
+    /// no native transition, no invokeX boxing. Bounded by distinct names.
+    private static final ConcurrentHashMap<String, MemorySegment> SEL_RESULT = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<String, MemorySegment> CLASS_RESULT = new ConcurrentHashMap<>();
+
+    /// objc_getClass(name) — result cached per distinct name.
     public static MemorySegment cls(String name) {
-        return (MemorySegment) invokeX(hGetClass,
-                CLASS_CACHE.computeIfAbsent(name, ObjC::globalCstring));
+        return CLASS_RESULT.computeIfAbsent(name,
+                n -> (MemorySegment) invokeX(hGetClass, CLASS_CACHE.computeIfAbsent(n, ObjC::globalCstring)));
     }
 
-    /// sel_registerName(name). `sel_registerName` is already unique-per-name natively,
-    /// so we cache the cstring input per distinct name instead of allocating one every call.
+    /// sel_registerName(name) — result cached per distinct name.
     public static MemorySegment sel(String name) {
-        return (MemorySegment) invokeX(hSelRegister,
-                SEL_CACHE.computeIfAbsent(name, ObjC::globalCstring));
+        return SEL_RESULT.computeIfAbsent(name,
+                n -> (MemorySegment) invokeX(hSelRegister, SEL_CACHE.computeIfAbsent(n, ObjC::globalCstring)));
     }
 
-    /// NSString from a Java string ([NSString stringWithUTF8String:]).
+    /// NSString from a Java string ([NSString stringWithUTF8String:]). Typed
+    /// invokeExact (not boxed invokeX): this sits on every setter hot path.
     public static MemorySegment nsstring(String s) {
-        return (MemorySegment) invokeX(hIdId, cls("NSString"), sel("stringWithUTF8String:"), cstring(s));
+        try {
+            return (MemorySegment) hIdId.invokeExact(cls("NSString"), sel("stringWithUTF8String:"), cstring(s));
+        } catch (Throwable t) {
+            throw fail(t);
+        }
     }
 
     /// NSString -> Java String (via [NSString UTF8String]) — safe for arbitrary length.

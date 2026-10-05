@@ -5,10 +5,15 @@ import java.lang.invoke.MethodHandle;
 
 import nsui.objc.ObjC;
 import nsui.objc.Sig;
+import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/// NSCursor — minimal wrapper over AppKit NSCursor.
-/// Provides standard cursors and push/pop/set.
+/// NSCursor — the mouse cursor: standard cursors plus push/pop/set.
+/// Thin stateless wrapper: each method maps to one objc_msgSend selector.
+/// OMITTED: initWithImage:hotSpot: — its (ID,ID,POINT) shape is NOT in the
+/// Sig vocabulary (verified by grep); initWithImage:foregroundColorHint:… +
+/// mouseEntered:/mouseExited:/setOnMouseExited: (deprecated no-ops per the
+/// header) and currentSystemCursor/resize*Cursor (deprecated) likewise.
 public final class NSCursor extends NSObject {
 
             private record Handles(MethodHandle hCursor, MethodHandle hVoid, MethodHandle hBool) {}
@@ -47,6 +52,72 @@ public final class NSCursor extends NSObject {
     public static NSCursor resizeLeftRightCursor() { return cursorWithSel("resizeLeftRightCursor"); }
     public static NSCursor resizeUpDownCursor() { return cursorWithSel("resizeUpDownCursor"); }
     public static NSCursor disappearingItemCursor() { return cursorWithSel("disappearingItemCursor"); }
+    public static NSCursor operationNotAllowedCursor() { return cursorWithSel("operationNotAllowedCursor"); }
+    public static NSCursor dragLinkCursor() { return cursorWithSel("dragLinkCursor"); }
+    public static NSCursor dragCopyCursor() { return cursorWithSel("dragCopyCursor"); }
+    public static NSCursor contextualMenuCursor() { return cursorWithSel("contextualMenuCursor"); }
+    public static NSCursor IBeamCursorForVerticalLayout() { return cursorWithSel("IBeamCursorForVerticalLayout"); }
+    public static NSCursor zoomInCursor() { return cursorWithSel("zoomInCursor"); }
+    public static NSCursor zoomOutCursor() { return cursorWithSel("zoomOutCursor"); }
+    public static NSCursor columnResizeCursor() { return cursorWithSel("columnResizeCursor"); }
+    public static NSCursor rowResizeCursor() { return cursorWithSel("rowResizeCursor"); }
+
+    /// +columnResizeCursorInDirections: — resize cursor for the given horizontal directions.
+    public static NSCursor columnResizeCursorInDirections(long directions) {
+        ensureInit();
+        try {
+            java.lang.invoke.MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.INT));
+            MemorySegment p = (MemorySegment) h.invokeExact(ObjC.cls("NSCursor"),
+                    ObjC.sel("columnResizeCursorInDirections:"), directions);
+            return wrap(p);
+        } catch (Throwable t) {
+            throw new RuntimeException("columnResizeCursorInDirections: failed", t);
+        }
+    }
+
+    /// +rowResizeCursorInDirections: — resize cursor for the given vertical directions.
+    public static NSCursor rowResizeCursorInDirections(long directions) {
+        ensureInit();
+        try {
+            java.lang.invoke.MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.INT));
+            MemorySegment p = (MemorySegment) h.invokeExact(ObjC.cls("NSCursor"),
+                    ObjC.sel("rowResizeCursorInDirections:"), directions);
+            return wrap(p);
+        } catch (Throwable t) {
+            throw new RuntimeException("rowResizeCursorInDirections: failed", t);
+        }
+    }
+
+    /// +frameResizeCursorFromPosition:inDirections: — frame-resize cursor.
+    public static NSCursor frameResizeCursorFromPositionInDirections(long position, long directions) {
+        ensureInit();
+        try {
+            java.lang.invoke.MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.INT, Arg.INT));
+            MemorySegment p = (MemorySegment) h.invokeExact(ObjC.cls("NSCursor"),
+                    ObjC.sel("frameResizeCursorFromPosition:inDirections:"), position, directions);
+            return wrap(p);
+        } catch (Throwable t) {
+            throw new RuntimeException("frameResizeCursorFromPosition:inDirections: failed", t);
+        }
+    }
+
+    /// +hide — hide the cursor (global side effect; tests must NOT call this).
+    public static void hide() {
+        ensureInit();
+        ObjC.msgSendVoid(ObjC.cls("NSCursor"), ObjC.sel("hide"));
+    }
+
+    /// +unhide — unhide the cursor (global side effect; tests must NOT call this).
+    public static void unhide() {
+        ensureInit();
+        ObjC.msgSendVoid(ObjC.cls("NSCursor"), ObjC.sel("unhide"));
+    }
+
+    /// +setHiddenUntilMouseMoves: — hide until the mouse moves (global side effect).
+    public static void setHiddenUntilMouseMoves(boolean flag) {
+        ensureInit();
+        ObjC.msgSendVoidBool(ObjC.cls("NSCursor"), ObjC.sel("setHiddenUntilMouseMoves:"), flag);
+    }
 
     /// +[NSCursor currentCursor]
     public static NSCursor currentCursor() {

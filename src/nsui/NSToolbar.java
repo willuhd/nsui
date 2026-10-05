@@ -230,4 +230,115 @@ public final class NSToolbar extends NSObject {
     public void setAutosavesConfiguration(boolean flag) {
         ObjC.msgSendVoidBool(peer, ObjC.sel("setAutosavesConfiguration:"), flag);
     }
+
+    // ---- init (macOS 10.13, empty-string identifier) ----
+    /// `[[NSToolbar alloc] init]` — toolbar with empty identifier (non-customizable use).
+    public static NSToolbar createDefault() {
+        ensureInit();
+        MemorySegment p = ObjC.msgSendId(ObjC.cls("NSToolbar"), ObjC.sel("alloc"));
+        p = ObjC.msgSendId(p, ObjC.sel("init"));
+        if (p == null || p.address() == 0) throw new IllegalStateException("NSToolbar alloc/init returned nil");
+        return new NSToolbar(p);
+    }
+
+    // ---- removeItemWithItemIdentifier: (macOS 15) ----
+    /// removeItemWithItemIdentifier:.
+    public void removeItemWithItemIdentifier(String identifier) {
+        ObjC.msgSendVoidId(peer, ObjC.sel("removeItemWithItemIdentifier:"),
+                identifier == null ? MemorySegment.NULL : ObjC.nsstring(identifier));
+    }
+    /// removeItemWithItemIdentifier: with raw id.
+    public void removeItemWithItemIdentifier(MemorySegment identifier) {
+        ObjC.msgSendVoidId(peer, ObjC.sel("removeItemWithItemIdentifier:"),
+                (MemorySegment) (identifier == null ? MemorySegment.NULL : identifier));
+    }
+
+    // ---- runCustomizationPalette: / customizationPaletteIsRunning ----
+    /// runCustomizationPalette: — never call from tests (opens modal palette).
+    public void runCustomizationPalette(MemorySegment sender) {
+        ObjC.msgSendVoidId(peer, ObjC.sel("runCustomizationPalette:"), (MemorySegment) (sender == null ? MemorySegment.NULL : sender));
+    }
+    /// runCustomizationPalette: with NSObject sender.
+    public void runCustomizationPalette(NSObject sender) {
+        runCustomizationPalette(sender == null ? MemorySegment.NULL : sender.peer());
+    }
+    /// customizationPaletteIsRunning.
+    public boolean customizationPaletteIsRunning() {
+        return ObjC.msgSendBool(peer, ObjC.sel("customizationPaletteIsRunning"));
+    }
+
+    // ---- allowsDisplayModeCustomization (macOS 15) ----
+    /// allowsDisplayModeCustomization.
+    public boolean allowsDisplayModeCustomization() {
+        return ObjC.msgSendBool(peer, ObjC.sel("allowsDisplayModeCustomization"));
+    }
+    /// setAllowsDisplayModeCustomization:.
+    public void setAllowsDisplayModeCustomization(boolean flag) {
+        ObjC.msgSendVoidBool(peer, ObjC.sel("setAllowsDisplayModeCustomization:"), flag);
+    }
+
+    // ---- itemIdentifiers (NSArray<NSToolbarItemIdentifier>, macOS 15) ----
+    /// itemIdentifiersPeer — raw NSArray id.
+    public MemorySegment itemIdentifiersPeer() {
+        return ObjC.msgSendId(peer, ObjC.sel("itemIdentifiers"));
+    }
+    /// itemIdentifiers — identifier strings (empty when none).
+    public java.util.List<String> itemIdentifiers() {
+        MemorySegment arr = itemIdentifiersPeer();
+        if (arr == null || arr.address() == 0) return java.util.List.of();
+        long count = ObjC.msgSendLong(arr, ObjC.sel("count"));
+        java.util.List<String> out = new java.util.ArrayList<>((int) count);
+        try {
+            java.lang.invoke.MethodHandle hAt = ObjC.handle(Sig.of(Ret.ID, Arg.INT));
+            for (long i = 0; i < count; i++) {
+                MemorySegment s = (MemorySegment) hAt.invokeExact(arr, ObjC.sel("objectAtIndex:"), i);
+                String str = ObjC.toString(s);
+                if (str != null) out.add(str);
+            }
+        } catch (Throwable t) { throw new RuntimeException("itemIdentifiers failed", t); }
+        return java.util.Collections.unmodifiableList(out);
+    }
+    /// setItemIdentifiers: with strings.
+    public void setItemIdentifiers(java.util.List<String> identifiers) {
+        MemorySegment arr = (identifiers == null) ? MemorySegment.NULL : ObjC.msgSendId(ObjC.cls("NSMutableArray"), ObjC.sel("array"));
+        if (identifiers != null) for (String s : identifiers) if (s != null) ObjC.msgSendVoidId(arr, ObjC.sel("addObject:"), ObjC.nsstring(s));
+        ObjC.msgSendVoidId(peer, ObjC.sel("setItemIdentifiers:"), arr);
+    }
+
+    // ---- centeredItemIdentifiers (NSSet, macOS 13) ----
+    /// centeredItemIdentifiersPeer — raw NSSet id.
+    public MemorySegment centeredItemIdentifiersPeer() {
+        return ObjC.msgSendId(peer, ObjC.sel("centeredItemIdentifiers"));
+    }
+    /// setCenteredItemIdentifiers: with NSSet id.
+    public void setCenteredItemIdentifiers(MemorySegment identifiers) {
+        ObjC.msgSendVoidId(peer, ObjC.sel("setCenteredItemIdentifiers:"), (MemorySegment) (identifiers == null ? MemorySegment.NULL : identifiers));
+    }
+
+    // ---- validateVisibleItems ----
+    /// validateVisibleItems.
+    public void validateVisibleItems() {
+        ObjC.msgSendVoid(peer, ObjC.sel("validateVisibleItems"));
+    }
+
+    // ---- allowsExtensionItems (macOS 10.10) ----
+    /// allowsExtensionItems.
+    public boolean allowsExtensionItems() {
+        return ObjC.msgSendBool(peer, ObjC.sel("allowsExtensionItems"));
+    }
+    /// setAllowsExtensionItems:.
+    public void setAllowsExtensionItems(boolean flag) {
+        ObjC.msgSendVoidBool(peer, ObjC.sel("setAllowsExtensionItems:"), flag);
+    }
+
+    // ---------------------------------------------------------------- omissions (documented, not oversights)
+    // SDK: $(xcrun --show-sdk-path)/System/Library/Frameworks/AppKit.framework/Headers/NSToolbar.h
+    // - NSToolbarDelegate protocol methods (toolbar:itemForItemIdentifier:..., toolbarDefault/Allowed/Selectable/
+    //   ImmovableItemIdentifiers:, canBeInsertedAtIndex:) — delegate side, covered by NSToolbarDelegate helper.
+    // - -toolbarWillAddItem:/-toolbarDidRemoveItem: — notification observers, not toolbar selectors.
+    // - Deprecated sizeMode is KEPT (still the working API; deprecation says ignored in future but present);
+    //   deprecated centeredItemIdentifier/fullScreenAccessoryView(*)/showsBaselineSeparator/configurationDictionary
+    //   are omitted except showsBaselineSeparator which is KEPT for compat (existing call sites) — other
+    //   deprecated fullScreen/configuration APIs omitted (no registered shape benefit, superseded by
+    //   itemIdentifiers/displayMode).
 }

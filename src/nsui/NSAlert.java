@@ -183,4 +183,94 @@ public final class NSAlert extends NSObject {
             return NSWindow.wrap(p);
         } catch (Throwable t) { throw new RuntimeException("window failed", t); }
     }
+
+    // ---- alertWithError: (+factory, NSError* as id) ----
+    /// +alertWithError: — alert initialized from an NSError (peer as id; nil-safe).
+    public static NSAlert alertWithError(MemorySegment error) {
+        ensureInit();
+        MemorySegment p = ObjC.msgSendIdId(ObjC.cls("NSAlert"), ObjC.sel("alertWithError:"),
+                (MemorySegment) (error == null ? MemorySegment.NULL : error));
+        return wrap(p);
+    }
+
+    // ---- buttons (readonly NSArray<NSButton*>) ----
+    /// buttons — response buttons in add order (excludes implicit OK when none added).
+    public java.util.List<NSButton> buttons() {
+        ensureInit();
+        try {
+            MemorySegment arr = (MemorySegment) hId.invokeExact(peer, ObjC.sel("buttons"));
+            if (arr == null || arr.address() == 0) return java.util.List.of();
+            long count = ObjC.msgSendLong(arr, ObjC.sel("count"));
+            java.util.List<NSButton> out = new java.util.ArrayList<>((int) count);
+            java.lang.invoke.MethodHandle hAt = ObjC.handle(Sig.of(Ret.ID, Arg.INT));
+            for (long i = 0; i < count; i++) {
+                MemorySegment b = (MemorySegment) hAt.invokeExact(arr, ObjC.sel("objectAtIndex:"), i);
+                NSButton w = NSButton.wrap(b);
+                if (w != null) out.add(w);
+            }
+            return java.util.Collections.unmodifiableList(out);
+        } catch (Throwable t) { throw new RuntimeException("buttons failed", t); }
+    }
+
+    /// buttonsPeer — raw NSArray id (nil-safe, may be NULL).
+    public MemorySegment buttonsPeer() {
+        ensureInit();
+        try { return (MemorySegment) hId.invokeExact(peer, ObjC.sel("buttons")); }
+        catch (Throwable t) { throw new RuntimeException("buttons failed", t); }
+    }
+
+    // ---- helpAnchor (NSHelpAnchorName NSString) ----
+    /// helpAnchor — HTML help anchor used with the help button (nil clears).
+    public String helpAnchor() {
+        return ObjC.toString(ObjC.msgSendId(peer, ObjC.sel("helpAnchor")));
+    }
+    /// setHelpAnchor:.
+    public void setHelpAnchor(String anchor) {
+        ObjC.msgSendVoidId(peer, ObjC.sel("setHelpAnchor:"),
+                anchor == null ? MemorySegment.NULL : ObjC.nsstring(anchor));
+    }
+
+    // ---- delegate (id<NSAlertDelegate>, weak) ----
+    /// delegate — alert delegate peer (currently only custom help behavior).
+    public MemorySegment delegatePeer() {
+        ensureInit();
+        try { return (MemorySegment) hId.invokeExact(peer, ObjC.sel("delegate")); }
+        catch (Throwable t) { throw new RuntimeException("delegate failed", t); }
+    }
+    /// setDelegate:.
+    public void setDelegate(MemorySegment delegate) {
+        ObjC.msgSendVoidId(peer, ObjC.sel("setDelegate:"),
+                (MemorySegment) (delegate == null ? MemorySegment.NULL : delegate));
+    }
+    /// setDelegate: with NSObject.
+    public void setDelegate(NSObject delegate) {
+        setDelegate(delegate == null ? MemorySegment.NULL : delegate.peer());
+    }
+
+    // ---- layout ----
+    /// layout — force immediate layout instead of lazily before display.
+    public void layout() {
+        ObjC.msgSendVoid(peer, ObjC.sel("layout"));
+    }
+
+    // ---------------------------------------------------------------- modal-response constants — verified against local SDK headers
+    // SDK: $(xcrun --show-sdk-path)/System/Library/Frameworks/AppKit.framework/Headers/NSAlert.h
+    //   NSAlertFirstButtonReturn 1000, NSAlertSecondButtonReturn 1001, NSAlertThirdButtonReturn 1002
+    //   (buttonPosition 3+x = NSAlertThirdButtonReturn + x; no buttons -> implicit OK returns 0)
+    // Docs: https://developer.apple.com/documentation/appkit/nsalert
+    /// NSAlertFirstButtonReturn — runModal/sheet return for the first (rightmost) button.
+    public static final long FIRST_BUTTON_RETURN = 1000L;
+    /// NSAlertSecondButtonReturn.
+    public static final long SECOND_BUTTON_RETURN = 1001L;
+    /// NSAlertThirdButtonReturn (buttonPosition 3+x = this + x).
+    public static final long THIRD_BUTTON_RETURN = 1002L;
+
+    // ---------------------------------------------------------------- omissions (documented, not oversights)
+    // - +alertWithMessageText:defaultButton:alternateButton:otherButton:informativeTextWithFormat: (deprecated 10.3-10.10,
+    //   variadic format) — omitted: variadic C call has no registered shape; use create() + setters.
+    // - -beginSheetModalForWindow:modalDelegate:didEndSelector:contextInfo: (deprecated 10.3-10.10, selector+void*)
+    //   — omitted: deprecated and needs (id,SEL,void*) plumbing with no registered shape; use
+    //   beginSheetModalForWindow:completionHandler:.
+    // - NSAlertDelegate.alertShowHelp: — delegate protocol method, not an NSAlert selector; wire via DelegateProxy
+    //   BoolArg if needed (no new upcall shape introduced here).
 }

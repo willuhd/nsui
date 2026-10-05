@@ -268,4 +268,127 @@ public final class NSPopover extends NSObject {
     public void setAppearance(NSObject appearance) {
         setAppearance(appearance == null ? MemorySegment.NULL : appearance.peer());
     }
+
+    // ---------------------------------------------------------------- nested types — verified against local SDK headers
+    // SDK: $(xcrun --show-sdk-path)/System/Library/Frameworks/AppKit.framework/Headers/NSPopover.h
+    //   NSPopoverBehavior: ApplicationDefined 0, Transient 1, Semitransient 2
+    //   NSPopoverAppearance (deprecated 10.7-10.10): Minimal 0, HUD 1 — superseded by NSAppearance
+    // Docs: https://developer.apple.com/documentation/appkit/nspopover
+    /// `NSPopoverBehavior` — 0=ApplicationDefined, 1=Transient, 2=Semitransient.
+    public enum Behavior {
+        applicationDefined(0), transientPopover(1), semitransient(2);
+        public final long value;
+        Behavior(long v) { this.value = v; }
+        public static Behavior fromValue(long v) { for (var e : values()) if (e.value == v) return e; return null; }
+    }
+    /// Typed behavior getter.
+    public Behavior behaviorEnum() { return Behavior.fromValue(behavior()); }
+    /// Typed behavior setter.
+    public void setBehavior(Behavior b) { setBehavior(b.value); }
+    /// `NSPopoverAppearance` (deprecated 10.7-10.10) — 0=Minimal, 1=HUD. Kept for header completeness.
+    public enum DeprecatedAppearance {
+        minimal(0), hud(1);
+        public final long value;
+        DeprecatedAppearance(long v) { this.value = v; }
+        public static DeprecatedAppearance fromValue(long v) { for (var e : values()) if (e.value == v) return e; return null; }
+    }
+
+    // ---- delegate (id<NSPopoverDelegate>, weak) ----
+    /// delegatePeer — raw delegate id (may be NULL).
+    public MemorySegment delegatePeer() {
+        ensureInit();
+        try { return (MemorySegment) handles.hGetId().invokeExact(peer, ObjC.sel("delegate")); }
+        catch (Throwable t) { throw new RuntimeException("delegate failed", t); }
+    }
+    /// setDelegate: with raw id.
+    public void setDelegate(MemorySegment delegate) {
+        ensureInit();
+        try {
+            MemorySegment p = (delegate == null || delegate.address() == 0) ? MemorySegment.NULL : delegate;
+            handles.hSetId().invokeExact(peer, ObjC.sel("setDelegate:"), p);
+        } catch (Throwable t) { throw new RuntimeException("setDelegate: failed", t); }
+    }
+    /// setDelegate: with NSObject.
+    public void setDelegate(NSObject delegate) {
+        setDelegate(delegate == null ? MemorySegment.NULL : delegate.peer());
+    }
+
+    // ---- effectiveAppearance (readonly NSAppearance, macOS 10.10) ----
+    /// effectiveAppearancePeer — raw NSAppearance id.
+    public MemorySegment effectiveAppearancePeer() {
+        ensureInit();
+        try { return (MemorySegment) handles.hGetId().invokeExact(peer, ObjC.sel("effectiveAppearance")); }
+        catch (Throwable t) { throw new RuntimeException("effectiveAppearance failed", t); }
+    }
+    /// effectiveAppearance — wrapped (NSAppearance wrapper exists in this repo).
+    public NSAppearance effectiveAppearance() {
+        return NSAppearance.wrap(effectiveAppearancePeer());
+    }
+
+    // ---- detached (readonly, macOS 10.10, getter isDetached) ----
+    /// isDetached.
+    public boolean isDetached() {
+        ensureInit();
+        try { return (boolean) handles.hGetBool().invokeExact(peer, ObjC.sel("isDetached")); }
+        catch (Throwable t) { throw new RuntimeException("isDetached failed", t); }
+    }
+
+    // ---- positioningRect (NSRect) ----
+    /// positioningRect.
+    public NSRect positioningRect() {
+        ensureInit();
+        try {
+            MemorySegment seg = (MemorySegment) ObjC.handle(Sig.of(Ret.RECT)).invokeExact(ObjC.structSlot(), peer, ObjC.sel("positioningRect"));
+            return NSRect.fromSegment(seg);
+        } catch (Throwable t) { throw new RuntimeException("positioningRect failed", t); }
+    }
+    /// setPositioningRect:.
+    public void setPositioningRect(NSRect rect) {
+        ensureInit();
+        if (rect == null) return;
+        try { ObjC.handle(Sig.of(Ret.VOID, Arg.RECT)).invokeExact(peer, ObjC.sel("setPositioningRect:"), rect.toSegment()); }
+        catch (Throwable t) { throw new RuntimeException("setPositioningRect: failed", t); }
+    }
+
+    // ---- hasFullSizeContent (BOOL, macOS 14) ----
+    /// hasFullSizeContent.
+    public boolean hasFullSizeContent() {
+        ensureInit();
+        try { return (boolean) handles.hGetBool().invokeExact(peer, ObjC.sel("hasFullSizeContent")); }
+        catch (Throwable t) { throw new RuntimeException("hasFullSizeContent failed", t); }
+    }
+    /// setHasFullSizeContent:.
+    public void setHasFullSizeContent(boolean flag) {
+        ensureInit();
+        try { handles.hSetBool().invokeExact(peer, ObjC.sel("setHasFullSizeContent:"), flag); }
+        catch (Throwable t) { throw new RuntimeException("setHasFullSizeContent: failed", t); }
+    }
+
+    // ---- showRelativeToToolbarItem: (macOS 14) ----
+    /// showRelativeToToolbarItem: — never call from tests (shows visibly); provided for completeness.
+    public void showRelativeToToolbarItem(NSToolbarItem item) {
+        ensureInit();
+        try {
+            handles.hSetId().invokeExact(peer, ObjC.sel("showRelativeToToolbarItem:"),
+                    (MemorySegment) (item == null ? MemorySegment.NULL : item.peer()));
+        } catch (Throwable t) { throw new RuntimeException("showRelativeToToolbarItem: failed", t); }
+    }
+    /// showRelativeToToolbarItem: with raw id.
+    public void showRelativeToToolbarItem(MemorySegment item) {
+        ensureInit();
+        try {
+            handles.hSetId().invokeExact(peer, ObjC.sel("showRelativeToToolbarItem:"),
+                    (MemorySegment) (item == null ? MemorySegment.NULL : item));
+        } catch (Throwable t) { throw new RuntimeException("showRelativeToToolbarItem: failed", t); }
+    }
+
+    // ---------------------------------------------------------------- omissions (documented, not oversights)
+    // - -initWithCoder: (NSCoding) — omitted: NSCoder plumbing out of scope.
+    // - Deprecated appearance (NSPopoverAppearance int, 10.7-10.10) — documented as DeprecatedAppearance above;
+    //   no separate getter/setter (superseded by NSAppearance appearance/effectiveAppearance kept above).
+    // - NSPopoverDelegate protocol methods (popoverShouldClose:, popoverShouldDetach, popoverDidDetach,
+    //   detachableWindowForPopover:, popoverWill/DidShow/Close:) — delegate side, not NSPopover selectors;
+    //   wire via DelegateProxy (BoolArg/VoidArg/IdArg shapes) if needed. No new upcall shape introduced here.
+    // - NSPopover close-reason constants / notifications (NSPopoverCloseReason*, NSPopoverWill/DidShow/Close
+    //   notifications) — NSNotificationCenter surface, not NSPopover selectors; observe via notification center.
 }

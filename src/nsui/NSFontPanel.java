@@ -136,4 +136,18 @@ public final class NSFontPanel extends NSObject {
     public void setWorksWhenModal(boolean flag) {
         ObjC.msgSendVoidBool(peer, ObjC.sel("setWorksWhenModal:"), flag);
     }
+
+    // ---- reloadDefaultFontFamilies ----
+    /// reloadDefaultFontFamilies — reload the default families list.
+    public void reloadDefaultFontFamilies() {
+        ObjC.msgSendVoid(peer, ObjC.sel("reloadDefaultFontFamilies"));
+    }
+
+    // ---------------------------------------------------------------- omissions (documented, not oversights)
+    // SDK: $(xcrun --show-sdk-path)/System/Library/Frameworks/AppKit.framework/Headers/NSFontPanel.h
+    // - -changeFont: / -validModesForFontPanel: — responder/delegate protocol methods (NSFontChanging /
+    //   NSFontManager side), not NSFontPanel selectors; wire via Target-Action or DelegateProxy if needed.
+    // - Deprecated -validModesForFontPanel: (10.0-11.0) — omitted (protocol-side, deprecated).
+    // - Panel show/run is NSPanel/NSWindow behavior (orderFront:, makeKeyAndOrderFront:, runModal) — inherited
+    //   AppKit behavior, not re-wrapped here; tests never show panels visibly.
 }

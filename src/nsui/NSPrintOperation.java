@@ -151,4 +151,166 @@ public final class NSPrintOperation extends NSObject {
         ensureInit();
         return wrap(ObjC.msgSendId(ObjC.cls("NSPrintOperation"), ObjC.sel("currentOperation")));
     }
+
+    // ---------------------------------------------------------------- nested enums — verified against local SDK headers
+    // SDK: $(xcrun --show-sdk-path)/System/Library/Frameworks/AppKit.framework/Headers/NSPrintOperation.h
+    //   NSPrintingPageOrder: Descending -1, Special 0, Ascending 1, Unknown 2
+    //   NSPrintRenderingQuality: Best 0, Responsive 1 (macOS 10.7)
+    // Docs: https://developer.apple.com/documentation/appkit/nsprintoperation
+    /// `NSPrintingPageOrder` — -1=Descending, 0=Special, 1=Ascending, 2=Unknown.
+    public enum PageOrder {
+        descending(-1), special(0), ascending(1), unknown(2);
+        public final long value;
+        PageOrder(long v) { this.value = v; }
+        public static PageOrder fromValue(long v) { for (var e : values()) if (e.value == v) return e; return null; }
+    }
+    /// `NSPrintRenderingQuality` — 0=Best, 1=Responsive.
+    public enum RenderingQuality {
+        best(0), responsive(1);
+        public final long value;
+        RenderingQuality(long v) { this.value = v; }
+        public static RenderingQuality fromValue(long v) { for (var e : values()) if (e.value == v) return e; return null; }
+    }
+
+    // ---- printOperationWithView: (view-only factory) ----
+    /// `+printOperationWithView:` — operation with default print info.
+    public static NSPrintOperation create(NSView view) {
+        ensureInit();
+        MemorySegment v = (MemorySegment)(view == null ? MemorySegment.NULL : view.peer());
+        try {
+            MemorySegment op = (MemorySegment) ObjC.handle(Sig.of(Ret.ID, Arg.ID))
+                    .invokeExact(ObjC.cls("NSPrintOperation"), ObjC.sel("printOperationWithView:"), v);
+            return wrap(op);
+        } catch (Throwable t) {
+            throw new RuntimeException("printOperationWithView: failed", t);
+        }
+    }
+
+    // ---- copyingOperation (readonly, getter isCopyingOperation) ----
+    /// isCopyingOperation.
+    public boolean isCopyingOperation() {
+        ensureInit();
+        try { return (boolean) H.hShowsPrintPanel().invokeExact(peer, ObjC.sel("isCopyingOperation")); }
+        catch (Throwable t) { throw new RuntimeException("isCopyingOperation failed", t); }
+    }
+
+    // ---- preferredRenderingQuality (readonly, macOS 10.7) ----
+    /// preferredRenderingQuality.
+    public long preferredRenderingQuality() {
+        ensureInit();
+        try { return (long) ObjC.handle(Sig.of(Ret.INT)).invokeExact(peer, ObjC.sel("preferredRenderingQuality")); }
+        catch (Throwable t) { throw new RuntimeException("preferredRenderingQuality failed", t); }
+    }
+    /// Typed getter.
+    public RenderingQuality preferredRenderingQualityEnum() { return RenderingQuality.fromValue(preferredRenderingQuality()); }
+
+    // ---- jobTitle (NSString, macOS 10.5) ----
+    /// jobTitle.
+    public String jobTitle() {
+        return ObjC.toString(ObjC.msgSendId(peer, ObjC.sel("jobTitle")));
+    }
+    /// setJobTitle:.
+    public void setJobTitle(String title) {
+        ObjC.msgSendVoidId(peer, ObjC.sel("setJobTitle:"), title == null ? MemorySegment.NULL : ObjC.nsstring(title));
+    }
+
+    // ---- printPanel ----
+    /// printPanel.
+    public NSPrintPanel printPanel() {
+        return NSPrintPanel.wrap(ObjC.msgSendId(peer, ObjC.sel("printPanel")));
+    }
+    /// setPrintPanel:.
+    public void setPrintPanel(NSPrintPanel panel) {
+        ObjC.msgSendVoidId(peer, ObjC.sel("setPrintPanel:"), (MemorySegment) (panel == null ? MemorySegment.NULL : panel.peer()));
+    }
+
+    // ---- PDFPanel (NSPDFPanel* — no wrapper; id peer, macOS 10.9) ----
+    /// pdfPanelPeer — raw NSPDFPanel id (may be NULL).
+    public MemorySegment pdfPanelPeer() {
+        return ObjC.msgSendId(peer, ObjC.sel("PDFPanel"));
+    }
+    /// setPDFPanel: with raw id.
+    public void setPDFPanel(MemorySegment panel) {
+        ObjC.msgSendVoidId(peer, ObjC.sel("setPDFPanel:"), (MemorySegment) (panel == null ? MemorySegment.NULL : panel));
+    }
+
+    // ---- canSpawnSeparateThread ----
+    /// canSpawnSeparateThread.
+    public boolean canSpawnSeparateThread() {
+        return ObjC.msgSendBool(peer, ObjC.sel("canSpawnSeparateThread"));
+    }
+    /// setCanSpawnSeparateThread:.
+    public void setCanSpawnSeparateThread(boolean flag) {
+        ObjC.msgSendVoidBool(peer, ObjC.sel("setCanSpawnSeparateThread:"), flag);
+    }
+
+    // ---- pageOrder (NSPrintingPageOrder long) ----
+    /// pageOrder.
+    public long pageOrder() {
+        return ObjC.msgSendLong(peer, ObjC.sel("pageOrder"));
+    }
+    /// setPageOrder:.
+    public void setPageOrder(long order) {
+        ObjC.msgSendVoidLong(peer, ObjC.sel("setPageOrder:"), order);
+    }
+    /// Typed overload.
+    public void setPageOrder(PageOrder o) { setPageOrder(o.value); }
+    /// Typed getter.
+    public PageOrder pageOrderEnum() { return PageOrder.fromValue(pageOrder()); }
+
+    // ---- setPrintInfo: (printInfo getter already exists) ----
+    /// setPrintInfo: — replace the operation\u0027s settings.
+    public void setPrintInfo(NSPrintInfo info) {
+        ObjC.msgSendVoidId(peer, ObjC.sel("setPrintInfo:"), (MemorySegment) (info == null ? MemorySegment.NULL : info.peer()));
+    }
+
+    // ---- context (readonly NSGraphicsContext*) ----
+    /// contextPeer — raw NSGraphicsContext id (valid only while paginating).
+    public MemorySegment contextPeer() {
+        return ObjC.msgSendId(peer, ObjC.sel("context"));
+    }
+
+    // ---- pageRange (readonly NSRange, macOS 10.5) / currentPage ----
+    /// pageRange.
+    public NSRange pageRange() {
+        ensureInit();
+        try {
+            MemorySegment seg = (MemorySegment) ObjC.handle(Sig.of(Ret.RANGE)).invokeExact(ObjC.structSlot(), peer, ObjC.sel("pageRange"));
+            return NSRange.fromSegment(seg);
+        } catch (Throwable t) { throw new RuntimeException("pageRange failed", t); }
+    }
+    /// currentPage.
+    public long currentPage() {
+        return ObjC.msgSendLong(peer, ObjC.sel("currentPage"));
+    }
+
+    // ---- createContext / destroyContext / deliverResult / cleanUpOperation ----
+    /// createContext — pagination context (caller must destroy).
+    public MemorySegment createContext() {
+        return ObjC.msgSendId(peer, ObjC.sel("createContext"));
+    }
+    /// destroyContext.
+    public void destroyContext() {
+        ObjC.msgSendVoid(peer, ObjC.sel("destroyContext"));
+    }
+    /// deliverResult.
+    public boolean deliverResult() {
+        return ObjC.msgSendBool(peer, ObjC.sel("deliverResult"));
+    }
+    /// cleanUpOperation.
+    public void cleanUpOperation() {
+        ObjC.msgSendVoid(peer, ObjC.sel("cleanUpOperation"));
+    }
+
+    // ---------------------------------------------------------------- omissions (documented, not oversights)
+    // - +PDFOperationWithView:insideRect:toData:printInfo: / +PDFOperationWithView:insideRect:toPath:printInfo: /
+    //   +EPSOperationWithView:insideRect:toData:printInfo: / +EPSOperationWithView:insideRect:toPath:printInfo: /
+    //   +PDFOperationWithView:insideRect:toData: / +EPSOperationWithView:insideRect:toData: — omitted: mixed
+    //   (id,NSRect,id,id) shapes have no vocabulary entry; grep Sig.java for ID,RECT — no match. Use
+    //   printOperationWithView:printInfo: for wiring coverage; runOperation itself is never called in tests.
+    // - -runOperationModalForWindow:delegate:didRunSelector:contextInfo: — deliberately out of scope (class
+    //   javadoc): needs delegate+SEL+void* plumbing with no registered shape; would block on a modal loop.
+    // - -printOperationDidRun:success:contextInfo: — delegate callback, not an NSPrintOperation selector.
+    // - Deprecated -setAccessoryView:/-accessoryView/-setJobStyleHint:/-jobStyleHint/-setShowPanels:/-showPanels
+    //   (all deprecated 10.0-10.5) — omitted; use NSPrintPanel accessory controllers.
 }

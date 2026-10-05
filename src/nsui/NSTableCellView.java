@@ -1,23 +1,15 @@
 package nsui;
 
 import java.lang.foreign.MemorySegment;
-import java.lang.invoke.MethodHandle;
 
 import nsui.objc.ObjC;
-import nsui.objc.Sig;
-import static nsui.objc.Sig.Arg;
-import static nsui.objc.Sig.Ret;
 
 /// NSTableCellView — a reusable table cell view: object value plus optional
 /// text-field and image-view outlets. Thin stateless wrapper.
 public final class NSTableCellView extends NSView {
 
-    private record Handles(MethodHandle hInitFrame) {}
-    private static volatile Handles handles;
-
     private NSTableCellView(MemorySegment peer) {
         super(peer);
-        ensureInit();
     }
 
     /// Wrap an existing peer.
@@ -25,22 +17,9 @@ public final class NSTableCellView extends NSView {
         return (peer == null || peer.address() == 0) ? null : new NSTableCellView(peer);
     }
 
-    private static synchronized void ensureInit() {
-        if (handles != null) return;
-        handles = new Handles(ObjC.handle(Sig.of(Ret.ID, Arg.RECT)));
-    }
-
     /// [[NSTableCellView alloc] initWithFrame:].
     public static NSTableCellView create(NSRect frame) {
-        ensureInit();
-        MemorySegment p = ObjC.msgSendId(ObjC.cls("NSTableCellView"), ObjC.sel("alloc"));
-        try {
-            p = (MemorySegment) handles.hInitFrame().invokeExact(p, ObjC.sel("initWithFrame:"), frame.toSegment());
-        } catch (Throwable t) {
-            throw new RuntimeException("initWithFrame: failed for NSTableCellView", t);
-        }
-        if (p.address() == 0) throw new IllegalStateException("initWithFrame: returned nil for NSTableCellView");
-        return new NSTableCellView(p);
+        return new NSTableCellView(ObjC.newView("NSTableCellView", frame));
     }
 
     /// objectValue — the represented object (raw peer: may be any class).

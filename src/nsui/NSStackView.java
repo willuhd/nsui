@@ -65,18 +65,9 @@ public class NSStackView extends NSView {
     }
 
     /// `[[NSStackView alloc] initWithFrame:frame]` — a new stack with the given frame.
-    public static NSStackView create(NSRect frame) {
+        public static NSStackView create(NSRect frame) {
         ensureInit();
-        MemorySegment s = ObjC.msgSendId(ObjC.cls("NSStackView"), ObjC.sel("alloc"));
-        try {
-            s = (MemorySegment) hInitFrame.invokeExact(s, ObjC.sel("initWithFrame:"), frame.toSegment());
-        } catch (Throwable t) {
-            throw new RuntimeException("initWithFrame: failed for NSStackView", t);
-        }
-        if (s.address() == 0) {
-            throw new IllegalStateException("NSStackView alloc/initWithFrame: returned nil");
-        }
-        return new NSStackView(s);
+        return new NSStackView(ObjC.newView("NSStackView", frame));
     }
 
     // ---------------------------------------------------------------- arranged subviews

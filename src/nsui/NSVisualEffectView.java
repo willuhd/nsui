@@ -51,18 +51,9 @@ public final class NSVisualEffectView extends NSView {
     }
 
     /// `[[NSVisualEffectView alloc] initWithFrame:frame]` — a new visual effect view.
-    public static NSVisualEffectView create(NSRect frame) {
+        public static NSVisualEffectView create(NSRect frame) {
         ensureInit();
-        MemorySegment v = ObjC.msgSendId(ObjC.cls("NSVisualEffectView"), ObjC.sel("alloc"));
-        try {
-            v = (MemorySegment) hInitFrame.invokeExact(v, ObjC.sel("initWithFrame:"), frame.toSegment());
-        } catch (Throwable t) {
-            throw new RuntimeException("initWithFrame: failed for NSVisualEffectView", t);
-        }
-        if (v.address() == 0) {
-            throw new IllegalStateException("NSVisualEffectView alloc/initWithFrame: returned nil");
-        }
-        return new NSVisualEffectView(v);
+        return new NSVisualEffectView(ObjC.newView("NSVisualEffectView", frame));
     }
 
     // ---------------------------------------------------------------- nested enums — verified against local SDK headers

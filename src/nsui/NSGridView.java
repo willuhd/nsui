@@ -12,7 +12,7 @@ import static nsui.objc.Sig.Ret;
 /// Thin 1:1 grid layout view; rows/columns managed via view hierarchy.
 public final class NSGridView extends NSView {
 
-            private record Handles(MethodHandle hInitFrame, MethodHandle hGridInit, MethodHandle hVoidId, MethodHandle hId, MethodHandle hInt, MethodHandle hVoidInt, MethodHandle hGetDouble, MethodHandle hSetDouble) {}
+            private record Handles(MethodHandle hGridInit, MethodHandle hVoidId, MethodHandle hId, MethodHandle hInt, MethodHandle hVoidInt, MethodHandle hGetDouble, MethodHandle hSetDouble) {}
     private static volatile Handles handles;
 
     private NSGridView(MemorySegment peer) {
@@ -27,7 +27,6 @@ public final class NSGridView extends NSView {
         private static synchronized void ensureInit() {
         if (handles != null) return;
         handles = new Handles(
-                ObjC.handle(Sig.of(Ret.ID, Arg.RECT)),
                 ObjC.handle(Sig.of(Ret.ID, Arg.INT, Arg.INT)),
                 ObjC.handle(Sig.of(Ret.VOID, Arg.ID)),
                 ObjC.handle(Sig.of(Ret.ID)),
@@ -39,16 +38,9 @@ public final class NSGridView extends NSView {
     }
 
     /// [[NSGridView alloc] initWithFrame:]
-    public static NSGridView create(NSRect frame) {
+        public static NSGridView create(NSRect frame) {
         ensureInit();
-        MemorySegment p = ObjC.msgSendId(ObjC.cls("NSGridView"), ObjC.sel("alloc"));
-        try {
-            p = (MemorySegment) handles.hInitFrame().invokeExact(p, ObjC.sel("initWithFrame:"), frame.toSegment());
-        } catch (Throwable t) {
-            throw new RuntimeException("initWithFrame: failed for NSGridView", t);
-        }
-        if (p.address() == 0) throw new IllegalStateException("NSGridView alloc/initWithFrame: returned nil");
-        return new NSGridView(p);
+        return new NSGridView(ObjC.newView("NSGridView", frame));
     }
 
     /// +[NSGridView gridViewWithNumberOfColumns:rows:] — convenience factory

@@ -13,7 +13,7 @@ import static nsui.objc.Sig.Ret;
 /// shapes outside the current vocabulary — omitted, not load-bearing.)
 public final class NSTableHeaderView extends NSView {
 
-    private record Handles(MethodHandle hInitFrame, MethodHandle hGetDouble) {}
+    private record Handles(MethodHandle hGetDouble) {}
     private static volatile Handles handles;
 
     private NSTableHeaderView(MemorySegment peer) {
@@ -29,21 +29,13 @@ public final class NSTableHeaderView extends NSView {
     private static synchronized void ensureInit() {
         if (handles != null) return;
         handles = new Handles(
-                ObjC.handle(Sig.of(Ret.ID, Arg.RECT)),
                 ObjC.handle(Sig.of(Ret.DOUBLE)));
     }
 
     /// [[NSTableHeaderView alloc] initWithFrame:].
-    public static NSTableHeaderView create(NSRect frame) {
+        public static NSTableHeaderView create(NSRect frame) {
         ensureInit();
-        MemorySegment p = ObjC.msgSendId(ObjC.cls("NSTableHeaderView"), ObjC.sel("alloc"));
-        try {
-            p = (MemorySegment) handles.hInitFrame().invokeExact(p, ObjC.sel("initWithFrame:"), frame.toSegment());
-        } catch (Throwable t) {
-            throw new RuntimeException("initWithFrame: failed for NSTableHeaderView", t);
-        }
-        if (p.address() == 0) throw new IllegalStateException("initWithFrame: returned nil for NSTableHeaderView");
-        return new NSTableHeaderView(p);
+        return new NSTableHeaderView(ObjC.newView("NSTableHeaderView", frame));
     }
 
     /// tableView (raw peer; NSTableView has no wrap).

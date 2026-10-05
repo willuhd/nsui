@@ -47,18 +47,9 @@ public final class NSBox extends NSView {
     }
 
     /// `[[NSBox alloc] initWithFrame:frame]` — a new box at the given rect.
-    public static NSBox create(NSRect frame) {
+        public static NSBox create(NSRect frame) {
         ensureInit();
-        MemorySegment p = ObjC.msgSendId(ObjC.cls("NSBox"), ObjC.sel("alloc"));
-        try {
-            p = (MemorySegment) hInitFrame.invokeExact(p, ObjC.sel("initWithFrame:"), frame.toSegment());
-        } catch (Throwable t) {
-            throw new RuntimeException("initWithFrame: failed for NSBox", t);
-        }
-        if (p.address() == 0) {
-            throw new IllegalStateException("NSBox alloc/initWithFrame: returned nil");
-        }
-        return new NSBox(p);
+        return new NSBox(ObjC.newView("NSBox", frame));
     }
 
     // ---------------------------------------------------------------- instance API

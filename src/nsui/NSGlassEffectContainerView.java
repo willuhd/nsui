@@ -13,7 +13,7 @@ import static nsui.objc.Sig.Ret;
 /// Thin stateless wrapper; all behavior is AppKit's.
 public final class NSGlassEffectContainerView extends NSView {
 
-    private record Handles(MethodHandle hInitFrame, MethodHandle hContentView, MethodHandle hSetContentView,
+    private record Handles(MethodHandle hContentView, MethodHandle hSetContentView,
             MethodHandle hGetDouble, MethodHandle hSetDouble) {}
     private static volatile Handles handles;
 
@@ -30,7 +30,6 @@ public final class NSGlassEffectContainerView extends NSView {
     private static synchronized void ensureInit() {
         if (handles != null) return;
         handles = new Handles(
-                ObjC.handle(Sig.of(Ret.ID, Arg.RECT)),
                 ObjC.handle(Sig.of(Ret.ID)),
                 ObjC.handle(Sig.of(Ret.VOID, Arg.ID)),
                 ObjC.handle(Sig.of(Ret.DOUBLE)),
@@ -38,16 +37,9 @@ public final class NSGlassEffectContainerView extends NSView {
     }
 
     /// [[NSGlassEffectContainerView alloc] initWithFrame:].
-    public static NSGlassEffectContainerView create(NSRect frame) {
+        public static NSGlassEffectContainerView create(NSRect frame) {
         ensureInit();
-        MemorySegment p = ObjC.msgSendId(ObjC.cls("NSGlassEffectContainerView"), ObjC.sel("alloc"));
-        try {
-            p = (MemorySegment) handles.hInitFrame().invokeExact(p, ObjC.sel("initWithFrame:"), frame.toSegment());
-        } catch (Throwable t) {
-            throw new RuntimeException("initWithFrame: failed for NSGlassEffectContainerView", t);
-        }
-        if (p.address() == 0) throw new IllegalStateException("initWithFrame: returned nil for NSGlassEffectContainerView");
-        return new NSGlassEffectContainerView(p);
+        return new NSGlassEffectContainerView(ObjC.newView("NSGlassEffectContainerView", frame));
     }
 
     /// contentView — descendants of this view are merged when eligible.

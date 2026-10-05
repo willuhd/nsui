@@ -37,18 +37,9 @@ public class NSText extends NSView {
     }
 
     /// `[[NSText alloc] initWithFrame:frame]` — a new text object at the given rect.
-    public static NSText create(NSRect frame) {
+        public static NSText create(NSRect frame) {
         ensureInit();
-        MemorySegment v = ObjC.msgSendId(ObjC.cls("NSText"), ObjC.sel("alloc"));
-        try {
-            v = (MemorySegment) hInitFrame.invokeExact(v, ObjC.sel("initWithFrame:"), frame.toSegment());
-        } catch (Throwable t) {
-            throw new RuntimeException("initWithFrame: failed for NSText", t);
-        }
-        if (v.address() == 0) {
-            throw new IllegalStateException("NSText alloc/initWithFrame: returned nil");
-        }
-        return new NSText(v);
+        return new NSText(ObjC.newView("NSText", frame));
     }
 
     // ---------------------------------------------------------------- string

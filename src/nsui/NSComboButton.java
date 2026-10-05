@@ -1,12 +1,8 @@
 package nsui;
 
 import java.lang.foreign.MemorySegment;
-import java.lang.invoke.MethodHandle;
 
 import nsui.objc.ObjC;
-import nsui.objc.Sig;
-import static nsui.objc.Sig.Arg;
-import static nsui.objc.Sig.Ret;
 
 /// NSComboButton (macOS 13+) — a button with a menu indicator: the leading
 /// segment performs the action, the trailing segment shows the menu.
@@ -17,12 +13,8 @@ public final class NSComboButton extends NSControl {
     public static final long STYLE_SPLIT = 0;
     public static final long STYLE_UNIFIED = 1;
 
-    private record Handles(MethodHandle hInitFrame) {}
-    private static volatile Handles handles;
-
     private NSComboButton(MemorySegment peer) {
         super(peer);
-        ensureInit();
     }
 
     /// Wrap an existing peer.
@@ -30,22 +22,9 @@ public final class NSComboButton extends NSControl {
         return (peer == null || peer.address() == 0) ? null : new NSComboButton(peer);
     }
 
-    private static synchronized void ensureInit() {
-        if (handles != null) return;
-        handles = new Handles(ObjC.handle(Sig.of(Ret.ID, Arg.RECT)));
-    }
-
     /// [[NSComboButton alloc] initWithFrame:].
     public static NSComboButton create(NSRect frame) {
-        ensureInit();
-        MemorySegment p = ObjC.msgSendId(ObjC.cls("NSComboButton"), ObjC.sel("alloc"));
-        try {
-            p = (MemorySegment) handles.hInitFrame().invokeExact(p, ObjC.sel("initWithFrame:"), frame.toSegment());
-        } catch (Throwable t) {
-            throw new RuntimeException("initWithFrame: failed for NSComboButton", t);
-        }
-        if (p.address() == 0) throw new IllegalStateException("initWithFrame: returned nil for NSComboButton");
-        return new NSComboButton(p);
+        return new NSComboButton(ObjC.newView("NSComboButton", frame));
     }
 
     /// title.

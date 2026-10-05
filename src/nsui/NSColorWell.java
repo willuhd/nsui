@@ -39,18 +39,9 @@ public final class NSColorWell extends NSControl {
     }
 
     /// `[[NSColorWell alloc] initWithFrame:frame]` — a new color well at the given rect.
-    public static NSColorWell create(NSRect frame) {
+        public static NSColorWell create(NSRect frame) {
         ensureInit();
-        MemorySegment p = ObjC.msgSendId(ObjC.cls("NSColorWell"), ObjC.sel("alloc"));
-        try {
-            p = (MemorySegment) hInitFrame.invokeExact(p, ObjC.sel("initWithFrame:"), frame.toSegment());
-        } catch (Throwable t) {
-            throw new RuntimeException("initWithFrame: failed for NSColorWell", t);
-        }
-        if (p.address() == 0) {
-            throw new IllegalStateException("NSColorWell alloc/initWithFrame: returned nil");
-        }
-        return new NSColorWell(p);
+        return new NSColorWell(ObjC.newView("NSColorWell", frame));
     }
 
     // ---------------------------------------------------------------- instance API

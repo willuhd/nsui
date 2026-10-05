@@ -34,18 +34,9 @@ public final class NSProgressIndicator extends NSControl {
     }
 
     /// `[[NSProgressIndicator alloc] initWithFrame:frame]` — a new progress indicator at the given rect.
-    public static NSProgressIndicator create(NSRect frame) {
+        public static NSProgressIndicator create(NSRect frame) {
         ensureInit();
-        MemorySegment p = ObjC.msgSendId(ObjC.cls("NSProgressIndicator"), ObjC.sel("alloc"));
-        try {
-            p = (MemorySegment) hInitFrame.invokeExact(p, ObjC.sel("initWithFrame:"), frame.toSegment());
-        } catch (Throwable t) {
-            throw new RuntimeException("initWithFrame: failed for NSProgressIndicator", t);
-        }
-        if (p.address() == 0) {
-            throw new IllegalStateException("NSProgressIndicator alloc/initWithFrame: returned nil");
-        }
-        return new NSProgressIndicator(p);
+        return new NSProgressIndicator(ObjC.newView("NSProgressIndicator", frame));
     }
 
     // ---------------------------------------------------------------- instance API

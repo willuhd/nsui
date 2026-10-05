@@ -45,18 +45,9 @@ public class NSSearchField extends NSTextField {
     }
 
     /// `[[NSSearchField alloc] initWithFrame:frame]` — a new search field at the given rect.
-    public static NSSearchField create(NSRect frame) {
+        public static NSSearchField create(NSRect frame) {
         ensureInit();
-        MemorySegment p = ObjC.msgSendId(ObjC.cls("NSSearchField"), ObjC.sel("alloc"));
-        try {
-            p = (MemorySegment) hInitFrame.invokeExact(p, ObjC.sel("initWithFrame:"), frame.toSegment());
-        } catch (Throwable t) {
-            throw new RuntimeException("initWithFrame: failed for NSSearchField", t);
-        }
-        if (p.address() == 0) {
-            throw new IllegalStateException("NSSearchField alloc/initWithFrame: returned nil");
-        }
-        return new NSSearchField(p);
+        return new NSSearchField(ObjC.newView("NSSearchField", frame));
     }
 
     /// Wrap an existing native NSSearchField id.

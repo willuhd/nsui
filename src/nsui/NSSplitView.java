@@ -49,18 +49,9 @@ public final class NSSplitView extends NSView {
     }
 
     /// `[[NSSplitView alloc] initWithFrame:frame]` — a new split view at the given rect.
-    public static NSSplitView create(NSRect frame) {
+        public static NSSplitView create(NSRect frame) {
         ensureInit();
-        MemorySegment p = ObjC.msgSendId(ObjC.cls("NSSplitView"), ObjC.sel("alloc"));
-        try {
-            p = (MemorySegment) hInitFrame.invokeExact(p, ObjC.sel("initWithFrame:"), frame.toSegment());
-        } catch (Throwable t) {
-            throw new RuntimeException("initWithFrame: failed for NSSplitView", t);
-        }
-        if (p.address() == 0) {
-            throw new IllegalStateException("NSSplitView alloc/initWithFrame: returned nil");
-        }
-        return new NSSplitView(p);
+        return new NSSplitView(ObjC.newView("NSSplitView", frame));
     }
 
     // ---------------------------------------------------------------- isVertical

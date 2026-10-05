@@ -34,18 +34,9 @@ public final class NSSlider extends NSControl {
     }
 
     /// `[[NSSlider alloc] initWithFrame:frame]` — a new slider at the given rect.
-    public static NSSlider create(NSRect frame) {
+        public static NSSlider create(NSRect frame) {
         ensureInit();
-        MemorySegment s = ObjC.msgSendId(ObjC.cls("NSSlider"), ObjC.sel("alloc"));
-        try {
-            s = (MemorySegment) hInitFrame.invokeExact(s, ObjC.sel("initWithFrame:"), frame.toSegment());
-        } catch (Throwable t) {
-            throw new RuntimeException("initWithFrame: failed for NSSlider", t);
-        }
-        if (s.address() == 0) {
-            throw new IllegalStateException("NSSlider alloc/initWithFrame: returned nil");
-        }
-        return new NSSlider(s);
+        return new NSSlider(ObjC.newView("NSSlider", frame));
     }
 
     // ---------------------------------------------------------------- instance API

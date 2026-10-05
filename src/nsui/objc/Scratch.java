@@ -29,11 +29,14 @@ import java.lang.foreign.MemorySegment;
 /// *by-value INPUT marshalling*: struct arguments (`NSRect`, `NSPoint`,
 /// `objc_super`) and C strings that the callee copies before returning (e.g.
 /// `sel_registerName`, `objc_getClass`, `[NSString stringWithUTF8String:]`).
-/// Anything the caller reads AFTER the call returns — struct RETURNS such as the
-/// `NSRect` written by `objc_msgSend_stret`, or strings held across a turn —
-/// MUST come from the global arena. In particular `rect` returns a segment that
-/// `msgSendRect` feeds as an *input*, which is scratch-legal, but the
-/// *returned* segment of `msgSendRect` and the escape-hatch paths keep their
+/// Anything the caller reads AFTER the call returns — strings held across a
+/// turn, for example — MUST come from the global arena. Struct RETURNS are a
+/// separate case: the `NSRect` written by `objc_msgSend_stret` lands in a
+/// per-thread reusable slot (`ObjC` internals), safe because every caller
+/// copies the doubles out immediately; it is never scratch (a turn rewind
+/// must not invalidate it) and never a fresh global slice per call. In
+/// particular `rect` returns a segment that `msgSendRect` feeds as an
+/// *input*, which is scratch-legal, while the escape-hatch paths keep their
 /// results in the global arena.
 public final class Scratch {
 

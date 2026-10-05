@@ -41,9 +41,11 @@ import static nsui.objc.Sig.S;
 ///   at runtime via their absolute paths (works through the dyld shared cache).
 /// - By-value INPUT marshalling (`rect`, `cstring`) is routed through the
 ///   per-turn `Scratch` arena so it does not leak immortal segments at 60fps.
-/// Struct RETURNS (`msgSendRect`) and the escape hatch still land in
-/// `Arena.global()`. Selector/class names are cached in the global arena
-/// (`sel`, `cls`).
+/// - Struct RETURNS (`msgSendRect`, one 32-byte NSRect) land in a per-thread
+///   reusable slot, not a fresh arena slice per call: every caller copies
+///   the four doubles out immediately, so overwriting on the next call is
+///   safe. The escape hatch still lands in `Arena.global()`. Selector/class
+///   names are cached in the global arena (`sel`, `cls`).
 public final class ObjC {
 
     // ---- canonical layouts (resolved at runtime to stay platform-correct) ----
@@ -87,6 +89,14 @@ public final class ObjC {
     private static MethodHandle hRect;        // (id, SEL) -> NSRect (objc_msgSend_stret on x86_64)
     private static MethodHandle hEscapeId;    // (id, SEL, id x6) -> id
     private static MethodHandle hEscapeVoid;  // (id, SEL, id x6) -> void
+
+    /// Reusable per-thread destination for struct returns (one 32-byte NSRect).
+    /// Lazily allocated from the global arena on first use per thread; never
+    /// rewound, just overwritten by the next `msgSendRect` on the same thread.
+    /// Safe because every caller (`NSView.frame`, `NSWindow.frame`, ...) copies
+    /// the doubles out via `NSRect.fromSegment` before any subsequent call.
+    private static final ThreadLocal<MemorySegment> RECT_SLOT =
+            ThreadLocal.withInitial(() -> ARENA.allocate(NS_RECT));
 
     private ObjC() {}
 
@@ -319,7 +329,7 @@ public final class ObjC {
     /// FFM gives downcalls with group-layout returns an implicit leading
     /// SegmentAllocator parameter, which is where the returned struct is written.
     public static MemorySegment msgSendRect(MemorySegment recv, MemorySegment s) {
-        try { return (MemorySegment) hRect.invokeExact((SegmentAllocator) ARENA, recv, s); } catch (Throwable t) { throw fail(t); }
+        try { return (MemorySegment) hRect.invokeExact((SegmentAllocator) RECT_SLOT.get(), recv, s); } catch (Throwable t) { throw fail(t); }
     }
 
     /// Generic object-argument message: any selector whose arguments are all objects

@@ -2,7 +2,6 @@ package nsui;
 
 import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodHandle;
-import java.util.concurrent.ConcurrentHashMap;
 
 import nsui.objc.ObjC;
 import nsui.objc.Sig;
@@ -10,6 +9,12 @@ import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
 /// NSMutableData — mutable data wrapper.
+///
+/// Header-completeness (`NSData.h`, mutable): every safe method whose shape is in the Sig
+/// vocabulary is wrapped below. OMITTED — replaceBytesInRange:withBytes:length: (needs
+/// of(VOID,RANGE,ID,INT), not in Sig; use the length-implied replaceBytesInRange:withBytes:);
+/// initWithCapacity:/initWithLength: (covered by dataWithCapacity:/dataWithLength:);
+/// decompressUsingAlgorithm:.../compressUsingAlgorithm:... (NSError** out-params).
 public final class NSMutableData extends NSData {
 
     private static volatile boolean initMut;
@@ -102,5 +107,42 @@ public final class NSMutableData extends NSData {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.RANGE));
             h.invokeExact(peer, ObjC.sel("resetBytesInRange:"), range.toSegment());
         } catch (Throwable t) { throw new RuntimeException("resetBytesInRange: failed", t); }
+    }
+
+    /// mutableBytes — writable inner pointer (valid while the data lives; length
+    /// management still goes through setLength:/increaseLengthBy:). Mirrors bytes().
+    public MemorySegment mutableBytes() {
+        ensureMutInit();
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.ID));
+            MemorySegment r = (MemorySegment) h.invokeExact(peer, ObjC.sel("mutableBytes"));
+            return (r == null || r.address() == 0) ? null : r;
+        } catch (Throwable t) { throw new RuntimeException("mutableBytes failed", t); }
+    }
+
+    /// setData: — replace contents with another data object.
+    public void setData(NSData data) {
+        ensureMutInit();
+        if (data == null) { setLength(0); return; }
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.ID));
+            h.invokeExact(peer, ObjC.sel("setData:"), data.peer());
+        } catch (Throwable t) { throw new RuntimeException("setData: failed", t); }
+    }
+
+    /// replaceBytesInRange:withBytes: — replace the range with Java bytes (the range
+    /// implies the length; the withBytes:length: variant needs of(VOID,RANGE,ID,INT),
+    /// not in Sig — resize first with setLength: when lengths differ).
+    public void replaceBytesInRange(NSRange range, byte[] bytes) {
+        ensureMutInit();
+        if (bytes == null) bytes = new byte[0];
+        try {
+            MemorySegment buf = nsui.objc.Scratch.allocInput(Math.max(1, bytes.length));
+            if (bytes.length > 0) {
+                MemorySegment.copy(bytes, 0, buf, java.lang.foreign.ValueLayout.JAVA_BYTE, 0, bytes.length);
+            }
+            MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.RANGE, Arg.ID));
+            h.invokeExact(peer, ObjC.sel("replaceBytesInRange:withBytes:"), range.toSegment(), buf);
+        } catch (Throwable t) { throw new RuntimeException("replaceBytesInRange:withBytes: failed", t); }
     }
 }

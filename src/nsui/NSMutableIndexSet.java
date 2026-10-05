@@ -9,6 +9,8 @@ import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
 /// NSMutableIndexSet — mutable index set.
+///
+/// Header-completeness (`NSIndexSet.h`, mutable): every safe method is wrapped below.
 public final class NSMutableIndexSet extends NSIndexSet {
 
     private static volatile boolean initMut;
@@ -105,5 +107,15 @@ public final class NSMutableIndexSet extends NSIndexSet {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.ID));
             h.invokeExact(peer, ObjC.sel("removeIndexes:"), other.peer());
         } catch (Throwable t) { throw new RuntimeException("removeIndexes: failed", t); }
+    }
+
+    /// shiftIndexesStartingAtIndex:by: — insert (positive delta) or delete (negative)
+    /// index space at index by shifting [index, INT_MAX].
+    public void shiftIndexesStartingAtIndex(long index, long delta) {
+        ensureMutInit();
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.INT, Arg.INT));
+            h.invokeExact(peer, ObjC.sel("shiftIndexesStartingAtIndex:by:"), index, delta);
+        } catch (Throwable t) { throw new RuntimeException("shiftIndexesStartingAtIndex:by: failed", t); }
     }
 }

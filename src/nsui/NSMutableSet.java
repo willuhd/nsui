@@ -10,6 +10,9 @@ import static nsui.objc.Sig.Ret;
 
 /// NSMutableSet — mutable set wrapper.
 /// Extends NSSet for convenience; peer is an NSMutableSet instance.
+///
+/// Header-completeness (`NSSet.h`, mutable): initWithCapacity: is covered by
+/// setWithCapacity:; every other safe method is wrapped (inherited or below).
 public final class NSMutableSet extends NSSet {
 
     private static volatile boolean initMut;
@@ -125,5 +128,12 @@ public final class NSMutableSet extends NSSet {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.ID));
             h.invokeExact(peer, ObjC.sel("setSet:"), other.peer());
         } catch (Throwable t) { throw new RuntimeException("setSet: failed", t); }
+    }
+
+    /// addObjectsFromArray:.
+    public void addObjectsFromArray(NSArray array) {
+        ensureMutInit();
+        if (array == null) return;
+        ObjC.msgSendVoidId(peer, ObjC.sel("addObjectsFromArray:"), array.peer());
     }
 }

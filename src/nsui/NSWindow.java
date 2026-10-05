@@ -594,6 +594,23 @@ public class NSWindow extends NSResponder {
         ObjC.msgSendVoidId(peer, ObjC.sel("orderFront:"), (MemorySegment) (sender == null ? MemorySegment.NULL : sender.peer()));
     }
 
+    /// Window sharing types (NSWindowSharingType): whether other processes
+    /// (screen capture, sharing) may read the contents. Default is READ_ONLY.
+    public static final long SHARING_NONE = 0;
+    public static final long SHARING_READ_ONLY = 1;
+
+    /// sharingType.
+    public long sharingType() {
+        return ObjC.msgSendLong(peer, ObjC.sel("sharingType"));
+    }
+
+    /// setSharingType: — NONE excludes the window from capture/sharing.
+    /// NOTE (measured on Tahoe): setting NONE sticks — a later set back to
+    /// READ_ONLY still reads NONE on a live window. Decide at creation time.
+    public void setSharingType(long type) {
+        ObjC.msgSendVoidLong(peer, ObjC.sel("setSharingType:"), type);
+    }
+
     public void performClose(NSObject sender) {
         ObjC.msgSendVoidId(peer, ObjC.sel("performClose:"), (MemorySegment) (sender == null ? MemorySegment.NULL : sender.peer()));
     }

@@ -40,6 +40,12 @@ public final class Dispatch {
     /// Runnables awaiting their block's execution on the main queue (FIFO).
     private static final ConcurrentLinkedQueue<Runnable> PENDING = new ConcurrentLinkedQueue<>();
 
+    /// One shared immortal block for every onMain dispatch: bodies travel via
+    /// PENDING (each execution pops exactly one), so no per-call block or stub
+    /// is ever built. Global blocks are immutable and reentrant; the serial
+    /// main queue preserves dispatch order.
+    private static MemorySegment SHARED_BLOCK;
+
     private Dispatch() {}
 
     /// Run-time init (native-image: no FFM work in static initializers).
@@ -63,20 +69,20 @@ public final class Dispatch {
         if (MAIN_QUEUE.address() == 0) {
             throw new IllegalStateException("_dispatch_main_q resolved to NULL address");
         }
+        SHARED_BLOCK = Blocks.block(runBodyHandle(), NsuiForeign.blockVoidUpcall());
     }
 
     /// Run `body` asynchronously on the main dispatch queue.
     ///
-    /// The body is enqueued and a `void(^)(void)` block is dispatched; when
-    /// the main run loop drains the queue, `runBody` pops the body and runs it.
+    /// The body is enqueued and the shared `void(^)(void)` block is dispatched;
+    /// when the main run loop drains the queue, `runBody` pops the body and runs it.
     /// The test's main thread must pump the run loop for the block to be drained.
     /// CONTRACT: a throwing body aborts the VM at the upcall stub (fail-fast).
     public static void onMain(Runnable body) {
         ensureInit();
         PENDING.add(body);
-        MemorySegment block = Blocks.block(runBodyHandle(), NsuiForeign.blockVoidUpcall());
         try {
-            hDispatchAsync.invokeExact(MAIN_QUEUE, block);
+            hDispatchAsync.invokeExact(MAIN_QUEUE, SHARED_BLOCK);
         } catch (Throwable t) {
             throw new RuntimeException("dispatch_async failed", t);
         }

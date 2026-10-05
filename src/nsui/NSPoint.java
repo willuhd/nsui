@@ -13,7 +13,7 @@ public record NSPoint(double x, double y) {
 
     /// 16-byte segment in the global arena: x at offset 0, y at offset 8.
     public MemorySegment toSegment() {
-        MemorySegment s = Scratch.alloc(16);
+        MemorySegment s = Scratch.allocInput(16);
         s.set(ValueLayout.JAVA_DOUBLE, 0, x);
         s.set(ValueLayout.JAVA_DOUBLE, 8, y);
         return s;

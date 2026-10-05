@@ -427,10 +427,11 @@ public final class ObjC {
         try { return (MemorySegment) hGetSuperclass.invokeExact(cls); } catch (Throwable t) { throw fail(t); }
     }
 
-    /// Allocate a `struct objc_super { id receiver; Class super_class;`} in the
-    /// global arena — the argument `objc_msgSendSuper` needs for `[super ...]`.
+    /// Allocate a `struct objc_super { id receiver; Class super_class;`} — the
+    /// argument `objc_msgSendSuper` needs for `[super ...]`. Call-scoped bump
+    /// (dealloc-only callers consume it synchronously), not immortal.
     public static MemorySegment superStruct(MemorySegment receiver, MemorySegment superClass) {
-        MemorySegment s = ARENA.allocate(16);
+        MemorySegment s = Scratch.allocInput(16);
         s.set(ValueLayout.ADDRESS, 0, receiver);
         s.set(ValueLayout.ADDRESS, 8, superClass);
         return s;

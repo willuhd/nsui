@@ -13,6 +13,13 @@ import static nsui.objc.Sig.Ret;
 /// volatile initialized, synchronized ensureInit, ObjC.handle(Sig.of...),
 /// invokeExact, static create/wrap.
 ///
+/// Coverage notes (header: NSPanGestureRecognizer.h wins on API truth):
+/// complete — `buttonMask`, `translationInView:`/`setTranslation:inView:`,
+/// `velocityInView:` and `numberOfTouchesRequired` (+ setters) plus the
+/// inherited NSGestureRecognizer surface cover every non-delegate member.
+/// Omitted: nothing (no blocks, no NSError**, no delegate protocol
+/// members here).
+///
 /// Created via `[[NSPanGestureRecognizer alloc] initWithTarget:action:]`.
 /// Adds pan-specific state: buttonMask, numberOfTouchesRequired, translation,
 /// velocity.

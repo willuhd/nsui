@@ -10,6 +10,11 @@ import static nsui.objc.Sig.Ret;
 
 /// NSRotationGestureRecognizer — two-finger rotation in radians (KVO-observable live value).
 /// Thin stateless wrapper; follows the NSClickGestureRecognizer template.
+///
+/// Coverage notes (header: NSRotationGestureRecognizer.h wins on API truth):
+/// complete — `rotation`/`rotationInDegrees` (+ setters) and the inherited
+/// NSGestureRecognizer surface cover every non-delegate member. Omitted:
+/// nothing (no blocks, no NSError**, no delegate protocol members here).
 public final class NSRotationGestureRecognizer extends NSGestureRecognizer {
 
     private record Handles(MethodHandle hInitTargetAction, MethodHandle hGetDouble, MethodHandle hSetDouble) {}
@@ -60,6 +65,24 @@ public final class NSRotationGestureRecognizer extends NSGestureRecognizer {
             handles.hSetDouble().invokeExact(peer, ObjC.sel("setRotation:"), value);
         } catch (Throwable t) {
             throw new RuntimeException("setRotation: failed", t);
+        }
+    }
+
+    /// rotationInDegrees — the same live value in degrees.
+    public double rotationInDegrees() {
+        try {
+            return (double) handles.hGetDouble().invokeExact(peer, ObjC.sel("rotationInDegrees"));
+        } catch (Throwable t) {
+            throw new RuntimeException("rotationInDegrees failed", t);
+        }
+    }
+
+    /// setRotationInDegrees:.
+    public void setRotationInDegrees(double value) {
+        try {
+            handles.hSetDouble().invokeExact(peer, ObjC.sel("setRotationInDegrees:"), value);
+        } catch (Throwable t) {
+            throw new RuntimeException("setRotationInDegrees: failed", t);
         }
     }
 }

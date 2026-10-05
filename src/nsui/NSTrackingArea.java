@@ -10,7 +10,32 @@ import static nsui.objc.Sig.Ret;
 
 /// NSTrackingArea — minimal wrapper over AppKit NSTrackingArea.
 /// Monitors mouse enter/exit/moved events over a rect.
+///
+/// Coverage notes (header: NSTrackingArea.h wins on API truth): complete —
+/// the designated initializer plus the `rect`/`options`/`owner`/`userInfo`
+/// readers and the NSTrackingAreaOptions constants below cover the whole
+/// header. Omitted: nothing (no blocks, no NSError**, no delegate protocol
+/// members here).
 public final class NSTrackingArea extends NSObject {
+
+    /// NSTrackingAreaOptions bit values (from NSTrackingArea.h).
+    /// One type bit plus one active bit are required; behavior bits optional.
+    public static final long MOUSE_ENTERED_AND_EXITED = 0x01;
+    public static final long MOUSE_MOVED = 0x02;
+    public static final long CURSOR_UPDATE = 0x04;
+    public static final long ACTIVE_WHEN_FIRST_RESPONDER = 0x10;
+    public static final long ACTIVE_IN_KEY_WINDOW = 0x20;
+    public static final long ACTIVE_IN_ACTIVE_APP = 0x40;
+    public static final long ACTIVE_ALWAYS = 0x80;
+    public static final long ASSUME_INSIDE = 0x100;
+    public static final long IN_VISIBLE_RECT = 0x200;
+    public static final long ENABLED_DURING_MOUSE_DRAG = 0x400;
+
+    /// The classic tracking combo: entered/exited + moved, always active,
+    /// in the visible rect (matches NSView.enableMouseTracking).
+    public static final long DEFAULT_OPTIONS =
+            MOUSE_ENTERED_AND_EXITED | MOUSE_MOVED | ACTIVE_ALWAYS | IN_VISIBLE_RECT;
+
 
             private record Handles(MethodHandle hInit, MethodHandle hRect, MethodHandle hInt, MethodHandle hId) {}
     private static volatile Handles handles;

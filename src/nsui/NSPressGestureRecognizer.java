@@ -10,6 +10,12 @@ import static nsui.objc.Sig.Ret;
 
 /// NSPressGestureRecognizer — press-and-hold (Force Touch / long press).
 /// Thin stateless wrapper; follows the NSClickGestureRecognizer template.
+///
+/// Coverage notes (header: NSPressGestureRecognizer.h wins on API truth):
+/// complete — `buttonMask`, `minimumPressDuration`, `allowableMovement`
+/// and `numberOfTouchesRequired` (+ setters) plus the inherited
+/// NSGestureRecognizer surface cover every non-delegate member. Omitted:
+/// nothing (no blocks, no NSError**, no delegate protocol members here).
 public final class NSPressGestureRecognizer extends NSGestureRecognizer {
 
     private record Handles(MethodHandle hInitTargetAction, MethodHandle hGetDouble, MethodHandle hSetDouble) {}

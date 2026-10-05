@@ -10,6 +10,14 @@ import static nsui.objc.Sig.Ret;
 
 /// NSDraggingItem — minimal wrapper over native `NSDraggingItem`.
 /// Holds a pasteboard writer (typically NSPasteboardItem) and represents one dragged item.
+///
+/// Coverage notes (header: NSDraggingItem.h wins on API truth):
+/// - Wrapped: initWithPasteboardWriter:, item, draggingFrame (+ setter),
+///   setDraggingFrame:contents: and imageComponents.
+/// - Omitted: init (NS_UNAVAILABLE by contract); imageComponentsProvider
+///   (block-taking property needs upcall machinery); the
+///   NSDraggingImageComponent key/contents/frame members (no wrapper in
+///   this batch — imageComponents stays a raw NSArray).
 public final class NSDraggingItem extends NSObject {
 
     private static volatile MethodHandle hInitWithWriter;
@@ -50,5 +58,64 @@ public final class NSDraggingItem extends NSObject {
     public static NSDraggingItem withString(String string, String type) {
         NSPasteboardItem item = NSPasteboardItem.withString(string, type);
         return create(item == null ? MemorySegment.NULL : item.peer());
+    }
+
+    /// item — the pasteboard writer this item was created with.
+    public NSObject item() {
+        ensureInit();
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.ID));
+            return NSObject.wrap((MemorySegment) h.invokeExact(peer, ObjC.sel("item")));
+        } catch (Throwable t) {
+            throw new RuntimeException("item failed", t);
+        }
+    }
+
+    /// draggingFrame — the drag image frame.
+    public NSRect draggingFrame() {
+        ensureInit();
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.RECT));
+            MemorySegment r = (MemorySegment) h.invokeExact(ObjC.structSlot(), peer, ObjC.sel("draggingFrame"));
+            return NSRect.fromSegment(r);
+        } catch (Throwable t) {
+            throw new RuntimeException("draggingFrame failed", t);
+        }
+    }
+
+    /// setDraggingFrame:.
+    public void setDraggingFrame(NSRect frame) {
+        ensureInit();
+        if (frame == null) throw new IllegalArgumentException("frame is null");
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.RECT));
+            h.invokeExact(peer, ObjC.sel("setDraggingFrame:"), frame.toSegment());
+        } catch (Throwable t) {
+            throw new RuntimeException("setDraggingFrame: failed", t);
+        }
+    }
+
+    /// setDraggingFrame:contents: — frame plus drag-image contents (or null).
+    public void setDraggingFrameContents(NSRect frame, MemorySegment contents) {
+        ensureInit();
+        if (frame == null) throw new IllegalArgumentException("frame is null");
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.RECT, Arg.ID));
+            h.invokeExact(peer, ObjC.sel("setDraggingFrame:contents:"), frame.toSegment(),
+                    (MemorySegment) (contents == null ? MemorySegment.NULL : contents));
+        } catch (Throwable t) {
+            throw new RuntimeException("setDraggingFrame:contents: failed", t);
+        }
+    }
+
+    /// imageComponents — the image components, or null when unset.
+    public NSArray imageComponents() {
+        ensureInit();
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.ID));
+            return NSArray.wrap((MemorySegment) h.invokeExact(peer, ObjC.sel("imageComponents")));
+        } catch (Throwable t) {
+            throw new RuntimeException("imageComponents failed", t);
+        }
     }
 }

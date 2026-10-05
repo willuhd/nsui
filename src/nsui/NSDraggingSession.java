@@ -8,6 +8,14 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Ret;
 
 /// NSDraggingSession — minimal wrapper over native `NSDraggingSession`.
+///
+/// Coverage notes (header: NSDraggingSession.h wins on API truth):
+/// - Wrapped: draggingPasteboard, draggingSequenceNumber, draggingLocation,
+///   draggingFormation (+ setter), animatesToStartingPositionsOnCancelOrFail
+///   (+ setter) and draggingLeaderIndex (+ setter).
+/// - Omitted: enumerateDraggingItemsWithOptions:… (block-taking method needs
+///   upcall machinery). `sourceOperationMask` below is kept for
+///   compatibility but natively lives on NSDraggingInfo, not the session.
 public final class NSDraggingSession extends NSObject {
 
             private record Handles(MethodHandle hDraggingPasteboard, MethodHandle hSourceOperationMask, MethodHandle hDraggingLocation) {}
@@ -97,5 +105,23 @@ public final class NSDraggingSession extends NSObject {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, nsui.objc.Sig.Arg.BOOL));
             h.invokeExact(peer, ObjC.sel("setAnimatesToStartingPositionsOnCancelOrFail:"), flag);
         } catch (Throwable t) { throw new RuntimeException("setAnimatesToStartingPositionsOnCancelOrFail: failed", t); }
+    }
+
+    /// draggingLeaderIndex.
+    public long draggingLeaderIndex() {
+        ensureInit();
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.INT));
+            return (long) h.invokeExact(peer, ObjC.sel("draggingLeaderIndex"));
+        } catch (Throwable t) { throw new RuntimeException("draggingLeaderIndex failed", t); }
+    }
+
+    /// setDraggingLeaderIndex:.
+    public void setDraggingLeaderIndex(long index) {
+        ensureInit();
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, nsui.objc.Sig.Arg.INT));
+            h.invokeExact(peer, ObjC.sel("setDraggingLeaderIndex:"), index);
+        } catch (Throwable t) { throw new RuntimeException("setDraggingLeaderIndex: failed", t); }
     }
 }

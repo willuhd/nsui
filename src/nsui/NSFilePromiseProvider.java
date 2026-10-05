@@ -10,6 +10,14 @@ import static nsui.objc.Sig.Ret;
 
 /// NSFilePromiseProvider — minimal wrapper over native `NSFilePromiseProvider`.
 /// Used for dragging file promises (e.g., drag-out).
+///
+/// Coverage notes (header: NSFilePromiseProvider.h wins on API truth):
+/// complete for the provider object — initWithFileType:delegate:, fileType
+/// (+ setter), delegate (+ setter) and userInfo (+ setter). Omitted: the
+/// NSFilePromiseProviderDelegate protocol methods
+/// (fileNameForType:/writePromiseToURL:completionHandler:/operationQueueFor…)
+/// — delegate protocols need upcall machinery, and two take blocks.
+/// init is covered by create() (no separate init overloads).
 public final class NSFilePromiseProvider extends NSObject {
 
     private static volatile boolean initialized;
@@ -26,7 +34,18 @@ public final class NSFilePromiseProvider extends NSObject {
     }
 
     /// [[NSFilePromiseProvider alloc] initWithFileType:delegate:]
+    ///
+    /// The delegate must be non-nil AND respond to both required
+    /// NSFilePromiseProviderDelegate methods
+    /// (filePromiseProvider:fileNameForType: and
+    /// filePromiseProvider:writePromiseToURL:completionHandler:) — AppKit
+    /// raises an uncatchable NSException (aborts the process) otherwise,
+    /// so unlike the peer wrappers this factory rejects a nil delegate in
+    /// Java up front. See EventCoverageTest for a minimal conforming delegate.
     public static NSFilePromiseProvider create(String fileType, NSObject delegate) {
+        if (delegate == null || delegate.peer() == null || delegate.peer().address() == 0) {
+            throw new IllegalArgumentException("initWithFileType:delegate: requires a non-nil delegate implementing the file-promise protocol");
+        }
         ensureInit();
         try {
             MemorySegment alloc = ObjC.msgSendId(ObjC.cls("NSFilePromiseProvider"), ObjC.sel("alloc"));

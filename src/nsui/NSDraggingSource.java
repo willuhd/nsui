@@ -9,6 +9,18 @@ import nsui.objc.DelegateProxy;
 /// NSDraggingSource — minimal protocol marker for drag sources.
 /// In AppKit this is an informal protocol with optional methods.
 /// Implementors provide sourceOperationMaskForDraggingContext: and related.
+///
+/// Coverage notes (header: NSDragging.h, source section, wins on API truth):
+/// - Wired: draggingSession:sourceOperationMaskForDraggingContext:,
+///   draggingSession:endedAtPoint:operation: and
+///   ignoreModifierKeysForDraggingSession: via the DelegateProxy
+///   single-sender shapes (exact for the latter; register-approximated for
+///   the two multi-arg selectors, documented on delegate()).
+/// - Omitted: draggingSession:willBeginAtPoint: and draggingSession:movedToPoint:
+///   (NSPoint arguments have no DelegateProxy dispatch shape and no exact
+///   single-sender upcall — requested `of(Ret.VOID, Arg.ID, Arg.POINT)`);
+///   draggingSourceOperationMaskForLocal:/draggedImage:…/ignoreModifierKeysWhileDragging
+///   (deprecated); namesOfPromisedFilesDroppedAtDestination: (deprecated).
 public interface NSDraggingSource {
 
     /// draggingSession:sourceOperationMaskForDraggingContext: — return NSDragOperation mask.

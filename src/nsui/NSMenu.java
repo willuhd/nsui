@@ -362,6 +362,9 @@ public final class NSMenu extends NSObject {
         return insertGallerySearchFieldItem(field, index);
     }
 
+    /// OMITTED: paletteMenuWithColors:... (block selectionHandler, no registered shape);
+    /// initWithCoder: (NSCoder); deprecated menuRepresentation/contextMenu/tearOff/menuZone/
+    /// attachedMenu/isAttached/sizeToFit/locationForSubmenu:/menuChangedMessages/helpRequested/tornOff.
     // ---- popUp / visible ----
     public boolean popUpMenuPositioningItem(NSMenuItem item, NSPoint loc, NSView view) {
         ensureInit();
@@ -372,5 +375,139 @@ public final class NSMenu extends NSObject {
         } catch (Throwable t) {
             throw new RuntimeException("popUpMenuPositioningItem:atLocation:inView: failed", t);
         }
+    }
+
+    /// popUpContextMenu:withEvent:forView: (class).
+    public static void popUpContextMenu(NSMenu menu, NSEvent event, NSView view) {
+        try {
+            ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.ID, Arg.ID)).invokeExact(
+                    ObjC.cls("NSMenu"), ObjC.sel("popUpContextMenu:withEvent:forView:"),
+                    (MemorySegment) (menu == null ? MemorySegment.NULL : menu.peer()),
+                    (MemorySegment) (event == null ? MemorySegment.NULL : event.peer()),
+                    (MemorySegment) (view == null ? MemorySegment.NULL : view.peer()));
+        } catch (Throwable t) { throw new RuntimeException("popUpContextMenu:withEvent:forView: failed", t); }
+    }
+
+    /// popUpContextMenu:withEvent:forView:withFont: (4 object args via escape hatch).
+    public static void popUpContextMenuWithFont(NSMenu menu, NSEvent event, NSView view, NSFont font) {
+        ObjC.invokeVoid(ObjC.cls("NSMenu"), ObjC.sel("popUpContextMenu:withEvent:forView:withFont:"),
+                (MemorySegment) (menu == null ? MemorySegment.NULL : menu.peer()),
+                (MemorySegment) (event == null ? MemorySegment.NULL : event.peer()),
+                (MemorySegment) (view == null ? MemorySegment.NULL : view.peer()),
+                (MemorySegment) (font == null ? MemorySegment.NULL : font.peer()));
+    }
+
+    /// setMenuBarVisible: / menuBarVisible (class).
+    public static void setMenuBarVisible(boolean flag) {
+        ObjC.msgSendVoidBool(ObjC.cls("NSMenu"), ObjC.sel("setMenuBarVisible:"), flag);
+    }
+    public static boolean menuBarVisible() {
+        return ObjC.msgSendBool(ObjC.cls("NSMenu"), ObjC.sel("menuBarVisible"));
+    }
+
+    /// indexOfItemWithRepresentedObject: / indexOfItemWithSubmenu:.
+    public long indexOfItemWithRepresentedObject(MemorySegment object) {
+        try {
+            return (long) ObjC.handle(Sig.of(Ret.INT, Arg.ID)).invokeExact(peer,
+                    ObjC.sel("indexOfItemWithRepresentedObject:"),
+                    (MemorySegment) (object == null ? MemorySegment.NULL : object));
+        } catch (Throwable t) { throw new RuntimeException("indexOfItemWithRepresentedObject: failed", t); }
+    }
+    public long indexOfItemWithSubmenu(NSMenu submenu) {
+        try {
+            return (long) ObjC.handle(Sig.of(Ret.INT, Arg.ID)).invokeExact(peer,
+                    ObjC.sel("indexOfItemWithSubmenu:"),
+                    (MemorySegment) (submenu == null ? MemorySegment.NULL : submenu.peer()));
+        } catch (Throwable t) { throw new RuntimeException("indexOfItemWithSubmenu: failed", t); }
+    }
+
+    /// indexOfItemWithTarget:andAction: (target id + SEL string).
+    public long indexOfItemWithTargetAndAction(MemorySegment target, String action) {
+        try {
+            return (long) ObjC.handle(Sig.of(Ret.INT, Arg.ID, Arg.ID)).invokeExact(peer,
+                    ObjC.sel("indexOfItemWithTarget:andAction:"),
+                    (MemorySegment) (target == null ? MemorySegment.NULL : target),
+                    (MemorySegment) (action == null ? MemorySegment.NULL : ObjC.sel(action)));
+        } catch (Throwable t) { throw new RuntimeException("indexOfItemWithTarget:andAction: failed", t); }
+    }
+
+    /// performKeyEquivalent:.
+    public boolean performKeyEquivalent(NSEvent event) {
+        try {
+            return (boolean) ObjC.handle(Sig.of(Ret.BOOL, Arg.ID)).invokeExact(peer,
+                    ObjC.sel("performKeyEquivalent:"),
+                    (MemorySegment) (event == null ? MemorySegment.NULL : event.peer()));
+        } catch (Throwable t) { throw new RuntimeException("performKeyEquivalent: failed", t); }
+    }
+
+    /// cancelTracking / cancelTrackingWithoutAnimation.
+    public void cancelTracking() {
+        ObjC.msgSendVoid(peer, ObjC.sel("cancelTracking"));
+    }
+    public void cancelTrackingWithoutAnimation() {
+        ObjC.msgSendVoid(peer, ObjC.sel("cancelTrackingWithoutAnimation"));
+    }
+
+    /// menuBarHeight.
+    public double menuBarHeight() {
+        try {
+            return (double) ObjC.handle(Sig.of(Ret.DOUBLE)).invokeExact(peer, ObjC.sel("menuBarHeight"));
+        } catch (Throwable t) { throw new RuntimeException("menuBarHeight failed", t); }
+    }
+
+    /// propertiesToUpdate — only valid from within menuNeedsUpdate: (AppKit raises otherwise).
+    public long propertiesToUpdate() {
+        return ObjC.msgSendLong(peer, ObjC.sel("propertiesToUpdate"));
+    }
+
+    /// userInterfaceLayoutDirection.
+    public long userInterfaceLayoutDirection() {
+        return ObjC.msgSendLong(peer, ObjC.sel("userInterfaceLayoutDirection"));
+    }
+    public void setUserInterfaceLayoutDirection(long dir) {
+        ObjC.msgSendVoidLong(peer, ObjC.sel("setUserInterfaceLayoutDirection:"), dir);
+    }
+
+    /// automaticallyInsertsWritingToolsItems (macOS 15.2+; guarded by respondsTo).
+    public boolean automaticallyInsertsWritingToolsItems() {
+        if (!respondsTo("automaticallyInsertsWritingToolsItems")) return true;
+        return ObjC.msgSendBool(peer, ObjC.sel("automaticallyInsertsWritingToolsItems"));
+    }
+    public void setAutomaticallyInsertsWritingToolsItems(boolean flag) {
+        if (!respondsTo("setAutomaticallyInsertsWritingToolsItems:")) return;
+        ObjC.msgSendVoidBool(peer, ObjC.sel("setAutomaticallyInsertsWritingToolsItems:"), flag);
+    }
+
+    /// presentationStyle / selectionMode / selectedItems (macOS 14+; guarded).
+    public long presentationStyle() {
+        if (!respondsTo("presentationStyle")) return 0L;
+        return ObjC.msgSendLong(peer, ObjC.sel("presentationStyle"));
+    }
+    public void setPresentationStyle(long style) {
+        if (!respondsTo("setPresentationStyle:")) return;
+        ObjC.msgSendVoidLong(peer, ObjC.sel("setPresentationStyle:"), style);
+    }
+    public long selectionMode() {
+        if (!respondsTo("selectionMode")) return 0L;
+        return ObjC.msgSendLong(peer, ObjC.sel("selectionMode"));
+    }
+    public void setSelectionMode(long mode) {
+        if (!respondsTo("setSelectionMode:")) return;
+        ObjC.msgSendVoidLong(peer, ObjC.sel("setSelectionMode:"), mode);
+    }
+    public NSArray selectedItems() {
+        if (!respondsTo("selectedItems")) return null;
+        return NSArray.wrap(ObjC.msgSendId(peer, ObjC.sel("selectedItems")));
+    }
+    public void setSelectedItems(NSArray items) {
+        if (!respondsTo("setSelectedItems:")) return;
+        ObjC.msgSendVoidId(peer, ObjC.sel("setSelectedItems:"),
+                (MemorySegment) (items == null ? MemorySegment.NULL : items.peer()));
+    }
+
+    /// submenuAction:.
+    public void submenuAction(MemorySegment sender) {
+        ObjC.msgSendVoidId(peer, ObjC.sel("submenuAction:"),
+                (MemorySegment) (sender == null ? MemorySegment.NULL : sender));
     }
 }

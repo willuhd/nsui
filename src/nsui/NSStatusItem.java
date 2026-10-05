@@ -13,6 +13,11 @@ import static nsui.objc.Sig.Ret;
 /// Covers the menu-bar right-side single-icon slot: title/image via the
 /// status-bar button (NSStatusBarButton), expandable behavior, toolTip,
 /// visibility, length, and target/action via DelegateProxy.
+/// OMITTED: NSStatusItemDeprecated forwarding (action/doubleAction/target/title/
+/// attributedTitle/image/alternateImage/enabled/highlightMode/toolTip/view +
+/// sendActionOn:/drawStatusBarBackgroundInRect:/popUpStatusItemMenu:) — all forward
+/// to button per header; use button() instead. Deprecated view/draw shapes
+/// (VOID,RECT,BOOL etc) are not wrapped.
 public final class NSStatusItem extends NSObject {
 
             private record Handles(MethodHandle hId, MethodHandle hDouble, MethodHandle hSetDouble, MethodHandle hBool, MethodHandle hSetBool, MethodHandle hSetId) {}
@@ -21,7 +26,8 @@ public final class NSStatusItem extends NSObject {
     // NSStatusItemBehavior constants (AppKit)
     public static final long BEHAVIOR_DEFAULT          = 0L;
     public static final long BEHAVIOR_REMOVAL_ALLOWED  = 1L << 1; // NSStatusItemBehaviorRemovalAllowed
-    public static final long BEHAVIOR_TERMINATION      = 1L << 0; // NSStatusItemBehaviorTermination
+    public static final long BEHAVIOR_TERMINATION_ON_REMOVAL = 1L << 2; // NSStatusItemBehaviorTerminationOnRemoval
+    public static final long BEHAVIOR_TERMINATION      = BEHAVIOR_TERMINATION_ON_REMOVAL; // legacy alias
     // convenience alias: expandable / removal-allowed
     public static final long BEHAVIOR_EXPANDABLE       = BEHAVIOR_REMOVAL_ALLOWED;
 
@@ -162,7 +168,7 @@ public final class NSStatusItem extends NSObject {
         if (b == null) return;
         try {
             if (!respondsTo(b.peer(), "setToolTip:")) return;
-            ObjC.msgSendVoidId(b.peer(), ObjC.sel("setToolTip:"), tip == null ? MemorySegment.NULL : ObjC.nsstring(tip));
+            ObjC.msgSendVoidId(b.peer(), ObjC.sel("setToolTip:"), (MemorySegment) (tip == null ? MemorySegment.NULL : ObjC.nsstring(tip)));
         } catch (Throwable ignored) {}
     }
 
@@ -256,6 +262,6 @@ public final class NSStatusItem extends NSObject {
         } catch (Throwable t) { throw new RuntimeException("autosaveName failed", t); }
     }
     public void setAutosaveName(String name) {
-        ObjC.msgSendVoidId(peer, ObjC.sel("setAutosaveName:"), name == null ? MemorySegment.NULL : ObjC.nsstring(name));
+        ObjC.msgSendVoidId(peer, ObjC.sel("setAutosaveName:"), (MemorySegment) (name == null ? MemorySegment.NULL : ObjC.nsstring(name)));
     }
 }

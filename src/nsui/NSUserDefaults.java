@@ -10,6 +10,9 @@ import static nsui.objc.Sig.Ret;
 
 /// NSUserDefaults (Foundation) — the app preferences domain: typed scalar
 /// and string accessors plus removal. Thin stateless wrapper.
+/// OMITTED: floatForKey:/setFloat:forKey: — FLOAT shapes (FLOAT,ID / VOID,FLOAT,ID)
+/// are NOT in the Sig vocabulary (verified by grep: no FLOAT,ID entry); and
+/// initWithUser: (deprecated).
 public final class NSUserDefaults extends NSObject {
 
     private record Handles(MethodHandle hIntId, MethodHandle hDoubleId, MethodHandle hBoolId,
@@ -119,5 +122,141 @@ public final class NSUserDefaults extends NSObject {
     /// removeObjectForKey:.
     public void removeObjectForKey(String name) {
         ObjC.msgSendVoidId(peer, ObjC.sel("removeObjectForKey:"), key(name));
+    }
+
+    /// resetStandardUserDefaults (class).
+    public static void resetStandardUserDefaults() {
+        ObjC.msgSendVoid(ObjC.cls("NSUserDefaults"), ObjC.sel("resetStandardUserDefaults"));
+    }
+
+    /// initWithSuiteName: (nil searches the default search list).
+    public static NSUserDefaults withSuiteName(String suitename) {
+        ensureInit();
+        MemorySegment p = ObjC.msgSendId(ObjC.cls("NSUserDefaults"), ObjC.sel("alloc"));
+        try {
+            MemorySegment q = (MemorySegment) ObjC.handle(Sig.of(Ret.ID, Arg.ID)).invokeExact(p,
+                    ObjC.sel("initWithSuiteName:"),
+                    (MemorySegment) (suitename == null ? MemorySegment.NULL : ObjC.nsstring(suitename)));
+            return wrap(q);
+        } catch (Throwable t) { throw new RuntimeException("initWithSuiteName: failed", t); }
+    }
+
+    /// objectForKey: (generic id, nil-safe as NULL peer).
+    public MemorySegment objectForKey(String name) {
+        return ObjC.msgSendIdId(peer, ObjC.sel("objectForKey:"), key(name));
+    }
+
+    /// arrayForKey: / dictionaryForKey: / dataForKey: / stringArrayForKey:.
+    public NSArray arrayForKey(String name) {
+        return NSArray.wrap(ObjC.msgSendIdId(peer, ObjC.sel("arrayForKey:"), key(name)));
+    }
+    public NSDictionary dictionaryForKey(String name) {
+        return NSDictionary.wrap(ObjC.msgSendIdId(peer, ObjC.sel("dictionaryForKey:"), key(name)));
+    }
+    public NSData dataForKey(String name) {
+        return NSData.wrap(ObjC.msgSendIdId(peer, ObjC.sel("dataForKey:"), key(name)));
+    }
+    public NSArray stringArrayForKey(String name) {
+        return NSArray.wrap(ObjC.msgSendIdId(peer, ObjC.sel("stringArrayForKey:"), key(name)));
+    }
+
+    /// URLForKey: (NSURL as generic id, nil-safe).
+    public MemorySegment URLForKey(String name) {
+        return ObjC.msgSendIdId(peer, ObjC.sel("URLForKey:"), key(name));
+    }
+
+    /// setURL:forKey: (NSURL as generic id; nil clears).
+    public void setURLForKey(MemorySegment url, String name) {
+        try {
+            ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.ID)).invokeExact(peer, ObjC.sel("setURL:forKey:"),
+                    (MemorySegment) (url == null ? MemorySegment.NULL : url), key(name));
+        } catch (Throwable t) { throw new RuntimeException("setURL:forKey: failed", t); }
+    }
+
+    /// setObject:forKey: generic id overload (nil removes).
+    public void setObjectForKey(MemorySegment value, String name) {
+        try {
+            handles.hSetObj().invokeExact(peer, ObjC.sel("setObject:forKey:"),
+                    (MemorySegment) (value == null ? MemorySegment.NULL : value), key(name));
+        } catch (Throwable t) { throw new RuntimeException("setObject:forKey: failed", t); }
+    }
+
+    /// registerDefaults:.
+    public void registerDefaults(NSDictionary dict) {
+        ObjC.msgSendVoidId(peer, ObjC.sel("registerDefaults:"),
+                (MemorySegment) (dict == null ? MemorySegment.NULL : dict.peer()));
+    }
+
+    /// addSuiteNamed: / removeSuiteNamed:.
+    public void addSuiteNamed(String suite) {
+        ObjC.msgSendVoidId(peer, ObjC.sel("addSuiteNamed:"),
+                (MemorySegment) (suite == null ? MemorySegment.NULL : ObjC.nsstring(suite)));
+    }
+    public void removeSuiteNamed(String suite) {
+        ObjC.msgSendVoidId(peer, ObjC.sel("removeSuiteNamed:"),
+                (MemorySegment) (suite == null ? MemorySegment.NULL : ObjC.nsstring(suite)));
+    }
+
+    /// dictionaryRepresentation.
+    public NSDictionary dictionaryRepresentation() {
+        return NSDictionary.wrap(ObjC.msgSendId(peer, ObjC.sel("dictionaryRepresentation")));
+    }
+
+    /// volatileDomainNames / volatileDomainForName: / setVolatileDomain:forName: / removeVolatileDomainForName:.
+    public NSArray volatileDomainNames() {
+        return NSArray.wrap(ObjC.msgSendId(peer, ObjC.sel("volatileDomainNames")));
+    }
+    public NSDictionary volatileDomainForName(String domain) {
+        return NSDictionary.wrap(ObjC.msgSendIdId(peer, ObjC.sel("volatileDomainForName:"),
+                (MemorySegment) (domain == null ? MemorySegment.NULL : ObjC.nsstring(domain))));
+    }
+    public void setVolatileDomainForName(NSDictionary domain, String name) {
+        try {
+            ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.ID)).invokeExact(peer, ObjC.sel("setVolatileDomain:forName:"),
+                    (MemorySegment) (domain == null ? MemorySegment.NULL : domain.peer()),
+                    (MemorySegment) (name == null ? MemorySegment.NULL : ObjC.nsstring(name)));
+        } catch (Throwable t) { throw new RuntimeException("setVolatileDomain:forName: failed", t); }
+    }
+    public void removeVolatileDomainForName(String domain) {
+        ObjC.msgSendVoidId(peer, ObjC.sel("removeVolatileDomainForName:"),
+                (MemorySegment) (domain == null ? MemorySegment.NULL : ObjC.nsstring(domain)));
+    }
+
+    /// persistentDomainForName: / setPersistentDomain:forName: / removePersistentDomainForName:.
+    public NSDictionary persistentDomainForName(String domain) {
+        return NSDictionary.wrap(ObjC.msgSendIdId(peer, ObjC.sel("persistentDomainForName:"),
+                (MemorySegment) (domain == null ? MemorySegment.NULL : ObjC.nsstring(domain))));
+    }
+    public void setPersistentDomainForName(NSDictionary domain, String name) {
+        try {
+            ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.ID)).invokeExact(peer, ObjC.sel("setPersistentDomain:forName:"),
+                    (MemorySegment) (domain == null ? MemorySegment.NULL : domain.peer()),
+                    (MemorySegment) (name == null ? MemorySegment.NULL : ObjC.nsstring(name)));
+        } catch (Throwable t) { throw new RuntimeException("setPersistentDomain:forName: failed", t); }
+    }
+    public void removePersistentDomainForName(String domain) {
+        ObjC.msgSendVoidId(peer, ObjC.sel("removePersistentDomainForName:"),
+                (MemorySegment) (domain == null ? MemorySegment.NULL : ObjC.nsstring(domain)));
+    }
+
+    /// synchronize (deprecated upstream but still in the header).
+    public boolean synchronize() {
+        return ObjC.msgSendBool(peer, ObjC.sel("synchronize"));
+    }
+
+    /// objectIsForcedForKey:.
+    public boolean objectIsForcedForKey(String name) {
+        try {
+            return (boolean) ObjC.handle(Sig.of(Ret.BOOL, Arg.ID)).invokeExact(peer,
+                    ObjC.sel("objectIsForcedForKey:"), key(name));
+        } catch (Throwable t) { throw new RuntimeException("objectIsForcedForKey: failed", t); }
+    }
+    public boolean objectIsForcedForKeyInDomain(String key, String domain) {
+        try {
+            return (boolean) ObjC.handle(Sig.of(Ret.BOOL, Arg.ID, Arg.ID)).invokeExact(peer,
+                    ObjC.sel("objectIsForcedForKey:inDomain:"),
+                    (MemorySegment) (key == null ? MemorySegment.NULL : ObjC.nsstring(key)),
+                    (MemorySegment) (domain == null ? MemorySegment.NULL : ObjC.nsstring(domain)));
+        } catch (Throwable t) { throw new RuntimeException("objectIsForcedForKey:inDomain: failed", t); }
     }
 }

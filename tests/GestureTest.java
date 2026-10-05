@@ -9,17 +9,11 @@ import nsui.NSPoint;
 import nsui.NSView;
 import nsui.objc.ObjC;
 
-/**
- * GestureTest — covers NSGestureRecognizer / NSPanGestureRecognizer /
- * NSClickGestureRecognizer: create with target/action, isEnabled,
- * buttonMask, translationInView with nil view, addTarget/removeTarget.
- * Stress 1000 iterations.
- */
+/// GestureTest — covers NSGestureRecognizer / NSPanGestureRecognizer /
+/// NSClickGestureRecognizer: create with target/action, isEnabled,
+/// buttonMask, translationInView with nil view, addTarget/removeTarget.
+/// Stress 1000 iterations.
 public final class GestureTest {
-
-    
-
-    
 
     private static MemorySegment dummyTarget() {
         MemorySegment alloc = ObjC.msgSendId(ObjC.cls("NSObject"), ObjC.sel("alloc"));

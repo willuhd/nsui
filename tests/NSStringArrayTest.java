@@ -8,16 +8,10 @@ import nsui.NSString;
 import nsui.objc.Autorelease;
 import nsui.objc.ObjC;
 
-/**
- * Tests for NSString / NSArray / NSDictionary wrappers.
- * Pure-memory (Foundation-only) — no NSWindow — but still requires ObjC.init().
- * Includes verification of the toString truncation fix (strings >4096 chars).
- */
+/// Tests for NSString / NSArray / NSDictionary wrappers.
+/// Pure-memory (Foundation-only) — no NSWindow — but still requires ObjC.init().
+/// Includes verification of the toString truncation fix (strings >4096 chars).
 public final class NSStringArrayTest {
-
-    
-
-    
 
     public static void main(String[] args) {
         System.out.println("=== NSStringArrayTest — NSString / NSArray / NSDictionary ===");

@@ -6,29 +6,21 @@ import nsui.NSRect;
 import nsui.NSWindow;
 import nsui.objc.ObjC;
 
-/**
- * Window styles: the COMPOSITIONAL AppKit model (styleMask bits + NSPanel subclass
- * + behavior properties), exposed via thin wrappers on {@code NSWindow}.
- *
- * <p>Key assertions (AppKit, not assumptions):
- * <ul>
- *   <li>a normal {@code NSWindow} created with styleMask {@code 15}
- *       (Titled|Closable|Miniaturizable|Resizable) reads back {@code styleMask()==15};</li>
- *   <li>{@code setTitlebarAppearsTransparent:} + {@code setTitleVisibility:} are the
- *       native "modern title bar" switches (no height/radius knob — AppKit derives those);</li>
- *   <li>{@code setLevel:}/{@code level()} round-trip (NSFloatingWindowLevel=3 checked);</li>
- *   <li>{@code standardWindowButton:} returns a real (non-nil) NSButton peer,
- *       here typed as {@code NSObject};</li>
- *   <li>{@code createPanel} with {@code 15L|16L} (Titled|UtilityWindow) really is an
- *       {@code NSPanel} (className), {@code isUtilityWindow()==true}, and honors the
- *       panel behaviors {@code setHidesOnDeactivate:} / {@code setBecomesKeyOnlyIfNeeded:}.</li>
- * </ul>
- */
+/// Window styles: the COMPOSITIONAL AppKit model (styleMask bits + NSPanel subclass
+/// + behavior properties), exposed via thin wrappers on `NSWindow`.
+///
+/// Key assertions (AppKit, not assumptions):
+/// - a normal `NSWindow` created with styleMask `15`
+/// (Titled|Closable|Miniaturizable|Resizable) reads back `styleMask()==15`;
+/// - `setTitlebarAppearsTransparent:` + `setTitleVisibility:` are the
+/// native "modern title bar" switches (no height/radius knob — AppKit derives those);
+/// - `setLevel:`/`level()` round-trip (NSFloatingWindowLevel=3 checked);
+/// - `standardWindowButton:` returns a real (non-nil) NSButton peer,
+/// here typed as `NSObject`;
+/// - `createPanel` with `15L|16L` (Titled|UtilityWindow) really is an
+/// `NSPanel` (className), `isUtilityWindow()==true`, and honors the
+/// panel behaviors `setHidesOnDeactivate:` / `setBecomesKeyOnlyIfNeeded:`.
 public final class WindowStyleTest {
-
-    
-
-    
 
     public static void main(String[] args) {
         System.out.println("=== WindowStyleTest — compositional window style (styleMask + NSPanel + behavior) ===");

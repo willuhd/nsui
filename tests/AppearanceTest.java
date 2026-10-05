@@ -5,25 +5,17 @@ import nsui.NSRect;
 import nsui.NSView;
 import nsui.objc.ObjC;
 
-/**
- * NSAppearance round-trip: appearanceNamed, currentAppearance, name,
- * view effectiveAppearance, and stress loop.
- *
- * <ul>
- *   <li>appearanceNamed("NSAppearanceNameAqua") non-null and name round-trip;</li>
- *   <li>appearanceNamed("NSAppearanceNameDarkAqua") non-null;</li>
- *   <li>currentAppearance non-null;</li>
- *   <li>NSView effectiveAppearance after setAppearance;</li>
- *   <li>Stress: 200 iterations appearanceNamed + name check.</li>
- * </ul>
- *
- * All AppKit activity runs on the main thread (-XstartOnFirstThread).
- */
+/// NSAppearance round-trip: appearanceNamed, currentAppearance, name,
+/// view effectiveAppearance, and stress loop.
+///
+/// - appearanceNamed("NSAppearanceNameAqua") non-null and name round-trip;
+/// - appearanceNamed("NSAppearanceNameDarkAqua") non-null;
+/// - currentAppearance non-null;
+/// - NSView effectiveAppearance after setAppearance;
+/// - Stress: 200 iterations appearanceNamed + name check.
+///
+/// All AppKit activity runs on the main thread (-XstartOnFirstThread).
 public final class AppearanceTest {
-
-    
-
-    
 
     public static void main(String[] args) throws Throwable {
         System.out.println("=== AppearanceTest — NSAppearance round-trip + stress ===");

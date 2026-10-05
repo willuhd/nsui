@@ -7,7 +7,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import nsui.NSApplication;
 import nsui.NSEvent;
-import nsui.NSObject;
 import nsui.NSRect;
 import nsui.NSView;
 import nsui.NSWindow;
@@ -17,21 +16,15 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * Layer-backed rendering: verifies that a view with {@code wantsLayer(true)} still draws
- * correctly through the Java {@code Drawable}, with concrete pixel verification (red fill
- * + blue centered rect), and that {@link NSView#backingScaleFactor()} is positive.
- *
- * <p>{@code setWantsLayer(true)} is applied BEFORE the view is installed as the window's
- * content view. Layer-backed views render into CoreAnimation layers; passing this test
- * requires the manual run-loop pump (with a {@code displayIfNeeded} fallback) to drive
- * the layer commit.
- */
+/// Layer-backed rendering: verifies that a view with `wantsLayer(true)` still draws
+/// correctly through the Java `Drawable`, with concrete pixel verification (red fill
+/// + blue centered rect), and that `NSView#backingScaleFactor()` is positive.
+///
+/// `setWantsLayer(true)` is applied BEFORE the view is installed as the window's
+/// content view. Layer-backed views render into CoreAnimation layers; passing this test
+/// requires the manual run-loop pump (with a `displayIfNeeded` fallback) to drive
+/// the layer commit.
 public final class LayerBackedTest {
-
-    
-
-    
 
     public static void main(String[] args) throws Throwable {
         System.out.println("=== LayerBackedTest — layer-backed rendering + backingScaleFactor ===");

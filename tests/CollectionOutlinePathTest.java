@@ -12,10 +12,8 @@ import nsui.NSTableColumn;
 import nsui.NSView;
 import nsui.objc.ObjC;
 
-/**
- * CollectionOutlinePathTest — creation and property checks for NSCollectionView,
- * NSCollectionViewItem, NSOutlineView, NSPathControl, and NSSplitView (if present).
- */
+/// CollectionOutlinePathTest — creation and property checks for NSCollectionView,
+/// NSCollectionViewItem, NSOutlineView, NSPathControl, and NSSplitView (if present).
 public final class CollectionOutlinePathTest {
     
     private static int asserts;

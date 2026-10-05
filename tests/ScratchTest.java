@@ -5,30 +5,22 @@ import java.lang.foreign.MemorySegment;
 import nsui.objc.ObjC;
 import nsui.objc.Scratch;
 
-/**
- * Tests for the per-turn bump arena ({@link Scratch}) and the scratch-aware INPUT
- * marshalling in {@link ObjC}.
- *
- * <p>Covers:
- * <ol>
- *   <li>100k-op bump-reuse loop: {@code Scratch.alloc(32)}, {@code ObjC.rect(...)},
- *       {@code ObjC.cstring(...)}, {@code ObjC.sel(...)} — {@code used()} stays bounded
- *       (≪ n*32), proving the buffer is reused, then resets to 0 on {@code endTurn()}.</li>
- *   <li>Turn nesting: begin/begin/end(allocs still active)/end resets used() to 0.</li>
- *   <li>Fallback: a single 2&nbsp;MiB alloc (larger than the 1&nbsp;MiB buffer) returns a
- *       non-null global-arena segment without throwing.</li>
- *   <li>Round-trip: within a turn, create an NSWindow, set a frame, and read it back via
- *       {@link ObjC#msgSendRect} — the struct RETURN reads correct doubles, proving returns
- *       stay in the global arena.</li>
- *   <li>SEL cache: two {@code sel("setTitle:")} calls return address-identical cached cstrings
- *       and both resolve to the same native SEL.</li>
- * </ol>
- */
+/// Tests for the per-turn bump arena (`Scratch`) and the scratch-aware INPUT
+/// marshalling in `ObjC`.
+///
+/// Covers:
+/// - 100k-op bump-reuse loop: `Scratch.alloc(32)`, `ObjC.rect(...)`,
+/// `ObjC.cstring(...)`, `ObjC.sel(...)` — `used()` stays bounded
+/// (≪ n*32), proving the buffer is reused, then resets to 0 on `endTurn()`.
+/// - Turn nesting: begin/begin/end(allocs still active)/end resets used() to 0.
+/// - Fallback: a single 2 MiB alloc (larger than the 1 MiB buffer) returns a
+/// non-null global-arena segment without throwing.
+/// - Round-trip: within a turn, create an NSWindow, set a frame, and read it back via
+/// `ObjC#msgSendRect` — the struct RETURN reads correct doubles, proving returns
+/// stay in the global arena.
+/// - SEL cache: two `sel("setTitle:")` calls return address-identical cached cstrings
+/// and both resolve to the same native SEL.
 public final class ScratchTest {
-
-    
-
-    
 
     public static void main(String[] args) {
         System.out.println("=== ScratchTest — per-turn bump arena + scratch-aware INPUT marshalling ===");

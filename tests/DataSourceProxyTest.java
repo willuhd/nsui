@@ -9,30 +9,24 @@ import nsui.objc.DelegateProxy;
 import nsui.objc.ObjC;
 import nsui.objc.Sig;
 
-/**
- * Proves the two data-source shapes added to {@link DelegateProxy} against a REAL
- * {@code NSTableView}: {@code -(NSInteger)numberOfRowsInTableView:} (an {@link
- * DelegateProxy.IntArg}) and {@code -(id)tableView:objectValueForTableColumn:row:}
- * (an {@link DelegateProxy.IdIdIntArg}).
- *
- * <p>No window is needed: {@code [table reloadData]} asks the dataSource regardless,
- * and the returned row count / cells are checked afterwards.
- *
- * <p>Also a regression that the pre-existing bool/void delegate shapes still work
- * (windowShouldClose: veto via the classic 4-arg {@code delegate} + performClose),
- * and that an UNREGISTERED selector sent to a data-source object is a safe no-op.
- */
+/// Proves the two data-source shapes added to `DelegateProxy` against a REAL
+/// `NSTableView`: `-(NSInteger)numberOfRowsInTableView:` (an {@link
+/// DelegateProxy.IntArg}) and `-(id)tableView:objectValueForTableColumn:row:`
+/// (an `DelegateProxy.IdIdIntArg`).
+///
+/// No window is needed: `[table reloadData]` asks the dataSource regardless,
+/// and the returned row count / cells are checked afterwards.
+///
+/// Also a regression that the pre-existing bool/void delegate shapes still work
+/// (windowShouldClose: veto via the classic 4-arg `delegate` + performClose),
+/// and that an UNREGISTERED selector sent to a data-source object is a safe no-op.
 public final class DataSourceProxyTest {
-
-    
 
     // Resolved ONCE after ObjC.init() (never before). FFM handles need the init-ed tables.
     private static MethodHandle hIdRect;       // initWithFrame: (id, SEL, NSRect) -> id
     private static MethodHandle hVoidDouble;   // setWidth: (id, SEL, double) -> void
     private static MethodHandle hIdIdIdInt;    // tableView:objectValueForTableColumn:row: (id, SEL, id, id, long) -> id
     private static MethodHandle hVoidId;       // addSubview: / setFrameOrigin: (id, SEL, id) -> void
-
-    
 
     public static void main(String[] args) throws Throwable {
         System.out.println("=== DataSourceProxyTest — table data-source via DelegateProxy ===");
@@ -171,19 +165,17 @@ public final class DataSourceProxyTest {
         } catch (Throwable t) { throw boom(t); }
     }
 
-    /**
-     * Optional, best-effort: put the table in a REAL window, order it front, and let AppKit's
-     * display pass actually pull cell values through the live data-source. Skipped cleanly (no
-     * failure) if the fixated window server is unavailable in this environment. The authoritative
-     * IdIdIntArg proof is the deterministic direct-send loop in main.
-     */
+/// Optional, best-effort: put the table in a REAL window, order it front, and let AppKit's
+/// display pass actually pull cell values through the live data-source. Skipped cleanly (no
+/// failure) if the fixated window server is unavailable in this environment. The authoritative
+/// IdIdIntArg proof is the deterministic direct-send loop in main.
     private static void attemptRealDisplayCellPull(MemorySegment table, int[] cellCalls, int before) {
         try {
             MemorySegment app = ObjC.msgSendId(ObjC.cls("NSApplication"), ObjC.sel("sharedApplication"));
             MemorySegment windowCls = ObjC.cls("NSWindow");
             MemorySegment window = ObjC.msgSendId(windowCls, ObjC.sel("alloc"));
             window = ObjC.msgSendIdRectLongLongBool(window, ObjC.sel("initWithContentRect:styleMask:backing:defer:"),
-                    ObjC.rect(0, 0, 520, 240), 15L, 2L, false);
+                    ObjC.rect(-10000, -10000, 520, 240), 15L, 2L, false);
             ObjC.msgSendVoidBool(window, ObjC.sel("setReleasedWhenClosed:"), false);
             MemorySegment content = ObjC.msgSendId(window, ObjC.sel("contentView"));
             // addSubview: is an (id, SEL, id) void message — use the cached vocabulary handle.

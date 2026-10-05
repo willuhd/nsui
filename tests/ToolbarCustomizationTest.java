@@ -15,12 +15,10 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * ToolbarCustomizationTest — verifies NSToolbarDelegate wiring via DelegateProxy.
- * - ObjC.init(), registrySize check, create delegate, call selectors via ObjC.msgSend handles,
- *   verify IdIdArg / IdArg fired, check default identifiers list size 2.
- * - Stress: 100 iterations create delegate + call selectors.
- */
+/// ToolbarCustomizationTest — verifies NSToolbarDelegate wiring via DelegateProxy.
+/// - ObjC.init(), registrySize check, create delegate, call selectors via ObjC.msgSend handles,
+/// verify IdIdArg / IdArg fired, check default identifiers list size 2.
+/// - Stress: 100 iterations create delegate + call selectors.
 public final class ToolbarCustomizationTest {
     
     private static int asserts;

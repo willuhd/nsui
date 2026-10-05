@@ -2,15 +2,10 @@ package nsui.tests;
 
 import nsui.*;
 import nsui.objc.ObjC;
-import nsui.objc.Sig;
-import static nsui.objc.Sig.Arg;
-import static nsui.objc.Sig.Ret;
 
-/**
- * TouchBarWindowDocTest — creation and property round-trips for
- * NSTouchBar, NSTouchBarItem, NSWindowController, NSDocument, NSSearchMenuTemplate.
- * Also covers NSMenu/NSSearchField searchMenuTemplate integration (Help menu).
- */
+/// TouchBarWindowDocTest — creation and property round-trips for
+/// NSTouchBar, NSTouchBarItem, NSWindowController, NSDocument, NSSearchMenuTemplate.
+/// Also covers NSMenu/NSSearchField searchMenuTemplate integration (Help menu).
 public final class TouchBarWindowDocTest {
     
     private static int asserts;

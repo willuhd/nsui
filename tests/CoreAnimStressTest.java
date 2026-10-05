@@ -6,9 +6,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import nsui.*;
 import nsui.objc.ObjC;
-import nsui.objc.Sig;
-import static nsui.objc.Sig.Arg;
-import static nsui.objc.Sig.Ret;
 
 /// CoreAnimStressTest — non-interactive stress + regression suite for the
 /// CoreAnimation coverage: CALayer tree/property additions, CAShapeLayer,
@@ -28,7 +25,6 @@ import static nsui.objc.Sig.Ret;
 /// Reuses the TouchBarMenuTest SKIP pattern when AppKit init fails.
 public final class CoreAnimStressTest {
 
-    
     private static int asserts;
     private static int wrongMethodTypeCount;
 

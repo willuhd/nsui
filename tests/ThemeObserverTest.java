@@ -9,7 +9,6 @@ import java.lang.reflect.Field;
 
 import nsui.NSAppearance;
 import nsui.NSApplication;
-import nsui.NSEvent;
 import nsui.NSRect;
 import nsui.NSWindow;
 import nsui.objc.ObjC;
@@ -259,5 +258,4 @@ public final class ThemeObserverTest {
         TestKit.end();
     }
 
-    
 }

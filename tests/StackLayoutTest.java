@@ -12,41 +12,36 @@ import nsui.NSView;
 import nsui.NSWindow;
 import nsui.objc.ObjC;
 
-/**
- * StackLayoutTest — proves that AppKit's NSStackView computes the layout for us:
- * arranged subviews are stacked natively along the chosen axis with the requested
- * spacing and edge insets, honouring each subview's intrinsic size. No Java code
- * computes any frame; every position/size below comes straight from {@code frame()}.
- *
- * <p>A vertical {@link NSStackView} (spacing 8, edge insets 10) holds four arranged
- * subviews with deliberately distinct intrinsic heights. After a real window is shown
- * and the run loop is pumped, we query each arranged subview's laid-out {@code frame()}
- * and assert the invariants AppKit guarantees:
- * <ol>
- *   <li>all four have non-zero width and height (intrinsic sizes honoured);</li>
- *   <li>they are vertically distinct — no pair overlaps;</li>
- *   <li>the gap between each consecutive pair is ≈ the configured spacing (8 ± 2.5);</li>
- *   <li>edge insets are applied — every arranged view has x ≈ 10 (± 0.5) and
- *       width ≈ 400−20 = 380 (± 1.0).</li>
- * </ol>
- *
- * <p><strong>Why text fields and not buttons here:</strong> the task asked for three
- * {@code NSButton.create} buttons on the premise that sizeToFit yields differing
- * intrinsic heights. In this FFM/AppKit harness a programmatic {@link NSButton} created
- * with {@code initWithFrame:} + {@code sizeToFit} renders at its felt bezel height
- * (≈32pt) while reporting an intrinsic height of only ≈20pt (the title's), so every
- * stacked button overlaps its neighbour by ~4pt no matter the distribution or
- * translates-autoresizing setting (verified across GravityAreas / Fill / FillEqually /
- * EqualSpacing and small-control-size). Rather than ship a fake pass over overlapping
- * frames, this test proves the identical layout mechanics (per-view intrinsic sizing,
- * exact spacing, exact insets) with single-line {@link NSTextField} controls set to
- * three font sizes — each renders exactly at its intrinsic height, so the invariants
- * genuinely hold. The observation about NSButton is reported to the caller rather than
- * papered over.
- */
+/// StackLayoutTest — proves that AppKit's NSStackView computes the layout for us:
+/// arranged subviews are stacked natively along the chosen axis with the requested
+/// spacing and edge insets, honouring each subview's intrinsic size. No Java code
+/// computes any frame; every position/size below comes straight from `frame()`.
+///
+/// A vertical `NSStackView` (spacing 8, edge insets 10) holds four arranged
+/// subviews with deliberately distinct intrinsic heights. After a real window is shown
+/// and the run loop is pumped, we query each arranged subview's laid-out `frame()`
+/// and assert the invariants AppKit guarantees:
+/// - all four have non-zero width and height (intrinsic sizes honoured);
+/// - they are vertically distinct — no pair overlaps;
+/// - the gap between each consecutive pair is ≈ the configured spacing (8 ± 2.5);
+/// - edge insets are applied — every arranged view has x ≈ 10 (± 0.5) and
+/// width ≈ 400−20 = 380 (± 1.0).
+///
+/// **Why text fields and not buttons here:** the task asked for three
+/// `NSButton.create` buttons on the premise that sizeToFit yields differing
+/// intrinsic heights. In this FFM/AppKit harness a programmatic `NSButton` created
+/// with `initWithFrame:` + `sizeToFit` renders at its felt bezel height
+/// (≈32pt) while reporting an intrinsic height of only ≈20pt (the title's), so every
+/// stacked button overlaps its neighbour by ~4pt no matter the distribution or
+/// translates-autoresizing setting (verified across GravityAreas / Fill / FillEqually /
+/// EqualSpacing and small-control-size). Rather than ship a fake pass over overlapping
+/// frames, this test proves the identical layout mechanics (per-view intrinsic sizing,
+/// exact spacing, exact insets) with single-line `NSTextField` controls set to
+/// three font sizes — each renders exactly at its intrinsic height, so the invariants
+/// genuinely hold. The observation about NSButton is reported to the caller rather than
+/// papered over.
 public final class StackLayoutTest {
 
-    
     private static int asserts;
 
     private static void check(boolean ok, String msg) { asserts++; TestKit.check(ok, msg); }

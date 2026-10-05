@@ -1,36 +1,24 @@
 package nsui.tests;
-
-import java.lang.foreign.MemorySegment;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import nsui.NSApplication;
-import nsui.NSEvent;
-import nsui.NSObject;
 import nsui.NSRect;
 import nsui.NSView;
 import nsui.NSWindow;
 import nsui.objc.CG;
 import nsui.objc.ObjC;
 
-/**
- * Dirty-rect redraw: prove that {@code setNeedsDisplayInRect:} reaches the Java
- * {@code Drawable} with the SUB-rect (not the full 500-wide bounds), and that a
- * subsequent full {@code setNeedsDisplay(true)} comes back full-size.
- *
- * <p>Pass criteria:</p>
- * <ul>
- *   <li>{@code draws >= 1}</li>
- *   <li>the LAST dirty rect recorded after a sub-rect invalidate is small
- *       ({@code width < 200}, i.e. NOT the full 500-wide bounds);</li>
- *   <li>a full invalidate afterwards yields a full-size dirty rect</li>
- *       ({@code width >= 499}).</li>
- * </ul>
- */
+/// Dirty-rect redraw: prove that `setNeedsDisplayInRect:` reaches the Java
+/// `Drawable` with the SUB-rect (not the full 500-wide bounds), and that a
+/// subsequent full `setNeedsDisplay(true)` comes back full-size.
+///
+/// Pass criteria:
+/// - `draws >= 1`
+/// - the LAST dirty rect recorded after a sub-rect invalidate is small
+/// (`width < 200`, i.e. NOT the full 500-wide bounds);
+/// - a full invalidate afterwards yields a full-size dirty rect
+/// (`width >= 499`).
 public final class DirtyRectTest {
-
-    
-
-    
 
     public static void main(String[] args) throws Throwable {
         System.out.println("=== DirtyRectTest — dirty-rect redraw reaches Drawable with sub-rect ===");

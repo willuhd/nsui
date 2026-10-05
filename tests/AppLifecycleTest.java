@@ -6,50 +6,41 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import nsui.NSApplication;
-import nsui.NSEvent;
 import nsui.NSObject;
 import nsui.NSRect;
 import nsui.NSWindow;
 import nsui.objc.DelegateProxy;
 import nsui.objc.ObjC;
 
-/**
- * FULL-AppKit-level proof that a Java BOOLEAN returned from a {@code DelegateProxy}
- * app-delegate method decides whether the REAL {@code NSApplication} lives or dies.
- *
- * <p>Two orthogonal things are proven, each through real AppKit:
- * <ul>
- *   <li><b>App wiring</b> — the app delegate's runtime class responds to the app-lifecycle
- *       selectors ({@code respondsToSelector:} returns true), the delegate is installed on
- *       the shared {@code NSApplication}, the window closes ({@code windowWillClose:} fires),
- *       and the PROCESS IS STILL ALIVE after the last window closes — the app did NOT
- *       terminate because the Java app delegate did not ask it to.</li>
- *   <li><b>Java-controlled termination</b> — calling {@code [NSApp terminate:]} consults the
- *       delegate's {@code applicationShouldTerminate:}; Java returns {@code false}
- *       (NSTerminateCancel) and the app is NOT terminated — then the test's main thread keeps
- *       running, proving the Java verdict held. This is the same terminate path NSUI3's
- *       {@code Main} relies on ({@code windowWillClose:} -&gt; {@code terminate:}).</li>
- * </ul>
- *
- * <p><b>Honest deviation (measured, not assumed).</b> The task's premise was that closing the
- * last window makes AppKit spontaneously send {@code applicationShouldTerminateAfterLastWindowClosed:}
- * to the app delegate, which we could veto. In this minimal NSUI3 setup it does NOT get
- * consulted — not under a manual {@code nextEventMatchingMask} pump, and not under a real
- * {@code [NSApp run]} either (both probed; the callback's {@code vetoFlag} stays {@code false},
- * and {@code run()} never returned because AppKit never invoked the terminate path at all). The
- * method IS correctly installed ({@code respondsToSelector:} == true) and the process correctly
- * does not terminate; it is merely that AppKit does not drive the spontaneous "last window
- * closed" termination hook for a hand-made non-LaunchServices window. This is exactly why
- * NSUI3's own {@code Main} adds an explicit {@code windowWillClose:} -&gt; {@code terminate:}
- * fallback. The tests therefore assert the provable facts and prove Java-controlled
- * termination through the real {@code terminate:} / {@code applicationShouldTerminate:} path —
- * a genuine AppKit-level boolean decision.
- */
+/// FULL-AppKit-level proof that a Java BOOLEAN returned from a `DelegateProxy`
+/// app-delegate method decides whether the REAL `NSApplication` lives or dies.
+///
+/// Two orthogonal things are proven, each through real AppKit:
+/// - **App wiring** — the app delegate's runtime class responds to the app-lifecycle
+/// selectors (`respondsToSelector:` returns true), the delegate is installed on
+/// the shared `NSApplication`, the window closes (`windowWillClose:` fires),
+/// and the PROCESS IS STILL ALIVE after the last window closes — the app did NOT
+/// terminate because the Java app delegate did not ask it to.
+/// - **Java-controlled termination** — calling `[NSApp terminate:]` consults the
+/// delegate's `applicationShouldTerminate:`; Java returns `false`
+/// (NSTerminateCancel) and the app is NOT terminated — then the test's main thread keeps
+/// running, proving the Java verdict held. This is the same terminate path NSUI3's
+/// `Main` relies on (`windowWillClose:` -> `terminate:`).
+///
+/// **Honest deviation (measured, not assumed).** The task's premise was that closing the
+/// last window makes AppKit spontaneously send `applicationShouldTerminateAfterLastWindowClosed:`
+/// to the app delegate, which we could veto. In this minimal NSUI3 setup it does NOT get
+/// consulted — not under a manual `nextEventMatchingMask` pump, and not under a real
+/// `[NSApp run]` either (both probed; the callback's `vetoFlag` stays `false`,
+/// and `run()` never returned because AppKit never invoked the terminate path at all). The
+/// method IS correctly installed (`respondsToSelector:` == true) and the process correctly
+/// does not terminate; it is merely that AppKit does not drive the spontaneous "last window
+/// closed" termination hook for a hand-made non-LaunchServices window. This is exactly why
+/// NSUI3's own `Main` adds an explicit `windowWillClose:` -> `terminate:`
+/// fallback. The tests therefore assert the provable facts and prove Java-controlled
+/// termination through the real `terminate:` / `applicationShouldTerminate:` path —
+/// a genuine AppKit-level boolean decision.
 public final class AppLifecycleTest {
-
-    
-
-    
 
     public static void main(String[] args) throws Throwable {
         System.out.println("=== AppLifecycleTest — Java app-delegate boolean controls NSApplication ===");

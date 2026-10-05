@@ -11,17 +11,15 @@ import java.util.concurrent.atomic.AtomicInteger;
 import nsui.objc.Dispatch;
 import nsui.objc.ObjC;
 
-/**
- * Integration test for the low-level libdispatch shim (nsui.objc.Dispatch) and the
- * ObjC block builder it relies on (nsui.objc.Blocks).
- *
- * <p>The main dispatch queue is drained by the main run loop, so the test's main
- * thread manually pumps the AppKit run loop the same way Main.java's smoke pump
- * does — calling nextEventMatchingMask:untilDate:inMode:dequeue: with a short countdown
- * interval — and breaks out early as soon as the expected latches fire.
- *
- * <p>Exit code: 0 if all three tests PASS, 1 otherwise.
- */
+/// Integration test for the low-level libdispatch shim (nsui.objc.Dispatch) and the
+/// ObjC block builder it relies on (nsui.objc.Blocks).
+///
+/// The main dispatch queue is drained by the main run loop, so the test's main
+/// thread manually pumps the AppKit run loop the same way Main.java's smoke pump
+/// does — calling nextEventMatchingMask:untilDate:inMode:dequeue: with a short countdown
+/// interval — and breaks out early as soon as the expected latches fire.
+///
+/// Exit code: 0 if all three tests PASS, 1 otherwise.
 public class DispatchTest {
 
     private static final long mainThreadId = Thread.currentThread().threadId();

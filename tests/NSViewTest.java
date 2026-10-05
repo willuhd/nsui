@@ -7,7 +7,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import nsui.NSApplication;
 import nsui.NSEvent;
-import nsui.NSObject;
 import nsui.NSRect;
 import nsui.NSView;
 import nsui.NSWindow;
@@ -17,19 +16,13 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * Full NSView drawing pipeline with concrete PIXEL verification: install a
- * Java-drawn NSView as a window's content view, pump the run loop, then render
- * the view into an NSBitmapImageRep and assert the actual channel values.
- *
- * <p>Pass: center pixel blue (blue>150, red<100), corner pixel red (red>150,
- * blue<100), and drawRect: fired at least once.
- */
+/// Full NSView drawing pipeline with concrete PIXEL verification: install a
+/// Java-drawn NSView as a window's content view, pump the run loop, then render
+/// the view into an NSBitmapImageRep and assert the actual channel values.
+///
+/// Pass: center pixel blue (blue>150, red<100), corner pixel red (red>150,
+/// blue<100), and drawRect: fired at least once.
 public final class NSViewTest {
-
-    
-
-    
 
     public static void main(String[] args) throws Throwable {
         System.out.println("=== NSViewTest — drawRect: pipeline + pixel verification ===");

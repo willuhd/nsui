@@ -15,27 +15,23 @@ import nsui.NSPoint;
 import nsui.NSRect;
 import nsui.objc.ObjC;
 
-/**
- * Edge cases the rest of the suite never pins down (all pre-existing gaps):
- *
- * <ol>
- *   <li>{@code ObjC.cstring} rejects embedded NUL bytes.</li>
- *   <li>{@code ObjC.toString} 16 MB cap (disabled case: proven crash, see BUG
- *       note on truncationCap — re-enable with the src fix).</li>
- *   <li>{@code NSRect} geometry branches beyond the happy path (negative sizes,
- *       empty rects, non-overlap intersection, integral, area).</li>
- *   <li>The {@code invoke} escape hatch enforces its documented 6-arg bound.</li>
- *   <li>Concurrent {@code sel}/{@code cls} cache reads are safe; sequential
- *       double {@code ObjC.init()} is idempotent. Concurrent <em>init</em>
- *       itself stays untested on purpose (unguarded initializer — the audit's
- *       latent race; this test refuses to deliberately hang the JVM).</li>
- *   <li>Studio-era typed wrappers ({@code CALayer} bounds/frame,
- *       {@code CAAnimation} fillMode/autoreverses/repeatCount), previously
- *       called only by the untracked demo.</li>
- * </ol>
- *
- * Pure-memory except where noted; hidden windows nowhere.
- */
+/// Edge cases the rest of the suite never pins down (all pre-existing gaps):
+///
+/// - `ObjC.cstring` rejects embedded NUL bytes.
+/// - `ObjC.toString` 16 MB cap (disabled case: proven crash, see BUG
+/// note on truncationCap — re-enable with the src fix).
+/// - `NSRect` geometry branches beyond the happy path (negative sizes,
+/// empty rects, non-overlap intersection, integral, area).
+/// - The `invoke` escape hatch enforces its documented 6-arg bound.
+/// - Concurrent `sel`/`cls` cache reads are safe; sequential
+/// double `ObjC.init()` is idempotent. Concurrent *init*
+/// itself stays untested on purpose (unguarded initializer — the audit's
+/// latent race; this test refuses to deliberately hang the JVM).
+/// - Studio-era typed wrappers (`CALayer` bounds/frame,
+/// `CAAnimation` fillMode/autoreverses/repeatCount), previously
+/// called only by the untracked demo.
+///
+/// Pure-memory except where noted; hidden windows nowhere.
 public final class EdgeTest {
 
     public static void main(String[] args) throws Throwable {

@@ -6,12 +6,10 @@ import java.util.*;
 import nsui.*;
 import nsui.objc.*;
 
-/**
- * FullCoverageTest — systematic 100% API coverage for all NS.* wrappers.
- * Exercises every create/wrap, every getter/setter pair (including null-ternary
- * invokeExact paths), and all delegate shapes.
- * Headless-safe: connection errors become SKIP, not FAIL.
- */
+/// FullCoverageTest — systematic 100% API coverage for all NS.* wrappers.
+/// Exercises every create/wrap, every getter/setter pair (including null-ternary
+/// invokeExact paths), and all delegate shapes.
+/// Headless-safe: connection errors become SKIP, not FAIL.
 public final class FullCoverageTest {
 
     private static int passes = 0;

@@ -18,11 +18,9 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * PanelMenuToolbarTest — creation and property round-trips for NSAlert,
- * NSOpenPanel/NSSavePanel, NSMenu, NSStatusBar, NSToolbar, NSToolbarItem.
- * Never blocks on runModal; just verifies the selector exists and peers are non-nil.
- */
+/// PanelMenuToolbarTest — creation and property round-trips for NSAlert,
+/// NSOpenPanel/NSSavePanel, NSMenu, NSStatusBar, NSToolbar, NSToolbarItem.
+/// Never blocks on runModal; just verifies the selector exists and peers are non-nil.
 public final class PanelMenuToolbarTest {
     
     private static int asserts;

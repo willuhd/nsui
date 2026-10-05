@@ -5,25 +5,20 @@ import nsui.objc.ObjC;
 
 import java.lang.foreign.MemorySegment;
 
-/**
- * NSException interception test.
- *
- * <p>IMPORTANT — HONESTY: this test does NOT attempt a guarded "@raise" that must
- * "^survive". Empirically (see the class javadoc and the report) an uncaught ObjC raise
- * always terminates the process on modern libobjc regardless of the preprocessor's return:
- * returning NULL aborts with "uncaught exception of class 'nil'", returning a replacement
- * rethrows it and aborts, pass-through aborts. So the assertions here cover the parts that
- * genuinely <em>do</em> work and must not regress:
- * <ul>
- *   <li>the preprocessor installs without disturbing normal (unarmed) msgSend,</li>
- *   <li>an armed {@code call(...)} with a non-raising body returns normally and unarms,</li>
- *   <li>work done before vs after installation is identical (non-interference).</li>
- * </ul>
- * The one path that WOULD crash (a guarded raise with no native catch) is deliberately not
- * executed here — consistent with the brief's "do not deliberately crash the process".
- */
+/// NSException interception test.
+///
+/// IMPORTANT — HONESTY: this test does NOT attempt a guarded "@raise" that must
+/// "^survive". Empirically (see the class javadoc and the report) an uncaught ObjC raise
+/// always terminates the process on modern libobjc regardless of the preprocessor's return:
+/// returning NULL aborts with "uncaught exception of class 'nil'", returning a replacement
+/// rethrows it and aborts, pass-through aborts. So the assertions here cover the parts that
+/// genuinely *do* work and must not regress:
+/// - the preprocessor installs without disturbing normal (unarmed) msgSend,
+/// - an armed `call(...)` with a non-raising body returns normally and unarms,
+/// - work done before vs after installation is identical (non-interference).
+/// The one path that WOULD crash (a guarded raise with no native catch) is deliberately not
+/// executed here — consistent with the brief's "do not deliberately crash the process".
 public class ExceptionsTest {
-
 
     public static void main(String[] args) {
         ObjC.init();

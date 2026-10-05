@@ -4,34 +4,30 @@ import java.lang.foreign.MemorySegment;
 
 import nsui.NSApplication;
 import nsui.NSEvent;
-import nsui.NSObject;
+import nsui.NSPoint;
 import nsui.NSRect;
 import nsui.NSWindow;
 import nsui.objc.ObjC;
 
-/**
- * Shared test primitives for the nsui suite.
- *
- * <p>Deliberately dependency-free (no JUnit, no JMH): every test is a plain
- * {@code main()} in its own JVM. This file holds the boilerplate that used to
- * be copy-pasted into all 51 tests, in four groups:
- *
- * <ol>
- *   <li><b>Reporting</b> ({@code check} + failure count + {@code end}) — the
- *       "boolean thing". One counter per JVM; call {@code end()} exactly once
- *       at the end of {@code main} so the exit code is honest.</li>
- *   <li><b>Unobtrusive windows</b> — windows are created hidden and, by
- *       default, <em>never shown</em>. {@code show()} orders front without
- *       making key (no focus steal, no activation); {@code showKey()} is
- *       reserved for the two tests where key routing is load-bearing
- *       (NSEventTest's window-server click, ButtonTest's hit-test path).</li>
- *   <li><b>Run-loop pump</b> — the same {@code nextEventMatchingMask} loop
- *       every test used to hand-write.</li>
- *   <li><b>Bench</b> — {@code nanoTime} loops with generous fixed budgets.
- *       These are regression tripwires (order-of-magnitude), not JMH-grade
- *       measurements; that is intentional (see BenchTest).</li>
- * </ol>
- */
+/// Shared test primitives for the nsui suite.
+///
+/// Deliberately dependency-free (no JUnit, no JMH): every test is a plain
+/// `main()` in its own JVM. This file holds the boilerplate that used to
+/// be copy-pasted into all 51 tests, in four groups:
+///
+/// - **Reporting** (`check` + failure count + `end`) — the
+/// "boolean thing". One counter per JVM; call `end()` exactly once
+/// at the end of `main` so the exit code is honest.
+/// - **Unobtrusive windows** — windows are created hidden and, by
+/// default, *never shown*. `show()` orders front without
+/// making key (no focus steal, no activation); `showKey()` is
+/// reserved for the two tests where key routing is load-bearing
+/// (NSEventTest's window-server click, ButtonTest's hit-test path).
+/// - **Run-loop pump** — the same `nextEventMatchingMask` loop
+/// every test used to hand-write.
+/// - **Bench** — `nanoTime` loops with generous fixed budgets.
+/// These are regression tripwires (order-of-magnitude), not JMH-grade
+/// measurements; that is intentional (see BenchTest).
 public final class TestKit {
 
     private TestKit() {}
@@ -102,15 +98,27 @@ public final class TestKit {
         return panel;
     }
 
-    /**
-     * Make a window visible WITHOUT making it key: {@code orderFront:}
-     * instead of {@code makeKeyAndOrderFront:}. No activation, no focus
-     * steal — but the window does appear on screen. Prefer leaving windows
-     * hidden; use this only where visibility is load-bearing (sheet
-     * attachment, popover anchoring).
-     */
+/// Park a window where no screen paints it. Called by show()/showKey() so
+/// even "visible" test windows never flash on screen. Fires windowDidMove:
+/// to an attached delegate — every caller attaches its delegate after
+/// showing, so nothing observes it.
+    public static void park(NSWindow win) {
+        if (win == null) return;
+        try {
+            win.setFrameOrigin(new NSPoint(-10000, -10000));
+        } catch (Throwable t) {
+            System.out.println("NOTE: park failed: " + t.getMessage());
+        }
+    }
+
+/// Make a window visible WITHOUT making it key: `orderFront:`
+/// instead of `makeKeyAndOrderFront:`. No activation, no focus
+/// steal — and parked offscreen first, so no pixels either. Prefer leaving
+/// windows hidden; use this only where AppKit-visibility is load-bearing
+/// (close-veto routing, sheet attachment, popover anchoring).
     public static void show(NSWindow win) {
         if (win == null) return;
+        park(win);
         try {
             ObjC.msgSendVoidId(win.peer(), ObjC.sel("orderFront:"), MemorySegment.NULL);
         } catch (Throwable t) {
@@ -118,12 +126,12 @@ public final class TestKit {
         }
     }
 
-    /**
-     * Show AND make key (steals focus, activates the app). Reserved for tests
-     * where key-window event routing is the thing under test (NSEventTest's
-     * window-server click, ButtonTest's hit-test path). Everywhere else this
-     * is disruption without coverage.
-     */
+/// Show AND make key (steals focus, activates the app). Reserved for tests
+/// where key-window event routing is the thing under test (NSEventTest's
+/// window-server click, ButtonTest's hit-test path). Everywhere else this
+/// is disruption without coverage. Does NOT park: NSEventTest needs real
+/// screen coordinates (call park() first when the test is window-coordinate
+/// based, as ButtonTest does).
     public static void showKey(NSWindow win) {
         if (win == null) return;
         NSApplication.shared().activateIgnoringOtherApps(true);
@@ -134,7 +142,7 @@ public final class TestKit {
     ///
     /// Not for close-veto assertions: ordering out first hides the window
     /// before the delegate verdict, masking the veto — those tests must call
-    /// {@code performClose} alone (see DelegateTest).
+    /// `performClose` alone (see DelegateTest).
     public static void close(NSWindow win) {
         if (win == null) return;
         try {
@@ -206,12 +214,10 @@ public final class TestKit {
         System.out.printf("TIME: %s — %d ms for %d iters (%.1f us/op)%n", what, ms, iters, us);
     }
 
-    /**
-     * Regression tripwire: passes iff {@code ms <= budgetMs}. Budgets are
-     * deliberately generous (10x+ headroom over this machine) — they catch
-     * order-of-magnitude regressions (e.g. a hot path going quadratic),
-     * not 20% noise. This is not JMH and does not pretend to be.
-     */
+/// Regression tripwire: passes iff `ms <= budgetMs`. Budgets are
+/// deliberately generous (10x+ headroom over this machine) — they catch
+/// order-of-magnitude regressions (e.g. a hot path going quadratic),
+/// not 20% noise. This is not JMH and does not pretend to be.
     public static void checkTime(String what, long ms, long budgetMs) {
         check(ms <= budgetMs, what + " took " + ms + " ms (budget " + budgetMs + " ms)");
     }

@@ -14,10 +14,8 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * PopoverTest — creation and property round-trips for NSPopover + NSViewController.
- * Never actually shows the popover in a blocking way; just verifies selectors and peers.
- */
+/// PopoverTest — creation and property round-trips for NSPopover + NSViewController.
+/// Never actually shows the popover in a blocking way; just verifies selectors and peers.
 public final class PopoverTest {
     
     private static int asserts;

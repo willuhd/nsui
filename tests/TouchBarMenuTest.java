@@ -13,20 +13,16 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * TouchBarMenuTest — covers TouchBar and Menu paths that previously had no tests
- * and would have caught the prior TestKit.failures().
- *
- * <ul>
- *   <li>NSTouchBar create, setDelegate, setCustomizationIdentifier</li>
- *   <li>NSTouchBarItem create</li>
- *   <li>NSCustomTouchBarItem create and setView (with NSButton)</li>
- *   <li>Delegate touchBar:makeItemForIdentifier: via DelegateProxy (IdIdArg)</li>
- *   <li>NSMenu insertGallerySearchFieldItem</li>
- *   <li>NSMenuItem setView with NSSearchField</li>
- *   <li>NSStatusItem setSFSymbol with SF Symbol loading</li>
- * </ul>
- */
+/// TouchBarMenuTest — covers TouchBar and Menu paths that previously had no tests
+/// and would have caught the prior TestKit.failures().
+///
+/// - NSTouchBar create, setDelegate, setCustomizationIdentifier
+/// - NSTouchBarItem create
+/// - NSCustomTouchBarItem create and setView (with NSButton)
+/// - Delegate touchBar:makeItemForIdentifier: via DelegateProxy (IdIdArg)
+/// - NSMenu insertGallerySearchFieldItem
+/// - NSMenuItem setView with NSSearchField
+/// - NSStatusItem setSFSymbol with SF Symbol loading
 public final class TouchBarMenuTest {
     
     private static int asserts;

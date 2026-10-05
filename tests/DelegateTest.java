@@ -5,35 +5,26 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import nsui.NSApplication;
-import nsui.NSEvent;
 import nsui.NSObject;
 import nsui.NSRect;
 import nsui.NSWindow;
 import nsui.objc.DelegateProxy;
 import nsui.objc.ObjC;
 
-/**
- * The real window-lifecycle proof: a Java delegate decides native close behavior.
- *
- * <p>{@code windowShouldClose:} is a {@code -(BOOL)} delegate callback AppKit consults
- * before closing a window. Implementing it in Java via DelegateProxy lets Java veto
- * or allow the close. {@code windowWillClose:} is the {@code -(void)} notification fired
- * once the window actually closes.
- *
- * <p>Pass:
- * <ul>
- *   <li>Delegate A (windowShouldClose: -&gt; false): performClose is vetoed — the window
- *       stays visible and windowWillClose never fires.</li>
- *   <li>Delegate B (windowShouldClose: -&gt; true): performClose closes the window — it is
- *       no longer visible and windowWillClose has fired.</li>
- *   <li>registrySize grew with each delegate registration.</li>
- * </ul>
- */
+/// The real window-lifecycle proof: a Java delegate decides native close behavior.
+///
+/// `windowShouldClose:` is a `-(BOOL)` delegate callback AppKit consults
+/// before closing a window. Implementing it in Java via DelegateProxy lets Java veto
+/// or allow the close. `windowWillClose:` is the `-(void)` notification fired
+/// once the window actually closes.
+///
+/// Pass:
+/// - Delegate A (windowShouldClose: -> false): performClose is vetoed — the window
+/// stays visible and windowWillClose never fires.
+/// - Delegate B (windowShouldClose: -> true): performClose closes the window — it is
+/// no longer visible and windowWillClose has fired.
+/// - registrySize grew with each delegate registration.
 public final class DelegateTest {
-
-    
-
-    
 
     public static void main(String[] args) throws Throwable {
         System.out.println("=== DelegateTest — Java delegate decides native close ===");

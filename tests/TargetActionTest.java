@@ -5,20 +5,14 @@ import java.lang.foreign.MemorySegment;
 import nsui.objc.DelegateProxy;
 import nsui.objc.ObjC;
 
-/**
- * Verify the DelegateProxy.actionTarget target/action shape: a Java {@link
- * DelegateProxy.VoidArg} is invoked when a control fires the registered selector
- * against the returned instance.
- *
- * <p>Pass: (1) firing the registered "ballPopped:" invokes the handler with the
- * correct sender; (2) firing an UNREGISTERED selector on the same target is a
- * harmless no-op (no crash).
- */
+/// Verify the DelegateProxy.actionTarget target/action shape: a Java {@link
+/// DelegateProxy.VoidArg} is invoked when a control fires the registered selector
+/// against the returned instance.
+///
+/// Pass: (1) firing the registered "ballPopped:" invokes the handler with the
+/// correct sender; (2) firing an UNREGISTERED selector on the same target is a
+/// harmless no-op (no crash).
 public final class TargetActionTest {
-
-    
-
-    
 
     public static void main(String[] args) {
         System.out.println("=== TargetActionTest — DelegateProxy.actionTarget ===");

@@ -10,16 +10,10 @@ import nsui.NSRect;
 import nsui.objc.DelegateProxy;
 import nsui.objc.ObjC;
 
-/**
- * Selection widget tests — NSPopUpButton, NSComboBox, NSSegmentedControl.
- * All plain AppKit object manipulation (no drawing): each control is created,
- * populated and asserted round-trip. Runs on the main thread via NSApplication.
- */
+/// Selection widget tests — NSPopUpButton, NSComboBox, NSSegmentedControl.
+/// All plain AppKit object manipulation (no drawing): each control is created,
+/// populated and asserted round-trip. Runs on the main thread via NSApplication.
 public final class SelectionWidgetsTest {
-
-    
-
-    
 
     private static void checkEq(long got, long expected, String msg) {
         TestKit.check(got == expected, msg + " [got " + got + ", expected " + expected + "]");

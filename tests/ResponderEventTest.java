@@ -11,23 +11,21 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * ResponderEventTest — wiring-level coverage for the responder chain and
- * input-event handling on custom views (Tier-1 item #1). Non-interactive and
- * self-terminating:
- *
- * - NSView.create view responds to every installed event/responder selector
- *   (respondsToSelector:) and really is the NSUIViewImpl subclass pair;
- * - acceptsFirstResponder flips exactly with key-listener registration;
- * - performKeyEquivalent reports "not handled" (chain continues);
- * - mouse/key listener registration round-trips through NSView.listenerCount();
- * - nextResponder/setNextResponder round-trip, including view -> window link;
- * - a real NSWindow: makeFirstResponder runs clean, firstResponder reads back,
- *   acceptsMouseMovedEvents and initialFirstResponder round-trip, and the
- *   inherited NSResponder touchBar accessors work on the window;
- * - enableMouseTracking installs a tracking area without error (idempotent);
- * - 200x register/unregister stress returns listenerCount() to baseline.
- */
+/// ResponderEventTest — wiring-level coverage for the responder chain and
+/// input-event handling on custom views (Tier-1 item #1). Non-interactive and
+/// self-terminating:
+///
+/// - NSView.create view responds to every installed event/responder selector
+/// (respondsToSelector:) and really is the NSUIViewImpl subclass pair;
+/// - acceptsFirstResponder flips exactly with key-listener registration;
+/// - performKeyEquivalent reports "not handled" (chain continues);
+/// - mouse/key listener registration round-trips through NSView.listenerCount();
+/// - nextResponder/setNextResponder round-trip, including view -> window link;
+/// - a real NSWindow: makeFirstResponder runs clean, firstResponder reads back,
+/// acceptsMouseMovedEvents and initialFirstResponder round-trip, and the
+/// inherited NSResponder touchBar accessors work on the window;
+/// - enableMouseTracking installs a tracking area without error (idempotent);
+/// - 200x register/unregister stress returns listenerCount() to baseline.
 public final class ResponderEventTest {
     
     private static int asserts;

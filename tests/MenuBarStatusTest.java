@@ -18,24 +18,19 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
-/**
- * MenuBarStatusTest — full menubar/status-tray integration test.
- *
- * Covers:
- * <ul>
- *   <li>NSStatusBar.systemStatusBar, thickness, isVertical;</li>
- *   <li>statusItem with VARIABLE_LENGTH and SQUARE_LENGTH;</li>
- *   <li>button setTitle/setImage, toolTip, target/action via DelegateProxy;</li>
- *   <li>setMenu with NSMenu containing items with image and search field view;</li>
- *   <li>NSMenu setShowsStateColumn, setAutoenablesItems, setShowsSearchField (Help search);</li>
- *   <li>insertItemWithTitle handling search field embedding (empty title + view);</li>
- *   <li>NSMenuItem setView typed overload and viewAsSearchField;</li>
- *   <li>behavior, isVisible, length round-trips.</li>
- * </ul>
- */
+/// MenuBarStatusTest — full menubar/status-tray integration test.
+///
+/// Covers:
+/// - NSStatusBar.systemStatusBar, thickness, isVertical;
+/// - statusItem with VARIABLE_LENGTH and SQUARE_LENGTH;
+/// - button setTitle/setImage, toolTip, target/action via DelegateProxy;
+/// - setMenu with NSMenu containing items with image and search field view;
+/// - NSMenu setShowsStateColumn, setAutoenablesItems, setShowsSearchField (Help search);
+/// - insertItemWithTitle handling search field embedding (empty title + view);
+/// - NSMenuItem setView typed overload and viewAsSearchField;
+/// - behavior, isVisible, length round-trips.
 public final class MenuBarStatusTest {
 
-    
     private static int asserts;
 
     private static void check(boolean ok, String msg) { asserts++; TestKit.check(ok, msg); }

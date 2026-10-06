@@ -25,7 +25,12 @@ public class NSTableView extends NSView {
         ensureInit();
     }
 
-    protected static synchronized void ensureInit() {
+    protected static void ensureInit() {
+        if (H != null) return;
+        ensureInitLocked();
+    }
+
+    protected static synchronized void ensureInitLocked() {
         if (H != null) return;
         H = new Handles(
                 ObjC.handle(Sig.of(Ret.VOID, Arg.ID)),

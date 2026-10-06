@@ -21,7 +21,12 @@ public final class NSMenuItem extends NSObject {
         ensureInit();
     }
 
-    private static synchronized void ensureInit() {
+    private static void ensureInit() {
+        if (H != null) return;
+        ensureInitLocked();
+    }
+
+    private static synchronized void ensureInitLocked() {
         if (H != null) return;
         H = new Handles(ObjC.handle(Sig.of(Ret.ID, Arg.INT)));
     }

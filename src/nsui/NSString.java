@@ -79,7 +79,12 @@ public final class NSString extends NSObject {
         return of(s);
     }
 
-        private static synchronized void ensureInit() {
+        private static void ensureInit() {
+            if (handles != null) return;
+            ensureInitLocked();
+        }
+
+        private static synchronized void ensureInitLocked() {
         if (handles != null) return;
         // hash is INT return, no args
         // UTF8String is ID return? Actually returns const char* (PTR) but we don't use handle for it; ObjC.toString handles directly.

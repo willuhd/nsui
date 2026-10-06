@@ -63,7 +63,12 @@ public class NSOrderedSet extends NSObject {
         return wrap(s);
     }
 
-    private static synchronized void ensureInit() {
+    private static void ensureInit() {
+        if (initialized) return;
+        ensureInitLocked();
+    }
+
+    private static synchronized void ensureInitLocked() {
         if (initialized) return;
         hCount = ObjC.handle(Sig.of(Ret.INT));
         hObjectAt = ObjC.handle(Sig.of(Ret.ID, Arg.INT));

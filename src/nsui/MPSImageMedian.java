@@ -24,7 +24,12 @@ public final class MPSImageMedian extends NSObject {
         return (peer == null || peer.address() == 0) ? null : new MPSImageMedian(peer);
     }
 
-    private static synchronized void ensureInit() {
+    private static void ensureInit() {
+        if (handles != null) return;
+        ensureInitLocked();
+    }
+
+    private static synchronized void ensureInitLocked() {
         if (handles != null) return;
         try { ObjC.ensureFramework("MetalPerformanceShaders"); } catch (Throwable ignored) {}
         handles = new Handles(

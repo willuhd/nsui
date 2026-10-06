@@ -37,7 +37,12 @@ public final class CG {
 
     /// Resolve CoreGraphics and build the downcall handles. Must run at RUNTIME
     /// (native-image rule — never in a static initializer). Idempotent.
-    public static synchronized void ensureInit() {
+    public static void ensureInit() {
+        if (initialized) return;
+        ensureInitLocked();
+    }
+
+    public static synchronized void ensureInitLocked() {
         if (initialized) return;
         SymbolLookup cg = SymbolLookup.libraryLookup(CORE_GRAPHICS, Arena.global());
         hFillColor     = down(cg, "CGContextSetRGBFillColor",     NsuiForeign.cgSetRGBFillColor());

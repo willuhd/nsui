@@ -57,12 +57,17 @@ public final class Exceptions {
     private static MethodHandle hExIdIdId;   // [NSException exceptionWithName:reason:userInfo:]
     private static MemorySegment stub;       // the installed upcall stub (kept alive)
     private static MemorySegment prev;       // the previous handler, to chain
-    private static boolean INIT;
+    private static volatile boolean INIT;
 
     private Exceptions() {}
 
     /// Install the preprocessor stub once; build supporting handles. Must run at runtime.
-    public static synchronized void ensureInit() {
+    public static void ensureInit() {
+        if (INIT) return;
+        ensureInitLocked();
+    }
+
+    public static synchronized void ensureInitLocked() {
         if (INIT) return;
         LINKER = Linker.nativeLinker();
         ARENA = Arena.global();

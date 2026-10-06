@@ -31,7 +31,12 @@ public final class NSDraggingItem extends NSObject {
         return (peer == null || peer.address() == 0) ? null : new NSDraggingItem(peer);
     }
 
-    private static synchronized void ensureInit() {
+    private static void ensureInit() {
+        if (hInitWithWriter != null) return;
+        ensureInitLocked();
+    }
+
+    private static synchronized void ensureInitLocked() {
         if (hInitWithWriter != null) return;
         hInitWithWriter = ObjC.handle(Sig.of(Ret.ID, Arg.ID));
     }

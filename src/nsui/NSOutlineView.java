@@ -33,7 +33,12 @@ public final class NSOutlineView extends NSTableView {
         return (peer == null || peer.address() == 0) ? null : new NSOutlineView(peer);
     }
 
-        private static synchronized void ensureOutlineInit() {
+        private static void ensureOutlineInit() {
+            if (handles != null) return;
+            ensureOutlineInitLocked();
+        }
+
+        private static synchronized void ensureOutlineInitLocked() {
         if (handles != null) return;
         // NSTableView.ensureInit may not have run; ensure base handles exist if called first.
         // We handle our own symbols; base class init is lazy and synchronized separately.

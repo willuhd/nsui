@@ -25,7 +25,12 @@ public class NSSavePanel extends NSObject {
         ensureInit();
     }
 
-    protected static synchronized void ensureInit() {
+    protected static void ensureInit() {
+        if (initialized) return;
+        ensureInitLocked();
+    }
+
+    protected static synchronized void ensureInitLocked() {
         if (initialized) return;
         hInt = ObjC.handle(Sig.of(Ret.INT));
         hId = ObjC.handle(Sig.of(Ret.ID));

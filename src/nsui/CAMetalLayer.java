@@ -25,7 +25,12 @@ public class CAMetalLayer extends CALayer {
         return (peer == null || peer.address() == 0) ? null : new CAMetalLayer(peer);
     }
 
-    private static synchronized void ensureInit() {
+    private static void ensureInit() {
+        if (handles != null) return;
+        ensureInitLocked();
+    }
+
+    private static synchronized void ensureInitLocked() {
         if (handles != null) return;
         try { ObjC.ensureFramework("QuartzCore"); } catch (Throwable ignored) {}
         handles = new Handles(ObjC.handle(Sig.of(Ret.SIZE)), ObjC.handle(Sig.of(Ret.VOID, Arg.SIZE)));

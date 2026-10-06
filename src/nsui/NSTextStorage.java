@@ -30,7 +30,12 @@ public class NSTextStorage extends NSMutableAttributedString {
         return (peer == null || peer.address() == 0) ? null : new NSTextStorage(peer);
     }
 
-    private static synchronized void ensureInit() {
+    private static void ensureInit() {
+        if (initialized) return;
+        ensureInitLocked();
+    }
+
+    private static synchronized void ensureInitLocked() {
         if (initialized) return;
         hInit = ObjC.handle(Sig.of(Ret.ID));
         hDelegate = ObjC.handle(Sig.of(Ret.ID));

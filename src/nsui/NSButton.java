@@ -40,7 +40,12 @@ public final class NSButton extends NSControl {
         return (peer == null || peer.address() == 0) ? null : new NSButton(peer);
     }
 
-    private static synchronized void ensureInit() {
+    private static void ensureInit() {
+        if (H != null) return;
+        ensureInitLocked();
+    }
+
+    private static synchronized void ensureInitLocked() {
         if (H != null) return;
         H = new Handles(
                 ObjC.handle(Sig.of(Ret.ID, Arg.RECT)),

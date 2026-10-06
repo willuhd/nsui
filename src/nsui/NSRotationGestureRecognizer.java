@@ -30,7 +30,12 @@ public final class NSRotationGestureRecognizer extends NSGestureRecognizer {
         return (peer == null || peer.address() == 0) ? null : new NSRotationGestureRecognizer(peer);
     }
 
-    private static synchronized void ensureRotInit() {
+    private static void ensureRotInit() {
+        if (handles != null) return;
+        ensureRotInitLocked();
+    }
+
+    private static synchronized void ensureRotInitLocked() {
         if (handles != null) return;
         NSGestureRecognizer.ensureInit();
         handles = new Handles(ObjC.handle(Sig.of(Ret.ID, Arg.ID, Arg.ID)), ObjC.handle(Sig.of(Ret.DOUBLE)), ObjC.handle(Sig.of(Ret.VOID, Arg.DOUBLE)));

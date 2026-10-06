@@ -27,7 +27,12 @@ public class NSMutableParagraphStyle extends NSParagraphStyle {
         return (peer == null || peer.address() == 0) ? null : new NSMutableParagraphStyle(peer);
     }
 
-    private static synchronized void ensureMutInit() {
+    private static void ensureMutInit() {
+        if (mutableInitialized) return;
+        ensureMutInitLocked();
+    }
+
+    private static synchronized void ensureMutInitLocked() {
         if (mutableInitialized) return;
         hSetLong = ObjC.handle(Sig.of(Ret.VOID, Arg.INT));
         hSetDouble = ObjC.handle(Sig.of(Ret.VOID, Arg.DOUBLE));

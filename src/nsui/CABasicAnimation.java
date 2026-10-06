@@ -27,7 +27,12 @@ public class CABasicAnimation extends CAAnimation {
         return (peer == null || peer.address() == 0) ? null : new CABasicAnimation(peer);
     }
 
-        private static synchronized void ensureInit() {
+        private static void ensureInit() {
+            if (handles != null) return;
+            ensureInitLocked();
+        }
+
+        private static synchronized void ensureInitLocked() {
         if (handles != null) return;
         try { ObjC.ensureFramework("QuartzCore"); } catch (Throwable ignored) {}
         handles = new Handles(ObjC.handle(Sig.of(Ret.ID, Arg.ID)));

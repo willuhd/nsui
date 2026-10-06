@@ -28,12 +28,17 @@ public final class Autorelease {
     private static Arena ARENA;
     private static MethodHandle hPush;   // objc_autoreleasePoolPush
     private static MethodHandle hPop;    // objc_autoreleasePoolPop
-    private static boolean INIT;
+    private static volatile boolean INIT;
 
     private Autorelease() {}
 
     /// idempotent — safe to call from anywhere at runtime.
-    public static synchronized void ensureInit() {
+    public static void ensureInit() {
+        if (INIT) return;
+        ensureInitLocked();
+    }
+
+    public static synchronized void ensureInitLocked() {
         if (INIT) return;
         LINKER = Linker.nativeLinker();
         ARENA = Arena.global();

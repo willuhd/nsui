@@ -42,7 +42,12 @@ public final class NSMutableIndexSet extends NSIndexSet {
         } catch (Throwable t) { throw new RuntimeException("indexSetWithIndex: failed", t); }
     }
 
-    private static synchronized void ensureMutInit() {
+    private static void ensureMutInit() {
+        if (initMut) return;
+        ensureMutInitLocked();
+    }
+
+    private static synchronized void ensureMutInitLocked() {
         if (initMut) return;
         try { NSIndexSet.indexSet(); } catch (Exception ignored) {}
         hAddIndex = ObjC.handle(Sig.of(Ret.VOID, Arg.INT));

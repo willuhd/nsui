@@ -52,7 +52,12 @@ public class NSLayoutConstraint extends NSObject {
         return (peer == null || peer.address() == 0) ? null : new NSLayoutConstraint(peer);
     }
 
-    private static synchronized void ensureInit() {
+    private static void ensureInit() {
+        if (initialized) return;
+        ensureInitLocked();
+    }
+
+    private static synchronized void ensureInitLocked() {
         if (initialized) return;
         hConstraintWithItem = ObjC.handle(Sig.of(Ret.ID, Arg.ID, Arg.INT, Arg.INT, Arg.ID, Arg.INT, Arg.DOUBLE, Arg.DOUBLE));
         hIsActive = ObjC.handle(Sig.of(Ret.BOOL));

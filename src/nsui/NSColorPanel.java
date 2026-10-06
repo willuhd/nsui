@@ -28,7 +28,12 @@ public final class NSColorPanel extends NSObject {
         return (peer == null || peer.address() == 0) ? null : new NSColorPanel(peer);
     }
 
-    private static synchronized void ensureInit() {
+    private static void ensureInit() {
+        if (initialized) return;
+        ensureInitLocked();
+    }
+
+    private static synchronized void ensureInitLocked() {
         if (initialized) return;
         hGetId = ObjC.handle(Sig.of(Ret.ID));
         hGetBool = ObjC.handle(Sig.of(Ret.BOOL));

@@ -30,7 +30,12 @@ public final class NSDraggingSession extends NSObject {
         return (peer == null || peer.address() == 0) ? null : new NSDraggingSession(peer);
     }
 
-        private static synchronized void ensureInit() {
+        private static void ensureInit() {
+            if (handles != null) return;
+            ensureInitLocked();
+        }
+
+        private static synchronized void ensureInitLocked() {
         if (handles != null) return;
         // point/size handles may not exist but we try to cache point getter
         MethodHandle tmp_hDraggingLocation = null;

@@ -43,7 +43,12 @@ public final class NSImage extends NSObject {
         return (peer == null || peer.address() == 0) ? null : new NSImage(peer);
     }
 
-    private static synchronized void ensureInit() {
+    private static void ensureInit() {
+        if (H != null) return;
+        ensureInitLocked();
+    }
+
+    private static synchronized void ensureInitLocked() {
         if (H != null) return;
         H = new Handles(
                 ObjC.handle(Sig.of(Ret.ID, Arg.ID)),

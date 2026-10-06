@@ -45,7 +45,12 @@ public class NSObject {
         return (peer == null || peer.address() == 0) ? null : new NSObject(peer);
     }
 
-    private static synchronized void ensureInit() {
+    private static void ensureInit() {
+        if (initialized) return;
+        ensureInitLocked();
+    }
+
+    private static synchronized void ensureInitLocked() {
         if (initialized) return;
         hIsKind = ObjC.handle(Sig.of(Sig.Ret.BOOL, Sig.Arg.ID));
         initialized = true;

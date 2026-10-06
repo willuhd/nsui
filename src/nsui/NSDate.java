@@ -69,7 +69,12 @@ public final class NSDate extends NSObject {
         return wrap(s);
     }
 
-        private static synchronized void ensureInit() {
+        private static void ensureInit() {
+            if (handles != null) return;
+            ensureInitLocked();
+        }
+
+        private static synchronized void ensureInitLocked() {
         if (handles != null) return;
         handles = new Handles(ObjC.handle(Sig.of(Ret.DOUBLE)), ObjC.handle(Sig.of(Ret.INT, Arg.ID)));
     }

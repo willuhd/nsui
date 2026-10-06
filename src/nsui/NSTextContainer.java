@@ -23,7 +23,12 @@ public final class NSTextContainer extends NSObject {
         return (peer == null || peer.address() == 0) ? null : new NSTextContainer(peer);
     }
 
-    private static synchronized void ensureInit() {
+    private static void ensureInit() {
+        if (handles != null) return;
+        ensureInitLocked();
+    }
+
+    private static synchronized void ensureInitLocked() {
         if (handles != null) return;
         // initWithContainerSize: is (ID,SIZE) which is not directly in vocab, but we resolve via handle;
         // if shape missing, handle will throw at call time — fallback path uses init+setContainerSize.

@@ -44,7 +44,12 @@ public class NSSliderTouchBarItem extends NSTouchBarItem {
         return (peer == null || peer.address() == 0) ? null : new NSSliderTouchBarItem(peer);
     }
 
-    private static synchronized void ensureInit() {
+    private static void ensureInit() {
+        if (handles != null) return;
+        ensureInitLocked();
+    }
+
+    private static synchronized void ensureInitLocked() {
         if (handles != null) return;
         handles = new Handles(
                 ObjC.handle(Sig.of(Ret.ID, Arg.ID)),

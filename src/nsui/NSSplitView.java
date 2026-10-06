@@ -41,7 +41,12 @@ public final class NSSplitView extends NSView {
         return (peer == null || peer.address() == 0) ? null : new NSSplitView(peer);
     }
 
-    private static synchronized void ensureInit() {
+    private static void ensureInit() {
+        if (initialized) return;
+        ensureInitLocked();
+    }
+
+    private static synchronized void ensureInitLocked() {
         if (initialized) return;
         hInitFrame = ObjC.handle(Sig.of(Ret.ID, Arg.RECT));
         hGetBool = ObjC.handle(Sig.of(Ret.BOOL));

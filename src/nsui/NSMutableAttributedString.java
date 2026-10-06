@@ -26,7 +26,12 @@ public class NSMutableAttributedString extends NSAttributedString {
         return (peer == null || peer.address() == 0) ? null : new NSMutableAttributedString(peer);
     }
 
-    private static synchronized void ensureMutInit() {
+    private static void ensureMutInit() {
+        if (handles != null) return;
+        ensureMutInitLocked();
+    }
+
+    private static synchronized void ensureMutInitLocked() {
         if (handles != null) return;
         handles = new Handles(
                 ObjC.handle(Sig.of(Ret.ID, Arg.ID)),

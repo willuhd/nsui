@@ -347,6 +347,7 @@ public final class SignatureConformanceTest {
         if (t.startsWith("{CGSize") || t.startsWith("{_NSSize") || t.startsWith("{NSSize")) return "SIZE";
         if (t.startsWith("{_NSRange") || t.startsWith("{NSRange")) return "RANGE";
         if (t.startsWith("{_MTLRegion") || t.startsWith("{MTLRegion")) return "REGION";
+        if (t.startsWith("{CATransform3D")) return "TRANSFORM3D";
         if (t.startsWith("{NSEdgeInsets") || t.startsWith("{_NSEdgeInsets")
                 || t.startsWith("{NSDirectionalEdgeInsets")) return "EDGEINSETS";
         return "OTHER";

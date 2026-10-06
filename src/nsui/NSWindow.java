@@ -59,7 +59,7 @@ import static nsui.objc.Sig.Ret;
 public class NSWindow extends NSResponder {
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
-    private record Handles(MethodHandle hSetFrameDisplay, MethodHandle hSetFrameOrigin, MethodHandle hSetContentSize, MethodHandle hStdWinButton, MethodHandle hGetDouble, MethodHandle hSetDouble, MethodHandle hGetSize, MethodHandle hSetSize, MethodHandle hRectRect, MethodHandle hGetPoint, MethodHandle hDoubleInt, MethodHandle hVoidDoubleInt, MethodHandle hBoolInt, MethodHandle hVoidBoolInt, MethodHandle hVoidIdInt, MethodHandle hVoidIntInt, MethodHandle hIdInt, MethodHandle hIdIntInt, MethodHandle hBoolIdId, MethodHandle hIdIdId, MethodHandle hVoidIntId, MethodHandle hIdIntIdIdBool, MethodHandle hVoidIdBool, MethodHandle hBoolIdBool, MethodHandle hBoolId, MethodHandle hIdRect) {}
+    private record Handles(MethodHandle hSetFrameDisplay, MethodHandle hSetFrameOrigin, MethodHandle hSetContentSize, MethodHandle hStdWinButton, MethodHandle hGetDouble, MethodHandle hSetDouble, MethodHandle hGetSize, MethodHandle hSetSize, MethodHandle hRectRect, MethodHandle hGetPoint, MethodHandle hDoubleInt, MethodHandle hVoidDoubleInt, MethodHandle hBoolInt, MethodHandle hVoidBoolInt, MethodHandle hVoidIdInt, MethodHandle hVoidIntInt, MethodHandle hIdInt, MethodHandle hIdIntInt, MethodHandle hBoolIdId, MethodHandle hIdIdId, MethodHandle hVoidIntId, MethodHandle hIdIntIdIdBool, MethodHandle hVoidIdBool, MethodHandle hBoolIdBool, MethodHandle hBoolId, MethodHandle hIdRect, MethodHandle hIdIdIdId) {}
     private static volatile Handles H;
 
     protected NSWindow(MemorySegment peer) {
@@ -99,7 +99,8 @@ public class NSWindow extends NSResponder {
                 ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.BOOL)),
                 ObjC.handle(Sig.of(Ret.BOOL, Arg.ID, Arg.BOOL)),
                 ObjC.handle(Sig.of(Ret.BOOL, Arg.ID)),
-                ObjC.handle(Sig.of(Ret.ID, Arg.RECT))); 
+                ObjC.handle(Sig.of(Ret.ID, Arg.RECT)),
+                ObjC.handle(Sig.of(Ret.ID, Arg.ID, Arg.ID, Arg.ID))); 
     }
 
     /// alloc + initWithContentRect:styleMask:backing:defer:.
@@ -2021,7 +2022,7 @@ public class NSWindow extends NSResponder {
     public NSDraggingSession beginDraggingSessionWithItems(NSArray items, NSEvent event, NSObject source) {
         if (items == null || event == null) return null;
         try {
-            MemorySegment s = (MemorySegment) H.hIdIdId().invokeExact(peer,
+            MemorySegment s = (MemorySegment) H.hIdIdIdId().invokeExact(peer,
                     ObjC.sel("beginDraggingSessionWithItems:event:source:"),
                     items.peer(), event.peer(),
                     (MemorySegment) (source == null ? MemorySegment.NULL : source.peer()));

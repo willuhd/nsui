@@ -34,10 +34,10 @@ import java.util.List;
 public final class Sig {
 
     /// Argument classes. `ID` covers id/SEL/Class/pointers — one ABI class.
-    public enum Arg { ID, INT, BOOL, DOUBLE, RECT, POINT, SIZE, FLOAT, RANGE, REGION }
+    public enum Arg { ID, INT, BOOL, DOUBLE, RECT, POINT, SIZE, FLOAT, RANGE, REGION, TRANSFORM3D }
 
     /// Return classes. `RECT` is a 32-byte struct (stret on x86_64); POINT/SIZE/RANGE are 16-byte structs.
-    public enum Ret { VOID, ID, INT, BOOL, DOUBLE, RECT, POINT, SIZE, FLOAT, RANGE }
+    public enum Ret { VOID, ID, INT, BOOL, DOUBLE, RECT, POINT, SIZE, FLOAT, RANGE, TRANSFORM3D }
 
     /// A message signature: return class plus argument classes, packed into a
     /// 4-bits-per-arg long key so the record's value-based `equals`/`hashCode`
@@ -85,6 +85,10 @@ public final class Sig {
     private static final MemoryLayout NS_RANGE = MemoryLayout.structLayout(LONG, LONG);
     private static final MemoryLayout MTL_REGION =
             MemoryLayout.structLayout(LONG, LONG, LONG, LONG, LONG, LONG);
+    /// CATransform3D == struct { CGFloat m11..m44 } — 16 doubles, 128 bytes, by value.
+    private static final MemoryLayout CA_TRANSFORM3D = MemoryLayout.structLayout(
+            DOUBLE, DOUBLE, DOUBLE, DOUBLE, DOUBLE, DOUBLE, DOUBLE, DOUBLE,
+            DOUBLE, DOUBLE, DOUBLE, DOUBLE, DOUBLE, DOUBLE, DOUBLE, DOUBLE);
 
     private static FunctionDescriptor descriptor(S s) {
         // objc_msgSend's real C signature is (id, SEL, ...) — the receiver and
@@ -104,6 +108,7 @@ public final class Sig {
                 case FLOAT -> FLOAT;
                 case RANGE -> NS_RANGE;
                 case REGION -> MTL_REGION;
+                case TRANSFORM3D -> CA_TRANSFORM3D;
             };
         }
         return switch (s.ret()) {
@@ -117,14 +122,30 @@ public final class Sig {
             case SIZE -> FunctionDescriptor.of(NS_SIZE, args);
             case FLOAT -> FunctionDescriptor.of(FLOAT, args);
             case RANGE -> FunctionDescriptor.of(NS_RANGE, args);
+            case TRANSFORM3D -> FunctionDescriptor.of(CA_TRANSFORM3D, args);
         };
     }
 
     /// The message-send symbol for a return class: x86_64 needs `objc_msgSend_stret`
-    /// for 32-byte struct returns; arm64 has a single `objc_msgSend` for everything.
+    /// for ANY struct return larger than 16 bytes (RECT 32, CATransform3D 128);
+    /// arm64 has a single `objc_msgSend` for everything.
     public static String msgSendSymbol(Ret ret) {
         if (System.getProperty("os.arch").equals("aarch64")) return "objc_msgSend";
-        return ret == Ret.RECT ? "objc_msgSend_stret" : "objc_msgSend";
+        return structReturnBytes(ret) > 16 ? "objc_msgSend_stret" : "objc_msgSend";
+    }
+
+    /// By-value size of a struct return class (0 for every scalar return). Ties the
+    /// stret decision to the layouts, so a new large struct return can never
+    /// silently pick the wrong symbol on x86_64.
+    private static long structReturnBytes(Ret ret) {
+        return switch (ret) {
+            case RECT -> NS_RECT.byteSize();
+            case POINT -> NS_POINT.byteSize();
+            case SIZE -> NS_SIZE.byteSize();
+            case RANGE -> NS_RANGE.byteSize();
+            case TRANSFORM3D -> CA_TRANSFORM3D.byteSize();
+            default -> 0L;
+        };
     }
 
     // ---- the vocabulary: every message shape the toolkit may send. ----
@@ -239,6 +260,12 @@ public final class Sig {
         of(Ret.ID, Arg.ID, Arg.INT),                         // convertFont:toHaveTrait: / MPS initWithDevice:kernelDiameter:
         of(Ret.ID, Arg.ID, Arg.INT, Arg.INT, Arg.DOUBLE),    // fontWithFamily:traits:weight:size:
         of(Ret.RECT, Arg.ID),                                // NSLayoutManager usedRectForTextContainer:
-        of(Ret.VOID, Arg.INT, Arg.RANGE, Arg.INT)            // NSTextStorage edited:range:changeInLength:
+        of(Ret.VOID, Arg.INT, Arg.RANGE, Arg.INT),           // NSTextStorage edited:range:changeInLength:
+        // --- Core Animation completeness: CATransform3D by value + point/time conversion ---
+        of(Ret.TRANSFORM3D),                                 // CALayer transform / sublayerTransform getters
+        of(Ret.VOID, Arg.TRANSFORM3D),                       // setTransform: / setSublayerTransform:
+        of(Ret.BOOL, Arg.POINT),                             // containsPoint:
+        of(Ret.POINT, Arg.POINT, Arg.ID),                    // convertPoint:fromLayer: / convertPoint:toLayer:
+        of(Ret.DOUBLE, Arg.DOUBLE, Arg.ID)                   // convertTime:fromLayer: / convertTime:toLayer:
     );
 }

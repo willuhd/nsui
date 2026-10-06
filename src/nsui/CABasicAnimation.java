@@ -13,7 +13,7 @@ import static nsui.objc.Sig.Ret;
 /// Raw MemorySegment value setters are inherited from CAAnimation; the typed
 /// setFromDouble/setToDouble/setByDouble conveniences build NSNumber values so
 /// callers never touch raw segments for scalar interpolation.
-public class CABasicAnimation extends CAAnimation {
+public class CABasicAnimation extends CAPropertyAnimation {
 
     private record Handles(MethodHandle hWithKeyPath) {}
     private static volatile Handles handles;

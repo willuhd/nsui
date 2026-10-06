@@ -16,7 +16,7 @@ import static nsui.objc.Sig.Ret;
 /// AppKit/CoreGraphics dependencies, but we ensure QuartzCore explicitly if needed.
 public class CALayer extends NSObject {
 
-            private record Handles(MethodHandle hGetDouble, MethodHandle hSetDouble, MethodHandle hGetFloat, MethodHandle hSetFloat, MethodHandle hGetId, MethodHandle hSetId, MethodHandle hGetPoint, MethodHandle hSetPoint, MethodHandle hGetSize, MethodHandle hSetSize, MethodHandle hGetBool, MethodHandle hSetBool, MethodHandle hGetRect, MethodHandle hSetRect) {}
+            private record Handles(MethodHandle hGetDouble, MethodHandle hSetDouble, MethodHandle hGetFloat, MethodHandle hSetFloat, MethodHandle hGetId, MethodHandle hSetId, MethodHandle hGetPoint, MethodHandle hSetPoint, MethodHandle hGetSize, MethodHandle hSetSize, MethodHandle hGetBool, MethodHandle hSetBool, MethodHandle hGetRect, MethodHandle hSetRect, MethodHandle hGetInt, MethodHandle hSetInt, MethodHandle hGetIdId, MethodHandle hSetIdId, MethodHandle hSetIdInt, MethodHandle hGetIdPoint, MethodHandle hGetBoolPoint, MethodHandle hGetPointPointId, MethodHandle hGetDoubleDoubleId, MethodHandle hGetTransform, MethodHandle hSetTransform) {}
     private static volatile Handles handles;
 
     protected CALayer(MemorySegment peer) {
@@ -51,7 +51,18 @@ public class CALayer extends NSObject {
                 ObjC.handle(Sig.of(Ret.BOOL)),
                 ObjC.handle(Sig.of(Ret.VOID, Arg.BOOL)),
                 ObjC.handle(Sig.of(Ret.RECT)),
-                ObjC.handle(Sig.of(Ret.VOID, Arg.RECT))
+                ObjC.handle(Sig.of(Ret.VOID, Arg.RECT)),
+                ObjC.handle(Sig.of(Ret.INT)),
+                ObjC.handle(Sig.of(Ret.VOID, Arg.INT)),
+                ObjC.handle(Sig.of(Ret.ID, Arg.ID)),
+                ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.ID)),
+                ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.INT)),
+                ObjC.handle(Sig.of(Ret.ID, Arg.POINT)),
+                ObjC.handle(Sig.of(Ret.BOOL, Arg.POINT)),
+                ObjC.handle(Sig.of(Ret.POINT, Arg.POINT, Arg.ID)),
+                ObjC.handle(Sig.of(Ret.DOUBLE, Arg.DOUBLE, Arg.ID)),
+                ObjC.handle(Sig.of(Ret.TRANSFORM3D)),
+                ObjC.handle(Sig.of(Ret.VOID, Arg.TRANSFORM3D))
         );
     }
 
@@ -552,5 +563,603 @@ public class CALayer extends NSObject {
             block.run();
             hCommit.invokeExact(cls, ObjC.sel("commit"));
         } catch (Throwable t) { throw new RuntimeException("CATransaction failed", t); }
+    }
+    // ---- Core Animation completeness: transforms, contents geometry, media timing,
+    // ---- filters, corner masking, rasterization, sublayer ordering, actions and
+    // ---- coordinate/time conversion (CALayer public API) ----
+
+    /// [layer transform] — the 4x4 matrix applied about the anchor point (by value, 128 bytes).
+    public CATransform3D transform() {
+        ensureInit();
+        try {
+            MemorySegment s = (MemorySegment) handles.hGetTransform().invokeExact(CATransform3D.slot(), peer, ObjC.sel("transform"));
+            return CATransform3D.fromSegment(s);
+        } catch (Throwable t) { throw new RuntimeException("transform failed", t); }
+    }
+
+    /// [layer setTransform:] — model-value transform (animatable).
+    public void setTransform(CATransform3D transform) {
+        ensureInit();
+        try {
+            handles.hSetTransform().invokeExact(peer, ObjC.sel("setTransform:"), transform.toSegment());
+        } catch (Throwable t) { throw new RuntimeException("setTransform: failed", t); }
+    }
+
+    /// [layer sublayerTransform] — transform applied to every sublayer.
+    public CATransform3D sublayerTransform() {
+        ensureInit();
+        try {
+            MemorySegment s = (MemorySegment) handles.hGetTransform().invokeExact(CATransform3D.slot(), peer, ObjC.sel("sublayerTransform"));
+            return CATransform3D.fromSegment(s);
+        } catch (Throwable t) { throw new RuntimeException("sublayerTransform failed", t); }
+    }
+
+    /// [layer setSublayerTransform:]
+    public void setSublayerTransform(CATransform3D transform) {
+        ensureInit();
+        try {
+            handles.hSetTransform().invokeExact(peer, ObjC.sel("setSublayerTransform:"), transform.toSegment());
+        } catch (Throwable t) { throw new RuntimeException("setSublayerTransform: failed", t); }
+    }
+
+    /// [layer mask] — the mask layer (strong) or null.
+    public MemorySegment mask() {
+        ensureInit();
+        try {
+            return (MemorySegment) handles.hGetId().invokeExact(peer, ObjC.sel("mask"));
+        } catch (Throwable t) { throw new RuntimeException("mask failed", t); }
+    }
+
+    /// [layer setMask:] — raw mask layer peer (NULL clears).
+    public void setMask(MemorySegment maskPeer) {
+        ensureInit();
+        try {
+            handles.hSetId().invokeExact(peer, ObjC.sel("setMask:"), (MemorySegment) (maskPeer == null ? MemorySegment.NULL : maskPeer));
+        } catch (Throwable t) { throw new RuntimeException("setMask: failed", t); }
+    }
+
+    /// [layer setMask:] — typed convenience.
+    public void setMask(CALayer maskLayer) {
+        setMask((MemorySegment) (maskLayer == null ? MemorySegment.NULL : maskLayer.peer()));
+    }
+
+    /// [layer delegate] — the CALayerDelegate (weak, not retained) or null.
+    public MemorySegment delegate() {
+        ensureInit();
+        try {
+            return (MemorySegment) handles.hGetId().invokeExact(peer, ObjC.sel("delegate"));
+        } catch (Throwable t) { throw new RuntimeException("delegate failed", t); }
+    }
+
+    /// [layer setDelegate:] — raw delegate peer (weak).
+    public void setDelegate(MemorySegment delegatePeer) {
+        ensureInit();
+        try {
+            handles.hSetId().invokeExact(peer, ObjC.sel("setDelegate:"), (MemorySegment) (delegatePeer == null ? MemorySegment.NULL : delegatePeer));
+        } catch (Throwable t) { throw new RuntimeException("setDelegate: failed", t); }
+    }
+
+    /// [layer name] — layout-manager name (nil-safe).
+    public String name() {
+        ensureInit();
+        try {
+            return ObjC.toString((MemorySegment) handles.hGetId().invokeExact(peer, ObjC.sel("name")));
+        } catch (Throwable t) { throw new RuntimeException("name failed", t); }
+    }
+
+    /// [layer setName:]
+    public void setName(String name) {
+        ensureInit();
+        try {
+            handles.hSetId().invokeExact(peer, ObjC.sel("setName:"),
+                    (MemorySegment) (name == null ? MemorySegment.NULL : ObjC.nsstring(name)));
+        } catch (Throwable t) { throw new RuntimeException("setName: failed", t); }
+    }
+
+    /// [layer isOpaque] — opaque-content hint.
+    public boolean isOpaque() {
+        ensureInit();
+        try {
+            return (boolean) handles.hGetBool().invokeExact(peer, ObjC.sel("isOpaque"));
+        } catch (Throwable t) { throw new RuntimeException("isOpaque failed", t); }
+    }
+
+    /// [layer setOpaque:]
+    public void setOpaque(boolean flag) {
+        ensureInit();
+        try {
+            handles.hSetBool().invokeExact(peer, ObjC.sel("setOpaque:"), flag);
+        } catch (Throwable t) { throw new RuntimeException("setOpaque: failed", t); }
+    }
+
+    /// [layer contentsRect] — unit-rectangle of the contents to display.
+    public NSRect contentsRect() {
+        ensureInit();
+        try {
+            MemorySegment s = (MemorySegment) handles.hGetRect().invokeExact(ObjC.structSlot(), peer, ObjC.sel("contentsRect"));
+            return NSRect.fromSegment(s);
+        } catch (Throwable t) { throw new RuntimeException("contentsRect failed", t); }
+    }
+
+    /// [layer setContentsRect:]
+    public void setContentsRect(NSRect rect) {
+        ensureInit();
+        try {
+            handles.hSetRect().invokeExact(peer, ObjC.sel("setContentsRect:"), rect.toSegment());
+        } catch (Throwable t) { throw new RuntimeException("setContentsRect: failed", t); }
+    }
+
+    /// [layer contentsCenter] — the stretchable region of the contents.
+    public NSRect contentsCenter() {
+        ensureInit();
+        try {
+            MemorySegment s = (MemorySegment) handles.hGetRect().invokeExact(ObjC.structSlot(), peer, ObjC.sel("contentsCenter"));
+            return NSRect.fromSegment(s);
+        } catch (Throwable t) { throw new RuntimeException("contentsCenter failed", t); }
+    }
+
+    /// [layer setContentsCenter:]
+    public void setContentsCenter(NSRect rect) {
+        ensureInit();
+        try {
+            handles.hSetRect().invokeExact(peer, ObjC.sel("setContentsCenter:"), rect.toSegment());
+        } catch (Throwable t) { throw new RuntimeException("setContentsCenter: failed", t); }
+    }
+
+    /// [layer magnificationFilter] — e.g. "linear", "nearest", "trilinear".
+    public String magnificationFilter() {
+        ensureInit();
+        try {
+            return ObjC.toString((MemorySegment) handles.hGetId().invokeExact(peer, ObjC.sel("magnificationFilter")));
+        } catch (Throwable t) { throw new RuntimeException("magnificationFilter failed", t); }
+    }
+
+    /// [layer setMagnificationFilter:]
+    public void setMagnificationFilter(String filter) {
+        ensureInit();
+        try {
+            handles.hSetId().invokeExact(peer, ObjC.sel("setMagnificationFilter:"),
+                    (MemorySegment) (filter == null ? MemorySegment.NULL : ObjC.nsstring(filter)));
+        } catch (Throwable t) { throw new RuntimeException("setMagnificationFilter: failed", t); }
+    }
+
+    /// [layer minificationFilter] — e.g. "linear", "nearest", "trilinear".
+    public String minificationFilter() {
+        ensureInit();
+        try {
+            return ObjC.toString((MemorySegment) handles.hGetId().invokeExact(peer, ObjC.sel("minificationFilter")));
+        } catch (Throwable t) { throw new RuntimeException("minificationFilter failed", t); }
+    }
+
+    /// [layer setMinificationFilter:]
+    public void setMinificationFilter(String filter) {
+        ensureInit();
+        try {
+            handles.hSetId().invokeExact(peer, ObjC.sel("setMinificationFilter:"),
+                    (MemorySegment) (filter == null ? MemorySegment.NULL : ObjC.nsstring(filter)));
+        } catch (Throwable t) { throw new RuntimeException("setMinificationFilter: failed", t); }
+    }
+
+    /// [layer minificationFilterBias] — float, declared float in the SDK.
+    public float minificationFilterBias() {
+        ensureInit();
+        try {
+            return (float) handles.hGetFloat().invokeExact(peer, ObjC.sel("minificationFilterBias"));
+        } catch (Throwable t) { throw new RuntimeException("minificationFilterBias failed", t); }
+    }
+
+    /// [layer setMinificationFilterBias:]
+    public void setMinificationFilterBias(float bias) {
+        ensureInit();
+        try {
+            handles.hSetFloat().invokeExact(peer, ObjC.sel("setMinificationFilterBias:"), bias);
+        } catch (Throwable t) { throw new RuntimeException("setMinificationFilterBias: failed", t); }
+    }
+
+    /// [layer maskedCorners] — CACornerMask (NSUInteger bitmask).
+    public long maskedCorners() {
+        ensureInit();
+        try {
+            return (long) handles.hGetInt().invokeExact(peer, ObjC.sel("maskedCorners"));
+        } catch (Throwable t) { throw new RuntimeException("maskedCorners failed", t); }
+    }
+
+    /// [layer setMaskedCorners:]
+    public void setMaskedCorners(long corners) {
+        ensureInit();
+        try {
+            handles.hSetInt().invokeExact(peer, ObjC.sel("setMaskedCorners:"), corners);
+        } catch (Throwable t) { throw new RuntimeException("setMaskedCorners: failed", t); }
+    }
+
+    /// [layer cornerCurve] — "circular" (default) or "continuous".
+    public String cornerCurve() {
+        ensureInit();
+        try {
+            return ObjC.toString((MemorySegment) handles.hGetId().invokeExact(peer, ObjC.sel("cornerCurve")));
+        } catch (Throwable t) { throw new RuntimeException("cornerCurve failed", t); }
+    }
+
+    /// [layer setCornerCurve:]
+    public void setCornerCurve(String curve) {
+        ensureInit();
+        try {
+            handles.hSetId().invokeExact(peer, ObjC.sel("setCornerCurve:"),
+                    (MemorySegment) (curve == null ? MemorySegment.NULL : ObjC.nsstring(curve)));
+        } catch (Throwable t) { throw new RuntimeException("setCornerCurve: failed", t); }
+    }
+
+    /// [layer duration] — CAMediaTiming duration (seconds).
+    public double duration() {
+        ensureInit();
+        try {
+            return (double) handles.hGetDouble().invokeExact(peer, ObjC.sel("duration"));
+        } catch (Throwable t) { throw new RuntimeException("duration failed", t); }
+    }
+
+    /// [layer setDuration:]
+    public void setDuration(double duration) {
+        ensureInit();
+        try {
+            handles.hSetDouble().invokeExact(peer, ObjC.sel("setDuration:"), duration);
+        } catch (Throwable t) { throw new RuntimeException("setDuration: failed", t); }
+    }
+
+    /// [layer beginTime] — CAMediaTiming begin time (seconds).
+    public double beginTime() {
+        ensureInit();
+        try {
+            return (double) handles.hGetDouble().invokeExact(peer, ObjC.sel("beginTime"));
+        } catch (Throwable t) { throw new RuntimeException("beginTime failed", t); }
+    }
+
+    /// [layer setBeginTime:]
+    public void setBeginTime(double beginTime) {
+        ensureInit();
+        try {
+            handles.hSetDouble().invokeExact(peer, ObjC.sel("setBeginTime:"), beginTime);
+        } catch (Throwable t) { throw new RuntimeException("setBeginTime: failed", t); }
+    }
+
+    /// [layer speed] — CAMediaTiming time-scale (float, declared float in the SDK).
+    public float speed() {
+        ensureInit();
+        try {
+            return (float) handles.hGetFloat().invokeExact(peer, ObjC.sel("speed"));
+        } catch (Throwable t) { throw new RuntimeException("speed failed", t); }
+    }
+
+    /// [layer setSpeed:]
+    public void setSpeed(float speed) {
+        ensureInit();
+        try {
+            handles.hSetFloat().invokeExact(peer, ObjC.sel("setSpeed:"), speed);
+        } catch (Throwable t) { throw new RuntimeException("setSpeed: failed", t); }
+    }
+
+    /// [layer timeOffset] — CAMediaTiming time offset (seconds).
+    public double timeOffset() {
+        ensureInit();
+        try {
+            return (double) handles.hGetDouble().invokeExact(peer, ObjC.sel("timeOffset"));
+        } catch (Throwable t) { throw new RuntimeException("timeOffset failed", t); }
+    }
+
+    /// [layer setTimeOffset:]
+    public void setTimeOffset(double timeOffset) {
+        ensureInit();
+        try {
+            handles.hSetDouble().invokeExact(peer, ObjC.sel("setTimeOffset:"), timeOffset);
+        } catch (Throwable t) { throw new RuntimeException("setTimeOffset: failed", t); }
+    }
+
+    /// [layer repeatCount] — CAMediaTiming repeat count (float).
+    public float repeatCount() {
+        ensureInit();
+        try {
+            return (float) handles.hGetFloat().invokeExact(peer, ObjC.sel("repeatCount"));
+        } catch (Throwable t) { throw new RuntimeException("repeatCount failed", t); }
+    }
+
+    /// [layer setRepeatCount:]
+    public void setRepeatCount(float count) {
+        ensureInit();
+        try {
+            handles.hSetFloat().invokeExact(peer, ObjC.sel("setRepeatCount:"), count);
+        } catch (Throwable t) { throw new RuntimeException("setRepeatCount: failed", t); }
+    }
+
+    /// [layer repeatDuration] — CAMediaTiming repeat duration (seconds).
+    public double repeatDuration() {
+        ensureInit();
+        try {
+            return (double) handles.hGetDouble().invokeExact(peer, ObjC.sel("repeatDuration"));
+        } catch (Throwable t) { throw new RuntimeException("repeatDuration failed", t); }
+    }
+
+    /// [layer setRepeatDuration:]
+    public void setRepeatDuration(double repeatDuration) {
+        ensureInit();
+        try {
+            handles.hSetDouble().invokeExact(peer, ObjC.sel("setRepeatDuration:"), repeatDuration);
+        } catch (Throwable t) { throw new RuntimeException("setRepeatDuration: failed", t); }
+    }
+
+    /// [layer autoreverses] — CAMediaTiming auto-reverse flag.
+    public boolean autoreverses() {
+        ensureInit();
+        try {
+            return (boolean) handles.hGetBool().invokeExact(peer, ObjC.sel("autoreverses"));
+        } catch (Throwable t) { throw new RuntimeException("autoreverses failed", t); }
+    }
+
+    /// [layer setAutoreverses:]
+    public void setAutoreverses(boolean flag) {
+        ensureInit();
+        try {
+            handles.hSetBool().invokeExact(peer, ObjC.sel("setAutoreverses:"), flag);
+        } catch (Throwable t) { throw new RuntimeException("setAutoreverses: failed", t); }
+    }
+
+    /// [layer fillMode] — e.g. "forwards", "backwards", "both", "removed".
+    public String fillMode() {
+        ensureInit();
+        try {
+            return ObjC.toString((MemorySegment) handles.hGetId().invokeExact(peer, ObjC.sel("fillMode")));
+        } catch (Throwable t) { throw new RuntimeException("fillMode failed", t); }
+    }
+
+    /// [layer setFillMode:]
+    public void setFillMode(String mode) {
+        ensureInit();
+        try {
+            handles.hSetId().invokeExact(peer, ObjC.sel("setFillMode:"),
+                    (MemorySegment) (mode == null ? MemorySegment.NULL : ObjC.nsstring(mode)));
+        } catch (Throwable t) { throw new RuntimeException("setFillMode: failed", t); }
+    }
+
+    /// [layer shouldRasterize] — composite the layer into an offscreen bitmap.
+    public boolean shouldRasterize() {
+        ensureInit();
+        try {
+            return (boolean) handles.hGetBool().invokeExact(peer, ObjC.sel("shouldRasterize"));
+        } catch (Throwable t) { throw new RuntimeException("shouldRasterize failed", t); }
+    }
+
+    /// [layer setShouldRasterize:]
+    public void setShouldRasterize(boolean flag) {
+        ensureInit();
+        try {
+            handles.hSetBool().invokeExact(peer, ObjC.sel("setShouldRasterize:"), flag);
+        } catch (Throwable t) { throw new RuntimeException("setShouldRasterize: failed", t); }
+    }
+
+    /// [layer rasterizationScale] — scale of the rasterized bitmap.
+    public double rasterizationScale() {
+        ensureInit();
+        try {
+            return (double) handles.hGetDouble().invokeExact(peer, ObjC.sel("rasterizationScale"));
+        } catch (Throwable t) { throw new RuntimeException("rasterizationScale failed", t); }
+    }
+
+    /// [layer setRasterizationScale:]
+    public void setRasterizationScale(double scale) {
+        ensureInit();
+        try {
+            handles.hSetDouble().invokeExact(peer, ObjC.sel("setRasterizationScale:"), scale);
+        } catch (Throwable t) { throw new RuntimeException("setRasterizationScale: failed", t); }
+    }
+
+    /// [layer drawsAsynchronously] — defer drawing to a background thread.
+    public boolean drawsAsynchronously() {
+        ensureInit();
+        try {
+            return (boolean) handles.hGetBool().invokeExact(peer, ObjC.sel("drawsAsynchronously"));
+        } catch (Throwable t) { throw new RuntimeException("drawsAsynchronously failed", t); }
+    }
+
+    /// [layer setDrawsAsynchronously:]
+    public void setDrawsAsynchronously(boolean flag) {
+        ensureInit();
+        try {
+            handles.hSetBool().invokeExact(peer, ObjC.sel("setDrawsAsynchronously:"), flag);
+        } catch (Throwable t) { throw new RuntimeException("setDrawsAsynchronously: failed", t); }
+    }
+
+    /// [layer allowsEdgeAntialiasing] — antialias transformed edges.
+    public boolean allowsEdgeAntialiasing() {
+        ensureInit();
+        try {
+            return (boolean) handles.hGetBool().invokeExact(peer, ObjC.sel("allowsEdgeAntialiasing"));
+        } catch (Throwable t) { throw new RuntimeException("allowsEdgeAntialiasing failed", t); }
+    }
+
+    /// [layer setAllowsEdgeAntialiasing:]
+    public void setAllowsEdgeAntialiasing(boolean flag) {
+        ensureInit();
+        try {
+            handles.hSetBool().invokeExact(peer, ObjC.sel("setAllowsEdgeAntialiasing:"), flag);
+        } catch (Throwable t) { throw new RuntimeException("setAllowsEdgeAntialiasing: failed", t); }
+    }
+
+    /// [layer edgeAntialiasingMask] — CAEdgeAntialiasingMask (unsigned int bitmask).
+    public long edgeAntialiasingMask() {
+        ensureInit();
+        try {
+            return (long) handles.hGetInt().invokeExact(peer, ObjC.sel("edgeAntialiasingMask"));
+        } catch (Throwable t) { throw new RuntimeException("edgeAntialiasingMask failed", t); }
+    }
+
+    /// [layer setEdgeAntialiasingMask:]
+    public void setEdgeAntialiasingMask(long mask) {
+        ensureInit();
+        try {
+            handles.hSetInt().invokeExact(peer, ObjC.sel("setEdgeAntialiasingMask:"), mask);
+        } catch (Throwable t) { throw new RuntimeException("setEdgeAntialiasingMask: failed", t); }
+    }
+
+    /// [layer contentsFormat] — storage-format hint (kCAContentsFormat*), nil-safe.
+    public String contentsFormat() {
+        ensureInit();
+        try {
+            return ObjC.toString((MemorySegment) handles.hGetId().invokeExact(peer, ObjC.sel("contentsFormat")));
+        } catch (Throwable t) { throw new RuntimeException("contentsFormat failed", t); }
+    }
+
+    /// [layer setContentsFormat:] — e.g. "RGBA8Uint", "Gray8Uint".
+    public void setContentsFormat(String format) {
+        ensureInit();
+        try {
+            handles.hSetId().invokeExact(peer, ObjC.sel("setContentsFormat:"),
+                    (MemorySegment) (format == null ? MemorySegment.NULL : ObjC.nsstring(format)));
+        } catch (Throwable t) { throw new RuntimeException("setContentsFormat: failed", t); }
+    }
+
+    /// [layer insertSublayer:atIndex:] — positional splice.
+    public void insertSublayer(CALayer sublayer, long index) {
+        ensureInit();
+        try {
+            handles.hSetIdInt().invokeExact(peer, ObjC.sel("insertSublayer:atIndex:"),
+                    (MemorySegment) (sublayer == null ? MemorySegment.NULL : sublayer.peer()), index);
+        } catch (Throwable t) { throw new RuntimeException("insertSublayer:atIndex: failed", t); }
+    }
+
+    /// [layer insertSublayer:above:] — place directly above a sibling.
+    public void insertSublayerAbove(CALayer sublayer, CALayer sibling) {
+        ensureInit();
+        try {
+            handles.hSetIdId().invokeExact(peer, ObjC.sel("insertSublayer:above:"),
+                    (MemorySegment) (sublayer == null ? MemorySegment.NULL : sublayer.peer()),
+                    (MemorySegment) (sibling == null ? MemorySegment.NULL : sibling.peer()));
+        } catch (Throwable t) { throw new RuntimeException("insertSublayer:above: failed", t); }
+    }
+
+    /// [layer insertSublayer:below:] — place directly below a sibling.
+    public void insertSublayerBelow(CALayer sublayer, CALayer sibling) {
+        ensureInit();
+        try {
+            handles.hSetIdId().invokeExact(peer, ObjC.sel("insertSublayer:below:"),
+                    (MemorySegment) (sublayer == null ? MemorySegment.NULL : sublayer.peer()),
+                    (MemorySegment) (sibling == null ? MemorySegment.NULL : sibling.peer()));
+        } catch (Throwable t) { throw new RuntimeException("insertSublayer:below: failed", t); }
+    }
+
+    /// [layer replaceSublayer:with:] — in-place swap preserving index.
+    public void replaceSublayer(CALayer oldLayer, CALayer newLayer) {
+        ensureInit();
+        try {
+            handles.hSetIdId().invokeExact(peer, ObjC.sel("replaceSublayer:with:"),
+                    (MemorySegment) (oldLayer == null ? MemorySegment.NULL : oldLayer.peer()),
+                    (MemorySegment) (newLayer == null ? MemorySegment.NULL : newLayer.peer()));
+        } catch (Throwable t) { throw new RuntimeException("replaceSublayer:with: failed", t); }
+    }
+
+    /// [layer actionForKey:] — the implicit-action object for an event, or null.
+    public MemorySegment actionForKey(String key) {
+        ensureInit();
+        try {
+            return (MemorySegment) handles.hGetIdId().invokeExact(peer, ObjC.sel("actionForKey:"),
+                    (MemorySegment) (key == null ? MemorySegment.NULL : ObjC.nsstring(key)));
+        } catch (Throwable t) { throw new RuntimeException("actionForKey: failed", t); }
+    }
+
+    /// [layer animationKeys] — keys of the animations currently attached, or null.
+    public NSArray animationKeys() {
+        ensureInit();
+        try {
+            return NSArray.wrap((MemorySegment) handles.hGetId().invokeExact(peer, ObjC.sel("animationKeys")));
+        } catch (Throwable t) { throw new RuntimeException("animationKeys failed", t); }
+    }
+
+    /// [layer preferredFrameSize] — bounds mapped into the superlayer (read-only).
+    public NSSize preferredFrameSize() {
+        ensureInit();
+        try {
+            MemorySegment s = (MemorySegment) handles.hGetSize().invokeExact(ObjC.structSlot(), peer, ObjC.sel("preferredFrameSize"));
+            return NSSize.fromSegment(s);
+        } catch (Throwable t) { throw new RuntimeException("preferredFrameSize failed", t); }
+    }
+
+    /// [layer setNeedsLayout] — mark -layoutSublayers for the next update.
+    public void setNeedsLayout() {
+        ensureInit();
+        ObjC.msgSendVoid(peer, ObjC.sel("setNeedsLayout"));
+    }
+
+    /// [layer needsLayout] — whether layout is pending.
+    public boolean needsLayout() {
+        ensureInit();
+        try {
+            return (boolean) handles.hGetBool().invokeExact(peer, ObjC.sel("needsLayout"));
+        } catch (Throwable t) { throw new RuntimeException("needsLayout failed", t); }
+    }
+
+    /// [layer layoutSublayers] — run the layer's own sublayer layout now.
+    public void layoutSublayers() {
+        ensureInit();
+        ObjC.msgSendVoid(peer, ObjC.sel("layoutSublayers"));
+    }
+
+    /// [layer hitTest:] — deepest descendant containing the point, or null.
+    public CALayer hitTest(NSPoint point) {
+        ensureInit();
+        try {
+            return wrap((MemorySegment) handles.hGetIdPoint().invokeExact(peer, ObjC.sel("hitTest:"), point.toSegment()));
+        } catch (Throwable t) { throw new RuntimeException("hitTest: failed", t); }
+    }
+
+    /// [layer containsPoint:] — whether the point lies inside the layer's bounds.
+    public boolean containsPoint(NSPoint point) {
+        ensureInit();
+        try {
+            return (boolean) handles.hGetBoolPoint().invokeExact(peer, ObjC.sel("containsPoint:"), point.toSegment());
+        } catch (Throwable t) { throw new RuntimeException("containsPoint: failed", t); }
+    }
+
+    /// [layer convertPoint:fromLayer:] — map a point from the given layer's space into this layer's.
+    public NSPoint convertPointFromLayer(NSPoint point, CALayer fromLayer) {
+        ensureInit();
+        try {
+            MemorySegment s = (MemorySegment) handles.hGetPointPointId().invokeExact(ObjC.structSlot(), peer, ObjC.sel("convertPoint:fromLayer:"),
+                    point.toSegment(), (MemorySegment) (fromLayer == null ? MemorySegment.NULL : fromLayer.peer()));
+            return NSPoint.fromSegment(s);
+        } catch (Throwable t) { throw new RuntimeException("convertPoint:fromLayer: failed", t); }
+    }
+
+    /// [layer convertPoint:toLayer:] — map a point from this layer's space into the given layer's.
+    public NSPoint convertPointToLayer(NSPoint point, CALayer toLayer) {
+        ensureInit();
+        try {
+            MemorySegment s = (MemorySegment) handles.hGetPointPointId().invokeExact(ObjC.structSlot(), peer, ObjC.sel("convertPoint:toLayer:"),
+                    point.toSegment(), (MemorySegment) (toLayer == null ? MemorySegment.NULL : toLayer.peer()));
+            return NSPoint.fromSegment(s);
+        } catch (Throwable t) { throw new RuntimeException("convertPoint:toLayer: failed", t); }
+    }
+
+    /// [layer convertTime:fromLayer:] — map a time from the given layer's space into this layer's.
+    public double convertTimeFromLayer(double time, CALayer fromLayer) {
+        ensureInit();
+        try {
+            return (double) handles.hGetDoubleDoubleId().invokeExact(peer, ObjC.sel("convertTime:fromLayer:"),
+                    time, (MemorySegment) (fromLayer == null ? MemorySegment.NULL : fromLayer.peer()));
+        } catch (Throwable t) { throw new RuntimeException("convertTime:fromLayer: failed", t); }
+    }
+
+    /// [layer convertTime:toLayer:] — map a time from this layer's space into the given layer's.
+    public double convertTimeToLayer(double time, CALayer toLayer) {
+        ensureInit();
+        try {
+            return (double) handles.hGetDoubleDoubleId().invokeExact(peer, ObjC.sel("convertTime:toLayer:"),
+                    time, (MemorySegment) (toLayer == null ? MemorySegment.NULL : toLayer.peer()));
+        } catch (Throwable t) { throw new RuntimeException("convertTime:toLayer: failed", t); }
+    }
+
+    /// [layer renderInContext:] — draw the layer tree into a CGContextRef.
+    public void renderInContext(MemorySegment cgContext) {
+        ensureInit();
+        try {
+            handles.hSetId().invokeExact(peer, ObjC.sel("renderInContext:"),
+                    (MemorySegment) (cgContext == null ? MemorySegment.NULL : cgContext));
+        } catch (Throwable t) { throw new RuntimeException("renderInContext: failed", t); }
     }
 }

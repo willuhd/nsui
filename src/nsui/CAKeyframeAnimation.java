@@ -11,7 +11,7 @@ import static nsui.objc.Sig.Ret;
 /// CAKeyframeAnimation — multi-stop animation over values/keyTimes (optionally
 /// paced, cubic, or rotating). Thin stateless wrapper; follows CABasicAnimation.
 /// (CGPathRef path omitted: needs a CGPath wrapper.)
-public class CAKeyframeAnimation extends CAAnimation {
+public class CAKeyframeAnimation extends CAPropertyAnimation {
 
     /// Calculation modes.
     public static final String CALCULATION_LINEAR = "linear";

@@ -66,15 +66,15 @@ public final class NSFontDescriptor extends NSObject {
         }
     }
 
-    /// `+[NSFontDescriptor preferredFontDescriptorWithTextStyle:options:]`
+    /// `+[NSFontDescriptor preferredFontDescriptorForTextStyle:options:]`
     public static NSFontDescriptor preferredFontDescriptorWithTextStyle(String style) {
         ensureInit();
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.ID, Arg.ID));
-            MemorySegment d = (MemorySegment) h.invokeExact(ObjC.cls("NSFontDescriptor"), ObjC.sel("preferredFontDescriptorWithTextStyle:options:"), ObjC.nsstring(style), MemorySegment.NULL);
+            MemorySegment d = (MemorySegment) h.invokeExact(ObjC.cls("NSFontDescriptor"), ObjC.sel("preferredFontDescriptorForTextStyle:options:"), ObjC.nsstring(style), MemorySegment.NULL);
             return wrap(d);
         } catch (Throwable t) {
-            throw new RuntimeException("preferredFontDescriptorWithTextStyle:options: failed", t);
+            throw new RuntimeException("preferredFontDescriptorForTextStyle:options: failed", t);
         }
     }
 

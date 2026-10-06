@@ -9,8 +9,8 @@ import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
 /// CAPropertyAnimation — thin wrapper for QuartzCore CAPropertyAnimation, the
-/// key-path base class shared by CABasicAnimation, CAKeyframeAnimation,
-/// CASpringAnimation and CAAnimationGroup. Adds keyPath, additive, cumulative
+/// key-path base class shared by CABasicAnimation, CAKeyframeAnimation and
+/// CASpringAnimation. Adds keyPath, additive, cumulative
 /// and valueFunction; timing behavior is inherited from CAAnimation.
 public class CAPropertyAnimation extends CAAnimation {
 

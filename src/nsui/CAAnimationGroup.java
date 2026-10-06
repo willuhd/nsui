@@ -11,7 +11,7 @@ import static nsui.objc.Sig.Ret;
 /// CAAnimationGroup — thin wrapper for QuartzCore CAAnimationGroup: runs several
 /// CAAnimations concurrently on one key path. Timing/duration behavior is
 /// inherited from CAAnimation; this wrapper adds the animations array accessors.
-public class CAAnimationGroup extends CAPropertyAnimation {
+public class CAAnimationGroup extends CAAnimation {
 
     // [CAAnimationGroup animation] and the animations getter share the (id,SEL)->id shape.
     private record Handles(MethodHandle hGetId, MethodHandle hSetId) {}

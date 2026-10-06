@@ -16,7 +16,8 @@ import static nsui.objc.Sig.Ret;
 /// - CALayer's remaining public API: transforms, contents geometry, media timing,
 ///   filters, corner masking, rasterization, sublayer ordering, actions, layout,
 ///   hit testing, coordinate/time conversion and renderInContext:;
-/// - CAPropertyAnimation as the shared base of basic/keyframe/spring/group.
+/// - CAPropertyAnimation as the shared base of basic/keyframe/spring
+///   (CAAnimationGroup is a CAAnimation sibling, not a property animation).
 ///
 /// Every accessor gets a real set-then-get assertion; renderInContext: proves the
 /// pixels it claims to draw; layoutSublayers (a pure side-effect action with no
@@ -441,11 +442,22 @@ public final class CACompletenessTest {
             CAAnimationGroup group = CAAnimationGroup.create();
             TestKit.check(group != null && group.isKindOfClass("CAAnimation"),
                     "CAAnimationGroup isKindOfClass CAAnimation");
-            // ObjC's CAAnimationGroup derives from CAAnimation, not CAPropertyAnimation,
-            // so the shared-base relationship requested for the Java wrappers is a
-            // type-hierarchy fact; assert it on the Java class.
-            TestKit.check(CAAnimationGroup.class.getSuperclass() == CAPropertyAnimation.class,
-                    "CAAnimationGroup extends CAPropertyAnimation in the Java hierarchy");
+            // ObjC reality: CAAnimationGroup derives from CAAnimation (a SIBLING of
+            // CAPropertyAnimation) and does not respond to keyPath/additive/valueFunction.
+            // The Java hierarchy must mirror that, or an inherited accessor would raise
+            // an unrecognized selector on a real group.
+            TestKit.check(CAAnimationGroup.class.getSuperclass() == CAAnimation.class,
+                    "CAAnimationGroup extends CAAnimation (mirrors ObjC)");
+            TestKit.check(CABasicAnimation.class.getSuperclass() == CAPropertyAnimation.class,
+                    "CABasicAnimation extends CAPropertyAnimation");
+            TestKit.check(CAKeyframeAnimation.class.getSuperclass() == CAPropertyAnimation.class,
+                    "CAKeyframeAnimation extends CAPropertyAnimation");
+            TestKit.check(CASpringAnimation.class.getSuperclass() == CABasicAnimation.class,
+                    "CASpringAnimation extends CABasicAnimation");
+            TestKit.check(!group.respondsToSelector(ObjC.sel("keyPath")),
+                    "CAAnimationGroup does not respond to keyPath");
+            TestKit.check(!group.respondsToSelector(ObjC.sel("isAdditive")),
+                    "CAAnimationGroup does not respond to isAdditive");
         } catch (Throwable t) {
             TestKit.check(false, "CAPropertyAnimation section threw: " + t);
         }

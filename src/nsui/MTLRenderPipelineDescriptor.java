@@ -56,6 +56,26 @@ public final class MTLRenderPipelineDescriptor extends NSObject {
                 (MemorySegment) (fn == null ? MemorySegment.NULL : fn.peer()));
     }
 
+    /// depthAttachmentPixelFormat (MTLPixelFormat; 0 == invalid).
+    public long depthAttachmentPixelFormat() {
+        return ObjC.msgSendLong(peer, ObjC.sel("depthAttachmentPixelFormat"));
+    }
+
+    /// setDepthAttachmentPixelFormat: — must match the pass's depth texture.
+    public void setDepthAttachmentPixelFormat(long format) {
+        ObjC.msgSendVoidLong(peer, ObjC.sel("setDepthAttachmentPixelFormat:"), format);
+    }
+
+    /// stencilAttachmentPixelFormat (MTLPixelFormat; 0 == invalid).
+    public long stencilAttachmentPixelFormat() {
+        return ObjC.msgSendLong(peer, ObjC.sel("stencilAttachmentPixelFormat"));
+    }
+
+    /// setStencilAttachmentPixelFormat: — must match the pass's stencil texture.
+    public void setStencilAttachmentPixelFormat(long format) {
+        ObjC.msgSendVoidLong(peer, ObjC.sel("setStencilAttachmentPixelFormat:"), format);
+    }
+
     /// colorAttachments[i] (v1 uses 0).
     public MTLRenderPipelineColorAttachmentDescriptor colorAttachment(long index) {
         ensureInit();

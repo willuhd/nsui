@@ -17,7 +17,8 @@ import static nsui.objc.Sig.Ret;
 public final class MTLDevice extends NSObject {
 
     private record Handles(MethodHandle hLibSource, MethodHandle hQueue,
-            MethodHandle hTexture, MethodHandle hPipeline) {}
+            MethodHandle hTexture, MethodHandle hPipeline, MethodHandle hDepthStencil,
+            MethodHandle hBuffer) {}
     private static volatile Handles handles;
     private static volatile MethodHandle hCreate;
     private static volatile boolean ready;
@@ -50,7 +51,9 @@ public final class MTLDevice extends NSObject {
                 ObjC.handle(Sig.of(Ret.ID, Arg.ID, Arg.ID, Arg.ID)),
                 ObjC.handle(Sig.of(Ret.ID)),
                 ObjC.handle(Sig.of(Ret.ID, Arg.ID)),
-                ObjC.handle(Sig.of(Ret.ID, Arg.ID, Arg.ID)));
+                ObjC.handle(Sig.of(Ret.ID, Arg.ID, Arg.ID)),
+                ObjC.handle(Sig.of(Ret.ID, Arg.ID)),
+                ObjC.handle(Sig.of(Ret.ID, Arg.INT, Arg.INT)));
         ready = true;
     }
 
@@ -72,8 +75,15 @@ public final class MTLDevice extends NSObject {
         return msg == null ? "unknown Metal error" : msg;
     }
 
+    /// A zeroed NSError** out-param. The scratch buffer is a *reused* bump
+    /// arena whose contents survive a rewind, so the slot MUST be cleared
+    /// before every call: otherwise a failed call that leaves *error untouched
+    /// (or a success followed by a read) would read last turn's stale pointer
+    /// and report the wrong message — or dereference a dangling error object.
     private static MemorySegment errorSlot() {
-        return nsui.objc.Scratch.allocInput(8);
+        MemorySegment slot = nsui.objc.Scratch.allocInput(8);
+        slot.set(java.lang.foreign.ValueLayout.ADDRESS, 0, MemorySegment.NULL);
+        return slot;
     }
 
     /// newLibraryWithSource:options:error: — compile MSL source (nil options).
@@ -99,8 +109,25 @@ public final class MTLDevice extends NSObject {
         return MTLCommandQueue.wrap(ObjC.msgSendId(peer, ObjC.sel("newCommandQueue")));
     }
 
+    /// newBufferWithLength:options: — MTLResourceStorageModeShared (0) for
+    /// CPU-writable vertex/index buffers.
+    public MTLBuffer newBuffer(long length, long options) {
+        ensureInit();
+        try {
+            MemorySegment b = (MemorySegment) handles.hBuffer().invokeExact(peer,
+                    ObjC.sel("newBufferWithLength:options:"), length, options);
+            if (b.address() == 0) throw new IllegalStateException("newBufferWithLength:options: returned nil");
+            return MTLBuffer.wrap(b);
+        } catch (RuntimeException t) {
+            throw t;
+        } catch (Throwable t) {
+            throw new RuntimeException("newBufferWithLength:options: failed", t);
+        }
+    }
+
     /// newTextureWithDescriptor:.
     public MTLTexture newTexture(MTLTextureDescriptor descriptor) {
+        if (descriptor == null) throw new IllegalArgumentException("descriptor is null");
         try {
             return MTLTexture.wrap((MemorySegment) handles.hTexture().invokeExact(peer,
                     ObjC.sel("newTextureWithDescriptor:"), descriptor.peer()));
@@ -112,6 +139,7 @@ public final class MTLDevice extends NSObject {
     /// newRenderPipelineStateWithDescriptor:error: — throws with message on failure.
     public MTLRenderPipelineState newRenderPipelineState(MTLRenderPipelineDescriptor descriptor) {
         ensureInit();
+        if (descriptor == null) throw new IllegalArgumentException("descriptor is null");
         MemorySegment err = errorSlot();
         try {
             MemorySegment ps = (MemorySegment) handles.hPipeline().invokeExact(peer,
@@ -123,6 +151,27 @@ public final class MTLDevice extends NSObject {
             throw t;
         } catch (Throwable t) {
             throw new RuntimeException("newRenderPipelineStateWithDescriptor: failed", t);
+        }
+    }
+
+    /// newDepthStencilStateWithDescriptor: — compile a depth/stencil state.
+    /// Unlike the pipeline/error paths this selector has no NSError out-param,
+    /// so a nil return is a hard failure (invalid descriptor combination):
+    /// throw instead of handing back a silently unusable null state.
+    public MTLDepthStencilState newDepthStencilState(MTLDepthStencilDescriptor descriptor) {
+        ensureInit();
+        if (descriptor == null) throw new IllegalArgumentException("descriptor is null");
+        try {
+            MemorySegment state = (MemorySegment) handles.hDepthStencil().invokeExact(peer,
+                    ObjC.sel("newDepthStencilStateWithDescriptor:"), descriptor.peer());
+            if (state.address() == 0)
+                throw new IllegalStateException("newDepthStencilStateWithDescriptor: returned nil "
+                        + "(invalid depth/stencil descriptor)");
+            return MTLDepthStencilState.wrap(state);
+        } catch (RuntimeException t) {
+            throw t;
+        } catch (Throwable t) {
+            throw new RuntimeException("newDepthStencilStateWithDescriptor: failed", t);
         }
     }
 }

@@ -43,6 +43,27 @@ public final class MTLRenderPassDescriptor extends NSObject {
                 ObjC.sel("renderPassDescriptor")));
     }
 
+    /// depthAttachment — never nil (the property is null_resettable and
+    /// Metal returns a default descriptor); wrap it to configure a depth target.
+    public MTLRenderPassDepthAttachmentDescriptor depthAttachment() {
+        return MTLRenderPassDepthAttachmentDescriptor.wrap(ObjC.msgSendId(peer, ObjC.sel("depthAttachment")));
+    }
+
+    /// setDepthAttachment: (nil resets to the default descriptor).
+    public void setDepthAttachment(MTLRenderPassDepthAttachmentDescriptor attachment) {
+        ObjC.msgSendVoidId(peer, ObjC.sel("setDepthAttachment:"), ObjC.nullablePeer(attachment));
+    }
+
+    /// stencilAttachment — never nil (see depthAttachment).
+    public MTLRenderPassStencilAttachmentDescriptor stencilAttachment() {
+        return MTLRenderPassStencilAttachmentDescriptor.wrap(ObjC.msgSendId(peer, ObjC.sel("stencilAttachment")));
+    }
+
+    /// setStencilAttachment: (nil resets to the default descriptor).
+    public void setStencilAttachment(MTLRenderPassStencilAttachmentDescriptor attachment) {
+        ObjC.msgSendVoidId(peer, ObjC.sel("setStencilAttachment:"), ObjC.nullablePeer(attachment));
+    }
+
     /// colorAttachments[i] via objectAtIndexedSubscript:.
     public MTLRenderPassColorAttachmentDescriptor colorAttachment(long index) {
         ensureInit();

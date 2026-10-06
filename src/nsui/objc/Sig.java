@@ -34,7 +34,7 @@ import java.util.List;
 public final class Sig {
 
     /// Argument classes. `ID` covers id/SEL/Class/pointers — one ABI class.
-    public enum Arg { ID, INT, BOOL, DOUBLE, RECT, POINT, SIZE, FLOAT, RANGE, REGION, TRANSFORM3D }
+    public enum Arg { ID, INT, BOOL, DOUBLE, RECT, POINT, SIZE, FLOAT, RANGE, REGION, TRANSFORM3D, MTLVIEWPORT, MTLSCISSORRECT }
 
     /// Return classes. `RECT` is a 32-byte struct (stret on x86_64); POINT/SIZE/RANGE are 16-byte structs.
     public enum Ret { VOID, ID, INT, BOOL, DOUBLE, RECT, POINT, SIZE, FLOAT, RANGE, TRANSFORM3D }
@@ -85,6 +85,12 @@ public final class Sig {
     private static final MemoryLayout NS_RANGE = MemoryLayout.structLayout(LONG, LONG);
     private static final MemoryLayout MTL_REGION =
             MemoryLayout.structLayout(LONG, LONG, LONG, LONG, LONG, LONG);
+    /// MTLViewport == struct { double originX, originY, width, height, znear, zfar } — 48 bytes by value.
+    private static final MemoryLayout MTL_VIEWPORT =
+            MemoryLayout.structLayout(DOUBLE, DOUBLE, DOUBLE, DOUBLE, DOUBLE, DOUBLE);
+    /// MTLScissorRect == struct { NSUInteger x, y, width, height } — 32 bytes by value.
+    private static final MemoryLayout MTL_SCISSOR_RECT =
+            MemoryLayout.structLayout(LONG, LONG, LONG, LONG);
     /// CATransform3D == struct { CGFloat m11..m44 } — 16 doubles, 128 bytes, by value.
     private static final MemoryLayout CA_TRANSFORM3D = MemoryLayout.structLayout(
             DOUBLE, DOUBLE, DOUBLE, DOUBLE, DOUBLE, DOUBLE, DOUBLE, DOUBLE,
@@ -109,6 +115,8 @@ public final class Sig {
                 case RANGE -> NS_RANGE;
                 case REGION -> MTL_REGION;
                 case TRANSFORM3D -> CA_TRANSFORM3D;
+                case MTLVIEWPORT -> MTL_VIEWPORT;
+                case MTLSCISSORRECT -> MTL_SCISSOR_RECT;
             };
         }
         return switch (s.ret()) {
@@ -266,6 +274,11 @@ public final class Sig {
         of(Ret.VOID, Arg.TRANSFORM3D),                       // setTransform: / setSublayerTransform:
         of(Ret.BOOL, Arg.POINT),                             // containsPoint:
         of(Ret.POINT, Arg.POINT, Arg.ID),                    // convertPoint:fromLayer: / convertPoint:toLayer:
-        of(Ret.DOUBLE, Arg.DOUBLE, Arg.ID)                   // convertTime:fromLayer: / convertTime:toLayer:
+        of(Ret.DOUBLE, Arg.DOUBLE, Arg.ID),                  // convertTime:fromLayer: / convertTime:toLayer:
+        // --- Metal depth/stencil + rasterizer state (append-only) ---
+        of(Ret.VOID, Arg.FLOAT, Arg.FLOAT, Arg.FLOAT),      // setDepthBias:slopeScale:clamp:
+        of(Ret.VOID, Arg.MTLVIEWPORT),                      // setViewport:
+        of(Ret.VOID, Arg.MTLSCISSORRECT),                   // setScissorRect:
+        of(Ret.VOID, Arg.INT, Arg.INT, Arg.INT, Arg.ID, Arg.INT) // drawIndexedPrimitives:indexCount:indexType:indexBuffer:indexBufferOffset:
     );
 }

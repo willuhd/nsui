@@ -16,10 +16,20 @@ public final class MTLCommandBuffer extends NSObject {
         return (peer == null || peer.address() == 0) ? null : new MTLCommandBuffer(peer);
     }
 
-    /// renderCommandEncoderWithDescriptor:.
+    /// renderCommandEncoderWithDescriptor: — throws on a nil result.
+    /// Metal returns nil (after logging a validation error) when the pass is
+    /// inconsistent with the pipeline or the attachments, and that selector has
+    /// no NSError out-param: pass the nil through and the caller silently
+    /// encodes nothing, so surface it as a hard failure instead.
     public MTLRenderCommandEncoder renderEncoder(MTLRenderPassDescriptor descriptor) {
-        return MTLRenderCommandEncoder.wrap(ObjC.msgSendIdId(peer,
+        if (descriptor == null) throw new IllegalArgumentException("descriptor is null");
+        MTLRenderCommandEncoder enc = MTLRenderCommandEncoder.wrap(ObjC.msgSendIdId(peer,
                 ObjC.sel("renderCommandEncoderWithDescriptor:"), descriptor.peer()));
+        if (enc == null) {
+            throw new IllegalStateException("renderCommandEncoderWithDescriptor: returned nil "
+                    + "(pass/pipeline attachment mismatch?)");
+        }
+        return enc;
     }
 
     /// commit — submit (async return).
@@ -33,7 +43,10 @@ public final class MTLCommandBuffer extends NSObject {
     }
 
     /// presentDrawable: — schedule drawable presentation on commit.
+    /// A null drawable (nextDrawable: returned nil this frame) is a no-op,
+    /// not a NullPointerException: an empty frame is legal.
     public void presentDrawable(CAMetalDrawable drawable) {
+        if (drawable == null) return;
         ObjC.msgSendVoidId(peer, ObjC.sel("presentDrawable:"), drawable.peer());
     }
 }

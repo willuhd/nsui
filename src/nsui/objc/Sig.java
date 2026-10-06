@@ -142,19 +142,18 @@ public final class Sig {
         of(Ret.ID, Arg.INT), of(Ret.ID, Arg.DOUBLE), of(Ret.VOID, Arg.INT), of(Ret.VOID, Arg.BOOL),
         of(Ret.VOID, Arg.DOUBLE),                       // setSpacing: / setDoubleValue: / setWidth:
         of(Ret.VOID, Arg.ID, Arg.INT), of(Ret.VOID, Arg.ID, Arg.BOOL),
-        of(Ret.VOID, Arg.INT, Arg.ID),                  // setLabel:forSegment: / setGravity:forArrangedSubviews:
+        of(Ret.VOID, Arg.INT, Arg.ID),                  // setLabel:forSegment: / setGravity:forArrangedSubviews: / getControlPointAtIndex:values: (out-param)
         of(Ret.VOID, Arg.BOOL, Arg.ID),                 // setBool:forKey: / setEmphasized-style setters
         of(Ret.VOID, Arg.DOUBLE, Arg.ID),               // setDouble:forKey:
         of(Ret.DOUBLE, Arg.ID),                        // doubleForKey: / draggedDistance
         of(Ret.BOOL, Arg.INT), of(Ret.VOID, Arg.BOOL, Arg.INT),  // isEnabledForSegment: / setEnabled:forSegment:
         of(Ret.DOUBLE, Arg.INT), of(Ret.VOID, Arg.DOUBLE, Arg.INT), // widthForSegment: / setWidth:forSegment:
         of(Ret.ID, Arg.ID, Arg.DOUBLE),                 // fontWithName:size:
-        of(Ret.ID, Arg.POINT),                       // valueWithPoint:
+        of(Ret.ID, Arg.POINT),                       // valueWithPoint: / NSBezierPath bezierPath helpers / NSCursor
         of(Ret.ID, Arg.SIZE),                        // valueWithSize:
         of(Ret.ID, Arg.FLOAT, Arg.FLOAT, Arg.FLOAT, Arg.FLOAT), // timingFunctionWithControlPoints::::
         of(Ret.ID, Arg.ID, Arg.ID, Arg.FLOAT),        // HDR10MetadataWithDisplayInfo:contentInfo:scale:
         of(Ret.ID, Arg.FLOAT, Arg.FLOAT, Arg.FLOAT),  // HDR10MetadataWithMinLuminance:...
-        of(Ret.VOID, Arg.INT, Arg.ID),                 // getControlPointAtIndex:values: (out-param)
         of(Ret.ID, Arg.INT, Arg.ID, Arg.INT, Arg.DOUBLE, Arg.DOUBLE), // constraintWithAttribute:scale:offset:
         of(Ret.ID, Arg.INT, Arg.ID, Arg.INT, Arg.DOUBLE), // constraintWithAttribute:offset:
         of(Ret.ID, Arg.INT, Arg.ID, Arg.INT),          // constraintWithAttribute: (source-relative)
@@ -231,7 +230,6 @@ public final class Sig {
         of(Ret.ID, Arg.ID, Arg.BOOL),                       // NSGraphicsContext graphicsContextWithCGContext:flipped:
         of(Ret.ID, Arg.RECT, Arg.INT, Arg.ID, Arg.ID),      // NSTrackingArea initWithRect:options:owner:userInfo:
         of(Ret.VOID, Arg.POINT, Arg.POINT, Arg.POINT),      // NSBezierPath curveToPoint:controlPoint1:controlPoint2:
-        of(Ret.ID, Arg.POINT),                              // NSBezierPath bezierPath helpers / NSCursor
         of(Ret.VOID, Arg.ID, Arg.RECT),                     // NSWorkspace iconForFileType etc alt
         of(Ret.BOOL, Arg.ID, Arg.BOOL),                     // NSWorkspace openURL with flag variant
         of(Ret.ID, Arg.RECT, Arg.INT),                      // NSGridView helper (rect,int)->id

@@ -22,7 +22,12 @@ public final class NSOpenPanel extends NSSavePanel {
         ensureInitOpen();
     }
 
-    private static synchronized void ensureInitOpen() {
+    private static void ensureInitOpen() {
+        if (initialized) return;
+        ensureInitOpenLocked();
+    }
+
+    private static synchronized void ensureInitOpenLocked() {
         if (initialized) return;
         // Ensure base initialized
         NSSavePanel.ensureInit();

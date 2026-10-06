@@ -32,7 +32,12 @@ public final class NSFindPanel extends NSObject {
         return (peer == null || peer.address() == 0) ? null : new NSFindPanel(peer);
     }
 
-    private static synchronized void ensureInit() {
+    private static void ensureInit() {
+        if (initialized) return;
+        ensureInitLocked();
+    }
+
+    private static synchronized void ensureInitLocked() {
         if (initialized) return;
         hGetId = ObjC.handle(Sig.of(Ret.ID));
         hBool = ObjC.handle(Sig.of(Ret.BOOL));

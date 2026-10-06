@@ -124,7 +124,12 @@ public class NSView extends NSResponder {
         return view;
     }
 
-    private static synchronized void ensureInit() {
+    private static void ensureInit() {
+        if (H != null) return;
+        ensureInitLocked();
+    }
+
+    private static synchronized void ensureInitLocked() {
         if (H != null) return;
         drawableClass = ObjC.makeClass("NSView", "NSUIViewImpl");
         try {

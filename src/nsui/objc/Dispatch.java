@@ -28,6 +28,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 public final class Dispatch {
 
     private static Linker LINKER;
+    private static volatile boolean INIT;
     private static Arena ARENA;
     private static SymbolLookup SYSTEM;
 
@@ -49,8 +50,13 @@ public final class Dispatch {
     private Dispatch() {}
 
     /// Run-time init (native-image: no FFM work in static initializers).
-    public static synchronized void ensureInit() {
-        if (LINKER != null) return;
+    public static void ensureInit() {
+        if (INIT) return;
+        ensureInitLocked();
+    }
+
+    public static synchronized void ensureInitLocked() {
+        if (INIT) return;
         LINKER = Linker.nativeLinker();
         ARENA = Arena.global();
 
@@ -70,6 +76,7 @@ public final class Dispatch {
             throw new IllegalStateException("_dispatch_main_q resolved to NULL address");
         }
         SHARED_BLOCK = Blocks.block(runBodyHandle(), NsuiForeign.blockVoidUpcall());
+        INIT = true;
     }
 
     /// Run `body` asynchronously on the main dispatch queue.

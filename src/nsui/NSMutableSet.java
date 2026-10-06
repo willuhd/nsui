@@ -45,7 +45,12 @@ public final class NSMutableSet extends NSSet {
         } catch (Throwable t) { throw new RuntimeException("setWithCapacity: failed", t); }
     }
 
-    private static synchronized void ensureMutInit() {
+    private static void ensureMutInit() {
+        if (initMut) return;
+        ensureMutInitLocked();
+    }
+
+    private static synchronized void ensureMutInitLocked() {
         if (initMut) return;
         // ensure NSSet handles also
         try { NSSet.set(); } catch (Exception ignored) {}

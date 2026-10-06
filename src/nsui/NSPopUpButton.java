@@ -50,7 +50,12 @@ public final class NSPopUpButton extends NSControl {
         ensureInit();
     }
 
-    private static synchronized void ensureInit() {
+    private static void ensureInit() {
+        if (initialized) return;
+        ensureInitLocked();
+    }
+
+    private static synchronized void ensureInitLocked() {
         if (initialized) return;
         hInitFrame = ObjC.handle(Sig.of(Ret.ID, Arg.RECT));
         hAddItem = ObjC.handle(Sig.of(Ret.VOID, Arg.ID));

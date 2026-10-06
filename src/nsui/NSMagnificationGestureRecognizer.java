@@ -30,7 +30,12 @@ public final class NSMagnificationGestureRecognizer extends NSGestureRecognizer 
         return (peer == null || peer.address() == 0) ? null : new NSMagnificationGestureRecognizer(peer);
     }
 
-    private static synchronized void ensureMagInit() {
+    private static void ensureMagInit() {
+        if (handles != null) return;
+        ensureMagInitLocked();
+    }
+
+    private static synchronized void ensureMagInitLocked() {
         if (handles != null) return;
         NSGestureRecognizer.ensureInit();
         handles = new Handles(ObjC.handle(Sig.of(Ret.ID, Arg.ID, Arg.ID)), ObjC.handle(Sig.of(Ret.DOUBLE)), ObjC.handle(Sig.of(Ret.VOID, Arg.DOUBLE)));

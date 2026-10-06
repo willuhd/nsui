@@ -32,7 +32,12 @@ public final class MTLDevice extends NSObject {
         return (peer == null || peer.address() == 0) ? null : new MTLDevice(peer);
     }
 
-    private static synchronized void ensureInit() {
+    private static void ensureInit() {
+        if (ready) return;
+        ensureInitLocked();
+    }
+
+    private static synchronized void ensureInitLocked() {
         if (ready) return;
         try { ObjC.ensureFramework("Metal"); } catch (Throwable ignored) {}
         SymbolLookup metal = SymbolLookup.libraryLookup(

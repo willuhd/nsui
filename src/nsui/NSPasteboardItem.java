@@ -32,7 +32,12 @@ public final class NSPasteboardItem extends NSObject {
         return (peer == null || peer.address() == 0) ? null : new NSPasteboardItem(peer);
     }
 
-    private static synchronized void ensureInit() {
+    private static void ensureInit() {
+        if (hInit != null) return;
+        ensureInitLocked();
+    }
+
+    private static synchronized void ensureInitLocked() {
         if (hInit != null) return;
         hInit = ObjC.handle(Sig.of(Ret.ID));
         hSetString = ObjC.handle(Sig.of(Ret.BOOL, Arg.ID, Arg.ID));

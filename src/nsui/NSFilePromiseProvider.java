@@ -57,7 +57,12 @@ public final class NSFilePromiseProvider extends NSObject {
         } catch (Throwable t) { throw new RuntimeException("NSFilePromiseProvider init failed", t); }
     }
 
-    private static synchronized void ensureInit() {
+    private static void ensureInit() {
+        if (initialized) return;
+        ensureInitLocked();
+    }
+
+    private static synchronized void ensureInitLocked() {
         if (initialized) return;
         hFileType = ObjC.handle(Sig.of(Ret.ID));
         hDelegate = ObjC.handle(Sig.of(Ret.ID));

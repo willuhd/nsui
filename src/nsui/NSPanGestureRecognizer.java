@@ -39,7 +39,12 @@ public final class NSPanGestureRecognizer extends NSGestureRecognizer {
         return (peer == null || peer.address() == 0) ? null : new NSPanGestureRecognizer(peer);
     }
 
-        private static synchronized void ensurePanInit() {
+        private static void ensurePanInit() {
+            if (handles != null) return;
+            ensurePanInitLocked();
+        }
+
+        private static synchronized void ensurePanInitLocked() {
         if (handles != null) return;
         // Ensure base class handles are ready
         NSGestureRecognizer.ensureInit();

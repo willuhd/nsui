@@ -31,7 +31,12 @@ public final class NSPressGestureRecognizer extends NSGestureRecognizer {
         return (peer == null || peer.address() == 0) ? null : new NSPressGestureRecognizer(peer);
     }
 
-    private static synchronized void ensurePressInit() {
+    private static void ensurePressInit() {
+        if (handles != null) return;
+        ensurePressInitLocked();
+    }
+
+    private static synchronized void ensurePressInitLocked() {
         if (handles != null) return;
         NSGestureRecognizer.ensureInit();
         handles = new Handles(ObjC.handle(Sig.of(Ret.ID, Arg.ID, Arg.ID)), ObjC.handle(Sig.of(Ret.DOUBLE)), ObjC.handle(Sig.of(Ret.VOID, Arg.DOUBLE)));

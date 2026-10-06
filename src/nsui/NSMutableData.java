@@ -54,7 +54,12 @@ public final class NSMutableData extends NSData {
         } catch (Throwable t) { throw new RuntimeException("dataWithLength: failed", t); }
     }
 
-    private static synchronized void ensureMutInit() {
+    private static void ensureMutInit() {
+        if (initMut) return;
+        ensureMutInitLocked();
+    }
+
+    private static synchronized void ensureMutInitLocked() {
         if (initMut) return;
         try { NSData.data(); } catch (Exception ignored) {}
         // appendBytes:length: signature is (id,SEL,const void*,long) -> void. Use VOID,ID,INT via pointer as ID

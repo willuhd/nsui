@@ -101,7 +101,7 @@ public final class DelegateProxy {
     // ------------------------------------------------------------------ runtime state
     // (built lazily in ensureInit(); NEVER in a static initializer — native-image rule.)
 
-    private static boolean initialized;
+    private static volatile boolean initialized;
 
     /// Shared upcall stubs — same ones everywhere, reused by every class pair.
     private static MemorySegment boolStub;
@@ -472,7 +472,12 @@ public final class DelegateProxy {
     // ------------------------------------------------------------------ internals
 
     /// Build the shared upcall stubs ONCE, lazily (never in a static initializer).
-    private static synchronized void ensureInit() {
+    private static void ensureInit() {
+        if (initialized) return;
+        ensureInitLocked();
+    }
+
+    private static synchronized void ensureInitLocked() {
         if (initialized) return;
         try {
             MethodHandle boolTarget = MethodHandles.lookup().findStatic(DelegateProxy.class, "dispatchBool",

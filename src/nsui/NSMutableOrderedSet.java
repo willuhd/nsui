@@ -47,7 +47,12 @@ public final class NSMutableOrderedSet extends NSOrderedSet {
         } catch (Throwable t) { throw new RuntimeException("orderedSetWithCapacity: failed", t); }
     }
 
-    private static synchronized void ensureMutInit() {
+    private static void ensureMutInit() {
+        if (initMut) return;
+        ensureMutInitLocked();
+    }
+
+    private static synchronized void ensureMutInitLocked() {
         if (initMut) return;
         try { NSOrderedSet.orderedSet(); } catch (Exception ignored) {}
         hAddObject = ObjC.handle(Sig.of(Ret.VOID, Arg.ID));

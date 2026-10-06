@@ -26,7 +26,12 @@ public class CAAnimationGroup extends CAAnimation {
         return (peer == null || peer.address() == 0) ? null : new CAAnimationGroup(peer);
     }
 
-        private static synchronized void ensureInit() {
+        private static void ensureInit() {
+            if (handles != null) return;
+            ensureInitLocked();
+        }
+
+        private static synchronized void ensureInitLocked() {
         if (handles != null) return;
         try { ObjC.ensureFramework("QuartzCore"); } catch (Throwable ignored) {}
         handles = new Handles(

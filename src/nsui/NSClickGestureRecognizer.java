@@ -37,7 +37,12 @@ public final class NSClickGestureRecognizer extends NSGestureRecognizer {
         return (peer == null || peer.address() == 0) ? null : new NSClickGestureRecognizer(peer);
     }
 
-        private static synchronized void ensureClickInit() {
+        private static void ensureClickInit() {
+            if (handles != null) return;
+            ensureClickInitLocked();
+        }
+
+        private static synchronized void ensureClickInitLocked() {
         if (handles != null) return;
         NSGestureRecognizer.ensureInit();
         handles = new Handles(ObjC.handle(Sig.of(Ret.ID, Arg.ID, Arg.ID)), ObjC.handle(Sig.of(Ret.INT)), ObjC.handle(Sig.of(Ret.VOID, Arg.INT)));

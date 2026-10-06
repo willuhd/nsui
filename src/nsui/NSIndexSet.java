@@ -60,7 +60,12 @@ public class NSIndexSet extends NSObject {
         } catch (Throwable t) { throw new RuntimeException("indexSetWithIndexesInRange: failed", t); }
     }
 
-    private static synchronized void ensureInit() {
+    private static void ensureInit() {
+        if (initialized) return;
+        ensureInitLocked();
+    }
+
+    private static synchronized void ensureInitLocked() {
         if (initialized) return;
         hCount = ObjC.handle(Sig.of(Ret.INT));
         hContains = ObjC.handle(Sig.of(Ret.BOOL, Arg.INT));

@@ -29,7 +29,12 @@ public final class NSFontManager extends NSObject {
         return (peer == null || peer.address() == 0) ? null : new NSFontManager(peer);
     }
 
-    private static synchronized void ensureInit() {
+    private static void ensureInit() {
+        if (initialized) return;
+        ensureInitLocked();
+    }
+
+    private static synchronized void ensureInitLocked() {
         if (initialized) return;
         hGetId = ObjC.handle(Sig.of(Ret.ID));
         hSetFont = ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.BOOL));

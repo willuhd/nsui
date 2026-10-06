@@ -56,7 +56,12 @@ public final class NSScreen extends NSObject {
         return (peer == null || peer.address() == 0) ? null : new NSScreen(peer);
     }
 
-    private static synchronized void ensureInit() {
+    private static void ensureInit() {
+        if (H != null) return;
+        ensureInitLocked();
+    }
+
+    private static synchronized void ensureInitLocked() {
         if (H != null) return;
         H = new Handles(
                 ObjC.handle(Sig.of(Ret.DOUBLE)),

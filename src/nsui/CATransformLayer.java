@@ -23,7 +23,12 @@ public class CATransformLayer extends CALayer {
 
     private static volatile boolean ready;
 
-    private static synchronized void ensureFramework() {
+    private static void ensureFramework() {
+        if (ready) return;
+        ensureFrameworkLocked();
+    }
+
+    private static synchronized void ensureFrameworkLocked() {
         if (ready) return;
         try { ObjC.ensureFramework("QuartzCore"); } catch (Throwable ignored) {}
         ready = true;

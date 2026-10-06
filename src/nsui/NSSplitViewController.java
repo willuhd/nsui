@@ -25,7 +25,12 @@ public final class NSSplitViewController extends NSViewController {
     public static NSSplitViewController wrap(MemorySegment peer) {
         return (peer == null || peer.address() == 0) ? null : new NSSplitViewController(peer);
     }
-    private static synchronized void ensureInit() {
+    private static void ensureInit() {
+        if (handles != null) return;
+        ensureInitLocked();
+    }
+
+    private static synchronized void ensureInitLocked() {
         if (handles != null) return;
         handles = new Handles(ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.INT)),
                 ObjC.handle(Sig.of(Ret.DOUBLE)), ObjC.handle(Sig.of(Ret.VOID, Arg.DOUBLE)));

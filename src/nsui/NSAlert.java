@@ -26,7 +26,12 @@ public final class NSAlert extends NSObject {
         ensureInit();
     }
 
-    private static synchronized void ensureInit() {
+    private static void ensureInit() {
+        if (initialized) return;
+        ensureInitLocked();
+    }
+
+    private static synchronized void ensureInitLocked() {
         if (initialized) return;
         hAddButton = ObjC.handle(Sig.of(Ret.ID, Arg.ID));
         hInt = ObjC.handle(Sig.of(Ret.INT));

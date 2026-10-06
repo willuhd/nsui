@@ -44,6 +44,7 @@ public final class Blocks {
 
     // ---- canonical layouts (resolved at run time) ----
     private static Linker LINKER;
+    private static volatile boolean INIT;
     private static Arena ARENA;
     private static SymbolLookup SYSTEM;
 
@@ -56,8 +57,13 @@ public final class Blocks {
     private Blocks() {}
 
     /// Run-time init (native-image: no FFM work in static initializers).
-    public static synchronized void ensureInit() {
-        if (LINKER != null) return;
+    public static void ensureInit() {
+        if (INIT) return;
+        ensureInitLocked();
+    }
+
+    public static synchronized void ensureInitLocked() {
+        if (INIT) return;
         LINKER = Linker.nativeLinker();
         ARENA = Arena.global();
 
@@ -68,6 +74,7 @@ public final class Blocks {
         if (GLOBAL_BLOCK_ISA.address() == 0) {
             throw new IllegalStateException("_NSConcreteGlobalBlock resolved to NULL address");
         }
+        INIT = true;
     }
 
     /// Build a global ObjC block backed by an FFM upcall stub.

@@ -40,7 +40,12 @@ public final class NSVisualEffectView extends NSView {
         return (peer == null || peer.address() == 0) ? null : new NSVisualEffectView(peer);
     }
 
-    private static synchronized void ensureInit() {
+    private static void ensureInit() {
+        if (initialized) return;
+        ensureInitLocked();
+    }
+
+    private static synchronized void ensureInitLocked() {
         if (initialized) return;
         hInitFrame = ObjC.handle(Sig.of(Ret.ID, Arg.RECT));
         hSetInt = ObjC.handle(Sig.of(Ret.VOID, Arg.INT));

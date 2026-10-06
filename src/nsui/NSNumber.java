@@ -31,7 +31,12 @@ public final class NSNumber extends NSValue {
         return (peer == null || peer.address() == 0) ? null : new NSNumber(peer);
     }
 
-        private static synchronized void ensureNumInit() {
+        private static void ensureNumInit() {
+            if (handles != null) return;
+            ensureNumInitLocked();
+        }
+
+        private static synchronized void ensureNumInitLocked() {
         if (handles != null) return;
         handles = new Handles(
                 ObjC.handle(Sig.of(Ret.INT)),

@@ -36,6 +36,144 @@ import static nsui.objc.Sig.Ret;
 /// insertString:, deleteCharactersInRange:, appendString:, setString:, stringWithCapacity:, etc.).
 public final class NSString extends NSObject {
 
+    /// Cached selectors, populated once from ensureInitLocked().
+    private static final class Sels {
+        static MemorySegment length;
+        static MemorySegment isEqualToString;
+        static MemorySegment isEqual;
+        static MemorySegment substringWithRange;
+        static MemorySegment rangeOfString;
+        static MemorySegment stringWithString;
+        static MemorySegment stringWithUTF8String;
+        static MemorySegment characterAtIndex;
+        static MemorySegment substringFromIndex;
+        static MemorySegment substringToIndex;
+        static MemorySegment compare;
+        static MemorySegment caseInsensitiveCompare;
+        static MemorySegment localizedCompare;
+        static MemorySegment localizedCaseInsensitiveCompare;
+        static MemorySegment localizedStandardCompare;
+        static MemorySegment hasPrefix;
+        static MemorySegment hasSuffix;
+        static MemorySegment containsString;
+        static MemorySegment localizedCaseInsensitiveContainsString;
+        static MemorySegment localizedStandardContainsString;
+        static MemorySegment localizedStandardRangeOfString;
+        static MemorySegment rangeOfString_options;
+        static MemorySegment rangeOfCharacterFromSet;
+        static MemorySegment rangeOfCharacterFromSet_options;
+        static MemorySegment rangeOfComposedCharacterSequencesForRange;
+        static MemorySegment lineRangeForRange;
+        static MemorySegment paragraphRangeForRange;
+        static MemorySegment stringByAppendingString;
+        static MemorySegment doubleValue;
+        static MemorySegment floatValue;
+        static MemorySegment intValue;
+        static MemorySegment integerValue;
+        static MemorySegment longLongValue;
+        static MemorySegment boolValue;
+        static MemorySegment uppercaseString;
+        static MemorySegment lowercaseString;
+        static MemorySegment capitalizedString;
+        static MemorySegment localizedUppercaseString;
+        static MemorySegment localizedLowercaseString;
+        static MemorySegment localizedCapitalizedString;
+        static MemorySegment uppercaseStringWithLocale;
+        static MemorySegment lowercaseStringWithLocale;
+        static MemorySegment capitalizedStringWithLocale;
+        static MemorySegment componentsSeparatedByString;
+        static MemorySegment componentsSeparatedByCharactersInSet;
+        static MemorySegment stringByTrimmingCharactersInSet;
+        static MemorySegment stringByFoldingWithOptions_locale;
+        static MemorySegment stringByReplacingOccurrencesOfString_withString;
+        static MemorySegment stringByReplacingCharactersInRange_withString;
+        static MemorySegment stringByApplyingTransform_reverse;
+        static MemorySegment decomposedStringWithCanonicalMapping;
+        static MemorySegment precomposedStringWithCanonicalMapping;
+        static MemorySegment decomposedStringWithCompatibilityMapping;
+        static MemorySegment precomposedStringWithCompatibilityMapping;
+        static MemorySegment dataUsingEncoding;
+        static MemorySegment dataUsingEncoding_allowLossyConversion;
+        static MemorySegment canBeConvertedToEncoding;
+        static MemorySegment lengthOfBytesUsingEncoding;
+        static MemorySegment maximumLengthOfBytesUsingEncoding;
+        static MemorySegment fastestEncoding;
+        static MemorySegment smallestEncoding;
+        static MemorySegment UTF8String;
+        static MemorySegment cStringUsingEncoding;
+        static MemorySegment localizedNameOfStringEncoding;
+        static MemorySegment defaultCStringEncoding;
+        static MemorySegment availableStringEncodings;
+        static void populate() {
+            length = ObjC.sel("length");
+            isEqualToString = ObjC.sel("isEqualToString:");
+            isEqual = ObjC.sel("isEqual:");
+            substringWithRange = ObjC.sel("substringWithRange:");
+            rangeOfString = ObjC.sel("rangeOfString:");
+            stringWithString = ObjC.sel("stringWithString:");
+            stringWithUTF8String = ObjC.sel("stringWithUTF8String:");
+            characterAtIndex = ObjC.sel("characterAtIndex:");
+            substringFromIndex = ObjC.sel("substringFromIndex:");
+            substringToIndex = ObjC.sel("substringToIndex:");
+            compare = ObjC.sel("compare:");
+            caseInsensitiveCompare = ObjC.sel("caseInsensitiveCompare:");
+            localizedCompare = ObjC.sel("localizedCompare:");
+            localizedCaseInsensitiveCompare = ObjC.sel("localizedCaseInsensitiveCompare:");
+            localizedStandardCompare = ObjC.sel("localizedStandardCompare:");
+            hasPrefix = ObjC.sel("hasPrefix:");
+            hasSuffix = ObjC.sel("hasSuffix:");
+            containsString = ObjC.sel("containsString:");
+            localizedCaseInsensitiveContainsString = ObjC.sel("localizedCaseInsensitiveContainsString:");
+            localizedStandardContainsString = ObjC.sel("localizedStandardContainsString:");
+            localizedStandardRangeOfString = ObjC.sel("localizedStandardRangeOfString:");
+            rangeOfString_options = ObjC.sel("rangeOfString:options:");
+            rangeOfCharacterFromSet = ObjC.sel("rangeOfCharacterFromSet:");
+            rangeOfCharacterFromSet_options = ObjC.sel("rangeOfCharacterFromSet:options:");
+            rangeOfComposedCharacterSequencesForRange = ObjC.sel("rangeOfComposedCharacterSequencesForRange:");
+            lineRangeForRange = ObjC.sel("lineRangeForRange:");
+            paragraphRangeForRange = ObjC.sel("paragraphRangeForRange:");
+            stringByAppendingString = ObjC.sel("stringByAppendingString:");
+            doubleValue = ObjC.sel("doubleValue");
+            floatValue = ObjC.sel("floatValue");
+            intValue = ObjC.sel("intValue");
+            integerValue = ObjC.sel("integerValue");
+            longLongValue = ObjC.sel("longLongValue");
+            boolValue = ObjC.sel("boolValue");
+            uppercaseString = ObjC.sel("uppercaseString");
+            lowercaseString = ObjC.sel("lowercaseString");
+            capitalizedString = ObjC.sel("capitalizedString");
+            localizedUppercaseString = ObjC.sel("localizedUppercaseString");
+            localizedLowercaseString = ObjC.sel("localizedLowercaseString");
+            localizedCapitalizedString = ObjC.sel("localizedCapitalizedString");
+            uppercaseStringWithLocale = ObjC.sel("uppercaseStringWithLocale:");
+            lowercaseStringWithLocale = ObjC.sel("lowercaseStringWithLocale:");
+            capitalizedStringWithLocale = ObjC.sel("capitalizedStringWithLocale:");
+            componentsSeparatedByString = ObjC.sel("componentsSeparatedByString:");
+            componentsSeparatedByCharactersInSet = ObjC.sel("componentsSeparatedByCharactersInSet:");
+            stringByTrimmingCharactersInSet = ObjC.sel("stringByTrimmingCharactersInSet:");
+            stringByFoldingWithOptions_locale = ObjC.sel("stringByFoldingWithOptions:locale:");
+            stringByReplacingOccurrencesOfString_withString = ObjC.sel("stringByReplacingOccurrencesOfString:withString:");
+            stringByReplacingCharactersInRange_withString = ObjC.sel("stringByReplacingCharactersInRange:withString:");
+            stringByApplyingTransform_reverse = ObjC.sel("stringByApplyingTransform:reverse:");
+            decomposedStringWithCanonicalMapping = ObjC.sel("decomposedStringWithCanonicalMapping");
+            precomposedStringWithCanonicalMapping = ObjC.sel("precomposedStringWithCanonicalMapping");
+            decomposedStringWithCompatibilityMapping = ObjC.sel("decomposedStringWithCompatibilityMapping");
+            precomposedStringWithCompatibilityMapping = ObjC.sel("precomposedStringWithCompatibilityMapping");
+            dataUsingEncoding = ObjC.sel("dataUsingEncoding:");
+            dataUsingEncoding_allowLossyConversion = ObjC.sel("dataUsingEncoding:allowLossyConversion:");
+            canBeConvertedToEncoding = ObjC.sel("canBeConvertedToEncoding:");
+            lengthOfBytesUsingEncoding = ObjC.sel("lengthOfBytesUsingEncoding:");
+            maximumLengthOfBytesUsingEncoding = ObjC.sel("maximumLengthOfBytesUsingEncoding:");
+            fastestEncoding = ObjC.sel("fastestEncoding");
+            smallestEncoding = ObjC.sel("smallestEncoding");
+            UTF8String = ObjC.sel("UTF8String");
+            cStringUsingEncoding = ObjC.sel("cStringUsingEncoding:");
+            localizedNameOfStringEncoding = ObjC.sel("localizedNameOfStringEncoding:");
+            defaultCStringEncoding = ObjC.sel("defaultCStringEncoding");
+            availableStringEncodings = ObjC.sel("availableStringEncodings");
+        }
+    }
+
     /// NSStringCompareOptions bit masks (combine with |).
     public static final long CASE_INSENSITIVE_SEARCH = 1;
     public static final long LITERAL_SEARCH = 2;
@@ -89,7 +227,8 @@ public final class NSString extends NSObject {
         // hash is INT return, no args
         // UTF8String is ID return? Actually returns const char* (PTR) but we don't use handle for it; ObjC.toString handles directly.
         handles = new Handles(ObjC.handle(Sig.of(Ret.INT)), ObjC.handle(Sig.of(Ret.BOOL, Arg.ID)), null);
-    }
+            Sels.populate();
+}
 
     /// Java String contents via `UTF8String` (uses ObjC.toString).
     public String string() {
@@ -100,7 +239,7 @@ public final class NSString extends NSObject {
     public long length() {
         ensureInit();
         try {
-            return (long) handles.hLength().invokeExact(peer, ObjC.sel("length"));
+            return (long) handles.hLength().invokeExact(peer, Sels.length);
         } catch (Throwable t) {
             throw new RuntimeException("NSString length failed", t);
         }
@@ -111,7 +250,7 @@ public final class NSString extends NSObject {
         ensureInit();
         if (other == null) return false;
         try {
-            return (boolean) handles.hIsEqual().invokeExact(peer, ObjC.sel("isEqualToString:"), other.peer());
+            return (boolean) handles.hIsEqual().invokeExact(peer, Sels.isEqualToString, other.peer());
         } catch (Throwable t) {
             throw new RuntimeException("isEqualToString: failed", t);
         }
@@ -130,7 +269,7 @@ public final class NSString extends NSObject {
         if (other == null) return false;
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.BOOL, Arg.ID));
-            return (boolean) h.invokeExact(peer, ObjC.sel("isEqual:"), other.peer());
+            return (boolean) h.invokeExact(peer, Sels.isEqual, other.peer());
         } catch (Throwable t) {
             throw new RuntimeException("isEqual: failed", t);
         }
@@ -141,7 +280,7 @@ public final class NSString extends NSObject {
         ensureInit();
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.RANGE));
-            MemorySegment r = (MemorySegment) h.invokeExact(peer, ObjC.sel("substringWithRange:"), range.toSegment());
+            MemorySegment r = (MemorySegment) h.invokeExact(peer, Sels.substringWithRange, range.toSegment());
             return wrap(r);
         } catch (Throwable t) {
             throw new RuntimeException("substringWithRange: failed", t);
@@ -156,7 +295,7 @@ public final class NSString extends NSObject {
             MethodHandle h = ObjC.handle(Sig.of(Ret.RANGE, Arg.ID));
             MemorySegment seg = (MemorySegment) h.invokeExact(
                     ObjC.structSlot(),
-                    peer, ObjC.sel("rangeOfString:"), ObjC.nsstring(substring));
+                    peer, Sels.rangeOfString, ObjC.nsstring(substring));
             return NSRange.fromSegment(seg);
         } catch (Throwable t) {
             throw new RuntimeException("rangeOfString: failed", t);
@@ -167,7 +306,7 @@ public final class NSString extends NSObject {
     public static NSString stringWithString(NSString other) {
         ensureInit();
         if (other == null) return null;
-        return wrap(ObjC.msgSendIdId(ObjC.cls("NSString"), ObjC.sel("stringWithString:"), other.peer()));
+        return wrap(ObjC.msgSendIdId(ObjC.cls("NSString"), Sels.stringWithString, other.peer()));
     }
 
     /// stringWithUTF8Bytes — decode bytes via +stringWithUTF8String: (nil for invalid UTF-8).
@@ -184,7 +323,7 @@ public final class NSString extends NSObject {
                 MemorySegment.copy(bytes, 0, buf, java.lang.foreign.ValueLayout.JAVA_BYTE, 0, bytes.length);
             }
             buf.set(java.lang.foreign.ValueLayout.JAVA_BYTE, bytes.length, (byte) 0);
-            return wrap(ObjC.msgSendIdId(ObjC.cls("NSString"), ObjC.sel("stringWithUTF8String:"), buf));
+            return wrap(ObjC.msgSendIdId(ObjC.cls("NSString"), Sels.stringWithUTF8String, buf));
         } catch (Throwable t) {
             throw new RuntimeException("stringWithUTF8String: failed", t);
         }
@@ -195,7 +334,7 @@ public final class NSString extends NSObject {
         ensureInit();
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.INT, Arg.INT));
-            return (long) h.invokeExact(peer, ObjC.sel("characterAtIndex:"), index);
+            return (long) h.invokeExact(peer, Sels.characterAtIndex, index);
         } catch (Throwable t) {
             throw new RuntimeException("characterAtIndex: failed", t);
         }
@@ -206,7 +345,7 @@ public final class NSString extends NSObject {
         ensureInit();
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.INT));
-            return wrap((MemorySegment) h.invokeExact(peer, ObjC.sel("substringFromIndex:"), index));
+            return wrap((MemorySegment) h.invokeExact(peer, Sels.substringFromIndex, index));
         } catch (Throwable t) {
             throw new RuntimeException("substringFromIndex: failed", t);
         }
@@ -217,7 +356,7 @@ public final class NSString extends NSObject {
         ensureInit();
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.INT));
-            return wrap((MemorySegment) h.invokeExact(peer, ObjC.sel("substringToIndex:"), index));
+            return wrap((MemorySegment) h.invokeExact(peer, Sels.substringToIndex, index));
         } catch (Throwable t) {
             throw new RuntimeException("substringToIndex: failed", t);
         }
@@ -229,7 +368,7 @@ public final class NSString extends NSObject {
         if (other == null) throw new IllegalArgumentException("compare: null");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.INT, Arg.ID));
-            return (long) h.invokeExact(peer, ObjC.sel("compare:"), other.peer());
+            return (long) h.invokeExact(peer, Sels.compare, other.peer());
         } catch (Throwable t) {
             throw new RuntimeException("compare: failed", t);
         }
@@ -247,7 +386,7 @@ public final class NSString extends NSObject {
         if (other == null) throw new IllegalArgumentException("caseInsensitiveCompare: null");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.INT, Arg.ID));
-            return (long) h.invokeExact(peer, ObjC.sel("caseInsensitiveCompare:"), other.peer());
+            return (long) h.invokeExact(peer, Sels.caseInsensitiveCompare, other.peer());
         } catch (Throwable t) {
             throw new RuntimeException("caseInsensitiveCompare: failed", t);
         }
@@ -265,7 +404,7 @@ public final class NSString extends NSObject {
         if (other == null) throw new IllegalArgumentException("localizedCompare: null");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.INT, Arg.ID));
-            return (long) h.invokeExact(peer, ObjC.sel("localizedCompare:"), other.peer());
+            return (long) h.invokeExact(peer, Sels.localizedCompare, other.peer());
         } catch (Throwable t) {
             throw new RuntimeException("localizedCompare: failed", t);
         }
@@ -277,7 +416,7 @@ public final class NSString extends NSObject {
         if (other == null) throw new IllegalArgumentException("localizedCaseInsensitiveCompare: null");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.INT, Arg.ID));
-            return (long) h.invokeExact(peer, ObjC.sel("localizedCaseInsensitiveCompare:"), other.peer());
+            return (long) h.invokeExact(peer, Sels.localizedCaseInsensitiveCompare, other.peer());
         } catch (Throwable t) {
             throw new RuntimeException("localizedCaseInsensitiveCompare: failed", t);
         }
@@ -289,7 +428,7 @@ public final class NSString extends NSObject {
         if (other == null) throw new IllegalArgumentException("localizedStandardCompare: null");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.INT, Arg.ID));
-            return (long) h.invokeExact(peer, ObjC.sel("localizedStandardCompare:"), other.peer());
+            return (long) h.invokeExact(peer, Sels.localizedStandardCompare, other.peer());
         } catch (Throwable t) {
             throw new RuntimeException("localizedStandardCompare: failed", t);
         }
@@ -301,7 +440,7 @@ public final class NSString extends NSObject {
         if (prefix == null) return false;
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.BOOL, Arg.ID));
-            return (boolean) h.invokeExact(peer, ObjC.sel("hasPrefix:"), prefix.peer());
+            return (boolean) h.invokeExact(peer, Sels.hasPrefix, prefix.peer());
         } catch (Throwable t) {
             throw new RuntimeException("hasPrefix: failed", t);
         }
@@ -319,7 +458,7 @@ public final class NSString extends NSObject {
         if (suffix == null) return false;
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.BOOL, Arg.ID));
-            return (boolean) h.invokeExact(peer, ObjC.sel("hasSuffix:"), suffix.peer());
+            return (boolean) h.invokeExact(peer, Sels.hasSuffix, suffix.peer());
         } catch (Throwable t) {
             throw new RuntimeException("hasSuffix: failed", t);
         }
@@ -337,7 +476,7 @@ public final class NSString extends NSObject {
         if (str == null) return false;
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.BOOL, Arg.ID));
-            return (boolean) h.invokeExact(peer, ObjC.sel("containsString:"), str.peer());
+            return (boolean) h.invokeExact(peer, Sels.containsString, str.peer());
         } catch (Throwable t) {
             throw new RuntimeException("containsString: failed", t);
         }
@@ -355,7 +494,7 @@ public final class NSString extends NSObject {
         if (str == null) return false;
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.BOOL, Arg.ID));
-            return (boolean) h.invokeExact(peer, ObjC.sel("localizedCaseInsensitiveContainsString:"), str.peer());
+            return (boolean) h.invokeExact(peer, Sels.localizedCaseInsensitiveContainsString, str.peer());
         } catch (Throwable t) {
             throw new RuntimeException("localizedCaseInsensitiveContainsString: failed", t);
         }
@@ -367,7 +506,7 @@ public final class NSString extends NSObject {
         if (str == null) return false;
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.BOOL, Arg.ID));
-            return (boolean) h.invokeExact(peer, ObjC.sel("localizedStandardContainsString:"), ObjC.nsstring(str));
+            return (boolean) h.invokeExact(peer, Sels.localizedStandardContainsString, ObjC.nsstring(str));
         } catch (Throwable t) {
             throw new RuntimeException("localizedStandardContainsString: failed", t);
         }
@@ -380,7 +519,7 @@ public final class NSString extends NSObject {
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.RANGE, Arg.ID));
             MemorySegment seg = (MemorySegment) h.invokeExact(
-                    ObjC.structSlot(), peer, ObjC.sel("localizedStandardRangeOfString:"), ObjC.nsstring(str));
+                    ObjC.structSlot(), peer, Sels.localizedStandardRangeOfString, ObjC.nsstring(str));
             return NSRange.fromSegment(seg);
         } catch (Throwable t) {
             throw new RuntimeException("localizedStandardRangeOfString: failed", t);
@@ -394,7 +533,7 @@ public final class NSString extends NSObject {
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.RANGE, Arg.ID, Arg.INT));
             MemorySegment seg = (MemorySegment) h.invokeExact(
-                    ObjC.structSlot(), peer, ObjC.sel("rangeOfString:options:"), searchString.peer(), options);
+                    ObjC.structSlot(), peer, Sels.rangeOfString_options, searchString.peer(), options);
             return NSRange.fromSegment(seg);
         } catch (Throwable t) {
             throw new RuntimeException("rangeOfString:options: failed", t);
@@ -416,7 +555,7 @@ public final class NSString extends NSObject {
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.RANGE, Arg.ID));
             MemorySegment seg = (MemorySegment) h.invokeExact(
-                    ObjC.structSlot(), peer, ObjC.sel("rangeOfCharacterFromSet:"), searchSet);
+                    ObjC.structSlot(), peer, Sels.rangeOfCharacterFromSet, searchSet);
             return NSRange.fromSegment(seg);
         } catch (Throwable t) {
             throw new RuntimeException("rangeOfCharacterFromSet: failed", t);
@@ -430,7 +569,7 @@ public final class NSString extends NSObject {
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.RANGE, Arg.ID, Arg.INT));
             MemorySegment seg = (MemorySegment) h.invokeExact(
-                    ObjC.structSlot(), peer, ObjC.sel("rangeOfCharacterFromSet:options:"), searchSet, options);
+                    ObjC.structSlot(), peer, Sels.rangeOfCharacterFromSet_options, searchSet, options);
             return NSRange.fromSegment(seg);
         } catch (Throwable t) {
             throw new RuntimeException("rangeOfCharacterFromSet:options: failed", t);
@@ -443,7 +582,7 @@ public final class NSString extends NSObject {
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.RANGE, Arg.RANGE));
             MemorySegment seg = (MemorySegment) h.invokeExact(
-                    ObjC.structSlot(), peer, ObjC.sel("rangeOfComposedCharacterSequencesForRange:"), range.toSegment());
+                    ObjC.structSlot(), peer, Sels.rangeOfComposedCharacterSequencesForRange, range.toSegment());
             return NSRange.fromSegment(seg);
         } catch (Throwable t) {
             throw new RuntimeException("rangeOfComposedCharacterSequencesForRange: failed", t);
@@ -456,7 +595,7 @@ public final class NSString extends NSObject {
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.RANGE, Arg.RANGE));
             MemorySegment seg = (MemorySegment) h.invokeExact(
-                    ObjC.structSlot(), peer, ObjC.sel("lineRangeForRange:"), range.toSegment());
+                    ObjC.structSlot(), peer, Sels.lineRangeForRange, range.toSegment());
             return NSRange.fromSegment(seg);
         } catch (Throwable t) {
             throw new RuntimeException("lineRangeForRange: failed", t);
@@ -469,7 +608,7 @@ public final class NSString extends NSObject {
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.RANGE, Arg.RANGE));
             MemorySegment seg = (MemorySegment) h.invokeExact(
-                    ObjC.structSlot(), peer, ObjC.sel("paragraphRangeForRange:"), range.toSegment());
+                    ObjC.structSlot(), peer, Sels.paragraphRangeForRange, range.toSegment());
             return NSRange.fromSegment(seg);
         } catch (Throwable t) {
             throw new RuntimeException("paragraphRangeForRange: failed", t);
@@ -480,7 +619,7 @@ public final class NSString extends NSObject {
     public NSString stringByAppendingString(NSString other) {
         ensureInit();
         if (other == null) return wrap(peer);
-        return wrap(ObjC.msgSendIdId(peer, ObjC.sel("stringByAppendingString:"), other.peer()));
+        return wrap(ObjC.msgSendIdId(peer, Sels.stringByAppendingString, other.peer()));
     }
 
     /// stringByAppendingString: with a Java string.
@@ -494,7 +633,7 @@ public final class NSString extends NSObject {
         ensureInit();
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.DOUBLE));
-            return (double) h.invokeExact(peer, ObjC.sel("doubleValue"));
+            return (double) h.invokeExact(peer, Sels.doubleValue);
         } catch (Throwable t) {
             throw new RuntimeException("doubleValue failed", t);
         }
@@ -505,7 +644,7 @@ public final class NSString extends NSObject {
         ensureInit();
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.FLOAT));
-            return (float) h.invokeExact(peer, ObjC.sel("floatValue"));
+            return (float) h.invokeExact(peer, Sels.floatValue);
         } catch (Throwable t) {
             throw new RuntimeException("floatValue failed", t);
         }
@@ -516,7 +655,7 @@ public final class NSString extends NSObject {
         ensureInit();
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.INT));
-            return (long) h.invokeExact(peer, ObjC.sel("intValue"));
+            return (long) h.invokeExact(peer, Sels.intValue);
         } catch (Throwable t) {
             throw new RuntimeException("intValue failed", t);
         }
@@ -527,7 +666,7 @@ public final class NSString extends NSObject {
         ensureInit();
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.INT));
-            return (long) h.invokeExact(peer, ObjC.sel("integerValue"));
+            return (long) h.invokeExact(peer, Sels.integerValue);
         } catch (Throwable t) {
             throw new RuntimeException("integerValue failed", t);
         }
@@ -538,7 +677,7 @@ public final class NSString extends NSObject {
         ensureInit();
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.INT));
-            return (long) h.invokeExact(peer, ObjC.sel("longLongValue"));
+            return (long) h.invokeExact(peer, Sels.longLongValue);
         } catch (Throwable t) {
             throw new RuntimeException("longLongValue failed", t);
         }
@@ -549,7 +688,7 @@ public final class NSString extends NSObject {
         ensureInit();
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.BOOL));
-            return (boolean) h.invokeExact(peer, ObjC.sel("boolValue"));
+            return (boolean) h.invokeExact(peer, Sels.boolValue);
         } catch (Throwable t) {
             throw new RuntimeException("boolValue failed", t);
         }
@@ -558,57 +697,57 @@ public final class NSString extends NSObject {
     /// uppercaseString — canonical (non-localized) mapping.
     public NSString uppercaseString() {
         ensureInit();
-        return wrap(ObjC.msgSendId(peer, ObjC.sel("uppercaseString")));
+        return wrap(ObjC.msgSendId(peer, Sels.uppercaseString));
     }
 
     /// lowercaseString — canonical (non-localized) mapping.
     public NSString lowercaseString() {
         ensureInit();
-        return wrap(ObjC.msgSendId(peer, ObjC.sel("lowercaseString")));
+        return wrap(ObjC.msgSendId(peer, Sels.lowercaseString));
     }
 
     /// capitalizedString — canonical (non-localized) mapping.
     public NSString capitalizedString() {
         ensureInit();
-        return wrap(ObjC.msgSendId(peer, ObjC.sel("capitalizedString")));
+        return wrap(ObjC.msgSendId(peer, Sels.capitalizedString));
     }
 
     /// localizedUppercaseString.
     public NSString localizedUppercaseString() {
         ensureInit();
-        return wrap(ObjC.msgSendId(peer, ObjC.sel("localizedUppercaseString")));
+        return wrap(ObjC.msgSendId(peer, Sels.localizedUppercaseString));
     }
 
     /// localizedLowercaseString.
     public NSString localizedLowercaseString() {
         ensureInit();
-        return wrap(ObjC.msgSendId(peer, ObjC.sel("localizedLowercaseString")));
+        return wrap(ObjC.msgSendId(peer, Sels.localizedLowercaseString));
     }
 
     /// localizedCapitalizedString.
     public NSString localizedCapitalizedString() {
         ensureInit();
-        return wrap(ObjC.msgSendId(peer, ObjC.sel("localizedCapitalizedString")));
+        return wrap(ObjC.msgSendId(peer, Sels.localizedCapitalizedString));
     }
 
     /// uppercaseStringWithLocale: — NSLocale peer, or NULL for the canonical mapping.
     public NSString uppercaseStringWithLocale(MemorySegment locale) {
         ensureInit();
-        return wrap(ObjC.msgSendIdId(peer, ObjC.sel("uppercaseStringWithLocale:"),
+        return wrap(ObjC.msgSendIdId(peer, Sels.uppercaseStringWithLocale,
                 (locale == null ? MemorySegment.NULL : locale)));
     }
 
     /// lowercaseStringWithLocale: — NSLocale peer, or NULL for the canonical mapping.
     public NSString lowercaseStringWithLocale(MemorySegment locale) {
         ensureInit();
-        return wrap(ObjC.msgSendIdId(peer, ObjC.sel("lowercaseStringWithLocale:"),
+        return wrap(ObjC.msgSendIdId(peer, Sels.lowercaseStringWithLocale,
                 (locale == null ? MemorySegment.NULL : locale)));
     }
 
     /// capitalizedStringWithLocale: — NSLocale peer, or NULL for the canonical mapping.
     public NSString capitalizedStringWithLocale(MemorySegment locale) {
         ensureInit();
-        return wrap(ObjC.msgSendIdId(peer, ObjC.sel("capitalizedStringWithLocale:"),
+        return wrap(ObjC.msgSendIdId(peer, Sels.capitalizedStringWithLocale,
                 (locale == null ? MemorySegment.NULL : locale)));
     }
 
@@ -616,7 +755,7 @@ public final class NSString extends NSObject {
     public NSArray componentsSeparatedByString(NSString separator) {
         ensureInit();
         if (separator == null) throw new IllegalArgumentException("componentsSeparatedByString: null");
-        return NSArray.wrap(ObjC.msgSendIdId(peer, ObjC.sel("componentsSeparatedByString:"), separator.peer()));
+        return NSArray.wrap(ObjC.msgSendIdId(peer, Sels.componentsSeparatedByString, separator.peer()));
     }
 
     /// componentsSeparatedByString: with a Java separator.
@@ -630,14 +769,14 @@ public final class NSString extends NSObject {
         ensureInit();
         if (separatorSet == null || separatorSet.address() == 0)
             throw new IllegalArgumentException("componentsSeparatedByCharactersInSet: null");
-        return NSArray.wrap(ObjC.msgSendIdId(peer, ObjC.sel("componentsSeparatedByCharactersInSet:"), separatorSet));
+        return NSArray.wrap(ObjC.msgSendIdId(peer, Sels.componentsSeparatedByCharactersInSet, separatorSet));
     }
 
     /// stringByTrimmingCharactersInSet: — NSCharacterSet peer (see rangeOfCharacterFromSet:).
     public NSString stringByTrimmingCharactersInSet(MemorySegment set) {
         ensureInit();
         if (set == null || set.address() == 0) return wrap(peer);
-        return wrap(ObjC.msgSendIdId(peer, ObjC.sel("stringByTrimmingCharactersInSet:"), set));
+        return wrap(ObjC.msgSendIdId(peer, Sels.stringByTrimmingCharactersInSet, set));
     }
 
     /// stringByFoldingWithOptions:locale: — character folding (pass CASE_/DIACRITIC_* flags).
@@ -646,7 +785,7 @@ public final class NSString extends NSObject {
         ensureInit();
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.INT, Arg.ID));
-            MemorySegment r = (MemorySegment) h.invokeExact(peer, ObjC.sel("stringByFoldingWithOptions:locale:"),
+            MemorySegment r = (MemorySegment) h.invokeExact(peer, Sels.stringByFoldingWithOptions_locale,
                     options, (MemorySegment) (locale == null ? MemorySegment.NULL : locale));
             return wrap(r);
         } catch (Throwable t) {
@@ -661,7 +800,7 @@ public final class NSString extends NSObject {
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.ID, Arg.ID));
             MemorySegment r = (MemorySegment) h.invokeExact(
-                    peer, ObjC.sel("stringByReplacingOccurrencesOfString:withString:"), target.peer(), replacement.peer());
+                    peer, Sels.stringByReplacingOccurrencesOfString_withString, target.peer(), replacement.peer());
             return wrap(r);
         } catch (Throwable t) {
             throw new RuntimeException("stringByReplacingOccurrencesOfString:withString: failed", t);
@@ -681,7 +820,7 @@ public final class NSString extends NSObject {
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.RANGE, Arg.ID));
             MemorySegment r = (MemorySegment) h.invokeExact(
-                    peer, ObjC.sel("stringByReplacingCharactersInRange:withString:"), range.toSegment(), replacement.peer());
+                    peer, Sels.stringByReplacingCharactersInRange_withString, range.toSegment(), replacement.peer());
             return wrap(r);
         } catch (Throwable t) {
             throw new RuntimeException("stringByReplacingCharactersInRange:withString: failed", t);
@@ -709,7 +848,7 @@ public final class NSString extends NSObject {
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.ID, Arg.BOOL));
             MemorySegment r = (MemorySegment) h.invokeExact(
-                    peer, ObjC.sel("stringByApplyingTransform:reverse:"), transform.peer(), reverse);
+                    peer, Sels.stringByApplyingTransform_reverse, transform.peer(), reverse);
             return wrap(r);
         } catch (Throwable t) {
             throw new RuntimeException("stringByApplyingTransform:reverse: failed", t);
@@ -719,25 +858,25 @@ public final class NSString extends NSObject {
     /// decomposedStringWithCanonicalMapping.
     public NSString decomposedStringWithCanonicalMapping() {
         ensureInit();
-        return wrap(ObjC.msgSendId(peer, ObjC.sel("decomposedStringWithCanonicalMapping")));
+        return wrap(ObjC.msgSendId(peer, Sels.decomposedStringWithCanonicalMapping));
     }
 
     /// precomposedStringWithCanonicalMapping.
     public NSString precomposedStringWithCanonicalMapping() {
         ensureInit();
-        return wrap(ObjC.msgSendId(peer, ObjC.sel("precomposedStringWithCanonicalMapping")));
+        return wrap(ObjC.msgSendId(peer, Sels.precomposedStringWithCanonicalMapping));
     }
 
     /// decomposedStringWithCompatibilityMapping.
     public NSString decomposedStringWithCompatibilityMapping() {
         ensureInit();
-        return wrap(ObjC.msgSendId(peer, ObjC.sel("decomposedStringWithCompatibilityMapping")));
+        return wrap(ObjC.msgSendId(peer, Sels.decomposedStringWithCompatibilityMapping));
     }
 
     /// precomposedStringWithCompatibilityMapping.
     public NSString precomposedStringWithCompatibilityMapping() {
         ensureInit();
-        return wrap(ObjC.msgSendId(peer, ObjC.sel("precomposedStringWithCompatibilityMapping")));
+        return wrap(ObjC.msgSendId(peer, Sels.precomposedStringWithCompatibilityMapping));
     }
 
     /// dataUsingEncoding: — external representation as NSData.
@@ -745,7 +884,7 @@ public final class NSString extends NSObject {
         ensureInit();
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.INT));
-            MemorySegment r = (MemorySegment) h.invokeExact(peer, ObjC.sel("dataUsingEncoding:"), encoding);
+            MemorySegment r = (MemorySegment) h.invokeExact(peer, Sels.dataUsingEncoding, encoding);
             return NSData.wrap(r);
         } catch (Throwable t) {
             throw new RuntimeException("dataUsingEncoding: failed", t);
@@ -758,7 +897,7 @@ public final class NSString extends NSObject {
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.INT, Arg.BOOL));
             MemorySegment r = (MemorySegment) h.invokeExact(
-                    peer, ObjC.sel("dataUsingEncoding:allowLossyConversion:"), encoding, lossy);
+                    peer, Sels.dataUsingEncoding_allowLossyConversion, encoding, lossy);
             return NSData.wrap(r);
         } catch (Throwable t) {
             throw new RuntimeException("dataUsingEncoding:allowLossyConversion: failed", t);
@@ -770,7 +909,7 @@ public final class NSString extends NSObject {
         ensureInit();
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.BOOL, Arg.INT));
-            return (boolean) h.invokeExact(peer, ObjC.sel("canBeConvertedToEncoding:"), encoding);
+            return (boolean) h.invokeExact(peer, Sels.canBeConvertedToEncoding, encoding);
         } catch (Throwable t) {
             throw new RuntimeException("canBeConvertedToEncoding: failed", t);
         }
@@ -781,7 +920,7 @@ public final class NSString extends NSObject {
         ensureInit();
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.INT, Arg.INT));
-            return (long) h.invokeExact(peer, ObjC.sel("lengthOfBytesUsingEncoding:"), encoding);
+            return (long) h.invokeExact(peer, Sels.lengthOfBytesUsingEncoding, encoding);
         } catch (Throwable t) {
             throw new RuntimeException("lengthOfBytesUsingEncoding: failed", t);
         }
@@ -792,7 +931,7 @@ public final class NSString extends NSObject {
         ensureInit();
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.INT, Arg.INT));
-            return (long) h.invokeExact(peer, ObjC.sel("maximumLengthOfBytesUsingEncoding:"), encoding);
+            return (long) h.invokeExact(peer, Sels.maximumLengthOfBytesUsingEncoding, encoding);
         } catch (Throwable t) {
             throw new RuntimeException("maximumLengthOfBytesUsingEncoding: failed", t);
         }
@@ -803,7 +942,7 @@ public final class NSString extends NSObject {
         ensureInit();
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.INT));
-            return (long) h.invokeExact(peer, ObjC.sel("fastestEncoding"));
+            return (long) h.invokeExact(peer, Sels.fastestEncoding);
         } catch (Throwable t) {
             throw new RuntimeException("fastestEncoding failed", t);
         }
@@ -814,7 +953,7 @@ public final class NSString extends NSObject {
         ensureInit();
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.INT));
-            return (long) h.invokeExact(peer, ObjC.sel("smallestEncoding"));
+            return (long) h.invokeExact(peer, Sels.smallestEncoding);
         } catch (Throwable t) {
             throw new RuntimeException("smallestEncoding failed", t);
         }
@@ -826,7 +965,7 @@ public final class NSString extends NSObject {
         ensureInit();
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.ID));
-            MemorySegment r = (MemorySegment) h.invokeExact(peer, ObjC.sel("UTF8String"));
+            MemorySegment r = (MemorySegment) h.invokeExact(peer, Sels.UTF8String);
             return (r == null || r.address() == 0) ? null : r;
         } catch (Throwable t) {
             throw new RuntimeException("UTF8String failed", t);
@@ -839,7 +978,7 @@ public final class NSString extends NSObject {
         ensureInit();
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.INT));
-            MemorySegment r = (MemorySegment) h.invokeExact(peer, ObjC.sel("cStringUsingEncoding:"), encoding);
+            MemorySegment r = (MemorySegment) h.invokeExact(peer, Sels.cStringUsingEncoding, encoding);
             return (r == null || r.address() == 0) ? null : r;
         } catch (Throwable t) {
             throw new RuntimeException("cStringUsingEncoding: failed", t);
@@ -852,7 +991,7 @@ public final class NSString extends NSObject {
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.INT));
             MemorySegment r = (MemorySegment) h.invokeExact(
-                    ObjC.cls("NSString"), ObjC.sel("localizedNameOfStringEncoding:"), encoding);
+                    ObjC.cls("NSString"), Sels.localizedNameOfStringEncoding, encoding);
             return wrap(r);
         } catch (Throwable t) {
             throw new RuntimeException("localizedNameOfStringEncoding: failed", t);
@@ -864,7 +1003,7 @@ public final class NSString extends NSObject {
         ensureInit();
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.INT));
-            return (long) h.invokeExact(ObjC.cls("NSString"), ObjC.sel("defaultCStringEncoding"));
+            return (long) h.invokeExact(ObjC.cls("NSString"), Sels.defaultCStringEncoding);
         } catch (Throwable t) {
             throw new RuntimeException("defaultCStringEncoding failed", t);
         }
@@ -876,7 +1015,7 @@ public final class NSString extends NSObject {
         ensureInit();
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.ID));
-            MemorySegment r = (MemorySegment) h.invokeExact(ObjC.cls("NSString"), ObjC.sel("availableStringEncodings"));
+            MemorySegment r = (MemorySegment) h.invokeExact(ObjC.cls("NSString"), Sels.availableStringEncodings);
             return (r == null || r.address() == 0) ? null : r;
         } catch (Throwable t) {
             throw new RuntimeException("availableStringEncodings failed", t);

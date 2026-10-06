@@ -165,6 +165,9 @@ public final class ObjC {
         hRect = handle(Sig.of(Ret.RECT));
         hEscapeId = handle(Sig.of(Ret.ID, Arg.ID, Arg.ID, Arg.ID, Arg.ID, Arg.ID, Arg.ID));
         hEscapeVoid = handle(Sig.of(Ret.VOID, Arg.ID, Arg.ID, Arg.ID, Arg.ID, Arg.ID, Arg.ID));
+        STRING_CLS = cls("NSString");
+        STRING_WITH_UTF8_SEL = sel("stringWithUTF8String:");
+        UTF8STRING_SEL = sel("UTF8String");
         INIT = true;
     }
 
@@ -191,13 +194,8 @@ public final class ObjC {
         }
     }
 
-    /// ONE global-arena cstring per distinct selector / class name, forever. Strings are
-    /// cached in the IMMORTAL arena (never scratch) because a cached pointer must stay
-    /// valid across turns; the per-call cost collapses to a `ConcurrentHashMap`
-    /// lookup — no scratch, no churn. Bounded by the number of distinct selector/class
-    /// names the program touches.
-    private static final ConcurrentHashMap<String, MemorySegment> SEL_CACHE = new ConcurrentHashMap<>();
-    private static final ConcurrentHashMap<String, MemorySegment> CLASS_CACHE = new ConcurrentHashMap<>();
+    /// Selector/class name pointers are cached in the IMMORTAL arena (never scratch)
+    /// because a cached pointer must stay valid across turns.
 
     /// NUL-terminated C string for call-scoped use. The bytes live in the
     /// thread-local bump buffer (`Scratch.allocInput`) — valid only until the
@@ -228,23 +226,35 @@ public final class ObjC {
     private static final ConcurrentHashMap<String, MemorySegment> SEL_RESULT = new ConcurrentHashMap<>();
     private static final ConcurrentHashMap<String, MemorySegment> CLASS_RESULT = new ConcurrentHashMap<>();
 
-    /// objc_getClass(name) — result cached per distinct name.
+    /// Fixed lookups ObjC's own hot paths make (nsstring/toString), resolved once in
+    /// init() so they too skip the per-call map hit.
+    private static MemorySegment STRING_CLS;
+    private static MemorySegment STRING_WITH_UTF8_SEL;
+    private static MemorySegment UTF8STRING_SEL;
+
+    /// objc_getClass(name) — cached per distinct name. Steady state is a plain map
+    /// get (a name repeats forever once seen); only a miss takes the atomic path and
+    /// allocates the immortal cstring.
     public static MemorySegment cls(String name) {
+        MemorySegment c = CLASS_RESULT.get(name);
+        if (c != null) return c;
         return CLASS_RESULT.computeIfAbsent(name,
-                n -> (MemorySegment) invokeX(hGetClass, CLASS_CACHE.computeIfAbsent(n, ObjC::globalCstring)));
+                n -> (MemorySegment) invokeX(hGetClass, globalCstring(n)));
     }
 
-    /// sel_registerName(name) — result cached per distinct name.
+    /// sel_registerName(name) — cached per distinct name. See cls() for the fast path.
     public static MemorySegment sel(String name) {
+        MemorySegment s = SEL_RESULT.get(name);
+        if (s != null) return s;
         return SEL_RESULT.computeIfAbsent(name,
-                n -> (MemorySegment) invokeX(hSelRegister, SEL_CACHE.computeIfAbsent(n, ObjC::globalCstring)));
+                n -> (MemorySegment) invokeX(hSelRegister, globalCstring(n)));
     }
 
     /// NSString from a Java string ([NSString stringWithUTF8String:]). Typed
     /// invokeExact (not boxed invokeX): this sits on every setter hot path.
     public static MemorySegment nsstring(String s) {
         try {
-            return (MemorySegment) hIdId.invokeExact(cls("NSString"), sel("stringWithUTF8String:"), cstring(s));
+            return (MemorySegment) hIdId.invokeExact(STRING_CLS, STRING_WITH_UTF8_SEL, cstring(s));
         } catch (Throwable t) {
             throw fail(t);
         }
@@ -258,7 +268,7 @@ public final class ObjC {
     /// looping forever or throwing: getString would scan past the region.
     public static String toString(MemorySegment nsString) {
         if (nsString == null || nsString.address() == 0) return null;
-        MemorySegment c = msgSendId(nsString, sel("UTF8String"));
+        MemorySegment c = msgSendId(nsString, UTF8STRING_SEL);
         if (c.address() == 0) return null;
         long len = -1;
         long base = 0;

@@ -25,6 +25,158 @@ import static nsui.objc.Sig.Ret;
 /// via `setView` with `insertGallerySearchFieldItem`.
 public final class NSMenu extends NSObject {
 
+    /// Cached selectors, populated once from ensureInitLocked().
+    private static final class Sels {
+        static MemorySegment alloc;
+        static MemorySegment init;
+        static MemorySegment initWithTitle;
+        static MemorySegment title;
+        static MemorySegment setTitle;
+        static MemorySegment supermenu;
+        static MemorySegment setSupermenu;
+        static MemorySegment array;
+        static MemorySegment addObject;
+        static MemorySegment setItemArray;
+        static MemorySegment addItem;
+        static MemorySegment insertItem_atIndex;
+        static MemorySegment insertItemWithTitle_action_keyEquivalent_atIndex;
+        static MemorySegment addItemWithTitle_action_keyEquivalent;
+        static MemorySegment removeItemAtIndex;
+        static MemorySegment removeItem;
+        static MemorySegment removeAllItems;
+        static MemorySegment setSubmenu;
+        static MemorySegment setSubmenu_forItem;
+        static MemorySegment itemArray;
+        static MemorySegment count;
+        static MemorySegment objectAtIndex;
+        static MemorySegment numberOfItems;
+        static MemorySegment itemAtIndex;
+        static MemorySegment indexOfItem;
+        static MemorySegment indexOfItemWithTitle;
+        static MemorySegment indexOfItemWithTag;
+        static MemorySegment itemWithTitle;
+        static MemorySegment itemWithTag;
+        static MemorySegment autoenablesItems;
+        static MemorySegment setAutoenablesItems;
+        static MemorySegment update;
+        static MemorySegment performActionForItemAtIndex;
+        static MemorySegment itemChanged;
+        static MemorySegment delegate;
+        static MemorySegment setDelegate;
+        static MemorySegment highlightedItem;
+        static MemorySegment minimumWidth;
+        static MemorySegment setMinimumWidth;
+        static MemorySegment size;
+        static MemorySegment font;
+        static MemorySegment setFont;
+        static MemorySegment showsStateColumn;
+        static MemorySegment setShowsStateColumn;
+        static MemorySegment allowsContextMenuPlugIns;
+        static MemorySegment setAllowsContextMenuPlugIns;
+        static MemorySegment respondsToSelector;
+        static MemorySegment showsSearchField;
+        static MemorySegment setShowsSearchField;
+        static MemorySegment popUpMenuPositioningItem_atLocation_inView;
+        static MemorySegment popUpContextMenu_withEvent_forView;
+        static MemorySegment popUpContextMenu_withEvent_forView_withFont;
+        static MemorySegment setMenuBarVisible;
+        static MemorySegment menuBarVisible;
+        static MemorySegment indexOfItemWithRepresentedObject;
+        static MemorySegment indexOfItemWithSubmenu;
+        static MemorySegment indexOfItemWithTarget_andAction;
+        static MemorySegment performKeyEquivalent;
+        static MemorySegment cancelTracking;
+        static MemorySegment cancelTrackingWithoutAnimation;
+        static MemorySegment menuBarHeight;
+        static MemorySegment propertiesToUpdate;
+        static MemorySegment userInterfaceLayoutDirection;
+        static MemorySegment setUserInterfaceLayoutDirection;
+        static MemorySegment automaticallyInsertsWritingToolsItems;
+        static MemorySegment setAutomaticallyInsertsWritingToolsItems;
+        static MemorySegment presentationStyle;
+        static MemorySegment setPresentationStyle;
+        static MemorySegment selectionMode;
+        static MemorySegment setSelectionMode;
+        static MemorySegment selectedItems;
+        static MemorySegment setSelectedItems;
+        static MemorySegment submenuAction;
+        static void populate() {
+            alloc = ObjC.sel("alloc");
+            init = ObjC.sel("init");
+            initWithTitle = ObjC.sel("initWithTitle:");
+            title = ObjC.sel("title");
+            setTitle = ObjC.sel("setTitle:");
+            supermenu = ObjC.sel("supermenu");
+            setSupermenu = ObjC.sel("setSupermenu:");
+            array = ObjC.sel("array");
+            addObject = ObjC.sel("addObject:");
+            setItemArray = ObjC.sel("setItemArray:");
+            addItem = ObjC.sel("addItem:");
+            insertItem_atIndex = ObjC.sel("insertItem:atIndex:");
+            insertItemWithTitle_action_keyEquivalent_atIndex = ObjC.sel("insertItemWithTitle:action:keyEquivalent:atIndex:");
+            addItemWithTitle_action_keyEquivalent = ObjC.sel("addItemWithTitle:action:keyEquivalent:");
+            removeItemAtIndex = ObjC.sel("removeItemAtIndex:");
+            removeItem = ObjC.sel("removeItem:");
+            removeAllItems = ObjC.sel("removeAllItems");
+            setSubmenu = ObjC.sel("setSubmenu:");
+            setSubmenu_forItem = ObjC.sel("setSubmenu:forItem:");
+            itemArray = ObjC.sel("itemArray");
+            count = ObjC.sel("count");
+            objectAtIndex = ObjC.sel("objectAtIndex:");
+            numberOfItems = ObjC.sel("numberOfItems");
+            itemAtIndex = ObjC.sel("itemAtIndex:");
+            indexOfItem = ObjC.sel("indexOfItem:");
+            indexOfItemWithTitle = ObjC.sel("indexOfItemWithTitle:");
+            indexOfItemWithTag = ObjC.sel("indexOfItemWithTag:");
+            itemWithTitle = ObjC.sel("itemWithTitle:");
+            itemWithTag = ObjC.sel("itemWithTag:");
+            autoenablesItems = ObjC.sel("autoenablesItems");
+            setAutoenablesItems = ObjC.sel("setAutoenablesItems:");
+            update = ObjC.sel("update");
+            performActionForItemAtIndex = ObjC.sel("performActionForItemAtIndex:");
+            itemChanged = ObjC.sel("itemChanged:");
+            delegate = ObjC.sel("delegate");
+            setDelegate = ObjC.sel("setDelegate:");
+            highlightedItem = ObjC.sel("highlightedItem");
+            minimumWidth = ObjC.sel("minimumWidth");
+            setMinimumWidth = ObjC.sel("setMinimumWidth:");
+            size = ObjC.sel("size");
+            font = ObjC.sel("font");
+            setFont = ObjC.sel("setFont:");
+            showsStateColumn = ObjC.sel("showsStateColumn");
+            setShowsStateColumn = ObjC.sel("setShowsStateColumn:");
+            allowsContextMenuPlugIns = ObjC.sel("allowsContextMenuPlugIns");
+            setAllowsContextMenuPlugIns = ObjC.sel("setAllowsContextMenuPlugIns:");
+            respondsToSelector = ObjC.sel("respondsToSelector:");
+            showsSearchField = ObjC.sel("showsSearchField");
+            setShowsSearchField = ObjC.sel("setShowsSearchField:");
+            popUpMenuPositioningItem_atLocation_inView = ObjC.sel("popUpMenuPositioningItem:atLocation:inView:");
+            popUpContextMenu_withEvent_forView = ObjC.sel("popUpContextMenu:withEvent:forView:");
+            popUpContextMenu_withEvent_forView_withFont = ObjC.sel("popUpContextMenu:withEvent:forView:withFont:");
+            setMenuBarVisible = ObjC.sel("setMenuBarVisible:");
+            menuBarVisible = ObjC.sel("menuBarVisible");
+            indexOfItemWithRepresentedObject = ObjC.sel("indexOfItemWithRepresentedObject:");
+            indexOfItemWithSubmenu = ObjC.sel("indexOfItemWithSubmenu:");
+            indexOfItemWithTarget_andAction = ObjC.sel("indexOfItemWithTarget:andAction:");
+            performKeyEquivalent = ObjC.sel("performKeyEquivalent:");
+            cancelTracking = ObjC.sel("cancelTracking");
+            cancelTrackingWithoutAnimation = ObjC.sel("cancelTrackingWithoutAnimation");
+            menuBarHeight = ObjC.sel("menuBarHeight");
+            propertiesToUpdate = ObjC.sel("propertiesToUpdate");
+            userInterfaceLayoutDirection = ObjC.sel("userInterfaceLayoutDirection");
+            setUserInterfaceLayoutDirection = ObjC.sel("setUserInterfaceLayoutDirection:");
+            automaticallyInsertsWritingToolsItems = ObjC.sel("automaticallyInsertsWritingToolsItems");
+            setAutomaticallyInsertsWritingToolsItems = ObjC.sel("setAutomaticallyInsertsWritingToolsItems:");
+            presentationStyle = ObjC.sel("presentationStyle");
+            setPresentationStyle = ObjC.sel("setPresentationStyle:");
+            selectionMode = ObjC.sel("selectionMode");
+            setSelectionMode = ObjC.sel("setSelectionMode:");
+            selectedItems = ObjC.sel("selectedItems");
+            setSelectedItems = ObjC.sel("setSelectedItems:");
+            submenuAction = ObjC.sel("submenuAction:");
+        }
+    }
+
     private record Handles(MethodHandle hIdInt, MethodHandle hVoidIdInt, MethodHandle hIntId, MethodHandle hSize, MethodHandle hPopUp, MethodHandle hInsertTitleActionKEIndex, MethodHandle hSetSubmenuForItem) {}
     private static volatile Handles H;
 
@@ -48,7 +200,8 @@ public final class NSMenu extends NSObject {
                 ObjC.handle(Sig.of(Ret.BOOL, Arg.ID, Arg.POINT, Arg.ID)),
                 ObjC.handle(Sig.of(Ret.ID, Arg.ID, Arg.ID, Arg.ID, Arg.INT)),
                 ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.ID)));
-    }
+            Sels.populate();
+}
 
     public static NSMenu wrap(MemorySegment peer) {
         return (peer == null || peer.address() == 0) ? null : new NSMenu(peer);
@@ -56,55 +209,63 @@ public final class NSMenu extends NSObject {
 
     /// alloc + init.
     public static NSMenu create() {
-        MemorySegment m = ObjC.msgSendId(ObjC.cls("NSMenu"), ObjC.sel("alloc"));
-        return new NSMenu(ObjC.msgSendId(m, ObjC.sel("init")));
+        ensureInit();
+        MemorySegment m = ObjC.msgSendId(ObjC.cls("NSMenu"), Sels.alloc);
+        return new NSMenu(ObjC.msgSendId(m, Sels.init));
     }
 
     public static NSMenu createWithTitle(String title) {
-        MemorySegment m = ObjC.msgSendId(ObjC.cls("NSMenu"), ObjC.sel("alloc"));
-        MemorySegment n = ObjC.msgSendIdId(m, ObjC.sel("initWithTitle:"), ObjC.nsstring(title));
+        ensureInit();
+        MemorySegment m = ObjC.msgSendId(ObjC.cls("NSMenu"), Sels.alloc);
+        MemorySegment n = ObjC.msgSendIdId(m, Sels.initWithTitle, ObjC.nsstring(title));
         return new NSMenu(n);
     }
 
     // ---- title ----
     public String title() {
-        return ObjC.toString(ObjC.msgSendId(peer, ObjC.sel("title")));
+        ensureInit();
+        return ObjC.toString(ObjC.msgSendId(peer, Sels.title));
     }
     public void setTitle(String t) {
-        ObjC.msgSendVoidId(peer, ObjC.sel("setTitle:"), ObjC.nsstring(t));
+        ensureInit();
+        ObjC.msgSendVoidId(peer, Sels.setTitle, ObjC.nsstring(t));
     }
 
     // ---- supermenu ----
     public NSMenu supermenu() {
-        return wrap(ObjC.msgSendId(peer, ObjC.sel("supermenu")));
+        ensureInit();
+        return wrap(ObjC.msgSendId(peer, Sels.supermenu));
     }
 
     /// [menu setSupermenu:] — set the supermenu (rarely set directly).
     public void setSupermenu(NSMenu menu) {
-        ObjC.msgSendVoidId(peer, ObjC.sel("setSupermenu:"), (MemorySegment) (menu == null ? MemorySegment.NULL : menu.peer()));
+        ensureInit();
+        ObjC.msgSendVoidId(peer, Sels.setSupermenu, (MemorySegment) (menu == null ? MemorySegment.NULL : menu.peer()));
     }
 
     /// [menu setItemArray:] — replace the item array.
     public void setItemArray(java.util.List<NSMenuItem> items) {
+        ensureInit();
         if (items == null) return;
         // Build NSArray from items
-        MemorySegment arr = ObjC.msgSendId(ObjC.cls("NSArray"), ObjC.sel("alloc"));
+        MemorySegment arr = ObjC.msgSendId(ObjC.cls("NSArray"), Sels.alloc);
         // Use initWithObjects:count: via handle if needed, fallback to adding
         // Simpler: create mutable array and add objects
-        MemorySegment mArr = ObjC.msgSendId(ObjC.cls("NSMutableArray"), ObjC.sel("array"));
+        MemorySegment mArr = ObjC.msgSendId(ObjC.cls("NSMutableArray"), Sels.array);
         for (NSMenuItem it : items) {
-            if (it != null) ObjC.msgSendVoidId(mArr, ObjC.sel("addObject:"), it.peer());
+            if (it != null) ObjC.msgSendVoidId(mArr, Sels.addObject, it.peer());
         }
-        ObjC.msgSendVoidId(peer, ObjC.sel("setItemArray:"), mArr);
+        ObjC.msgSendVoidId(peer, Sels.setItemArray, mArr);
     }
 
     // ---- items ----
     public void addItem(NSMenuItem item) {
-        ObjC.msgSendVoidId(peer, ObjC.sel("addItem:"), item.peer());
+        ensureInit();
+        ObjC.msgSendVoidId(peer, Sels.addItem, item.peer());
     }
     public void insertItem(NSMenuItem item, long index) {
         ensureInit();
-        try { H.hVoidIdInt().invokeExact(peer, ObjC.sel("insertItem:atIndex:"), item.peer(), index); } catch (Throwable t) { throw new RuntimeException("insertItem:atIndex: failed", t); }
+        try { H.hVoidIdInt().invokeExact(peer, Sels.insertItem_atIndex, item.peer(), index); } catch (Throwable t) { throw new RuntimeException("insertItem:atIndex: failed", t); }
     }
     public NSMenuItem insertItemWithTitle(String title, String action, String keyEquivalent, long index) {
         ensureInit();
@@ -114,7 +275,7 @@ public final class NSMenu extends NSObject {
             String safeTitle = title == null ? "" : title;
             String safeKE = keyEquivalent == null ? "" : keyEquivalent;
             MemorySegment p = (MemorySegment) H.hInsertTitleActionKEIndex().invokeExact(peer,
-                    ObjC.sel("insertItemWithTitle:action:keyEquivalent:atIndex:"),
+                    Sels.insertItemWithTitle_action_keyEquivalent_atIndex,
                     ObjC.nsstring(safeTitle), selAction, ObjC.nsstring(safeKE), index);
             return NSMenuItem.wrap(p);
         } catch (Throwable t) {
@@ -122,33 +283,38 @@ public final class NSMenu extends NSObject {
         }
     }
     public NSMenuItem addItemWithTitle(String title, String action, String keyEquivalent) {
+        ensureInit();
         String safeTitle = title == null ? "" : title;
         String safeKE = keyEquivalent == null ? "" : keyEquivalent;
         MemorySegment item = ObjC.msgSendIdIdSelId(peer,
-                ObjC.sel("addItemWithTitle:action:keyEquivalent:"),
+                Sels.addItemWithTitle_action_keyEquivalent,
                 ObjC.nsstring(safeTitle), action == null || action.isEmpty() ? MemorySegment.NULL : ObjC.sel(action), ObjC.nsstring(safeKE));
         return (item == null || item.address() == 0) ? null : NSMenuItem.wrap(item);
     }
 
     public void removeItemAtIndex(long index) {
-        ObjC.msgSendVoidLong(peer, ObjC.sel("removeItemAtIndex:"), index);
+        ensureInit();
+        ObjC.msgSendVoidLong(peer, Sels.removeItemAtIndex, index);
     }
     public void removeItem(NSMenuItem item) {
-        ObjC.msgSendVoidId(peer, ObjC.sel("removeItem:"), item.peer());
+        ensureInit();
+        ObjC.msgSendVoidId(peer, Sels.removeItem, item.peer());
     }
     public void removeAllItems() {
-        ObjC.msgSendVoid(peer, ObjC.sel("removeAllItems"));
+        ensureInit();
+        ObjC.msgSendVoid(peer, Sels.removeAllItems);
     }
 
     /// Attach a submenu to a menu item (the item lives in this menu) — [item setSubmenu:submenu].
     public void setSubmenu(NSMenuItem item, NSMenu submenu) {
-        ObjC.msgSendVoidId(item.peer(), ObjC.sel("setSubmenu:"), (MemorySegment) (submenu == null ? MemorySegment.NULL : submenu.peer()));
+        ensureInit();
+        ObjC.msgSendVoidId(item.peer(), Sels.setSubmenu, (MemorySegment) (submenu == null ? MemorySegment.NULL : submenu.peer()));
     }
     /// [self setSubmenu:submenu forItem:item] — the NSMenu variant (both peers as ID).
     public void setSubmenuForItem(NSMenu submenu, NSMenuItem item) {
         ensureInit();
         try {
-            H.hSetSubmenuForItem().invokeExact(peer, ObjC.sel("setSubmenu:forItem:"),
+            H.hSetSubmenuForItem().invokeExact(peer, Sels.setSubmenu_forItem,
                     (MemorySegment) (submenu == null ? MemorySegment.NULL : submenu.peer()),
                     item.peer());
         } catch (Throwable t) {
@@ -162,16 +328,18 @@ public final class NSMenu extends NSObject {
 
     // ---- itemArray / numberOfItems / itemAtIndex ----
     public MemorySegment itemArrayId() {
-        return ObjC.msgSendId(peer, ObjC.sel("itemArray"));
+        ensureInit();
+        return ObjC.msgSendId(peer, Sels.itemArray);
     }
     public java.util.List<NSMenuItem> itemArray() {
-        MemorySegment arr = ObjC.msgSendId(peer, ObjC.sel("itemArray"));
+        ensureInit();
+        MemorySegment arr = ObjC.msgSendId(peer, Sels.itemArray);
         if (arr == null || arr.address() == 0) return java.util.List.of();
         // NSArray -> count + objectAtIndex:
-        long count = ObjC.msgSendLong(arr, ObjC.sel("count"));
+        long count = ObjC.msgSendLong(arr, Sels.count);
         java.util.List<NSMenuItem> out = new java.util.ArrayList<>((int) count);
         MethodHandle hAt = ObjC.handle(Sig.of(Ret.ID, Arg.INT));
-        MemorySegment atSel = ObjC.sel("objectAtIndex:");
+        MemorySegment atSel = Sels.objectAtIndex;
         for (long i = 0; i < count; i++) {
             try {
                 MemorySegment it = (MemorySegment) hAt.invokeExact(arr, atSel, i);
@@ -181,97 +349,119 @@ public final class NSMenu extends NSObject {
         return java.util.Collections.unmodifiableList(out);
     }
     public long numberOfItems() {
-        return ObjC.msgSendLong(peer, ObjC.sel("numberOfItems"));
+        ensureInit();
+        return ObjC.msgSendLong(peer, Sels.numberOfItems);
     }
     public NSMenuItem itemAtIndex(long index) {
         ensureInit();
         try {
-            MemorySegment p = (MemorySegment) H.hIdInt().invokeExact(peer, ObjC.sel("itemAtIndex:"), index);
+            MemorySegment p = (MemorySegment) H.hIdInt().invokeExact(peer, Sels.itemAtIndex, index);
             return NSMenuItem.wrap(p);
         } catch (Throwable t) { throw new RuntimeException("itemAtIndex: failed", t); }
     }
     public long indexOfItem(NSMenuItem item) {
         ensureInit();
-        try { return (long) H.hIntId().invokeExact(peer, ObjC.sel("indexOfItem:"), item.peer()); } catch (Throwable t) { throw new RuntimeException("indexOfItem: failed", t); }
+        try { return (long) H.hIntId().invokeExact(peer, Sels.indexOfItem, item.peer()); } catch (Throwable t) { throw new RuntimeException("indexOfItem: failed", t); }
     }
     public long indexOfItemWithTitle(String title) {
         ensureInit();
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.INT, Arg.ID));
-            return (long) h.invokeExact(peer, ObjC.sel("indexOfItemWithTitle:"), ObjC.nsstring(title));
+            return (long) h.invokeExact(peer, Sels.indexOfItemWithTitle, ObjC.nsstring(title));
         } catch (Throwable t) { throw new RuntimeException("indexOfItemWithTitle: failed", t); }
     }
     public long indexOfItemWithTag(long tag) {
+        ensureInit();
         try {
-            return (long) ObjC.handle(nsui.objc.Sig.of(nsui.objc.Sig.Ret.INT, nsui.objc.Sig.Arg.INT)).invokeExact(peer, ObjC.sel("indexOfItemWithTag:"), tag);
+            return (long) ObjC.handle(nsui.objc.Sig.of(nsui.objc.Sig.Ret.INT, nsui.objc.Sig.Arg.INT)).invokeExact(peer, Sels.indexOfItemWithTag, tag);
         } catch (Throwable e) { throw new RuntimeException("indexOfItemWithTag: failed", e); }
     }
     public NSMenuItem itemWithTitle(String title) {
-        MemorySegment p = ObjC.msgSendIdId(peer, ObjC.sel("itemWithTitle:"), ObjC.nsstring(title));
+        ensureInit();
+        MemorySegment p = ObjC.msgSendIdId(peer, Sels.itemWithTitle, ObjC.nsstring(title));
         return NSMenuItem.wrap(p);
     }
     public NSMenuItem itemWithTag(long tag) {
         ensureInit();
         try {
-            MemorySegment p = (MemorySegment) H.hIdInt().invokeExact(peer, ObjC.sel("itemWithTag:"), tag);
+            MemorySegment p = (MemorySegment) H.hIdInt().invokeExact(peer, Sels.itemWithTag, tag);
             return NSMenuItem.wrap(p);
         } catch (Throwable t) { throw new RuntimeException("itemWithTag: failed", t); }
     }
 
     // ---- autoenablesItems / update ----
     public boolean autoenablesItems() {
-        return ObjC.msgSendBool(peer, ObjC.sel("autoenablesItems"));
+        ensureInit();
+        return ObjC.msgSendBool(peer, Sels.autoenablesItems);
     }
     public void setAutoenablesItems(boolean flag) {
-        ObjC.msgSendVoidBool(peer, ObjC.sel("setAutoenablesItems:"), flag);
+        ensureInit();
+        ObjC.msgSendVoidBool(peer, Sels.setAutoenablesItems, flag);
     }
     public void update() {
-        ObjC.msgSendVoid(peer, ObjC.sel("update"));
+        ensureInit();
+        ObjC.msgSendVoid(peer, Sels.update);
     }
     public void performActionForItemAtIndex(long index) {
-        ObjC.msgSendVoidLong(peer, ObjC.sel("performActionForItemAtIndex:"), index);
+        ensureInit();
+        ObjC.msgSendVoidLong(peer, Sels.performActionForItemAtIndex, index);
     }
     public void itemChanged(NSMenuItem item) {
-        ObjC.msgSendVoidId(peer, ObjC.sel("itemChanged:"), item.peer());
+        ensureInit();
+        ObjC.msgSendVoidId(peer, Sels.itemChanged, item.peer());
     }
 
     // ---- delegate / appearance ----
-    public MemorySegment delegate() { return ObjC.msgSendId(peer, ObjC.sel("delegate")); }
-    public void setDelegate(MemorySegment d) { ObjC.msgSendVoidId(peer, ObjC.sel("setDelegate:"), (MemorySegment) (d == null ? MemorySegment.NULL : d)); }
-    public NSMenuItem highlightedItem() { return NSMenuItem.wrap(ObjC.msgSendId(peer, ObjC.sel("highlightedItem"))); }
+    public MemorySegment delegate() {
+    ensureInit(); return ObjC.msgSendId(peer, Sels.delegate); }
+    public void setDelegate(MemorySegment d) {
+    ensureInit(); ObjC.msgSendVoidId(peer, Sels.setDelegate, (MemorySegment) (d == null ? MemorySegment.NULL : d)); }
+    public NSMenuItem highlightedItem() {
+    ensureInit(); return NSMenuItem.wrap(ObjC.msgSendId(peer, Sels.highlightedItem)); }
     public double minimumWidth() {
-        try { return (double) ObjC.handle(Sig.of(Ret.DOUBLE)).invokeExact(peer, ObjC.sel("minimumWidth")); } catch (Throwable t) { throw new RuntimeException("minimumWidth failed", t); }
+        ensureInit();
+        try { return (double) ObjC.handle(Sig.of(Ret.DOUBLE)).invokeExact(peer, Sels.minimumWidth); } catch (Throwable t) { throw new RuntimeException("minimumWidth failed", t); }
     }
     public void setMinimumWidth(double w) {
-        try { ObjC.handle(Sig.of(Ret.VOID, Arg.DOUBLE)).invokeExact(peer, ObjC.sel("setMinimumWidth:"), w); } catch (Throwable t) { throw new RuntimeException("setMinimumWidth: failed", t); }
+        ensureInit();
+        try { ObjC.handle(Sig.of(Ret.VOID, Arg.DOUBLE)).invokeExact(peer, Sels.setMinimumWidth, w); } catch (Throwable t) { throw new RuntimeException("setMinimumWidth: failed", t); }
     }
     public NSSize size() {
         ensureInit();
-        try { return NSSize.fromSegment((MemorySegment) H.hSize().invokeExact(ObjC.structSlot(), peer, ObjC.sel("size"))); } catch (Throwable t) { throw new RuntimeException("size failed", t); }
+        try { return NSSize.fromSegment((MemorySegment) H.hSize().invokeExact(ObjC.structSlot(), peer, Sels.size)); } catch (Throwable t) { throw new RuntimeException("size failed", t); }
     }
-    public MemorySegment font() { return ObjC.msgSendId(peer, ObjC.sel("font")); }
-    public void setFont(NSFont f) { ObjC.msgSendVoidId(peer, ObjC.sel("setFont:"), (MemorySegment) (f == null ? MemorySegment.NULL : f.peer())); }
-    public boolean showsStateColumn() { return ObjC.msgSendBool(peer, ObjC.sel("showsStateColumn")); }
-    public void setShowsStateColumn(boolean flag) { ObjC.msgSendVoidBool(peer, ObjC.sel("setShowsStateColumn:"), flag); }
-    public boolean allowsContextMenuPlugIns() { return ObjC.msgSendBool(peer, ObjC.sel("allowsContextMenuPlugIns")); }
-    public void setAllowsContextMenuPlugIns(boolean flag) { ObjC.msgSendVoidBool(peer, ObjC.sel("setAllowsContextMenuPlugIns:"), flag); }
+    public MemorySegment font() {
+    ensureInit(); return ObjC.msgSendId(peer, Sels.font); }
+    public void setFont(NSFont f) {
+    ensureInit(); ObjC.msgSendVoidId(peer, Sels.setFont, (MemorySegment) (f == null ? MemorySegment.NULL : f.peer())); }
+    public boolean showsStateColumn() {
+    ensureInit(); return ObjC.msgSendBool(peer, Sels.showsStateColumn); }
+    public void setShowsStateColumn(boolean flag) {
+    ensureInit(); ObjC.msgSendVoidBool(peer, Sels.setShowsStateColumn, flag); }
+    public boolean allowsContextMenuPlugIns() {
+    ensureInit(); return ObjC.msgSendBool(peer, Sels.allowsContextMenuPlugIns); }
+    public void setAllowsContextMenuPlugIns(boolean flag) {
+ensureInit(); ObjC.msgSendVoidBool(peer, Sels.setAllowsContextMenuPlugIns, flag); }
 
     // ---- Help-search field (showsSearchField) ----
     // AppKit may not expose this selector on all OS versions; guard via respondsToSelector:
     private boolean respondsTo(String selName) {
+        ensureInit();
         try {
-            return (boolean) ObjC.handle(Sig.of(Ret.BOOL, Arg.ID)).invokeExact(peer, ObjC.sel("respondsToSelector:"), ObjC.sel(selName));
+            return (boolean) ObjC.handle(Sig.of(Ret.BOOL, Arg.ID)).invokeExact(peer, Sels.respondsToSelector, ObjC.sel(selName));
         } catch (Throwable t) { return false; }
     }
     /// [menu showsSearchField] — Help-menu search field visibility (guarded; false if selector absent).
     public boolean showsSearchField() {
+        ensureInit();
         if (!respondsTo("showsSearchField")) return false;
-        try { return ObjC.msgSendBool(peer, ObjC.sel("showsSearchField")); } catch (Throwable t) { return false; }
+        try { return ObjC.msgSendBool(peer, Sels.showsSearchField); } catch (Throwable t) { return false; }
     }
     /// [menu setShowsSearchField:] — Help-menu search field visibility (no-op if selector absent).
     public void setShowsSearchField(boolean flag) {
+        ensureInit();
         if (!respondsTo("setShowsSearchField:")) return;
-        try { ObjC.msgSendVoidBool(peer, ObjC.sel("setShowsSearchField:"), flag); } catch (Throwable ignored) {}
+        try { ObjC.msgSendVoidBool(peer, Sels.setShowsSearchField, flag); } catch (Throwable ignored) {}
     }
     /// Alias for setShowsSearchField — legacy name used by some tests/docs.
     public void setShowsSearchFieldCompat(boolean flag) { setShowsSearchField(flag); }
@@ -376,7 +566,7 @@ public final class NSMenu extends NSObject {
         try {
             MemorySegment itemPeer = (item == null) ? MemorySegment.NULL : item.peer();
             MemorySegment viewPeer = (view == null) ? MemorySegment.NULL : view.peer();
-            return (boolean) H.hPopUp().invokeExact(peer, ObjC.sel("popUpMenuPositioningItem:atLocation:inView:"), itemPeer, loc.toSegment(), viewPeer);
+            return (boolean) H.hPopUp().invokeExact(peer, Sels.popUpMenuPositioningItem_atLocation_inView, itemPeer, loc.toSegment(), viewPeer);
         } catch (Throwable t) {
             throw new RuntimeException("popUpMenuPositioningItem:atLocation:inView: failed", t);
         }
@@ -384,9 +574,10 @@ public final class NSMenu extends NSObject {
 
     /// popUpContextMenu:withEvent:forView: (class).
     public static void popUpContextMenu(NSMenu menu, NSEvent event, NSView view) {
+        ensureInit();
         try {
             ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.ID, Arg.ID)).invokeExact(
-                    ObjC.cls("NSMenu"), ObjC.sel("popUpContextMenu:withEvent:forView:"),
+                    ObjC.cls("NSMenu"), Sels.popUpContextMenu_withEvent_forView,
                     (MemorySegment) (menu == null ? MemorySegment.NULL : menu.peer()),
                     (MemorySegment) (event == null ? MemorySegment.NULL : event.peer()),
                     (MemorySegment) (view == null ? MemorySegment.NULL : view.peer()));
@@ -395,7 +586,8 @@ public final class NSMenu extends NSObject {
 
     /// popUpContextMenu:withEvent:forView:withFont: (4 object args via escape hatch).
     public static void popUpContextMenuWithFont(NSMenu menu, NSEvent event, NSView view, NSFont font) {
-        ObjC.invokeVoid(ObjC.cls("NSMenu"), ObjC.sel("popUpContextMenu:withEvent:forView:withFont:"),
+        ensureInit();
+        ObjC.invokeVoid(ObjC.cls("NSMenu"), Sels.popUpContextMenu_withEvent_forView_withFont,
                 (MemorySegment) (menu == null ? MemorySegment.NULL : menu.peer()),
                 (MemorySegment) (event == null ? MemorySegment.NULL : event.peer()),
                 (MemorySegment) (view == null ? MemorySegment.NULL : view.peer()),
@@ -404,33 +596,38 @@ public final class NSMenu extends NSObject {
 
     /// setMenuBarVisible: / menuBarVisible (class).
     public static void setMenuBarVisible(boolean flag) {
-        ObjC.msgSendVoidBool(ObjC.cls("NSMenu"), ObjC.sel("setMenuBarVisible:"), flag);
+        ensureInit();
+        ObjC.msgSendVoidBool(ObjC.cls("NSMenu"), Sels.setMenuBarVisible, flag);
     }
     public static boolean menuBarVisible() {
-        return ObjC.msgSendBool(ObjC.cls("NSMenu"), ObjC.sel("menuBarVisible"));
+        ensureInit();
+        return ObjC.msgSendBool(ObjC.cls("NSMenu"), Sels.menuBarVisible);
     }
 
     /// indexOfItemWithRepresentedObject: / indexOfItemWithSubmenu:.
     public long indexOfItemWithRepresentedObject(MemorySegment object) {
+        ensureInit();
         try {
             return (long) ObjC.handle(Sig.of(Ret.INT, Arg.ID)).invokeExact(peer,
-                    ObjC.sel("indexOfItemWithRepresentedObject:"),
+                    Sels.indexOfItemWithRepresentedObject,
                     (MemorySegment) (object == null ? MemorySegment.NULL : object));
         } catch (Throwable t) { throw new RuntimeException("indexOfItemWithRepresentedObject: failed", t); }
     }
     public long indexOfItemWithSubmenu(NSMenu submenu) {
+        ensureInit();
         try {
             return (long) ObjC.handle(Sig.of(Ret.INT, Arg.ID)).invokeExact(peer,
-                    ObjC.sel("indexOfItemWithSubmenu:"),
+                    Sels.indexOfItemWithSubmenu,
                     (MemorySegment) (submenu == null ? MemorySegment.NULL : submenu.peer()));
         } catch (Throwable t) { throw new RuntimeException("indexOfItemWithSubmenu: failed", t); }
     }
 
     /// indexOfItemWithTarget:andAction: (target id + SEL string).
     public long indexOfItemWithTargetAndAction(MemorySegment target, String action) {
+        ensureInit();
         try {
             return (long) ObjC.handle(Sig.of(Ret.INT, Arg.ID, Arg.ID)).invokeExact(peer,
-                    ObjC.sel("indexOfItemWithTarget:andAction:"),
+                    Sels.indexOfItemWithTarget_andAction,
                     (MemorySegment) (target == null ? MemorySegment.NULL : target),
                     (MemorySegment) (action == null ? MemorySegment.NULL : ObjC.sel(action)));
         } catch (Throwable t) { throw new RuntimeException("indexOfItemWithTarget:andAction: failed", t); }
@@ -438,81 +635,97 @@ public final class NSMenu extends NSObject {
 
     /// performKeyEquivalent:.
     public boolean performKeyEquivalent(NSEvent event) {
+        ensureInit();
         try {
             return (boolean) ObjC.handle(Sig.of(Ret.BOOL, Arg.ID)).invokeExact(peer,
-                    ObjC.sel("performKeyEquivalent:"),
+                    Sels.performKeyEquivalent,
                     (MemorySegment) (event == null ? MemorySegment.NULL : event.peer()));
         } catch (Throwable t) { throw new RuntimeException("performKeyEquivalent: failed", t); }
     }
 
     /// cancelTracking / cancelTrackingWithoutAnimation.
     public void cancelTracking() {
-        ObjC.msgSendVoid(peer, ObjC.sel("cancelTracking"));
+        ensureInit();
+        ObjC.msgSendVoid(peer, Sels.cancelTracking);
     }
     public void cancelTrackingWithoutAnimation() {
-        ObjC.msgSendVoid(peer, ObjC.sel("cancelTrackingWithoutAnimation"));
+        ensureInit();
+        ObjC.msgSendVoid(peer, Sels.cancelTrackingWithoutAnimation);
     }
 
     /// menuBarHeight.
     public double menuBarHeight() {
+        ensureInit();
         try {
-            return (double) ObjC.handle(Sig.of(Ret.DOUBLE)).invokeExact(peer, ObjC.sel("menuBarHeight"));
+            return (double) ObjC.handle(Sig.of(Ret.DOUBLE)).invokeExact(peer, Sels.menuBarHeight);
         } catch (Throwable t) { throw new RuntimeException("menuBarHeight failed", t); }
     }
 
     /// propertiesToUpdate — only valid from within menuNeedsUpdate: (AppKit raises otherwise).
     public long propertiesToUpdate() {
-        return ObjC.msgSendLong(peer, ObjC.sel("propertiesToUpdate"));
+        ensureInit();
+        return ObjC.msgSendLong(peer, Sels.propertiesToUpdate);
     }
 
     /// userInterfaceLayoutDirection.
     public long userInterfaceLayoutDirection() {
-        return ObjC.msgSendLong(peer, ObjC.sel("userInterfaceLayoutDirection"));
+        ensureInit();
+        return ObjC.msgSendLong(peer, Sels.userInterfaceLayoutDirection);
     }
     public void setUserInterfaceLayoutDirection(long dir) {
-        ObjC.msgSendVoidLong(peer, ObjC.sel("setUserInterfaceLayoutDirection:"), dir);
+        ensureInit();
+        ObjC.msgSendVoidLong(peer, Sels.setUserInterfaceLayoutDirection, dir);
     }
 
     /// automaticallyInsertsWritingToolsItems (macOS 15.2+; guarded by respondsTo).
     public boolean automaticallyInsertsWritingToolsItems() {
+        ensureInit();
         if (!respondsTo("automaticallyInsertsWritingToolsItems")) return true;
-        return ObjC.msgSendBool(peer, ObjC.sel("automaticallyInsertsWritingToolsItems"));
+        return ObjC.msgSendBool(peer, Sels.automaticallyInsertsWritingToolsItems);
     }
     public void setAutomaticallyInsertsWritingToolsItems(boolean flag) {
+        ensureInit();
         if (!respondsTo("setAutomaticallyInsertsWritingToolsItems:")) return;
-        ObjC.msgSendVoidBool(peer, ObjC.sel("setAutomaticallyInsertsWritingToolsItems:"), flag);
+        ObjC.msgSendVoidBool(peer, Sels.setAutomaticallyInsertsWritingToolsItems, flag);
     }
 
     /// presentationStyle / selectionMode / selectedItems (macOS 14+; guarded).
     public long presentationStyle() {
+        ensureInit();
         if (!respondsTo("presentationStyle")) return 0L;
-        return ObjC.msgSendLong(peer, ObjC.sel("presentationStyle"));
+        return ObjC.msgSendLong(peer, Sels.presentationStyle);
     }
     public void setPresentationStyle(long style) {
+        ensureInit();
         if (!respondsTo("setPresentationStyle:")) return;
-        ObjC.msgSendVoidLong(peer, ObjC.sel("setPresentationStyle:"), style);
+        ObjC.msgSendVoidLong(peer, Sels.setPresentationStyle, style);
     }
     public long selectionMode() {
+        ensureInit();
         if (!respondsTo("selectionMode")) return 0L;
-        return ObjC.msgSendLong(peer, ObjC.sel("selectionMode"));
+        return ObjC.msgSendLong(peer, Sels.selectionMode);
     }
     public void setSelectionMode(long mode) {
+        ensureInit();
         if (!respondsTo("setSelectionMode:")) return;
-        ObjC.msgSendVoidLong(peer, ObjC.sel("setSelectionMode:"), mode);
+        ObjC.msgSendVoidLong(peer, Sels.setSelectionMode, mode);
     }
     public NSArray selectedItems() {
+        ensureInit();
         if (!respondsTo("selectedItems")) return null;
-        return NSArray.wrap(ObjC.msgSendId(peer, ObjC.sel("selectedItems")));
+        return NSArray.wrap(ObjC.msgSendId(peer, Sels.selectedItems));
     }
     public void setSelectedItems(NSArray items) {
+        ensureInit();
         if (!respondsTo("setSelectedItems:")) return;
-        ObjC.msgSendVoidId(peer, ObjC.sel("setSelectedItems:"),
+        ObjC.msgSendVoidId(peer, Sels.setSelectedItems,
                 (MemorySegment) (items == null ? MemorySegment.NULL : items.peer()));
     }
 
     /// submenuAction:.
     public void submenuAction(MemorySegment sender) {
-        ObjC.msgSendVoidId(peer, ObjC.sel("submenuAction:"),
+        ensureInit();
+        ObjC.msgSendVoidId(peer, Sels.submenuAction,
                 (MemorySegment) (sender == null ? MemorySegment.NULL : sender));
     }
 }

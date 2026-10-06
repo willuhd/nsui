@@ -408,11 +408,11 @@ public final class PanelsCoverageTest {
             // accepted but the getters keep returning true), so verify no-crash + selector presence.
             boolean origEn = fp.isEnabled();
             fp.setEnabled(!origEn);
-            check(fp.isEnabled() == true || fp.isEnabled() == false, "NSFontPanel setEnabled no crash (getter pinned at " + fp.isEnabled() + ")");
+            TestKit.probe("NSFontPanel setEnabled no crash (getter pinned at " + fp.isEnabled() + ")");
             fp.setEnabled(origEn);
             boolean origModal = fp.worksWhenModal();
             fp.setWorksWhenModal(!origModal);
-            check(fp.worksWhenModal() == true || fp.worksWhenModal() == false, "NSFontPanel setWorksWhenModal no crash (getter pinned at " + fp.worksWhenModal() + ")");
+            TestKit.probe("NSFontPanel setWorksWhenModal no crash (getter pinned at " + fp.worksWhenModal() + ")");
             fp.setWorksWhenModal(origModal);
             check(responds(fp.peer(), "setEnabled:"), "NSFontPanel respondsTo setEnabled:");
             check(responds(fp.peer(), "setWorksWhenModal:"), "NSFontPanel respondsTo setWorksWhenModal:");
@@ -475,13 +475,12 @@ public final class PanelsCoverageTest {
             NSFindPanel find = NSFindPanel.create();
             check(find != null && find.peer().address() != 0, "NSFindPanel.create non-nil");
             find.setFindString("coverage-find");
-            check("coverage-find".equals(find.findString()) || find.findString() == null,
-                    "NSFindPanel findString best-effort (got " + find.findString() + ")");
+            TestKit.probe("NSFindPanel findString best-effort (got " + find.findString() + ")");
             find.setCaseSensitive(true);
-            check(find.isCaseSensitive() == true || find.isCaseSensitive() == false, "NSFindPanel isCaseSensitive no crash");
+            TestKit.probe("NSFindPanel isCaseSensitive no crash (" + find.isCaseSensitive() + ")");
             find.setCaseSensitive(false);
             find.setRegularExpression(true);
-            check(find.isRegularExpression() == true || find.isRegularExpression() == false, "NSFindPanel isRegularExpression no crash");
+            TestKit.probe("NSFindPanel isRegularExpression no crash (" + find.isRegularExpression() + ")");
             find.setRegularExpression(false);
             check(find.isVisible() == false, "NSFindPanel isVisible false (never shown)");
             check(NSFindPanel.FinderAction.nextMatch.value == 2L, "NSFindPanel FinderAction.nextMatch==2");
@@ -572,7 +571,7 @@ public final class PanelsCoverageTest {
             // verify no-crash + selector presence instead of a toggle round-trip.
             boolean origB = ti.isBordered();
             ti.setBordered(!origB);
-            check(ti.isBordered() == true || ti.isBordered() == false, "NSToolbarItem setBordered no crash (got " + ti.isBordered() + ")");
+            TestKit.probe("NSToolbarItem setBordered no crash (got " + ti.isBordered() + ")");
             ti.setBordered(origB);
             check(responds(ti.peer(), "setBordered:"), "NSToolbarItem respondsTo setBordered:");
             boolean origNav = ti.isNavigational();

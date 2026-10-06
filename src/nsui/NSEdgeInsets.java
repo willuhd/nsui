@@ -15,7 +15,7 @@ public record NSEdgeInsets(double top, double left, double bottom, double right)
 
     /// 32-byte segment: top at 0, left at 8, bottom at 16, right at 24.
     public MemorySegment toSegment() {
-        MemorySegment s = Scratch.alloc(32);
+        MemorySegment s = Scratch.allocInput(32);
         s.set(ValueLayout.JAVA_DOUBLE, 0, top);
         s.set(ValueLayout.JAVA_DOUBLE, 8, left);
         s.set(ValueLayout.JAVA_DOUBLE, 16, bottom);

@@ -53,7 +53,7 @@ public final class Exceptions {
     private static Linker LINKER;
     private static Arena ARENA;
     private static MethodHandle hSet;        // objc_setExceptionPreprocessor
-    private static MethodHandle hPrev;       // call the previous preprocessor ((id)->id shape)
+    private static volatile MethodHandle hPrev;  // previous preprocessor; read from the upcall
     private static MethodHandle hExIdIdId;   // [NSException exceptionWithName:reason:userInfo:]
     private static MemorySegment stub;       // the installed upcall stub (kept alive)
     private static MemorySegment prev;       // the previous handler, to chain
@@ -137,12 +137,13 @@ public final class Exceptions {
     /// the throw proceeds.
     public static <T> T call(Callable<T> body) throws Exception {
         ensureInit();
+        Boolean prevArmed = ARMED.get();
         ARMED.set(Boolean.TRUE);
         LAST.set(null);
         try {
             return body.call();
         } finally {
-            ARMED.set(null);
+            ARMED.set(prevArmed);   // restore, so a nested call does not disarm the outer one
         }
     }
 

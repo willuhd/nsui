@@ -17,7 +17,7 @@ import static nsui.objc.Sig.Ret;
 /// - `material` — `NSVisualEffectMaterial` (NSInteger), e.g. 0 = appearanceBased,
 ///   3 = titlebar, 7 = sidebar, 13 = HUDWindow.
 /// - `blendingMode` — `NSVisualEffectBlendingMode` (NSInteger): 0 = behindWindow, 1 = withinWindow.
-/// - `state` — `NSVisualEffectState` (NSInteger): 0 = inactive, 1 = followsWindowActiveState, 2 = active.
+/// - `state` — `NSVisualEffectState` (NSInteger): 0 = followsWindowActiveState, 1 = active, 2 = inactive.
 /// - `isEmphasized` — BOOL, whether the material is emphasized (selection/active).
 /// - `maskingImage` — optional `NSImage` that masks the effect.
 public final class NSVisualEffectView extends NSView {

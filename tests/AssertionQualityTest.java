@@ -4,6 +4,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 /// AssertionQualityTest - guards the suite against tautologies.
@@ -27,12 +29,26 @@ public final class AssertionQualityTest {
         }
 
         String tautology = "check(" + "true";
+        // Always-true EXPRESSIONS (not just the literal check(true,...)): comparing the
+        // same call against both true and false (or both null and non-null) can never fail.
+        Pattern tautExpr = Pattern.compile(
+                "([A-Za-z_][\\w.]*(?:\\([^)]*\\))?)\\s*(?:"
+                + "==\\s*true\\s*\\|\\|\\s*\\1\\s*==\\s*false"
+                + "|==\\s*false\\s*\\|\\|\\s*\\1\\s*==\\s*true"
+                + "|==\\s*null\\s*\\|\\|\\s*\\1\\s*!=\\s*null"
+                + "|!=\\s*null\\s*\\|\\|\\s*\\1\\s*==\\s*null)");
         int checks = 0, noThrow = 0, attempt = 0, expectThrows = 0, skipCase = 0, probe = 0;
         List<String> offenders = new ArrayList<>();
         for (Path p : files) {
             String code = mask(Files.readString(p));
             int t = count(code, tautology);
-            if (t > 0) offenders.add(p.getFileName() + " x" + t);
+            Matcher te = tautExpr.matcher(code);
+            StringBuilder locs = new StringBuilder();
+            while (te.find()) {
+                t++;
+                if (locs.length() < 160) locs.append(" :").append(lineOf(code, te.start()));
+            }
+            if (t > 0) offenders.add(p.getFileName() + " x" + t + locs);
             checks += count(code, "check(");
             noThrow += count(code, "noThrow(");
             attempt += count(code, "attempt(");
@@ -49,6 +65,12 @@ public final class AssertionQualityTest {
         TestKit.check(real >= 250, "suite has real no-throw/negative assertions (got " + real + ")");
         TestKit.check(skipCase > 0, "environment-dependent cases are explicit skips (got " + skipCase + ")");
         TestKit.end();
+    }
+
+    private static int lineOf(String s, int idx) {
+        int n = 1;
+        for (int i = 0; i < idx && i < s.length(); i++) if (s.charAt(i) == '\n') n++;
+        return n;
     }
 
     private static int count(String s, String needle) {

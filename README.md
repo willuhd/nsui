@@ -14,7 +14,7 @@ NSUI talks directly to the ObjC runtime. Every AppKit call is an `objc_msgSend` 
 
 ```bash
 ./build.sh          # compiles to out/classes
-./tests.sh          # full suite (74 tests), exit 0 iff all pass
+./tests.sh          # full suite (75 tests), exit 0 iff all pass
 ./tests.sh Bench    # run only matching tests (substring filter)
 ```
 

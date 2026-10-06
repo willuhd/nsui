@@ -155,7 +155,7 @@ public final class MediaCoverageTest {
             // leaves zero types on a fresh named pasteboard, though the string channel
             // round-trips fine) — unproven here, so only the nil-safe read is pinned.
             NSColor back = NSColor.colorFromPasteboard(pb);
-            check(back == null || back != null, "colorFromPasteboard nil-safe (got "
+            TestKit.probe("colorFromPasteboard nil-safe (got "
                     + (back == null ? "nil — server dropped the write" : "a color") + ")");
             check(pb.setStringForType("sa-ping", NSPasteboard.NSPasteboardTypeString),
                     "private pasteboard string channel works");
@@ -197,7 +197,7 @@ public final class MediaCoverageTest {
             img.setMatchesOnMultipleResolution(!m0);
             check(img.matchesOnMultipleResolution() == !m0, "matchesOnMultipleResolution round-trip");
             img.setMatchesOnMultipleResolution(m0);
-            check(img.backgroundColor() == null || img.backgroundColor() != null, "backgroundColor readable");
+            TestKit.probe("backgroundColor readable (" + (img.backgroundColor() == null ? "nil" : "set") + ")");
             img.setBackgroundColor(NSColor.redColor());
             check(img.backgroundColor() != null, "backgroundColor set/get non-nil");
             img.setBackgroundColor(null);
@@ -292,8 +292,7 @@ public final class MediaCoverageTest {
             check(rep.bitmapFormat() >= 0, "bitmapFormat readable (" + rep.bitmapFormat() + ")");
             check(rep.bitmapData() != null, "bitmapData non-nil");
             check(rep.tiffRepresentation() != null, "tiffRepresentation non-nil");
-            check(rep.canBeCompressedUsing(1) == true || rep.canBeCompressedUsing(1) == false,
-                    "canBeCompressedUsing no-crash");
+            TestKit.probe("canBeCompressedUsing no-crash (" + rep.canBeCompressedUsing(1) + ")");
             check(rep.colorSpacePeer() != null, "rep colorSpacePeer non-nil");
             check(rep.bitmapImageRepByRetaggingWithColorSpace(rep.colorSpacePeer()) != null,
                     "retagging non-nil");
@@ -481,9 +480,8 @@ public final class MediaCoverageTest {
         NSGraphicsContext prev = null;
         try {
             prev = TestKit.attempt("currentContext readable headless", () -> NSGraphicsContext.currentContext());
-            check(NSGraphicsContext.currentContextDrawingToScreen() == false
-                    || NSGraphicsContext.currentContextDrawingToScreen() == true,
-                    "currentContextDrawingToScreen no-crash");
+            TestKit.probe("currentContextDrawingToScreen no-crash ("
+                    + NSGraphicsContext.currentContextDrawingToScreen() + ")");
             try {
                 NSGraphicsContext.saveCurrentGraphicsState();
                 TestKit.noThrow("class save/restore no-throw", () -> NSGraphicsContext.restoreCurrentGraphicsState());
@@ -496,10 +494,9 @@ public final class MediaCoverageTest {
             check(ctx != null, "graphicsContextWithBitmapImageRep non-nil");
             NSGraphicsContext.setCurrentContext(ctx);
             check(NSGraphicsContext.currentContext() != null, "setCurrentContext sticks");
-            check(ctx.isDrawingToScreen() == false || ctx.isDrawingToScreen() == true,
-                    "isDrawingToScreen no-crash (" + ctx.isDrawingToScreen() + ")");
-            check(ctx.isFlipped() == false || ctx.isFlipped() == true, "isFlipped no-crash");
-            check(ctx.attributes() == null || ctx.attributes() != null, "attributes readable");
+            TestKit.probe("isDrawingToScreen no-crash (" + ctx.isDrawingToScreen() + ")");
+            TestKit.probe("isFlipped no-crash (" + ctx.isFlipped() + ")");
+            TestKit.probe("attributes readable (" + ctx.attributes() + ")");
             try {
                 ctx.saveGraphicsState();
                 ctx.restoreGraphicsState();
@@ -521,7 +518,7 @@ public final class MediaCoverageTest {
             long cri0 = ctx.colorRenderingIntent();
             ctx.setColorRenderingIntent(cri0);
             check(ctx.colorRenderingIntent() == cri0, "colorRenderingIntent round-trip");
-            check(ctx.ciContext() == null || ctx.ciContext() != null, "ciContext readable");
+            TestKit.probe("ciContext readable (" + (ctx.ciContext() == null ? "nil" : "set") + ")");
             check(ctx.CGContext() != null, "CGContext non-nil for bitmap ctx");
             try {
                 NSColor.redColor().setFill();
@@ -534,9 +531,8 @@ public final class MediaCoverageTest {
             } catch (Throwable t) {
                 check(false, "real-ctx draws threw: " + t);
             }
-            check(NSGraphicsContext.graphicsContextWithAttributes(null) == null
-                    || NSGraphicsContext.graphicsContextWithAttributes(null) != null,
-                    "graphicsContextWithAttributes(null) no-crash");
+            TestKit.probe("graphicsContextWithAttributes(null) no-crash ("
+                    + (NSGraphicsContext.graphicsContextWithAttributes(null) == null ? "nil" : "set") + ")");
             NSGraphicsContext.setCurrentContext(prev);
             TestKit.probe("context restored");
         } catch (Throwable t) {

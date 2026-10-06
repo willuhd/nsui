@@ -69,8 +69,8 @@ public final class ImageRepExportTest {
                     "bitsPerSample/samplesPerPixel sane (" + rep.bitsPerSample() + "/" + rep.samplesPerPixel() + ")");
             String cs = rep.colorSpaceName();
             check(cs != null && !cs.isEmpty(), "colorSpaceName readable (\"" + cs + "\")");
-            check(rep.hasAlpha() == false || rep.hasAlpha() == true, "hasAlpha accessor no crash (" + rep.hasAlpha() + ")");
-            check(rep.isPlanar() == false || rep.isPlanar() == true, "isPlanar accessor no crash (" + rep.isPlanar() + ")");
+            TestKit.probe("hasAlpha accessor no crash (" + rep.hasAlpha() + ")");
+            TestKit.probe("isPlanar accessor no crash (" + rep.isPlanar() + ")");
             MemorySegment cg = rep.cgImage();
             check(cg != null && cg.address() != 0, "cgImage() peer non-null");
             check(NSBitmapImageRep.wrap(null) == null, "wrap(null) returns null");

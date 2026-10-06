@@ -801,7 +801,7 @@ public final class ControlsCoverageTest {
 
             // NSSliderTouchBarItem: full header coverage
             NSSliderTouchBarItem sitem = NSSliderTouchBarItem.create("slider." + System.nanoTime());
-            TestKit.check(sitem.view() != null || sitem.view() == null, "NSSliderTouchBarItem view getter no crash");
+            TestKit.probe("NSSliderTouchBarItem view getter no crash (" + (sitem.view() == null ? "nil" : "set") + ")");
             NSSlider custom = NSSlider.create(new NSRect(0, 0, 140, 30));
             custom.setMinValue(0.0);
             custom.setMaxValue(100.0);
@@ -860,8 +860,8 @@ public final class ControlsCoverageTest {
             NSTouchBarItem base = NSTouchBarItem.create("base." + System.nanoTime());
             System.out.println("  base customizationLabel = \"" + base.customizationLabel() + "\"");
             TestKit.check(base.customizationLabel() != null, "NSTouchBarItem customizationLabel non-null (empty string by default)");
-            TestKit.check(base.viewController() == null || base.viewController() != null,
-                    "NSTouchBarItem viewController getter no crash");
+            TestKit.probe("NSTouchBarItem viewController getter no crash ("
+                    + (base.viewController() == null ? "nil" : "set") + ")");
             TestKit.check(!NSTouchBarItem.FIXED_SPACE_SMALL.isEmpty()
                     && !NSTouchBarItem.FIXED_SPACE_LARGE.isEmpty()
                     && !NSTouchBarItem.FLEXIBLE_SPACE.isEmpty()

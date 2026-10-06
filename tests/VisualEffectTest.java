@@ -74,11 +74,11 @@ public final class VisualEffectTest {
         long origState = view.state();
         System.out.println("  original state = " + origState);
         view.setState(1L);
-        TestKit.check(view.state() == 1L, "state 1 (followsWindowActiveState) round-trip [got " + view.state() + "]");
+        TestKit.check(view.state() == 1L, "state 1 (active) round-trip [got " + view.state() + "]");
         view.setState(2L);
-        TestKit.check(view.state() == 2L, "state 2 (active) round-trip [got " + view.state() + "]");
+        TestKit.check(view.state() == 2L, "state 2 (inactive) round-trip [got " + view.state() + "]");
         view.setState(0L);
-        TestKit.check(view.state() == 0L, "state 0 (inactive) round-trip [got " + view.state() + "]");
+        TestKit.check(view.state() == 0L, "state 0 (followsWindowActiveState) round-trip [got " + view.state() + "]");
         view.setState(origState);
 
         // ---- isEmphasized round-trip ----

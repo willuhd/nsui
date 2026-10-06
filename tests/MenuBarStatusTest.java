@@ -208,13 +208,27 @@ public final class MenuBarStatusTest {
                     menu.setAutoenablesItems(origAuto);
                 } catch (Throwable t) { check(false, "autoenablesItems threw: " + t); }
 
+                // showsSearchField/setShowsSearchField: are not NSMenu selectors on this OS;
+                // the wrapper is a documented guarded no-op. Assert that contract instead of
+                // a no-crash that can never fail.
                 try {
-                    TestKit.noThrow("NSMenu setShowsSearchField(true) no crash (showsSearchField=" + menu.showsSearchField() + ")", () -> menu.setShowsSearchField(true));
-                    TestKit.noThrow("NSMenu setShowsSearchField(false) no crash", () -> menu.setShowsSearchField(false));
-                    // compat alias
-                    menu.setShowsSearchFieldCompat(true);
-                    TestKit.noThrow("NSMenu setShowsSearchFieldCompat no crash", () -> menu.setShowsSearchFieldCompat(false));
-                } catch (Throwable t) { check(false, "showsSearchField threw: " + t); }
+                    boolean hasSearch = (boolean) ObjC.handle(nsui.objc.Sig.of(nsui.objc.Sig.Ret.BOOL, nsui.objc.Sig.Arg.ID))
+                            .invokeExact(menu.peer(), ObjC.sel("respondsToSelector:"), ObjC.sel("showsSearchField"));
+                    if (hasSearch) {
+                        boolean origSearch = menu.showsSearchField();
+                        menu.setShowsSearchField(!origSearch);
+                        check(menu.showsSearchField() == !origSearch,
+                                "NSMenu setShowsSearchField round-trip (got " + menu.showsSearchField() + ")");
+                        menu.setShowsSearchField(origSearch);
+                        check(menu.showsSearchField() == origSearch, "NSMenu showsSearchField restored");
+                    } else {
+                        check(!menu.showsSearchField(), "NSMenu showsSearchField false when the selector is absent");
+                        menu.setShowsSearchField(true);
+                        menu.setShowsSearchFieldCompat(false);
+                        check(!menu.showsSearchField(), "NSMenu setShowsSearchField is a no-op when absent");
+                        TestKit.skipCase("NSMenu showsSearchField absent on this OS (documented guarded no-op)");
+                    }
+                } catch (Throwable t) { check(false, "showsSearchField probe threw: " + t); }
 
                 // items with image
                 NSMenuItem m1 = menu.addItemWithTitle("First", "", "");

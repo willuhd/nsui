@@ -244,6 +244,9 @@ public final class MetalTest {
         layer.setDevice(device);
         layer.setPixelFormat(80);
         layer.setDrawableSize(new NSSize(200, 200));
+        NSSize dsize = layer.drawableSize();
+        TestKit.check(Math.abs(dsize.width() - 200) < 0.5 && Math.abs(dsize.height() - 200) < 0.5,
+                "CAMetalLayer drawableSize by-value round-trip (got " + dsize + ")");
         NSView content = NSView.create(new NSRect(0, 0, 200, 200), (ctx, d) -> {});
         content.setWantsLayer(true);
         win.setContentView(content);

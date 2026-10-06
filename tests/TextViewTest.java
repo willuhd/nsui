@@ -155,6 +155,13 @@ public final class TextViewTest {
         // NSTextView inside scroll may have been resized by scroll view; just check not empty
         TestKit.check(fr.width() > 0 && fr.height() > 0, "textView frame non-empty in scroll (got " + fr + ")");
 
+        // ---- setAttributedStringValue must not send setAttributedString: to NSTextView ----
+        // (NSTextView implements neither; the setter routes through its textStorage)
+        nsui.NSTextStorage att = nsui.NSTextStorage.create("Attributed Body");
+        tv.setAttributedStringValue(att);
+        TestKit.check("Attributed Body".equals(tv.string()),
+                "setAttributedStringValue routes through textStorage (got \"" + tv.string() + "\")");
+
         System.out.println(TestKit.failures() == 0 ? "RESULT: ALL PASS" : "RESULT: " + TestKit.failures() + " FAILURE(S)");
         TestKit.close(window);
         TestKit.end();

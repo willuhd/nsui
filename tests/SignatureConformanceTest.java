@@ -189,18 +189,33 @@ public final class SignatureConformanceTest {
         Matcher mc = Pattern.compile("ObjC\\.cls\\(\"([^\"]+)\"\\)").matcher(text);
         while (mc.find()) if (!cands.contains(mc.group(1))) cands.add(mc.group(1));
 
-        Matcher ms = Pattern.compile("ObjC\\.sel\\(\\s*\"([^\"]+)\"\\s*\\)").matcher(text);
+        // Tier-2 selector hoisting replaces ObjC.sel("x") with Sels.x; the field's
+        // selector literal is recorded by the generated populate() assignments.
+        Map<String, String> selsMap = new HashMap<>();
+        Matcher msel = Pattern.compile("([A-Za-z_]\\w*)\\s*=\\s*ObjC\\.sel\\(\\s*\"([^\"]+)\"\\s*\\)").matcher(text);
+        while (msel.find()) selsMap.put(msel.group(1), msel.group(2));
+
+        // A call site is either a literal ObjC.sel("...") or a hoisted Sels.<field>.
+        // Only the FIRST selector token in a statement is the dispatched selector;
+        // later ones are SEL arguments (e.g. the tested SEL in a respondsToSelector: guard).
+        Matcher ms = Pattern.compile(
+                "ObjC\\.sel\\(\\s*\"([^\"]+)\"\\s*\\)|Sels\\.([A-Za-z_]\\w*)").matcher(text);
         while (ms.find()) {
-            String sel = ms.group(1);
             int start = ms.start();
             int cut = Math.max(Math.max(text.lastIndexOf(';', start), text.lastIndexOf('{', start)),
                     text.lastIndexOf('}', start));
-            // A selector passed as an argument (e.g. the tested SEL in a
-            // respondsToSelector: guard) is not a dispatch site; only the first
-            // ObjC.sel(...) in a statement is the message selector.
-            int firstSel = text.indexOf("ObjC.sel(", cut + 1);
-            if (firstSel >= 0 && firstSel < start) continue;
+            Matcher probe = ms.pattern().matcher(text);
+            if (probe.find(cut + 1) && probe.start() < start) continue;
             String stmt = text.substring(cut + 1, start);
+            // The generated populate() assignment (field = ObjC.sel("...")) is not a call site.
+            if (stmt.matches("(?s)\\s*[A-Za-z_]\\w*\\s*=\\s*")) continue;
+            String sel;
+            if (ms.group(1) != null) {
+                sel = ms.group(1);
+            } else {
+                sel = selsMap.get(ms.group(2));
+                if (sel == null) { st.unresolved++; continue; }
+            }
 
             Resolved res = resolve(stmt, start, defName, defShape, defOffset, allByName);
             List<String> assumed = res == null ? null : res.shape;

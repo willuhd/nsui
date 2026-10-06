@@ -26,6 +26,148 @@ import static nsui.objc.Sig.Ret;
 /// `ObjC.invoke` escape hatch (NULL-padded to the registered 6-object shape).
 public final class NSButton extends NSControl {
 
+    /// Cached selectors, populated once from ensureInitLocked().
+    private static final class Sels {
+        static MemorySegment alloc;
+        static MemorySegment initWithFrame;
+        static MemorySegment setTitle;
+        static MemorySegment title;
+        static MemorySegment alternateTitle;
+        static MemorySegment setAlternateTitle;
+        static MemorySegment attributedTitle;
+        static MemorySegment setAttributedTitle;
+        static MemorySegment attributedAlternateTitle;
+        static MemorySegment setAttributedAlternateTitle;
+        static MemorySegment sizeToFit;
+        static MemorySegment bezelStyle;
+        static MemorySegment setBezelStyle;
+        static MemorySegment setButtonType;
+        static MemorySegment state;
+        static MemorySegment setState;
+        static MemorySegment setNextState;
+        static MemorySegment allowsMixedState;
+        static MemorySegment setAllowsMixedState;
+        static MemorySegment highlight;
+        static MemorySegment isBordered;
+        static MemorySegment setBordered;
+        static MemorySegment isTransparent;
+        static MemorySegment setTransparent;
+        static MemorySegment showsBorderOnlyWhileMouseInside;
+        static MemorySegment setShowsBorderOnlyWhileMouseInside;
+        static MemorySegment image;
+        static MemorySegment setImage;
+        static MemorySegment alternateImage;
+        static MemorySegment setAlternateImage;
+        static MemorySegment imagePosition;
+        static MemorySegment setImagePosition;
+        static MemorySegment imageScaling;
+        static MemorySegment setImageScaling;
+        static MemorySegment imageHugsTitle;
+        static MemorySegment setImageHugsTitle;
+        static MemorySegment keyEquivalent;
+        static MemorySegment setKeyEquivalent;
+        static MemorySegment keyEquivalentModifierMask;
+        static MemorySegment setKeyEquivalentModifierMask;
+        static MemorySegment sound;
+        static MemorySegment setSound;
+        static MemorySegment isSpringLoaded;
+        static MemorySegment setSpringLoaded;
+        static MemorySegment bezelColor;
+        static MemorySegment setBezelColor;
+        static MemorySegment contentTintColor;
+        static MemorySegment setContentTintColor;
+        static MemorySegment setPeriodicDelay_interval;
+        static MemorySegment hasDestructiveAction;
+        static MemorySegment setHasDestructiveAction;
+        static MemorySegment buttonWithTitle_target_action;
+        static MemorySegment buttonWithImage_target_action;
+        static MemorySegment checkboxWithTitle_target_action;
+        static MemorySegment radioButtonWithTitle_target_action;
+        static MemorySegment buttonWithTitle_image_target_action;
+        static MemorySegment maxAcceleratorLevel;
+        static MemorySegment setMaxAcceleratorLevel;
+        static MemorySegment symbolConfiguration;
+        static MemorySegment setSymbolConfiguration;
+        static MemorySegment respondsToSelector;
+        static MemorySegment tintProminence;
+        static MemorySegment setTintProminence;
+        static MemorySegment borderShape;
+        static MemorySegment setBorderShape;
+        static MemorySegment performKeyEquivalent;
+        static MemorySegment compressWithPrioritizedCompressionOptions;
+        static MemorySegment activeCompressionOptions;
+        static void populate() {
+            alloc = ObjC.sel("alloc");
+            initWithFrame = ObjC.sel("initWithFrame:");
+            setTitle = ObjC.sel("setTitle:");
+            title = ObjC.sel("title");
+            alternateTitle = ObjC.sel("alternateTitle");
+            setAlternateTitle = ObjC.sel("setAlternateTitle:");
+            attributedTitle = ObjC.sel("attributedTitle");
+            setAttributedTitle = ObjC.sel("setAttributedTitle:");
+            attributedAlternateTitle = ObjC.sel("attributedAlternateTitle");
+            setAttributedAlternateTitle = ObjC.sel("setAttributedAlternateTitle:");
+            sizeToFit = ObjC.sel("sizeToFit");
+            bezelStyle = ObjC.sel("bezelStyle");
+            setBezelStyle = ObjC.sel("setBezelStyle:");
+            setButtonType = ObjC.sel("setButtonType:");
+            state = ObjC.sel("state");
+            setState = ObjC.sel("setState:");
+            setNextState = ObjC.sel("setNextState");
+            allowsMixedState = ObjC.sel("allowsMixedState");
+            setAllowsMixedState = ObjC.sel("setAllowsMixedState:");
+            highlight = ObjC.sel("highlight:");
+            isBordered = ObjC.sel("isBordered");
+            setBordered = ObjC.sel("setBordered:");
+            isTransparent = ObjC.sel("isTransparent");
+            setTransparent = ObjC.sel("setTransparent:");
+            showsBorderOnlyWhileMouseInside = ObjC.sel("showsBorderOnlyWhileMouseInside");
+            setShowsBorderOnlyWhileMouseInside = ObjC.sel("setShowsBorderOnlyWhileMouseInside:");
+            image = ObjC.sel("image");
+            setImage = ObjC.sel("setImage:");
+            alternateImage = ObjC.sel("alternateImage");
+            setAlternateImage = ObjC.sel("setAlternateImage:");
+            imagePosition = ObjC.sel("imagePosition");
+            setImagePosition = ObjC.sel("setImagePosition:");
+            imageScaling = ObjC.sel("imageScaling");
+            setImageScaling = ObjC.sel("setImageScaling:");
+            imageHugsTitle = ObjC.sel("imageHugsTitle");
+            setImageHugsTitle = ObjC.sel("setImageHugsTitle:");
+            keyEquivalent = ObjC.sel("keyEquivalent");
+            setKeyEquivalent = ObjC.sel("setKeyEquivalent:");
+            keyEquivalentModifierMask = ObjC.sel("keyEquivalentModifierMask");
+            setKeyEquivalentModifierMask = ObjC.sel("setKeyEquivalentModifierMask:");
+            sound = ObjC.sel("sound");
+            setSound = ObjC.sel("setSound:");
+            isSpringLoaded = ObjC.sel("isSpringLoaded");
+            setSpringLoaded = ObjC.sel("setSpringLoaded:");
+            bezelColor = ObjC.sel("bezelColor");
+            setBezelColor = ObjC.sel("setBezelColor:");
+            contentTintColor = ObjC.sel("contentTintColor");
+            setContentTintColor = ObjC.sel("setContentTintColor:");
+            setPeriodicDelay_interval = ObjC.sel("setPeriodicDelay:interval:");
+            hasDestructiveAction = ObjC.sel("hasDestructiveAction");
+            setHasDestructiveAction = ObjC.sel("setHasDestructiveAction:");
+            buttonWithTitle_target_action = ObjC.sel("buttonWithTitle:target:action:");
+            buttonWithImage_target_action = ObjC.sel("buttonWithImage:target:action:");
+            checkboxWithTitle_target_action = ObjC.sel("checkboxWithTitle:target:action:");
+            radioButtonWithTitle_target_action = ObjC.sel("radioButtonWithTitle:target:action:");
+            buttonWithTitle_image_target_action = ObjC.sel("buttonWithTitle:image:target:action:");
+            maxAcceleratorLevel = ObjC.sel("maxAcceleratorLevel");
+            setMaxAcceleratorLevel = ObjC.sel("setMaxAcceleratorLevel:");
+            symbolConfiguration = ObjC.sel("symbolConfiguration");
+            setSymbolConfiguration = ObjC.sel("setSymbolConfiguration:");
+            respondsToSelector = ObjC.sel("respondsToSelector:");
+            tintProminence = ObjC.sel("tintProminence");
+            setTintProminence = ObjC.sel("setTintProminence:");
+            borderShape = ObjC.sel("borderShape");
+            setBorderShape = ObjC.sel("setBorderShape:");
+            performKeyEquivalent = ObjC.sel("performKeyEquivalent:");
+            compressWithPrioritizedCompressionOptions = ObjC.sel("compressWithPrioritizedCompressionOptions:");
+            activeCompressionOptions = ObjC.sel("activeCompressionOptions");
+        }
+    }
+
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
     private record Handles(MethodHandle hInitFrame, MethodHandle hSetPeriodicDelay, MethodHandle hResponds, MethodHandle hBoolId) {}
     private static volatile Handles H;
@@ -52,7 +194,8 @@ public final class NSButton extends NSControl {
                 ObjC.handle(Sig.of(Ret.VOID, Arg.FLOAT, Arg.FLOAT)),
                 ObjC.handle(Sig.of(Ret.BOOL, Arg.ID)),
                 ObjC.handle(Sig.of(Ret.BOOL, Arg.ID)));
-    }
+            Sels.populate();
+}
 
     /// `[[NSButton alloc] initWithFrame:frame]` then configure bezel/type and
     /// wire the target/action, then `sizeToFit` and re-apply `setFrame:`
@@ -65,9 +208,9 @@ public final class NSButton extends NSControl {
     /// e.g. `"pressed:"`
     public static NSButton create(NSRect frame, String title, MemorySegment target, String actionSelector) {
         ensureInit();
-        MemorySegment b = ObjC.msgSendId(ObjC.cls("NSButton"), ObjC.sel("alloc"));
+        MemorySegment b = ObjC.msgSendId(ObjC.cls("NSButton"), Sels.alloc);
         try {
-            b = (MemorySegment) H.hInitFrame().invokeExact(b, ObjC.sel("initWithFrame:"), frame.toSegment());
+            b = (MemorySegment) H.hInitFrame().invokeExact(b, Sels.initWithFrame, frame.toSegment());
         } catch (Throwable t) {
             throw new RuntimeException("initWithFrame: failed for NSButton", t);
         }
@@ -93,39 +236,48 @@ public final class NSButton extends NSControl {
 
     /// [button setTitle:] — the string shown on the bezel.
     public void setTitle(String title) {
-        ObjC.msgSendVoidId(peer, ObjC.sel("setTitle:"), ObjC.nsstring(title));
+        ensureInit();
+        ObjC.msgSendVoidId(peer, Sels.setTitle, ObjC.nsstring(title));
     }
 
     /// [button title] — the current title (NSString -> String).
     public String title() {
-        return ObjC.toString(ObjC.msgSendId(peer, ObjC.sel("title")));
+        ensureInit();
+        return ObjC.toString(ObjC.msgSendId(peer, Sels.title));
     }
 
     /// [button alternateTitle] — the alternate title (for stateful buttons).
     public String alternateTitle() {
-        return ObjC.toString(ObjC.msgSendId(peer, ObjC.sel("alternateTitle")));
+        ensureInit();
+        return ObjC.toString(ObjC.msgSendId(peer, Sels.alternateTitle));
     }
     public void setAlternateTitle(String t) {
-        ObjC.msgSendVoidId(peer, ObjC.sel("setAlternateTitle:"), ObjC.nsstring(t));
+        ensureInit();
+        ObjC.msgSendVoidId(peer, Sels.setAlternateTitle, ObjC.nsstring(t));
     }
 
     /// [button attributedTitle] — NSAttributedString id.
     public MemorySegment attributedTitle() {
-        return ObjC.msgSendId(peer, ObjC.sel("attributedTitle"));
+        ensureInit();
+        return ObjC.msgSendId(peer, Sels.attributedTitle);
     }
     public void setAttributedTitle(MemorySegment attr) {
-        ObjC.msgSendVoidId(peer, ObjC.sel("setAttributedTitle:"), attr);
+        ensureInit();
+        ObjC.msgSendVoidId(peer, Sels.setAttributedTitle, attr);
     }
     public MemorySegment attributedAlternateTitle() {
-        return ObjC.msgSendId(peer, ObjC.sel("attributedAlternateTitle"));
+        ensureInit();
+        return ObjC.msgSendId(peer, Sels.attributedAlternateTitle);
     }
     public void setAttributedAlternateTitle(MemorySegment attr) {
-        ObjC.msgSendVoidId(peer, ObjC.sel("setAttributedAlternateTitle:"), attr);
+        ensureInit();
+        ObjC.msgSendVoidId(peer, Sels.setAttributedAlternateTitle, attr);
     }
 
     /// [button sizeToFit] — size the button to its intrinsic content.
     public void sizeToFit() {
-        ObjC.msgSendVoid(peer, ObjC.sel("sizeToFit"));
+        ensureInit();
+        ObjC.msgSendVoid(peer, Sels.sizeToFit);
     }
 
     // ---------------------------------------------------------------- nested enums — verified against local SDK headers
@@ -169,145 +321,182 @@ public final class NSButton extends NSControl {
 
     /// [button bezelStyle] — NSBezelStyle.
     public long bezelStyle() {
-        return ObjC.msgSendLong(peer, ObjC.sel("bezelStyle"));
+        ensureInit();
+        return ObjC.msgSendLong(peer, Sels.bezelStyle);
     }
     /// Typed getter.
     public BezelStyle bezelStyleEnum() { return BezelStyle.fromValue(bezelStyle()); }
     /// [button setBezelStyle:] — NSBezelStyle (1 = Rounded).
     public void setBezelStyle(long style) {
-        ObjC.msgSendVoidLong(peer, ObjC.sel("setBezelStyle:"), style);
+        ensureInit();
+        ObjC.msgSendVoidLong(peer, Sels.setBezelStyle, style);
     }
     /// Typed overload.
     public void setBezelStyle(BezelStyle s) { setBezelStyle(s.value); }
 
     /// [button setButtonType:] — NSButtonType (0 = MomentaryPushIn).
     public void setButtonType(long type) {
-        ObjC.msgSendVoidLong(peer, ObjC.sel("setButtonType:"), type);
+        ensureInit();
+        ObjC.msgSendVoidLong(peer, Sels.setButtonType, type);
     }
     /// Typed overload.
     public void setButtonType(ButtonType t) { setButtonType(t.value); }
 
     // ---- state ----
     public long state() {
-        return ObjC.msgSendLong(peer, ObjC.sel("state"));
+        ensureInit();
+        return ObjC.msgSendLong(peer, Sels.state);
     }
     public void setState(long state) {
-        ObjC.msgSendVoidLong(peer, ObjC.sel("setState:"), state);
+        ensureInit();
+        ObjC.msgSendVoidLong(peer, Sels.setState, state);
     }
     public void setNextState() {
-        ObjC.msgSendVoid(peer, ObjC.sel("setNextState"));
+        ensureInit();
+        ObjC.msgSendVoid(peer, Sels.setNextState);
     }
     public boolean allowsMixedState() {
-        return ObjC.msgSendBool(peer, ObjC.sel("allowsMixedState"));
+        ensureInit();
+        return ObjC.msgSendBool(peer, Sels.allowsMixedState);
     }
     public void setAllowsMixedState(boolean flag) {
-        ObjC.msgSendVoidBool(peer, ObjC.sel("setAllowsMixedState:"), flag);
+        ensureInit();
+        ObjC.msgSendVoidBool(peer, Sels.setAllowsMixedState, flag);
     }
     public void highlight(boolean flag) {
-        ObjC.msgSendVoidBool(peer, ObjC.sel("highlight:"), flag);
+        ensureInit();
+        ObjC.msgSendVoidBool(peer, Sels.highlight, flag);
     }
 
     // ---- bordered / transparent ----
     public boolean isBordered() {
-        return ObjC.msgSendBool(peer, ObjC.sel("isBordered"));
+        ensureInit();
+        return ObjC.msgSendBool(peer, Sels.isBordered);
     }
     public void setBordered(boolean flag) {
-        ObjC.msgSendVoidBool(peer, ObjC.sel("setBordered:"), flag);
+        ensureInit();
+        ObjC.msgSendVoidBool(peer, Sels.setBordered, flag);
     }
     public boolean isTransparent() {
-        return ObjC.msgSendBool(peer, ObjC.sel("isTransparent"));
+        ensureInit();
+        return ObjC.msgSendBool(peer, Sels.isTransparent);
     }
     public void setTransparent(boolean flag) {
-        ObjC.msgSendVoidBool(peer, ObjC.sel("setTransparent:"), flag);
+        ensureInit();
+        ObjC.msgSendVoidBool(peer, Sels.setTransparent, flag);
     }
     public boolean showsBorderOnlyWhileMouseInside() {
-        return ObjC.msgSendBool(peer, ObjC.sel("showsBorderOnlyWhileMouseInside"));
+        ensureInit();
+        return ObjC.msgSendBool(peer, Sels.showsBorderOnlyWhileMouseInside);
     }
     public void setShowsBorderOnlyWhileMouseInside(boolean flag) {
-        ObjC.msgSendVoidBool(peer, ObjC.sel("setShowsBorderOnlyWhileMouseInside:"), flag);
+        ensureInit();
+        ObjC.msgSendVoidBool(peer, Sels.setShowsBorderOnlyWhileMouseInside, flag);
     }
 
     // ---- image ----
     public NSImage image() {
-        MemorySegment p = ObjC.msgSendId(peer, ObjC.sel("image"));
+        ensureInit();
+        MemorySegment p = ObjC.msgSendId(peer, Sels.image);
         return (p == null || p.address() == 0) ? null : NSImage.wrap(p);
     }
     public void setImage(NSImage img) {
-        ObjC.msgSendVoidId(peer, ObjC.sel("setImage:"), (MemorySegment) (img == null ? MemorySegment.NULL : img.peer()));
+        ensureInit();
+        ObjC.msgSendVoidId(peer, Sels.setImage, (MemorySegment) (img == null ? MemorySegment.NULL : img.peer()));
     }
     public NSImage alternateImage() {
-        MemorySegment p = ObjC.msgSendId(peer, ObjC.sel("alternateImage"));
+        ensureInit();
+        MemorySegment p = ObjC.msgSendId(peer, Sels.alternateImage);
         return (p == null || p.address() == 0) ? null : NSImage.wrap(p);
     }
     public void setAlternateImage(NSImage img) {
-        ObjC.msgSendVoidId(peer, ObjC.sel("setAlternateImage:"), (MemorySegment) (img == null ? MemorySegment.NULL : img.peer()));
+        ensureInit();
+        ObjC.msgSendVoidId(peer, Sels.setAlternateImage, (MemorySegment) (img == null ? MemorySegment.NULL : img.peer()));
     }
     public long imagePosition() {
-        return ObjC.msgSendLong(peer, ObjC.sel("imagePosition"));
+        ensureInit();
+        return ObjC.msgSendLong(peer, Sels.imagePosition);
     }
     public void setImagePosition(long pos) {
-        ObjC.msgSendVoidLong(peer, ObjC.sel("setImagePosition:"), pos);
+        ensureInit();
+        ObjC.msgSendVoidLong(peer, Sels.setImagePosition, pos);
     }
     public long imageScaling() {
-        return ObjC.msgSendLong(peer, ObjC.sel("imageScaling"));
+        ensureInit();
+        return ObjC.msgSendLong(peer, Sels.imageScaling);
     }
     public void setImageScaling(long scaling) {
-        ObjC.msgSendVoidLong(peer, ObjC.sel("setImageScaling:"), scaling);
+        ensureInit();
+        ObjC.msgSendVoidLong(peer, Sels.setImageScaling, scaling);
     }
     public boolean imageHugsTitle() {
-        return ObjC.msgSendBool(peer, ObjC.sel("imageHugsTitle"));
+        ensureInit();
+        return ObjC.msgSendBool(peer, Sels.imageHugsTitle);
     }
     public void setImageHugsTitle(boolean flag) {
-        ObjC.msgSendVoidBool(peer, ObjC.sel("setImageHugsTitle:"), flag);
+        ensureInit();
+        ObjC.msgSendVoidBool(peer, Sels.setImageHugsTitle, flag);
     }
 
     // ---- keyEquivalent ----
     public String keyEquivalent() {
-        return ObjC.toString(ObjC.msgSendId(peer, ObjC.sel("keyEquivalent")));
+        ensureInit();
+        return ObjC.toString(ObjC.msgSendId(peer, Sels.keyEquivalent));
     }
     public void setKeyEquivalent(String ke) {
-        ObjC.msgSendVoidId(peer, ObjC.sel("setKeyEquivalent:"), ObjC.nsstring(ke));
+        ensureInit();
+        ObjC.msgSendVoidId(peer, Sels.setKeyEquivalent, ObjC.nsstring(ke));
     }
     public long keyEquivalentModifierMask() {
-        return ObjC.msgSendLong(peer, ObjC.sel("keyEquivalentModifierMask"));
+        ensureInit();
+        return ObjC.msgSendLong(peer, Sels.keyEquivalentModifierMask);
     }
     public void setKeyEquivalentModifierMask(long mask) {
-        ObjC.msgSendVoidLong(peer, ObjC.sel("setKeyEquivalentModifierMask:"), mask);
+        ensureInit();
+        ObjC.msgSendVoidLong(peer, Sels.setKeyEquivalentModifierMask, mask);
     }
 
     // ---- sound ----
     public MemorySegment sound() {
-        return ObjC.msgSendId(peer, ObjC.sel("sound"));
+        ensureInit();
+        return ObjC.msgSendId(peer, Sels.sound);
     }
     public void setSound(MemorySegment sound) {
-        ObjC.msgSendVoidId(peer, ObjC.sel("setSound:"), (MemorySegment) (sound == null ? MemorySegment.NULL : sound));
+        ensureInit();
+        ObjC.msgSendVoidId(peer, Sels.setSound, (MemorySegment) (sound == null ? MemorySegment.NULL : sound));
     }
 
     // ---- springLoaded / colors ----
     public boolean isSpringLoaded() {
-        return ObjC.msgSendBool(peer, ObjC.sel("isSpringLoaded"));
+        ensureInit();
+        return ObjC.msgSendBool(peer, Sels.isSpringLoaded);
     }
     public void setSpringLoaded(boolean flag) {
-        ObjC.msgSendVoidBool(peer, ObjC.sel("setSpringLoaded:"), flag);
+        ensureInit();
+        ObjC.msgSendVoidBool(peer, Sels.setSpringLoaded, flag);
     }
     public MemorySegment bezelColor() {
-        return ObjC.msgSendId(peer, ObjC.sel("bezelColor"));
+        ensureInit();
+        return ObjC.msgSendId(peer, Sels.bezelColor);
     }
     public void setBezelColor(NSColor c) {
-        ObjC.msgSendVoidId(peer, ObjC.sel("setBezelColor:"), (MemorySegment) (c == null ? MemorySegment.NULL : c.peer()));
+        ensureInit();
+        ObjC.msgSendVoidId(peer, Sels.setBezelColor, (MemorySegment) (c == null ? MemorySegment.NULL : c.peer()));
     }
     public MemorySegment contentTintColor() {
-        return ObjC.msgSendId(peer, ObjC.sel("contentTintColor"));
+        ensureInit();
+        return ObjC.msgSendId(peer, Sels.contentTintColor);
     }
     public void setContentTintColor(NSColor c) {
-        ObjC.msgSendVoidId(peer, ObjC.sel("setContentTintColor:"), (MemorySegment) (c == null ? MemorySegment.NULL : c.peer()));
+        ensureInit();
+        ObjC.msgSendVoidId(peer, Sels.setContentTintColor, (MemorySegment) (c == null ? MemorySegment.NULL : c.peer()));
     }
 
     // ---- periodic delay ----
     public void setPeriodicDelay(float delay, float interval) {
         ensureInit();
         try {
-            H.hSetPeriodicDelay().invokeExact(peer, ObjC.sel("setPeriodicDelay:interval:"), delay, interval);
+            H.hSetPeriodicDelay().invokeExact(peer, Sels.setPeriodicDelay_interval, delay, interval);
         } catch (Throwable t) {
             throw new RuntimeException("setPeriodicDelay:interval: failed", t);
         }
@@ -315,17 +504,19 @@ public final class NSButton extends NSControl {
 
     // ---- hasDestructiveAction ----
     public boolean hasDestructiveAction() {
-        return ObjC.msgSendBool(peer, ObjC.sel("hasDestructiveAction"));
+        ensureInit();
+        return ObjC.msgSendBool(peer, Sels.hasDestructiveAction);
     }
     public void setHasDestructiveAction(boolean flag) {
-        ObjC.msgSendVoidBool(peer, ObjC.sel("setHasDestructiveAction:"), flag);
+        ensureInit();
+        ObjC.msgSendVoidBool(peer, Sels.setHasDestructiveAction, flag);
     }
 
     // ---- standard factories (NSButton.h "Creating Standard Buttons") ----
     /// `+buttonWithTitle:target:action:` — a standard push button (nil-safe target/action).
     public static NSButton buttonWithTitle(String title, MemorySegment target, String actionSelector) {
         ensureInit();
-        MemorySegment b = ObjC.msgSendIdIdSelId(ObjC.cls("NSButton"), ObjC.sel("buttonWithTitle:target:action:"),
+        MemorySegment b = ObjC.msgSendIdIdSelId(ObjC.cls("NSButton"), Sels.buttonWithTitle_target_action,
                 ObjC.nsstring(title == null ? "" : title),
                 target == null ? MemorySegment.NULL : target,
                 (actionSelector == null || actionSelector.isEmpty()) ? MemorySegment.NULL : ObjC.sel(actionSelector));
@@ -335,7 +526,7 @@ public final class NSButton extends NSControl {
     /// `+buttonWithImage:target:action:` — a standard image button (nil-safe image/target/action).
     public static NSButton buttonWithImage(NSImage image, MemorySegment target, String actionSelector) {
         ensureInit();
-        MemorySegment b = ObjC.msgSendIdIdSelId(ObjC.cls("NSButton"), ObjC.sel("buttonWithImage:target:action:"),
+        MemorySegment b = ObjC.msgSendIdIdSelId(ObjC.cls("NSButton"), Sels.buttonWithImage_target_action,
                 (MemorySegment) (image == null ? MemorySegment.NULL : image.peer()),
                 target == null ? MemorySegment.NULL : target,
                 (actionSelector == null || actionSelector.isEmpty()) ? MemorySegment.NULL : ObjC.sel(actionSelector));
@@ -345,7 +536,7 @@ public final class NSButton extends NSControl {
     /// `+checkboxWithTitle:target:action:` — a standard checkbox (nil-safe target/action).
     public static NSButton checkboxWithTitle(String title, MemorySegment target, String actionSelector) {
         ensureInit();
-        MemorySegment b = ObjC.msgSendIdIdSelId(ObjC.cls("NSButton"), ObjC.sel("checkboxWithTitle:target:action:"),
+        MemorySegment b = ObjC.msgSendIdIdSelId(ObjC.cls("NSButton"), Sels.checkboxWithTitle_target_action,
                 ObjC.nsstring(title == null ? "" : title),
                 target == null ? MemorySegment.NULL : target,
                 (actionSelector == null || actionSelector.isEmpty()) ? MemorySegment.NULL : ObjC.sel(actionSelector));
@@ -355,7 +546,7 @@ public final class NSButton extends NSControl {
     /// `+radioButtonWithTitle:target:action:` — a standard radio button (nil-safe target/action).
     public static NSButton radioButtonWithTitle(String title, MemorySegment target, String actionSelector) {
         ensureInit();
-        MemorySegment b = ObjC.msgSendIdIdSelId(ObjC.cls("NSButton"), ObjC.sel("radioButtonWithTitle:target:action:"),
+        MemorySegment b = ObjC.msgSendIdIdSelId(ObjC.cls("NSButton"), Sels.radioButtonWithTitle_target_action,
                 ObjC.nsstring(title == null ? "" : title),
                 target == null ? MemorySegment.NULL : target,
                 (actionSelector == null || actionSelector.isEmpty()) ? MemorySegment.NULL : ObjC.sel(actionSelector));
@@ -365,7 +556,7 @@ public final class NSButton extends NSControl {
     /// `+buttonWithTitle:image:target:action:` — title plus image (all object args; via `ObjC.invoke`).
     public static NSButton buttonWithTitleImage(String title, NSImage image, MemorySegment target, String actionSelector) {
         ensureInit();
-        MemorySegment b = ObjC.invoke(ObjC.cls("NSButton"), ObjC.sel("buttonWithTitle:image:target:action:"),
+        MemorySegment b = ObjC.invoke(ObjC.cls("NSButton"), Sels.buttonWithTitle_image_target_action,
                 ObjC.nsstring(title == null ? "" : title),
                 (MemorySegment) (image == null ? MemorySegment.NULL : image.peer()),
                 target == null ? MemorySegment.NULL : target,
@@ -377,19 +568,23 @@ public final class NSButton extends NSControl {
     // ---- accelerator / symbol ----
     /// [button maxAcceleratorLevel] — max level for multi-level accelerator buttons (default 2).
     public long maxAcceleratorLevel() {
-        return ObjC.msgSendLong(peer, ObjC.sel("maxAcceleratorLevel"));
+        ensureInit();
+        return ObjC.msgSendLong(peer, Sels.maxAcceleratorLevel);
     }
     /// [button setMaxAcceleratorLevel:] — allowed values 1..5.
     public void setMaxAcceleratorLevel(long level) {
-        ObjC.msgSendVoidLong(peer, ObjC.sel("setMaxAcceleratorLevel:"), level);
+        ensureInit();
+        ObjC.msgSendVoidLong(peer, Sels.setMaxAcceleratorLevel, level);
     }
     /// [button symbolConfiguration] — sizing for symbol images (raw id; nil becomes NULL).
     public MemorySegment symbolConfiguration() {
-        return ObjC.msgSendId(peer, ObjC.sel("symbolConfiguration"));
+        ensureInit();
+        return ObjC.msgSendId(peer, Sels.symbolConfiguration);
     }
     /// [button setSymbolConfiguration:] — pass `MemorySegment.NULL` for nil.
     public void setSymbolConfiguration(MemorySegment config) {
-        ObjC.msgSendVoidId(peer, ObjC.sel("setSymbolConfiguration:"), config);
+        ensureInit();
+        ObjC.msgSendVoidId(peer, Sels.setSymbolConfiguration, config);
     }
 
     // ---- macOS 26 tint / border shape (guarded: 0 / no-op where absent) ----
@@ -397,36 +592,36 @@ public final class NSButton extends NSControl {
     public long tintProminence() {
         ensureInit();
         try {
-            boolean responds = (boolean) H.hResponds().invokeExact(peer, ObjC.sel("respondsToSelector:"), ObjC.sel("tintProminence"));
+            boolean responds = (boolean) H.hResponds().invokeExact(peer, Sels.respondsToSelector, Sels.tintProminence);
             if (!responds) return 0L;
-            return ObjC.msgSendLong(peer, ObjC.sel("tintProminence"));
+            return ObjC.msgSendLong(peer, Sels.tintProminence);
         } catch (Throwable t) { throw new RuntimeException("tintProminence failed", t); }
     }
     /// [button setTintProminence:] — macOS 26+; no-op when absent.
     public void setTintProminence(long prominence) {
         ensureInit();
         try {
-            boolean responds = (boolean) H.hResponds().invokeExact(peer, ObjC.sel("respondsToSelector:"), ObjC.sel("setTintProminence:"));
+            boolean responds = (boolean) H.hResponds().invokeExact(peer, Sels.respondsToSelector, Sels.setTintProminence);
             if (!responds) return;
-            ObjC.msgSendVoidLong(peer, ObjC.sel("setTintProminence:"), prominence);
+            ObjC.msgSendVoidLong(peer, Sels.setTintProminence, prominence);
         } catch (Throwable t) { throw new RuntimeException("setTintProminence: failed", t); }
     }
     /// [button borderShape] — NSControlBorderShape (0=Automatic); macOS 26+, 0 when absent.
     public long borderShape() {
         ensureInit();
         try {
-            boolean responds = (boolean) H.hResponds().invokeExact(peer, ObjC.sel("respondsToSelector:"), ObjC.sel("borderShape"));
+            boolean responds = (boolean) H.hResponds().invokeExact(peer, Sels.respondsToSelector, Sels.borderShape);
             if (!responds) return 0L;
-            return ObjC.msgSendLong(peer, ObjC.sel("borderShape"));
+            return ObjC.msgSendLong(peer, Sels.borderShape);
         } catch (Throwable t) { throw new RuntimeException("borderShape failed", t); }
     }
     /// [button setBorderShape:] — macOS 26+; no-op when absent.
     public void setBorderShape(long shape) {
         ensureInit();
         try {
-            boolean responds = (boolean) H.hResponds().invokeExact(peer, ObjC.sel("respondsToSelector:"), ObjC.sel("setBorderShape:"));
+            boolean responds = (boolean) H.hResponds().invokeExact(peer, Sels.respondsToSelector, Sels.setBorderShape);
             if (!responds) return;
-            ObjC.msgSendVoidLong(peer, ObjC.sel("setBorderShape:"), shape);
+            ObjC.msgSendVoidLong(peer, Sels.setBorderShape, shape);
         } catch (Throwable t) { throw new RuntimeException("setBorderShape: failed", t); }
     }
 
@@ -434,14 +629,16 @@ public final class NSButton extends NSControl {
     /// [button performKeyEquivalent:] — YES when the event matches (nil-safe event).
     public boolean performKeyEquivalent(NSEvent event) {
         ensureInit();
-        try { return (boolean) H.hBoolId().invokeExact(peer, ObjC.sel("performKeyEquivalent:"), (MemorySegment) (event == null ? MemorySegment.NULL : event.peer())); } catch (Throwable t) { throw new RuntimeException("performKeyEquivalent: failed", t); }
+        try { return (boolean) H.hBoolId().invokeExact(peer, Sels.performKeyEquivalent, (MemorySegment) (event == null ? MemorySegment.NULL : event.peer())); } catch (Throwable t) { throw new RuntimeException("performKeyEquivalent: failed", t); }
     }
     /// [button compressWithPrioritizedCompressionOptions:] — compress per prioritized options.
     public void compressWithPrioritizedCompressionOptions(NSArray options) {
-        ObjC.msgSendVoidId(peer, ObjC.sel("compressWithPrioritizedCompressionOptions:"), (MemorySegment) (options == null ? MemorySegment.NULL : options.peer()));
+        ensureInit();
+        ObjC.msgSendVoidId(peer, Sels.compressWithPrioritizedCompressionOptions, (MemorySegment) (options == null ? MemorySegment.NULL : options.peer()));
     }
     /// [button activeCompressionOptions] — options currently applied (raw id; nil becomes NULL).
     public MemorySegment activeCompressionOptions() {
-        return ObjC.msgSendId(peer, ObjC.sel("activeCompressionOptions"));
+        ensureInit();
+        return ObjC.msgSendId(peer, Sels.activeCompressionOptions);
     }
 }

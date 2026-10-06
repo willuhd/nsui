@@ -31,6 +31,450 @@ import static nsui.objc.Sig.Ret;
 /// and capture-free — they are registered for native-image in NsuiFeature.
 public class NSView extends NSResponder {
 
+    /// Cached selectors, populated once from ensureInitLocked().
+    private static final class Sels {
+        static MemorySegment alloc;
+        static MemorySegment initWithFrame;
+        static MemorySegment currentContext;
+        static MemorySegment graphicsPort;
+        static MemorySegment addTrackingArea;
+        static MemorySegment nextResponder;
+        static MemorySegment addSubview;
+        static MemorySegment setFrame;
+        static MemorySegment setAutoresizingMask;
+        static MemorySegment bounds;
+        static MemorySegment setBounds;
+        static MemorySegment frame;
+        static MemorySegment needsDisplay;
+        static MemorySegment setNeedsDisplay;
+        static MemorySegment setNeedsDisplayInRect;
+        static MemorySegment backingScaleFactor;
+        static MemorySegment convertRectToBacking;
+        static MemorySegment window;
+        static MemorySegment setWantsLayer;
+        static MemorySegment wantsLayer;
+        static MemorySegment isFlipped;
+        static MemorySegment layer;
+        static MemorySegment setLayer;
+        static MemorySegment autoresizingMask;
+        static MemorySegment autoresizesSubviews;
+        static MemorySegment setAutoresizesSubviews;
+        static MemorySegment translatesAutoresizingMaskIntoConstraints;
+        static MemorySegment setTranslatesAutoresizingMaskIntoConstraints;
+        static MemorySegment leadingAnchor;
+        static MemorySegment trailingAnchor;
+        static MemorySegment topAnchor;
+        static MemorySegment bottomAnchor;
+        static MemorySegment widthAnchor;
+        static MemorySegment heightAnchor;
+        static MemorySegment centerXAnchor;
+        static MemorySegment centerYAnchor;
+        static MemorySegment addConstraint;
+        static MemorySegment removeConstraint;
+        static MemorySegment constraints;
+        static MemorySegment count;
+        static MemorySegment objectAtIndex;
+        static MemorySegment displayIfNeeded;
+        static MemorySegment displayIfNeededInRect;
+        static MemorySegment layoutSubtreeIfNeeded;
+        static MemorySegment intrinsicContentSize;
+        static MemorySegment alphaValue;
+        static MemorySegment setAlphaValue;
+        static MemorySegment isHidden;
+        static MemorySegment setHidden;
+        static MemorySegment isHiddenOrHasHiddenAncestor;
+        static MemorySegment superview;
+        static MemorySegment isOpaque;
+        static MemorySegment visibleRect;
+        static MemorySegment isRotatedFromBase;
+        static MemorySegment isRotatedOrScaledFromBase;
+        static MemorySegment canBecomeKeyView;
+        static MemorySegment enclosingScrollView;
+        static MemorySegment invalidateIntrinsicContentSize;
+        static MemorySegment array;
+        static MemorySegment addObject;
+        static MemorySegment registerForDraggedTypes;
+        static MemorySegment unregisterDraggedTypes;
+        static MemorySegment beginDraggingSessionWithItems_event_source;
+        static MemorySegment bitmapImageRepForCachingDisplayInRect;
+        static MemorySegment cacheDisplayInRect_toBitmapImageRep;
+        static MemorySegment isDescendantOf;
+        static MemorySegment ancestorSharedWithView;
+        static MemorySegment subviews;
+        static MemorySegment setSubviews;
+        static MemorySegment opaqueAncestor;
+        static MemorySegment removeFromSuperview;
+        static MemorySegment replaceSubview_with;
+        static MemorySegment removeFromSuperviewWithoutNeedingDisplay;
+        static MemorySegment viewWillMoveToWindow;
+        static MemorySegment viewDidMoveToWindow;
+        static MemorySegment viewWillMoveToSuperview;
+        static MemorySegment viewDidMoveToSuperview;
+        static MemorySegment didAddSubview;
+        static MemorySegment willRemoveSubview;
+        static MemorySegment viewDidHide;
+        static MemorySegment viewDidUnhide;
+        static MemorySegment viewDidChangeBackingProperties;
+        static MemorySegment setFrameOrigin;
+        static MemorySegment setFrameSize;
+        static MemorySegment setBoundsOrigin;
+        static MemorySegment setBoundsSize;
+        static MemorySegment translateOriginToPoint;
+        static MemorySegment scaleUnitSquareToSize;
+        static MemorySegment rotateByAngle;
+        static MemorySegment frameRotation;
+        static MemorySegment setFrameRotation;
+        static MemorySegment frameCenterRotation;
+        static MemorySegment setFrameCenterRotation;
+        static MemorySegment boundsRotation;
+        static MemorySegment setBoundsRotation;
+        static MemorySegment postsFrameChangedNotifications;
+        static MemorySegment setPostsFrameChangedNotifications;
+        static MemorySegment postsBoundsChangedNotifications;
+        static MemorySegment setPostsBoundsChangedNotifications;
+        static MemorySegment resizeSubviewsWithOldSize;
+        static MemorySegment resizeWithOldSuperviewSize;
+        static MemorySegment display;
+        static MemorySegment displayIfNeededIgnoringOpacity;
+        static MemorySegment displayRect;
+        static MemorySegment displayRectIgnoringOpacity;
+        static MemorySegment displayIfNeededInRectIgnoringOpacity;
+        static MemorySegment displayRectIgnoringOpacity_inContext;
+        static MemorySegment viewWillDraw;
+        static MemorySegment wantsDefaultClipping;
+        static MemorySegment canDrawConcurrently;
+        static MemorySegment setCanDrawConcurrently;
+        static MemorySegment needsLayout;
+        static MemorySegment setNeedsLayout;
+        static MemorySegment layout;
+        static MemorySegment updateLayer;
+        static MemorySegment makeBackingLayer;
+        static MemorySegment centerScanRect;
+        static MemorySegment adjustScroll;
+        static MemorySegment convertRectFromBacking;
+        static MemorySegment convertSizeToBacking;
+        static MemorySegment convertSizeFromBacking;
+        static MemorySegment convertSizeToLayer;
+        static MemorySegment convertSizeFromLayer;
+        static MemorySegment scrollPoint;
+        static MemorySegment autoscroll;
+        static MemorySegment hitTest;
+        static MemorySegment viewWithTag;
+        static MemorySegment tag;
+        static MemorySegment needsPanelToBecomeKey;
+        static MemorySegment mouseDownCanMoveWindow;
+        static MemorySegment menuForEvent;
+        static MemorySegment willOpenMenu_withEvent;
+        static MemorySegment didCloseMenu_withEvent;
+        static MemorySegment defaultMenu;
+        static MemorySegment toolTip;
+        static MemorySegment setToolTip;
+        static MemorySegment removeToolTip;
+        static MemorySegment removeAllToolTips;
+        static MemorySegment viewWillStartLiveResize;
+        static MemorySegment viewDidEndLiveResize;
+        static MemorySegment inLiveResize;
+        static MemorySegment preservesContentDuringLiveResize;
+        static MemorySegment rectPreservedDuringLiveResize;
+        static MemorySegment prepareForReuse;
+        static MemorySegment prepareContentInRect;
+        static MemorySegment viewDidChangeEffectiveAppearance;
+        static MemorySegment setKeyboardFocusRingNeedsDisplayInRect;
+        static MemorySegment drawFocusRingMask;
+        static MemorySegment noteFocusRingMaskChanged;
+        static MemorySegment focusRingMaskBounds;
+        static MemorySegment focusRingType;
+        static MemorySegment setFocusRingType;
+        static MemorySegment defaultFocusRingType;
+        static MemorySegment focusView;
+        static MemorySegment nextKeyView;
+        static MemorySegment setNextKeyView;
+        static MemorySegment previousKeyView;
+        static MemorySegment nextValidKeyView;
+        static MemorySegment previousValidKeyView;
+        static MemorySegment layerContentsRedrawPolicy;
+        static MemorySegment setLayerContentsRedrawPolicy;
+        static MemorySegment layerContentsPlacement;
+        static MemorySegment setLayerContentsPlacement;
+        static MemorySegment wantsUpdateLayer;
+        static MemorySegment canDrawSubviewsIntoLayer;
+        static MemorySegment setCanDrawSubviewsIntoLayer;
+        static MemorySegment layerUsesCoreImageFilters;
+        static MemorySegment setLayerUsesCoreImageFilters;
+        static MemorySegment shadow;
+        static MemorySegment setShadow;
+        static MemorySegment clipsToBounds;
+        static MemorySegment setClipsToBounds;
+        static MemorySegment wantsRestingTouches;
+        static MemorySegment setWantsRestingTouches;
+        static MemorySegment allowedTouchTypes;
+        static MemorySegment setAllowedTouchTypes;
+        static MemorySegment print;
+        static MemorySegment pageHeader;
+        static MemorySegment pageFooter;
+        static MemorySegment printJobTitle;
+        static MemorySegment dataWithEPSInsideRect;
+        static MemorySegment dataWithPDFInsideRect;
+        static MemorySegment writeEPSInsideRect_toPasteboard;
+        static MemorySegment writePDFInsideRect_toPasteboard;
+        static MemorySegment drawPageBorderWithSize;
+        static MemorySegment beginDocument;
+        static MemorySegment endDocument;
+        static MemorySegment endPage;
+        static MemorySegment heightAdjustLimit;
+        static MemorySegment widthAdjustLimit;
+        static MemorySegment registeredDraggedTypes;
+        static MemorySegment enterFullScreenMode_withOptions;
+        static MemorySegment exitFullScreenModeWithOptions;
+        static MemorySegment isInFullScreenMode;
+        static MemorySegment addGestureRecognizer;
+        static MemorySegment removeGestureRecognizer;
+        static MemorySegment gestureRecognizers;
+        static MemorySegment removeTrackingArea;
+        static MemorySegment updateTrackingAreas;
+        static MemorySegment trackingAreas;
+        static MemorySegment addCursorRect_cursor;
+        static MemorySegment removeCursorRect_cursor;
+        static MemorySegment discardCursorRects;
+        static MemorySegment resetCursorRects;
+        static MemorySegment displayLinkWithTarget_selector;
+        static MemorySegment userInterfaceLayoutDirection;
+        static MemorySegment setUserInterfaceLayoutDirection;
+        static MemorySegment preparedContentRect;
+        static MemorySegment setPreparedContentRect;
+        static MemorySegment allowsVibrancy;
+        static MemorySegment safeAreaInsets;
+        static MemorySegment additionalSafeAreaInsets;
+        static MemorySegment setAdditionalSafeAreaInsets;
+        static MemorySegment safeAreaRect;
+        static MemorySegment safeAreaLayoutGuide;
+        static MemorySegment layoutMarginsGuide;
+        static MemorySegment prefersCompactControlSizeMetrics;
+        static MemorySegment setPrefersCompactControlSizeMetrics;
+        static MemorySegment isDrawingFindIndicator;
+        static void populate() {
+            alloc = ObjC.sel("alloc");
+            initWithFrame = ObjC.sel("initWithFrame:");
+            currentContext = ObjC.sel("currentContext");
+            graphicsPort = ObjC.sel("graphicsPort");
+            addTrackingArea = ObjC.sel("addTrackingArea:");
+            nextResponder = ObjC.sel("nextResponder");
+            addSubview = ObjC.sel("addSubview:");
+            setFrame = ObjC.sel("setFrame:");
+            setAutoresizingMask = ObjC.sel("setAutoresizingMask:");
+            bounds = ObjC.sel("bounds");
+            setBounds = ObjC.sel("setBounds:");
+            frame = ObjC.sel("frame");
+            needsDisplay = ObjC.sel("needsDisplay");
+            setNeedsDisplay = ObjC.sel("setNeedsDisplay:");
+            setNeedsDisplayInRect = ObjC.sel("setNeedsDisplayInRect:");
+            backingScaleFactor = ObjC.sel("backingScaleFactor");
+            convertRectToBacking = ObjC.sel("convertRectToBacking:");
+            window = ObjC.sel("window");
+            setWantsLayer = ObjC.sel("setWantsLayer:");
+            wantsLayer = ObjC.sel("wantsLayer");
+            isFlipped = ObjC.sel("isFlipped");
+            layer = ObjC.sel("layer");
+            setLayer = ObjC.sel("setLayer:");
+            autoresizingMask = ObjC.sel("autoresizingMask");
+            autoresizesSubviews = ObjC.sel("autoresizesSubviews");
+            setAutoresizesSubviews = ObjC.sel("setAutoresizesSubviews:");
+            translatesAutoresizingMaskIntoConstraints = ObjC.sel("translatesAutoresizingMaskIntoConstraints");
+            setTranslatesAutoresizingMaskIntoConstraints = ObjC.sel("setTranslatesAutoresizingMaskIntoConstraints:");
+            leadingAnchor = ObjC.sel("leadingAnchor");
+            trailingAnchor = ObjC.sel("trailingAnchor");
+            topAnchor = ObjC.sel("topAnchor");
+            bottomAnchor = ObjC.sel("bottomAnchor");
+            widthAnchor = ObjC.sel("widthAnchor");
+            heightAnchor = ObjC.sel("heightAnchor");
+            centerXAnchor = ObjC.sel("centerXAnchor");
+            centerYAnchor = ObjC.sel("centerYAnchor");
+            addConstraint = ObjC.sel("addConstraint:");
+            removeConstraint = ObjC.sel("removeConstraint:");
+            constraints = ObjC.sel("constraints");
+            count = ObjC.sel("count");
+            objectAtIndex = ObjC.sel("objectAtIndex:");
+            displayIfNeeded = ObjC.sel("displayIfNeeded");
+            displayIfNeededInRect = ObjC.sel("displayIfNeededInRect:");
+            layoutSubtreeIfNeeded = ObjC.sel("layoutSubtreeIfNeeded");
+            intrinsicContentSize = ObjC.sel("intrinsicContentSize");
+            alphaValue = ObjC.sel("alphaValue");
+            setAlphaValue = ObjC.sel("setAlphaValue:");
+            isHidden = ObjC.sel("isHidden");
+            setHidden = ObjC.sel("setHidden:");
+            isHiddenOrHasHiddenAncestor = ObjC.sel("isHiddenOrHasHiddenAncestor");
+            superview = ObjC.sel("superview");
+            isOpaque = ObjC.sel("isOpaque");
+            visibleRect = ObjC.sel("visibleRect");
+            isRotatedFromBase = ObjC.sel("isRotatedFromBase");
+            isRotatedOrScaledFromBase = ObjC.sel("isRotatedOrScaledFromBase");
+            canBecomeKeyView = ObjC.sel("canBecomeKeyView");
+            enclosingScrollView = ObjC.sel("enclosingScrollView");
+            invalidateIntrinsicContentSize = ObjC.sel("invalidateIntrinsicContentSize");
+            array = ObjC.sel("array");
+            addObject = ObjC.sel("addObject:");
+            registerForDraggedTypes = ObjC.sel("registerForDraggedTypes:");
+            unregisterDraggedTypes = ObjC.sel("unregisterDraggedTypes");
+            beginDraggingSessionWithItems_event_source = ObjC.sel("beginDraggingSessionWithItems:event:source:");
+            bitmapImageRepForCachingDisplayInRect = ObjC.sel("bitmapImageRepForCachingDisplayInRect:");
+            cacheDisplayInRect_toBitmapImageRep = ObjC.sel("cacheDisplayInRect:toBitmapImageRep:");
+            isDescendantOf = ObjC.sel("isDescendantOf:");
+            ancestorSharedWithView = ObjC.sel("ancestorSharedWithView:");
+            subviews = ObjC.sel("subviews");
+            setSubviews = ObjC.sel("setSubviews:");
+            opaqueAncestor = ObjC.sel("opaqueAncestor");
+            removeFromSuperview = ObjC.sel("removeFromSuperview");
+            replaceSubview_with = ObjC.sel("replaceSubview:with:");
+            removeFromSuperviewWithoutNeedingDisplay = ObjC.sel("removeFromSuperviewWithoutNeedingDisplay");
+            viewWillMoveToWindow = ObjC.sel("viewWillMoveToWindow:");
+            viewDidMoveToWindow = ObjC.sel("viewDidMoveToWindow");
+            viewWillMoveToSuperview = ObjC.sel("viewWillMoveToSuperview:");
+            viewDidMoveToSuperview = ObjC.sel("viewDidMoveToSuperview");
+            didAddSubview = ObjC.sel("didAddSubview:");
+            willRemoveSubview = ObjC.sel("willRemoveSubview:");
+            viewDidHide = ObjC.sel("viewDidHide");
+            viewDidUnhide = ObjC.sel("viewDidUnhide");
+            viewDidChangeBackingProperties = ObjC.sel("viewDidChangeBackingProperties");
+            setFrameOrigin = ObjC.sel("setFrameOrigin:");
+            setFrameSize = ObjC.sel("setFrameSize:");
+            setBoundsOrigin = ObjC.sel("setBoundsOrigin:");
+            setBoundsSize = ObjC.sel("setBoundsSize:");
+            translateOriginToPoint = ObjC.sel("translateOriginToPoint:");
+            scaleUnitSquareToSize = ObjC.sel("scaleUnitSquareToSize:");
+            rotateByAngle = ObjC.sel("rotateByAngle:");
+            frameRotation = ObjC.sel("frameRotation");
+            setFrameRotation = ObjC.sel("setFrameRotation:");
+            frameCenterRotation = ObjC.sel("frameCenterRotation");
+            setFrameCenterRotation = ObjC.sel("setFrameCenterRotation:");
+            boundsRotation = ObjC.sel("boundsRotation");
+            setBoundsRotation = ObjC.sel("setBoundsRotation:");
+            postsFrameChangedNotifications = ObjC.sel("postsFrameChangedNotifications");
+            setPostsFrameChangedNotifications = ObjC.sel("setPostsFrameChangedNotifications:");
+            postsBoundsChangedNotifications = ObjC.sel("postsBoundsChangedNotifications");
+            setPostsBoundsChangedNotifications = ObjC.sel("setPostsBoundsChangedNotifications:");
+            resizeSubviewsWithOldSize = ObjC.sel("resizeSubviewsWithOldSize:");
+            resizeWithOldSuperviewSize = ObjC.sel("resizeWithOldSuperviewSize:");
+            display = ObjC.sel("display");
+            displayIfNeededIgnoringOpacity = ObjC.sel("displayIfNeededIgnoringOpacity");
+            displayRect = ObjC.sel("displayRect:");
+            displayRectIgnoringOpacity = ObjC.sel("displayRectIgnoringOpacity:");
+            displayIfNeededInRectIgnoringOpacity = ObjC.sel("displayIfNeededInRectIgnoringOpacity:");
+            displayRectIgnoringOpacity_inContext = ObjC.sel("displayRectIgnoringOpacity:inContext:");
+            viewWillDraw = ObjC.sel("viewWillDraw");
+            wantsDefaultClipping = ObjC.sel("wantsDefaultClipping");
+            canDrawConcurrently = ObjC.sel("canDrawConcurrently");
+            setCanDrawConcurrently = ObjC.sel("setCanDrawConcurrently:");
+            needsLayout = ObjC.sel("needsLayout");
+            setNeedsLayout = ObjC.sel("setNeedsLayout:");
+            layout = ObjC.sel("layout");
+            updateLayer = ObjC.sel("updateLayer");
+            makeBackingLayer = ObjC.sel("makeBackingLayer");
+            centerScanRect = ObjC.sel("centerScanRect:");
+            adjustScroll = ObjC.sel("adjustScroll:");
+            convertRectFromBacking = ObjC.sel("convertRectFromBacking:");
+            convertSizeToBacking = ObjC.sel("convertSizeToBacking:");
+            convertSizeFromBacking = ObjC.sel("convertSizeFromBacking:");
+            convertSizeToLayer = ObjC.sel("convertSizeToLayer:");
+            convertSizeFromLayer = ObjC.sel("convertSizeFromLayer:");
+            scrollPoint = ObjC.sel("scrollPoint:");
+            autoscroll = ObjC.sel("autoscroll:");
+            hitTest = ObjC.sel("hitTest:");
+            viewWithTag = ObjC.sel("viewWithTag:");
+            tag = ObjC.sel("tag");
+            needsPanelToBecomeKey = ObjC.sel("needsPanelToBecomeKey");
+            mouseDownCanMoveWindow = ObjC.sel("mouseDownCanMoveWindow");
+            menuForEvent = ObjC.sel("menuForEvent:");
+            willOpenMenu_withEvent = ObjC.sel("willOpenMenu:withEvent:");
+            didCloseMenu_withEvent = ObjC.sel("didCloseMenu:withEvent:");
+            defaultMenu = ObjC.sel("defaultMenu");
+            toolTip = ObjC.sel("toolTip");
+            setToolTip = ObjC.sel("setToolTip:");
+            removeToolTip = ObjC.sel("removeToolTip:");
+            removeAllToolTips = ObjC.sel("removeAllToolTips");
+            viewWillStartLiveResize = ObjC.sel("viewWillStartLiveResize");
+            viewDidEndLiveResize = ObjC.sel("viewDidEndLiveResize");
+            inLiveResize = ObjC.sel("inLiveResize");
+            preservesContentDuringLiveResize = ObjC.sel("preservesContentDuringLiveResize");
+            rectPreservedDuringLiveResize = ObjC.sel("rectPreservedDuringLiveResize");
+            prepareForReuse = ObjC.sel("prepareForReuse");
+            prepareContentInRect = ObjC.sel("prepareContentInRect:");
+            viewDidChangeEffectiveAppearance = ObjC.sel("viewDidChangeEffectiveAppearance");
+            setKeyboardFocusRingNeedsDisplayInRect = ObjC.sel("setKeyboardFocusRingNeedsDisplayInRect:");
+            drawFocusRingMask = ObjC.sel("drawFocusRingMask");
+            noteFocusRingMaskChanged = ObjC.sel("noteFocusRingMaskChanged");
+            focusRingMaskBounds = ObjC.sel("focusRingMaskBounds");
+            focusRingType = ObjC.sel("focusRingType");
+            setFocusRingType = ObjC.sel("setFocusRingType:");
+            defaultFocusRingType = ObjC.sel("defaultFocusRingType");
+            focusView = ObjC.sel("focusView");
+            nextKeyView = ObjC.sel("nextKeyView");
+            setNextKeyView = ObjC.sel("setNextKeyView:");
+            previousKeyView = ObjC.sel("previousKeyView");
+            nextValidKeyView = ObjC.sel("nextValidKeyView");
+            previousValidKeyView = ObjC.sel("previousValidKeyView");
+            layerContentsRedrawPolicy = ObjC.sel("layerContentsRedrawPolicy");
+            setLayerContentsRedrawPolicy = ObjC.sel("setLayerContentsRedrawPolicy:");
+            layerContentsPlacement = ObjC.sel("layerContentsPlacement");
+            setLayerContentsPlacement = ObjC.sel("setLayerContentsPlacement:");
+            wantsUpdateLayer = ObjC.sel("wantsUpdateLayer");
+            canDrawSubviewsIntoLayer = ObjC.sel("canDrawSubviewsIntoLayer");
+            setCanDrawSubviewsIntoLayer = ObjC.sel("setCanDrawSubviewsIntoLayer:");
+            layerUsesCoreImageFilters = ObjC.sel("layerUsesCoreImageFilters");
+            setLayerUsesCoreImageFilters = ObjC.sel("setLayerUsesCoreImageFilters:");
+            shadow = ObjC.sel("shadow");
+            setShadow = ObjC.sel("setShadow:");
+            clipsToBounds = ObjC.sel("clipsToBounds");
+            setClipsToBounds = ObjC.sel("setClipsToBounds:");
+            wantsRestingTouches = ObjC.sel("wantsRestingTouches");
+            setWantsRestingTouches = ObjC.sel("setWantsRestingTouches:");
+            allowedTouchTypes = ObjC.sel("allowedTouchTypes");
+            setAllowedTouchTypes = ObjC.sel("setAllowedTouchTypes:");
+            print = ObjC.sel("print:");
+            pageHeader = ObjC.sel("pageHeader");
+            pageFooter = ObjC.sel("pageFooter");
+            printJobTitle = ObjC.sel("printJobTitle");
+            dataWithEPSInsideRect = ObjC.sel("dataWithEPSInsideRect:");
+            dataWithPDFInsideRect = ObjC.sel("dataWithPDFInsideRect:");
+            writeEPSInsideRect_toPasteboard = ObjC.sel("writeEPSInsideRect:toPasteboard:");
+            writePDFInsideRect_toPasteboard = ObjC.sel("writePDFInsideRect:toPasteboard:");
+            drawPageBorderWithSize = ObjC.sel("drawPageBorderWithSize:");
+            beginDocument = ObjC.sel("beginDocument");
+            endDocument = ObjC.sel("endDocument");
+            endPage = ObjC.sel("endPage");
+            heightAdjustLimit = ObjC.sel("heightAdjustLimit");
+            widthAdjustLimit = ObjC.sel("widthAdjustLimit");
+            registeredDraggedTypes = ObjC.sel("registeredDraggedTypes");
+            enterFullScreenMode_withOptions = ObjC.sel("enterFullScreenMode:withOptions:");
+            exitFullScreenModeWithOptions = ObjC.sel("exitFullScreenModeWithOptions:");
+            isInFullScreenMode = ObjC.sel("isInFullScreenMode");
+            addGestureRecognizer = ObjC.sel("addGestureRecognizer:");
+            removeGestureRecognizer = ObjC.sel("removeGestureRecognizer:");
+            gestureRecognizers = ObjC.sel("gestureRecognizers");
+            removeTrackingArea = ObjC.sel("removeTrackingArea:");
+            updateTrackingAreas = ObjC.sel("updateTrackingAreas");
+            trackingAreas = ObjC.sel("trackingAreas");
+            addCursorRect_cursor = ObjC.sel("addCursorRect:cursor:");
+            removeCursorRect_cursor = ObjC.sel("removeCursorRect:cursor:");
+            discardCursorRects = ObjC.sel("discardCursorRects");
+            resetCursorRects = ObjC.sel("resetCursorRects");
+            displayLinkWithTarget_selector = ObjC.sel("displayLinkWithTarget:selector:");
+            userInterfaceLayoutDirection = ObjC.sel("userInterfaceLayoutDirection");
+            setUserInterfaceLayoutDirection = ObjC.sel("setUserInterfaceLayoutDirection:");
+            preparedContentRect = ObjC.sel("preparedContentRect");
+            setPreparedContentRect = ObjC.sel("setPreparedContentRect:");
+            allowsVibrancy = ObjC.sel("allowsVibrancy");
+            safeAreaInsets = ObjC.sel("safeAreaInsets");
+            additionalSafeAreaInsets = ObjC.sel("additionalSafeAreaInsets");
+            setAdditionalSafeAreaInsets = ObjC.sel("setAdditionalSafeAreaInsets:");
+            safeAreaRect = ObjC.sel("safeAreaRect");
+            safeAreaLayoutGuide = ObjC.sel("safeAreaLayoutGuide");
+            layoutMarginsGuide = ObjC.sel("layoutMarginsGuide");
+            prefersCompactControlSizeMetrics = ObjC.sel("prefersCompactControlSizeMetrics");
+            setPrefersCompactControlSizeMetrics = ObjC.sel("setPrefersCompactControlSizeMetrics:");
+            isDrawingFindIndicator = ObjC.sel("isDrawingFindIndicator");
+        }
+    }
+
     /// Java-side drawing callback, invoked from AppKit's drawRect: on the main thread.
     ///
     /// **Dirty-rect contract:** the `dirtyRect` passed to `draw`
@@ -113,9 +557,9 @@ public class NSView extends NSResponder {
     /// alloc + initWithFrame: and register the Java drawable for this view.
     public static NSView create(NSRect frame, Drawable drawable) {
         ensureInit();
-        MemorySegment v = ObjC.msgSendId(drawableClass, ObjC.sel("alloc"));
+        MemorySegment v = ObjC.msgSendId(drawableClass, Sels.alloc);
         try {
-            v = (MemorySegment) H.hInitFrame().invokeExact(v, ObjC.sel("initWithFrame:"), frame.toSegment());
+            v = (MemorySegment) H.hInitFrame().invokeExact(v, Sels.initWithFrame, frame.toSegment());
         } catch (Throwable t) {
             throw new RuntimeException("initWithFrame: failed", t);
         }
@@ -202,7 +646,8 @@ public class NSView extends NSResponder {
                 ObjC.handle(Sig.of(Ret.BOOL, Arg.ID, Arg.ID)),
                 ObjC.handle(Sig.of(Ret.SIZE, Arg.SIZE)),
                 ObjC.handle(Sig.of(Ret.ID, Arg.ID, Arg.ID)));
-    }
+            Sels.populate();
+}
 
     // ---- upcall-stub builders (called only from the lazy ensureInit, never class-init) ----
 
@@ -226,10 +671,11 @@ public class NSView extends NSResponder {
 
     /// FFM upcall target: `-(void)drawRect:(NSRect)dirtyRect` — called by AppKit on the main thread.
     public static void drawRectImpl(MemorySegment self, MemorySegment sel, MemorySegment rect) {
+        ensureInit();
         Drawable d = DRAWABLES.get(self.address());
         if (d == null) return;
-        MemorySegment ctx = ObjC.msgSendId(ObjC.cls("NSGraphicsContext"), ObjC.sel("currentContext"));
-        ctx = ObjC.msgSendId(ctx, ObjC.sel("graphicsPort"));
+        MemorySegment ctx = ObjC.msgSendId(ObjC.cls("NSGraphicsContext"), Sels.currentContext);
+        ctx = ObjC.msgSendId(ctx, Sels.graphicsPort);
         // Every draw call's input marshalling (rects, cstrings) goes through the
         // per-turn scratch arena — recycled per draw pass instead of immortal.
         Scratch.beginTurn();
@@ -338,7 +784,7 @@ public class NSView extends NSResponder {
         long options = trackingMouseEnteredAndExited | trackingMouseMoved
                 | trackingActiveAlways | trackingInVisibleRect;
         NSTrackingArea area = NSTrackingArea.create(bounds(), options, this);
-        ObjC.msgSendVoidId(peer, ObjC.sel("addTrackingArea:"), area.peer());
+        ObjC.msgSendVoidId(peer, Sels.addTrackingArea, area.peer());
     }
 
     // ---- FFM upcall targets: input-event overrides on the ObjC subclass ----
@@ -376,7 +822,8 @@ public class NSView extends NSResponder {
     private static final ThreadLocal<java.util.Set<Long>> FORWARDING = ThreadLocal.withInitial(java.util.HashSet::new);
 
     private static void forwardChain(MemorySegment self, MemorySegment sel, MemorySegment eventSeg) {
-        MemorySegment next = ObjC.msgSendId(self, ObjC.sel("nextResponder"));
+        ensureInit();
+        MemorySegment next = ObjC.msgSendId(self, Sels.nextResponder);
         if (next == null || next.address() == 0) return;
         long nextAddr = next.address();
         java.util.Set<Long> visiting = FORWARDING.get();
@@ -490,14 +937,15 @@ public class NSView extends NSResponder {
 
     /// addSubview: — attach a child view.
     public void addSubview(NSView subview) {
-        ObjC.msgSendVoidId(peer, ObjC.sel("addSubview:"), subview.peer());
+        ensureInit();
+        ObjC.msgSendVoidId(peer, Sels.addSubview, subview.peer());
     }
 
     /// setFrame: — reposition/resize in the superview's coordinates.
     public void setFrame(NSRect frame) {
         ensureInit();
         try {
-            H.hSetFrame().invokeExact(peer, ObjC.sel("setFrame:"), frame.toSegment());
+            H.hSetFrame().invokeExact(peer, Sels.setFrame, frame.toSegment());
         } catch (Throwable t) {
             throw new RuntimeException("setFrame: failed", t);
         }
@@ -511,7 +959,7 @@ public class NSView extends NSResponder {
     public void setAutoresizingMask(long mask) {
         ensureInit();
         try {
-            H.hAutoMask().invokeExact(peer, ObjC.sel("setAutoresizingMask:"), mask);
+            H.hAutoMask().invokeExact(peer, Sels.setAutoresizingMask, mask);
         } catch (Throwable t) {
             throw new RuntimeException("setAutoresizingMask: failed", t);
         }
@@ -520,14 +968,15 @@ public class NSView extends NSResponder {
 
     /// bounds — the view's own coordinate system (origin usually {0,0}).
     public NSRect bounds() {
-        return NSRect.fromSegment(ObjC.msgSendRect(peer, ObjC.sel("bounds")));
+        ensureInit();
+        return NSRect.fromSegment(ObjC.msgSendRect(peer, Sels.bounds));
     }
 
     /// setBounds: — set the view's bounds.
     public void setBounds(NSRect bounds) {
         ensureInit();
         try {
-            H.hSetBounds().invokeExact(peer, ObjC.sel("setBounds:"), bounds.toSegment());
+            H.hSetBounds().invokeExact(peer, Sels.setBounds, bounds.toSegment());
         } catch (Throwable t) {
             throw new RuntimeException("setBounds: failed", t);
         }
@@ -535,17 +984,20 @@ public class NSView extends NSResponder {
 
     /// frame — the view's frame in its superview's coordinates (struct return).
     public NSRect frame() {
-        return NSRect.fromSegment(ObjC.msgSendRect(peer, ObjC.sel("frame")));
+        ensureInit();
+        return NSRect.fromSegment(ObjC.msgSendRect(peer, Sels.frame));
     }
 
     /// needsDisplay — whether the view needs display.
     public boolean needsDisplay() {
-        return ObjC.msgSendBool(peer, ObjC.sel("needsDisplay"));
+        ensureInit();
+        return ObjC.msgSendBool(peer, Sels.needsDisplay);
     }
 
     /// setNeedsDisplay: — request a redraw on the next run-loop pass.
     public void setNeedsDisplay(boolean flag) {
-        ObjC.msgSendVoidBool(peer, ObjC.sel("setNeedsDisplay:"), flag);
+        ensureInit();
+        ObjC.msgSendVoidBool(peer, Sels.setNeedsDisplay, flag);
     }
 
     /// setNeedsDisplayInRect: — mark only the given region, in the view's own coordinate
@@ -556,7 +1008,7 @@ public class NSView extends NSResponder {
     public void setNeedsDisplayInRect(NSRect rect) {
         ensureInit();
         try {
-            H.hNeedsRect().invokeExact(peer, ObjC.sel("setNeedsDisplayInRect:"), rect.toSegment());
+            H.hNeedsRect().invokeExact(peer, Sels.setNeedsDisplayInRect, rect.toSegment());
         } catch (Throwable t) {
             throw new RuntimeException("setNeedsDisplayInRect: failed", t);
         }
@@ -569,7 +1021,7 @@ public class NSView extends NSResponder {
     public double backingScaleFactor() {
         ensureInit();
         try {
-            return (double) H.hBacking().invokeExact(peer, ObjC.sel("backingScaleFactor"));
+            return (double) H.hBacking().invokeExact(peer, Sels.backingScaleFactor);
         } catch (Throwable t) {
             throw new RuntimeException("backingScaleFactor failed", t);
         }
@@ -581,7 +1033,7 @@ public class NSView extends NSResponder {
         try {
             return NSRect.fromSegment((MemorySegment) H.hConvBacking().invokeExact(
                     ObjC.structSlot(), peer,
-                    ObjC.sel("convertRectToBacking:"), rect.toSegment()));
+                    Sels.convertRectToBacking, rect.toSegment()));
         } catch (Throwable t) {
             throw new RuntimeException("convertRectToBacking: failed", t);
         }
@@ -589,106 +1041,126 @@ public class NSView extends NSResponder {
 
     /// window — the NSWindow this view is installed in (null if none).
     public NSObject window() {
-        return NSObject.wrap(ObjC.msgSendId(peer, ObjC.sel("window")));
+        ensureInit();
+        return NSObject.wrap(ObjC.msgSendId(peer, Sels.window));
     }
 
     /// setWantsLayer: — opt into layer-backed drawing.
     public void setWantsLayer(boolean flag) {
-        ObjC.msgSendVoidBool(peer, ObjC.sel("setWantsLayer:"), flag);
+        ensureInit();
+        ObjC.msgSendVoidBool(peer, Sels.setWantsLayer, flag);
     }
 
     /// wantsLayer — whether the view is layer-backed.
     public boolean wantsLayer() {
-        return ObjC.msgSendBool(peer, ObjC.sel("wantsLayer"));
+        ensureInit();
+        return ObjC.msgSendBool(peer, Sels.wantsLayer);
     }
 
     /// isFlipped — whether the view's y-axis points up (NO for a plain NSView).
     public boolean isFlipped() {
-        return ObjC.msgSendBool(peer, ObjC.sel("isFlipped"));
+        ensureInit();
+        return ObjC.msgSendBool(peer, Sels.isFlipped);
     }
 
     /// layer — the view's backing CALayer (null if not layer-backed). Typed via CALayer.
     public CALayer layer() {
-        return CALayer.wrap(ObjC.msgSendId(peer, ObjC.sel("layer")));
+        ensureInit();
+        return CALayer.wrap(ObjC.msgSendId(peer, Sels.layer));
     }
 
     /// setLayer: — assign a CALayer
     public void setLayer(CALayer layer) {
-        ObjC.msgSendVoidId(peer, ObjC.sel("setLayer:"), (MemorySegment) (layer == null ? MemorySegment.NULL : layer.peer()));
+        ensureInit();
+        ObjC.msgSendVoidId(peer, Sels.setLayer, (MemorySegment) (layer == null ? MemorySegment.NULL : layer.peer()));
     }
 
     // ---------------------------------------------------------------- additional getters — completeness
 
     /// autoresizingMask — NSAutoresizingMaskOptions.
     public long autoresizingMask() {
-        return ObjC.msgSendLong(peer, ObjC.sel("autoresizingMask"));
+        ensureInit();
+        return ObjC.msgSendLong(peer, Sels.autoresizingMask);
     }
 
     /// autoresizesSubviews.
     public boolean autoresizesSubviews() {
-        return ObjC.msgSendBool(peer, ObjC.sel("autoresizesSubviews"));
+        ensureInit();
+        return ObjC.msgSendBool(peer, Sels.autoresizesSubviews);
     }
 
     /// setAutoresizesSubviews:.
     public void setAutoresizesSubviews(boolean flag) {
-        ObjC.msgSendVoidBool(peer, ObjC.sel("setAutoresizesSubviews:"), flag);
+        ensureInit();
+        ObjC.msgSendVoidBool(peer, Sels.setAutoresizesSubviews, flag);
     }
 
     /// translatesAutoresizingMaskIntoConstraints.
     public boolean translatesAutoresizingMaskIntoConstraints() {
-        return ObjC.msgSendBool(peer, ObjC.sel("translatesAutoresizingMaskIntoConstraints"));
+        ensureInit();
+        return ObjC.msgSendBool(peer, Sels.translatesAutoresizingMaskIntoConstraints);
     }
 
     /// setTranslatesAutoresizingMaskIntoConstraints:.
     public void setTranslatesAutoresizingMaskIntoConstraints(boolean flag) {
-        ObjC.msgSendVoidBool(peer, ObjC.sel("setTranslatesAutoresizingMaskIntoConstraints:"), flag);
+        ensureInit();
+        ObjC.msgSendVoidBool(peer, Sels.setTranslatesAutoresizingMaskIntoConstraints, flag);
     }
 
     // ---------------------------------------------------------------- Auto Layout — anchors & constraints
 
     /// leadingAnchor — NSLayoutXAxisAnchor.
     public NSLayoutAnchor leadingAnchor() {
-        return NSLayoutAnchor.wrap(ObjC.msgSendId(peer, ObjC.sel("leadingAnchor")));
+        ensureInit();
+        return NSLayoutAnchor.wrap(ObjC.msgSendId(peer, Sels.leadingAnchor));
     }
 
     /// trailingAnchor — NSLayoutXAxisAnchor.
     public NSLayoutAnchor trailingAnchor() {
-        return NSLayoutAnchor.wrap(ObjC.msgSendId(peer, ObjC.sel("trailingAnchor")));
+        ensureInit();
+        return NSLayoutAnchor.wrap(ObjC.msgSendId(peer, Sels.trailingAnchor));
     }
 
     /// topAnchor — NSLayoutYAxisAnchor.
     public NSLayoutAnchor topAnchor() {
-        return NSLayoutAnchor.wrap(ObjC.msgSendId(peer, ObjC.sel("topAnchor")));
+        ensureInit();
+        return NSLayoutAnchor.wrap(ObjC.msgSendId(peer, Sels.topAnchor));
     }
 
     /// bottomAnchor — NSLayoutYAxisAnchor.
     public NSLayoutAnchor bottomAnchor() {
-        return NSLayoutAnchor.wrap(ObjC.msgSendId(peer, ObjC.sel("bottomAnchor")));
+        ensureInit();
+        return NSLayoutAnchor.wrap(ObjC.msgSendId(peer, Sels.bottomAnchor));
     }
 
     /// widthAnchor — NSLayoutDimension.
     public NSLayoutAnchor widthAnchor() {
-        return NSLayoutAnchor.wrap(ObjC.msgSendId(peer, ObjC.sel("widthAnchor")));
+        ensureInit();
+        return NSLayoutAnchor.wrap(ObjC.msgSendId(peer, Sels.widthAnchor));
     }
 
     /// heightAnchor — NSLayoutDimension.
     public NSLayoutAnchor heightAnchor() {
-        return NSLayoutAnchor.wrap(ObjC.msgSendId(peer, ObjC.sel("heightAnchor")));
+        ensureInit();
+        return NSLayoutAnchor.wrap(ObjC.msgSendId(peer, Sels.heightAnchor));
     }
 
     /// centerXAnchor — NSLayoutXAxisAnchor.
     public NSLayoutAnchor centerXAnchor() {
-        return NSLayoutAnchor.wrap(ObjC.msgSendId(peer, ObjC.sel("centerXAnchor")));
+        ensureInit();
+        return NSLayoutAnchor.wrap(ObjC.msgSendId(peer, Sels.centerXAnchor));
     }
 
     /// centerYAnchor — NSLayoutYAxisAnchor.
     public NSLayoutAnchor centerYAnchor() {
-        return NSLayoutAnchor.wrap(ObjC.msgSendId(peer, ObjC.sel("centerYAnchor")));
+        ensureInit();
+        return NSLayoutAnchor.wrap(ObjC.msgSendId(peer, Sels.centerYAnchor));
     }
 
     /// addConstraint: — install a single layout constraint on this view.
     public void addConstraint(NSLayoutConstraint constraint) {
-        ObjC.msgSendVoidId(peer, ObjC.sel("addConstraint:"), constraint.peer());
+        ensureInit();
+        ObjC.msgSendVoidId(peer, Sels.addConstraint, constraint.peer());
     }
 
     /// addConstraints: — install multiple constraints (loops over addConstraint: for simplicity).
@@ -698,7 +1170,8 @@ public class NSView extends NSResponder {
 
     /// removeConstraint: — remove a previously-added constraint.
     public void removeConstraint(NSLayoutConstraint constraint) {
-        ObjC.msgSendVoidId(peer, ObjC.sel("removeConstraint:"), constraint.peer());
+        ensureInit();
+        ObjC.msgSendVoidId(peer, Sels.removeConstraint, constraint.peer());
     }
 
     /// removeConstraints: — bulk remove.
@@ -709,11 +1182,11 @@ public class NSView extends NSResponder {
     /// constraints — the view's installed constraints.
     public java.util.List<NSLayoutConstraint> constraints() {
         ensureInit();
-        MemorySegment arr = ObjC.msgSendId(peer, ObjC.sel("constraints"));
+        MemorySegment arr = ObjC.msgSendId(peer, Sels.constraints);
         if (arr == null || arr.address() == 0) return java.util.List.of();
-        long count = ObjC.msgSendLong(arr, ObjC.sel("count"));
+        long count = ObjC.msgSendLong(arr, Sels.count);
         java.util.List<NSLayoutConstraint> list = new java.util.ArrayList<>((int) count);
-        MemorySegment selAt = ObjC.sel("objectAtIndex:");
+        MemorySegment selAt = Sels.objectAtIndex;
         MethodHandle h = H.hObjectAtIndex();
         for (long i = 0; i < count; i++) {
             try {
@@ -728,14 +1201,15 @@ public class NSView extends NSResponder {
 
     /// displayIfNeeded — display the view if needed.
     public void displayIfNeeded() {
-        ObjC.msgSendVoid(peer, ObjC.sel("displayIfNeeded"));
+        ensureInit();
+        ObjC.msgSendVoid(peer, Sels.displayIfNeeded);
     }
 
     /// displayIfNeededInRect: — display if needed in rect.
     public void displayIfNeededInRect(NSRect rect) {
         ensureInit();
         try {
-            H.hNeedsRect().invokeExact(peer, ObjC.sel("displayIfNeededInRect:"), rect.toSegment());
+            H.hNeedsRect().invokeExact(peer, Sels.displayIfNeededInRect, rect.toSegment());
         } catch (Throwable t) {
             throw new RuntimeException("displayIfNeededInRect: failed", t);
         }
@@ -743,14 +1217,15 @@ public class NSView extends NSResponder {
 
     /// layoutSubtreeIfNeeded — layout the subtree if needed.
     public void layoutSubtreeIfNeeded() {
-        ObjC.msgSendVoid(peer, ObjC.sel("layoutSubtreeIfNeeded"));
+        ensureInit();
+        ObjC.msgSendVoid(peer, Sels.layoutSubtreeIfNeeded);
     }
 
     /// intrinsicContentSize — the view's intrinsic content size.
     public NSSize intrinsicContentSize() {
         ensureInit();
         try {
-            MemorySegment s = (MemorySegment) H.hGetSize().invokeExact(ObjC.structSlot(), peer, ObjC.sel("intrinsicContentSize"));
+            MemorySegment s = (MemorySegment) H.hGetSize().invokeExact(ObjC.structSlot(), peer, Sels.intrinsicContentSize);
             return NSSize.fromSegment(s);
         } catch (Throwable t) {
             throw new RuntimeException("intrinsicContentSize failed", t);
@@ -761,7 +1236,7 @@ public class NSView extends NSResponder {
     public double alphaValue() {
         ensureInit();
         try {
-            return (double) H.hGetDouble().invokeExact(peer, ObjC.sel("alphaValue"));
+            return (double) H.hGetDouble().invokeExact(peer, Sels.alphaValue);
         } catch (Throwable t) {
             throw new RuntimeException("alphaValue failed", t);
         }
@@ -771,7 +1246,7 @@ public class NSView extends NSResponder {
     public void setAlphaValue(double alpha) {
         ensureInit();
         try {
-            H.hSetDouble().invokeExact(peer, ObjC.sel("setAlphaValue:"), alpha);
+            H.hSetDouble().invokeExact(peer, Sels.setAlphaValue, alpha);
         } catch (Throwable t) {
             throw new RuntimeException("setAlphaValue: failed", t);
         }
@@ -779,59 +1254,70 @@ public class NSView extends NSResponder {
 
     /// isHidden.
     public boolean isHidden() {
-        return ObjC.msgSendBool(peer, ObjC.sel("isHidden"));
+        ensureInit();
+        return ObjC.msgSendBool(peer, Sels.isHidden);
     }
 
     /// setHidden:.
     public void setHidden(boolean flag) {
-        ObjC.msgSendVoidBool(peer, ObjC.sel("setHidden:"), flag);
+        ensureInit();
+        ObjC.msgSendVoidBool(peer, Sels.setHidden, flag);
     }
 
     /// isHiddenOrHasHiddenAncestor.
     public boolean isHiddenOrHasHiddenAncestor() {
-        return ObjC.msgSendBool(peer, ObjC.sel("isHiddenOrHasHiddenAncestor"));
+        ensureInit();
+        return ObjC.msgSendBool(peer, Sels.isHiddenOrHasHiddenAncestor);
     }
 
     /// superview — parent view.
     public NSView superview() {
-        MemorySegment v = ObjC.msgSendId(peer, ObjC.sel("superview"));
+        ensureInit();
+        MemorySegment v = ObjC.msgSendId(peer, Sels.superview);
         return NSView.wrap(v);
     }
 
     /// isOpaque — whether the view is opaque.
     public boolean isOpaque() {
-        return ObjC.msgSendBool(peer, ObjC.sel("isOpaque"));
+        ensureInit();
+        return ObjC.msgSendBool(peer, Sels.isOpaque);
     }
 
     /// visibleRect — the visible rect (readonly).
     public NSRect visibleRect() {
-        return NSRect.fromSegment(ObjC.msgSendRect(peer, ObjC.sel("visibleRect")));
+        ensureInit();
+        return NSRect.fromSegment(ObjC.msgSendRect(peer, Sels.visibleRect));
     }
 
     /// isRotatedFromBase
     public boolean isRotatedFromBase() {
-        return ObjC.msgSendBool(peer, ObjC.sel("isRotatedFromBase"));
+        ensureInit();
+        return ObjC.msgSendBool(peer, Sels.isRotatedFromBase);
     }
 
     /// isRotatedOrScaledFromBase
     public boolean isRotatedOrScaledFromBase() {
-        return ObjC.msgSendBool(peer, ObjC.sel("isRotatedOrScaledFromBase"));
+        ensureInit();
+        return ObjC.msgSendBool(peer, Sels.isRotatedOrScaledFromBase);
     }
 
     /// canBecomeKeyView
     public boolean canBecomeKeyView() {
-        return ObjC.msgSendBool(peer, ObjC.sel("canBecomeKeyView"));
+        ensureInit();
+        return ObjC.msgSendBool(peer, Sels.canBecomeKeyView);
     }
 
     /// enclosingScrollView
     public NSView enclosingScrollView() {
-        MemorySegment v = ObjC.msgSendId(peer, ObjC.sel("enclosingScrollView"));
+        ensureInit();
+        MemorySegment v = ObjC.msgSendId(peer, Sels.enclosingScrollView);
         return NSView.wrap(v);
     }
 
     /// invalidateIntrinsicContentSize.
     public void invalidateIntrinsicContentSize() {
-        ObjC.msgSendVoid(peer, ObjC.sel("invalidateIntrinsicContentSize"));
+        ensureInit();
+        ObjC.msgSendVoid(peer, Sels.invalidateIntrinsicContentSize);
     }
 
     // ---- dragging support (Phase 0B) ----
@@ -841,17 +1327,17 @@ public class NSView extends NSResponder {
         ensureInit();
         MemorySegment arr;
         if (types == null || types.isEmpty()) {
-            arr = ObjC.msgSendId(ObjC.cls("NSArray"), ObjC.sel("array"));
+            arr = ObjC.msgSendId(ObjC.cls("NSArray"), Sels.array);
         } else {
-            arr = ObjC.msgSendId(ObjC.cls("NSMutableArray"), ObjC.sel("array"));
+            arr = ObjC.msgSendId(ObjC.cls("NSMutableArray"), Sels.array);
             for (String t : types) {
                 if (t == null) continue;
                 MemorySegment ns = ObjC.nsstring(t);
-                ObjC.msgSendVoidId(arr, ObjC.sel("addObject:"), ns);
+                ObjC.msgSendVoidId(arr, Sels.addObject, ns);
             }
         }
         try {
-            H.hRegisterForDraggedTypes().invokeExact(peer, ObjC.sel("registerForDraggedTypes:"), arr);
+            H.hRegisterForDraggedTypes().invokeExact(peer, Sels.registerForDraggedTypes, arr);
         } catch (Throwable t) {
             throw new RuntimeException("registerForDraggedTypes: failed", t);
         }
@@ -859,7 +1345,8 @@ public class NSView extends NSResponder {
 
     /// unregisterDraggedTypes — unregister all previously registered drag types.
     public void unregisterDraggedTypes() {
-        ObjC.msgSendVoid(peer, ObjC.sel("unregisterDraggedTypes"));
+        ensureInit();
+        ObjC.msgSendVoid(peer, Sels.unregisterDraggedTypes);
     }
 
     /// beginDraggingSessionWithItems:event:source: — begin a dragging session.
@@ -869,12 +1356,12 @@ public class NSView extends NSResponder {
         ensureInit();
         MemorySegment arr;
         if (items == null || items.isEmpty()) {
-            arr = ObjC.msgSendId(ObjC.cls("NSArray"), ObjC.sel("array"));
+            arr = ObjC.msgSendId(ObjC.cls("NSArray"), Sels.array);
         } else {
-            arr = ObjC.msgSendId(ObjC.cls("NSMutableArray"), ObjC.sel("array"));
+            arr = ObjC.msgSendId(ObjC.cls("NSMutableArray"), Sels.array);
             for (NSDraggingItem item : items) {
                 if (item == null || item.peer() == null || item.peer().address() == 0) continue;
-                ObjC.msgSendVoidId(arr, ObjC.sel("addObject:"), item.peer());
+                ObjC.msgSendVoidId(arr, Sels.addObject, item.peer());
             }
         }
         MemorySegment eventSeg = (event == null || event.peer() == null || event.peer().address() == 0) ? MemorySegment.NULL : event.peer();
@@ -884,7 +1371,7 @@ public class NSView extends NSResponder {
             return null;
         }
         try {
-            MemorySegment sess = (MemorySegment) H.hBeginDraggingSession().invokeExact(peer, ObjC.sel("beginDraggingSessionWithItems:event:source:"), arr, eventSeg, sourceSeg);
+            MemorySegment sess = (MemorySegment) H.hBeginDraggingSession().invokeExact(peer, Sels.beginDraggingSessionWithItems_event_source, arr, eventSeg, sourceSeg);
             return NSDraggingSession.wrap(sess);
         } catch (Throwable t) {
             // Also graceful: if AppKit raises (e.g. view not in window), return null rather than throw
@@ -900,7 +1387,7 @@ public class NSView extends NSResponder {
     public NSBitmapImageRep bitmapImageRepForCachingDisplayInRect(NSRect rect) {
         ensureInit();
         try {
-            MemorySegment rep = (MemorySegment) H.hRepForCache().invokeExact(peer, ObjC.sel("bitmapImageRepForCachingDisplayInRect:"), rect.toSegment());
+            MemorySegment rep = (MemorySegment) H.hRepForCache().invokeExact(peer, Sels.bitmapImageRepForCachingDisplayInRect, rect.toSegment());
             return NSBitmapImageRep.wrap(rep);
         } catch (Throwable e) { throw new RuntimeException("bitmapImageRepForCachingDisplayInRect: failed", e); }
     }
@@ -909,7 +1396,7 @@ public class NSView extends NSResponder {
     public void cacheDisplayInRectToBitmapImageRep(NSRect rect, NSBitmapImageRep rep) {
         ensureInit();
         try {
-            H.hCacheDisplay().invokeExact(peer, ObjC.sel("cacheDisplayInRect:toBitmapImageRep:"), rect.toSegment(), (MemorySegment)(rep == null ? MemorySegment.NULL : rep.peer()));
+            H.hCacheDisplay().invokeExact(peer, Sels.cacheDisplayInRect_toBitmapImageRep, rect.toSegment(), (MemorySegment)(rep == null ? MemorySegment.NULL : rep.peer()));
         } catch (Throwable e) { throw new RuntimeException("cacheDisplayInRect:toBitmapImageRep: failed", e); }
     }
 
@@ -946,7 +1433,7 @@ public class NSView extends NSResponder {
     public boolean isDescendantOf(NSView view) {
         ensureInit();
         try {
-            return (boolean) H.hBoolId().invokeExact(peer, ObjC.sel("isDescendantOf:"), view.peer());
+            return (boolean) H.hBoolId().invokeExact(peer, Sels.isDescendantOf, view.peer());
         } catch (Throwable t) {
             throw new RuntimeException("isDescendantOf: failed", t);
         }
@@ -954,19 +1441,21 @@ public class NSView extends NSResponder {
 
     /// [view ancestorSharedWithView:] — nearest common ancestor (nil-safe).
     public NSView ancestorSharedWithView(NSView view) {
-        return NSView.wrap(ObjC.msgSendIdId(peer, ObjC.sel("ancestorSharedWithView:"), view.peer()));
+        ensureInit();
+        return NSView.wrap(ObjC.msgSendIdId(peer, Sels.ancestorSharedWithView, view.peer()));
     }
 
     /// [view subviews] — direct children.
     public NSArray subviews() {
-        return NSArray.wrap(ObjC.msgSendId(peer, ObjC.sel("subviews")));
+        ensureInit();
+        return NSArray.wrap(ObjC.msgSendId(peer, Sels.subviews));
     }
 
     /// [view setSubviews:].
     public void setSubviews(NSArray views) {
         ensureInit();
         try {
-            H.hVoidId().invokeExact(peer, ObjC.sel("setSubviews:"), views.peer());
+            H.hVoidId().invokeExact(peer, Sels.setSubviews, views.peer());
         } catch (Throwable t) {
             throw new RuntimeException("setSubviews: failed", t);
         }
@@ -974,19 +1463,21 @@ public class NSView extends NSResponder {
 
     /// [view opaqueAncestor] — nearest opaque ancestor (may be nil).
     public NSView opaqueAncestor() {
-        return NSView.wrap(ObjC.msgSendId(peer, ObjC.sel("opaqueAncestor")));
+        ensureInit();
+        return NSView.wrap(ObjC.msgSendId(peer, Sels.opaqueAncestor));
     }
 
     /// [view removeFromSuperview].
     public void removeFromSuperview() {
-        ObjC.msgSendVoid(peer, ObjC.sel("removeFromSuperview"));
+        ensureInit();
+        ObjC.msgSendVoid(peer, Sels.removeFromSuperview);
     }
 
     /// [view replaceSubview:with:].
     public void replaceSubview(NSView oldView, NSView newView) {
         ensureInit();
         try {
-            H.hVoidIdId().invokeExact(peer, ObjC.sel("replaceSubview:with:"), oldView.peer(), newView.peer());
+            H.hVoidIdId().invokeExact(peer, Sels.replaceSubview_with, oldView.peer(), newView.peer());
         } catch (Throwable t) {
             throw new RuntimeException("replaceSubview:with: failed", t);
         }
@@ -994,14 +1485,15 @@ public class NSView extends NSResponder {
 
     /// [view removeFromSuperviewWithoutNeedingDisplay].
     public void removeFromSuperviewWithoutNeedingDisplay() {
-        ObjC.msgSendVoid(peer, ObjC.sel("removeFromSuperviewWithoutNeedingDisplay"));
+        ensureInit();
+        ObjC.msgSendVoid(peer, Sels.removeFromSuperviewWithoutNeedingDisplay);
     }
 
     /// [view viewWillMoveToWindow:] (nil allowed).
     public void viewWillMoveToWindow(NSWindow window) {
         ensureInit();
         try {
-            H.hVoidId().invokeExact(peer, ObjC.sel("viewWillMoveToWindow:"), (MemorySegment) (window == null ? MemorySegment.NULL : window.peer()));
+            H.hVoidId().invokeExact(peer, Sels.viewWillMoveToWindow, (MemorySegment) (window == null ? MemorySegment.NULL : window.peer()));
         } catch (Throwable t) {
             throw new RuntimeException("viewWillMoveToWindow: failed", t);
         }
@@ -1009,14 +1501,15 @@ public class NSView extends NSResponder {
 
     /// [view viewDidMoveToWindow].
     public void viewDidMoveToWindow() {
-        ObjC.msgSendVoid(peer, ObjC.sel("viewDidMoveToWindow"));
+        ensureInit();
+        ObjC.msgSendVoid(peer, Sels.viewDidMoveToWindow);
     }
 
     /// [view viewWillMoveToSuperview:] (nil allowed).
     public void viewWillMoveToSuperview(NSView superview) {
         ensureInit();
         try {
-            H.hVoidId().invokeExact(peer, ObjC.sel("viewWillMoveToSuperview:"), (MemorySegment) (superview == null ? MemorySegment.NULL : superview.peer()));
+            H.hVoidId().invokeExact(peer, Sels.viewWillMoveToSuperview, (MemorySegment) (superview == null ? MemorySegment.NULL : superview.peer()));
         } catch (Throwable t) {
             throw new RuntimeException("viewWillMoveToSuperview: failed", t);
         }
@@ -1024,39 +1517,45 @@ public class NSView extends NSResponder {
 
     /// [view viewDidMoveToSuperview].
     public void viewDidMoveToSuperview() {
-        ObjC.msgSendVoid(peer, ObjC.sel("viewDidMoveToSuperview"));
+        ensureInit();
+        ObjC.msgSendVoid(peer, Sels.viewDidMoveToSuperview);
     }
 
     /// [view didAddSubview:].
     public void didAddSubview(NSView subview) {
-        ObjC.msgSendVoidId(peer, ObjC.sel("didAddSubview:"), subview.peer());
+        ensureInit();
+        ObjC.msgSendVoidId(peer, Sels.didAddSubview, subview.peer());
     }
 
     /// [view willRemoveSubview:].
     public void willRemoveSubview(NSView subview) {
-        ObjC.msgSendVoidId(peer, ObjC.sel("willRemoveSubview:"), subview.peer());
+        ensureInit();
+        ObjC.msgSendVoidId(peer, Sels.willRemoveSubview, subview.peer());
     }
 
     /// [view viewDidHide].
     public void viewDidHide() {
-        ObjC.msgSendVoid(peer, ObjC.sel("viewDidHide"));
+        ensureInit();
+        ObjC.msgSendVoid(peer, Sels.viewDidHide);
     }
 
     /// [view viewDidUnhide].
     public void viewDidUnhide() {
-        ObjC.msgSendVoid(peer, ObjC.sel("viewDidUnhide"));
+        ensureInit();
+        ObjC.msgSendVoid(peer, Sels.viewDidUnhide);
     }
 
     /// [view viewDidChangeBackingProperties].
     public void viewDidChangeBackingProperties() {
-        ObjC.msgSendVoid(peer, ObjC.sel("viewDidChangeBackingProperties"));
+        ensureInit();
+        ObjC.msgSendVoid(peer, Sels.viewDidChangeBackingProperties);
     }
 
     /// [view setFrameOrigin:] — move without resizing.
     public void setFrameOrigin(NSPoint origin) {
         ensureInit();
         try {
-            H.hSetPoint().invokeExact(peer, ObjC.sel("setFrameOrigin:"), origin.toSegment());
+            H.hSetPoint().invokeExact(peer, Sels.setFrameOrigin, origin.toSegment());
         } catch (Throwable t) {
             throw new RuntimeException("setFrameOrigin: failed", t);
         }
@@ -1066,7 +1565,7 @@ public class NSView extends NSResponder {
     public void setFrameSize(NSSize size) {
         ensureInit();
         try {
-            H.hSetSize().invokeExact(peer, ObjC.sel("setFrameSize:"), size.toSegment());
+            H.hSetSize().invokeExact(peer, Sels.setFrameSize, size.toSegment());
         } catch (Throwable t) {
             throw new RuntimeException("setFrameSize: failed", t);
         }
@@ -1076,7 +1575,7 @@ public class NSView extends NSResponder {
     public void setBoundsOrigin(NSPoint origin) {
         ensureInit();
         try {
-            H.hSetPoint().invokeExact(peer, ObjC.sel("setBoundsOrigin:"), origin.toSegment());
+            H.hSetPoint().invokeExact(peer, Sels.setBoundsOrigin, origin.toSegment());
         } catch (Throwable t) {
             throw new RuntimeException("setBoundsOrigin: failed", t);
         }
@@ -1086,7 +1585,7 @@ public class NSView extends NSResponder {
     public void setBoundsSize(NSSize size) {
         ensureInit();
         try {
-            H.hSetSize().invokeExact(peer, ObjC.sel("setBoundsSize:"), size.toSegment());
+            H.hSetSize().invokeExact(peer, Sels.setBoundsSize, size.toSegment());
         } catch (Throwable t) {
             throw new RuntimeException("setBoundsSize: failed", t);
         }
@@ -1096,7 +1595,7 @@ public class NSView extends NSResponder {
     public void translateOriginToPoint(NSPoint point) {
         ensureInit();
         try {
-            H.hSetPoint().invokeExact(peer, ObjC.sel("translateOriginToPoint:"), point.toSegment());
+            H.hSetPoint().invokeExact(peer, Sels.translateOriginToPoint, point.toSegment());
         } catch (Throwable t) {
             throw new RuntimeException("translateOriginToPoint: failed", t);
         }
@@ -1106,7 +1605,7 @@ public class NSView extends NSResponder {
     public void scaleUnitSquareToSize(NSSize size) {
         ensureInit();
         try {
-            H.hSetSize().invokeExact(peer, ObjC.sel("scaleUnitSquareToSize:"), size.toSegment());
+            H.hSetSize().invokeExact(peer, Sels.scaleUnitSquareToSize, size.toSegment());
         } catch (Throwable t) {
             throw new RuntimeException("scaleUnitSquareToSize: failed", t);
         }
@@ -1116,7 +1615,7 @@ public class NSView extends NSResponder {
     public void rotateByAngle(double angle) {
         ensureInit();
         try {
-            H.hSetDouble().invokeExact(peer, ObjC.sel("rotateByAngle:"), angle);
+            H.hSetDouble().invokeExact(peer, Sels.rotateByAngle, angle);
         } catch (Throwable t) {
             throw new RuntimeException("rotateByAngle: failed", t);
         }
@@ -1126,7 +1625,7 @@ public class NSView extends NSResponder {
     public double frameRotation() {
         ensureInit();
         try {
-            return (double) H.hGetDouble().invokeExact(peer, ObjC.sel("frameRotation"));
+            return (double) H.hGetDouble().invokeExact(peer, Sels.frameRotation);
         } catch (Throwable t) {
             throw new RuntimeException("frameRotation failed", t);
         }
@@ -1136,7 +1635,7 @@ public class NSView extends NSResponder {
     public void setFrameRotation(double angle) {
         ensureInit();
         try {
-            H.hSetDouble().invokeExact(peer, ObjC.sel("setFrameRotation:"), angle);
+            H.hSetDouble().invokeExact(peer, Sels.setFrameRotation, angle);
         } catch (Throwable t) {
             throw new RuntimeException("setFrameRotation: failed", t);
         }
@@ -1146,7 +1645,7 @@ public class NSView extends NSResponder {
     public double frameCenterRotation() {
         ensureInit();
         try {
-            return (double) H.hGetDouble().invokeExact(peer, ObjC.sel("frameCenterRotation"));
+            return (double) H.hGetDouble().invokeExact(peer, Sels.frameCenterRotation);
         } catch (Throwable t) {
             throw new RuntimeException("frameCenterRotation failed", t);
         }
@@ -1156,7 +1655,7 @@ public class NSView extends NSResponder {
     public void setFrameCenterRotation(double angle) {
         ensureInit();
         try {
-            H.hSetDouble().invokeExact(peer, ObjC.sel("setFrameCenterRotation:"), angle);
+            H.hSetDouble().invokeExact(peer, Sels.setFrameCenterRotation, angle);
         } catch (Throwable t) {
             throw new RuntimeException("setFrameCenterRotation: failed", t);
         }
@@ -1166,7 +1665,7 @@ public class NSView extends NSResponder {
     public double boundsRotation() {
         ensureInit();
         try {
-            return (double) H.hGetDouble().invokeExact(peer, ObjC.sel("boundsRotation"));
+            return (double) H.hGetDouble().invokeExact(peer, Sels.boundsRotation);
         } catch (Throwable t) {
             throw new RuntimeException("boundsRotation failed", t);
         }
@@ -1176,7 +1675,7 @@ public class NSView extends NSResponder {
     public void setBoundsRotation(double angle) {
         ensureInit();
         try {
-            H.hSetDouble().invokeExact(peer, ObjC.sel("setBoundsRotation:"), angle);
+            H.hSetDouble().invokeExact(peer, Sels.setBoundsRotation, angle);
         } catch (Throwable t) {
             throw new RuntimeException("setBoundsRotation: failed", t);
         }
@@ -1184,29 +1683,33 @@ public class NSView extends NSResponder {
 
     /// [view postsFrameChangedNotifications].
     public boolean postsFrameChangedNotifications() {
-        return ObjC.msgSendBool(peer, ObjC.sel("postsFrameChangedNotifications"));
+        ensureInit();
+        return ObjC.msgSendBool(peer, Sels.postsFrameChangedNotifications);
     }
 
     /// [view setPostsFrameChangedNotifications:].
     public void setPostsFrameChangedNotifications(boolean flag) {
-        ObjC.msgSendVoidBool(peer, ObjC.sel("setPostsFrameChangedNotifications:"), flag);
+        ensureInit();
+        ObjC.msgSendVoidBool(peer, Sels.setPostsFrameChangedNotifications, flag);
     }
 
     /// [view postsBoundsChangedNotifications].
     public boolean postsBoundsChangedNotifications() {
-        return ObjC.msgSendBool(peer, ObjC.sel("postsBoundsChangedNotifications"));
+        ensureInit();
+        return ObjC.msgSendBool(peer, Sels.postsBoundsChangedNotifications);
     }
 
     /// [view setPostsBoundsChangedNotifications:].
     public void setPostsBoundsChangedNotifications(boolean flag) {
-        ObjC.msgSendVoidBool(peer, ObjC.sel("setPostsBoundsChangedNotifications:"), flag);
+        ensureInit();
+        ObjC.msgSendVoidBool(peer, Sels.setPostsBoundsChangedNotifications, flag);
     }
 
     /// [view resizeSubviewsWithOldSize:].
     public void resizeSubviewsWithOldSize(NSSize oldSize) {
         ensureInit();
         try {
-            H.hSetSize().invokeExact(peer, ObjC.sel("resizeSubviewsWithOldSize:"), oldSize.toSegment());
+            H.hSetSize().invokeExact(peer, Sels.resizeSubviewsWithOldSize, oldSize.toSegment());
         } catch (Throwable t) {
             throw new RuntimeException("resizeSubviewsWithOldSize: failed", t);
         }
@@ -1216,7 +1719,7 @@ public class NSView extends NSResponder {
     public void resizeWithOldSuperviewSize(NSSize oldSize) {
         ensureInit();
         try {
-            H.hSetSize().invokeExact(peer, ObjC.sel("resizeWithOldSuperviewSize:"), oldSize.toSegment());
+            H.hSetSize().invokeExact(peer, Sels.resizeWithOldSuperviewSize, oldSize.toSegment());
         } catch (Throwable t) {
             throw new RuntimeException("resizeWithOldSuperviewSize: failed", t);
         }
@@ -1224,19 +1727,21 @@ public class NSView extends NSResponder {
 
     /// [view display] — draw now, outside the deferred mechanism.
     public void display() {
-        ObjC.msgSendVoid(peer, ObjC.sel("display"));
+        ensureInit();
+        ObjC.msgSendVoid(peer, Sels.display);
     }
 
     /// [view displayIfNeededIgnoringOpacity].
     public void displayIfNeededIgnoringOpacity() {
-        ObjC.msgSendVoid(peer, ObjC.sel("displayIfNeededIgnoringOpacity"));
+        ensureInit();
+        ObjC.msgSendVoid(peer, Sels.displayIfNeededIgnoringOpacity);
     }
 
     /// [view displayRect:].
     public void displayRect(NSRect rect) {
         ensureInit();
         try {
-            H.hSetBounds().invokeExact(peer, ObjC.sel("displayRect:"), rect.toSegment());
+            H.hSetBounds().invokeExact(peer, Sels.displayRect, rect.toSegment());
         } catch (Throwable t) {
             throw new RuntimeException("displayRect: failed", t);
         }
@@ -1246,7 +1751,7 @@ public class NSView extends NSResponder {
     public void displayRectIgnoringOpacity(NSRect rect) {
         ensureInit();
         try {
-            H.hSetBounds().invokeExact(peer, ObjC.sel("displayRectIgnoringOpacity:"), rect.toSegment());
+            H.hSetBounds().invokeExact(peer, Sels.displayRectIgnoringOpacity, rect.toSegment());
         } catch (Throwable t) {
             throw new RuntimeException("displayRectIgnoringOpacity: failed", t);
         }
@@ -1256,7 +1761,7 @@ public class NSView extends NSResponder {
     public void displayIfNeededInRectIgnoringOpacity(NSRect rect) {
         ensureInit();
         try {
-            H.hSetBounds().invokeExact(peer, ObjC.sel("displayIfNeededInRectIgnoringOpacity:"), rect.toSegment());
+            H.hSetBounds().invokeExact(peer, Sels.displayIfNeededInRectIgnoringOpacity, rect.toSegment());
         } catch (Throwable t) {
             throw new RuntimeException("displayIfNeededInRectIgnoringOpacity: failed", t);
         }
@@ -1266,7 +1771,7 @@ public class NSView extends NSResponder {
     public void displayRectIgnoringOpacityInContext(NSRect rect, NSGraphicsContext context) {
         ensureInit();
         try {
-            H.hCacheDisplay().invokeExact(peer, ObjC.sel("displayRectIgnoringOpacity:inContext:"), rect.toSegment(), context.peer());
+            H.hCacheDisplay().invokeExact(peer, Sels.displayRectIgnoringOpacity_inContext, rect.toSegment(), context.peer());
         } catch (Throwable t) {
             throw new RuntimeException("displayRectIgnoringOpacity:inContext: failed", t);
         }
@@ -1274,54 +1779,63 @@ public class NSView extends NSResponder {
 
     /// [view viewWillDraw].
     public void viewWillDraw() {
-        ObjC.msgSendVoid(peer, ObjC.sel("viewWillDraw"));
+        ensureInit();
+        ObjC.msgSendVoid(peer, Sels.viewWillDraw);
     }
 
     /// [view wantsDefaultClipping].
     public boolean wantsDefaultClipping() {
-        return ObjC.msgSendBool(peer, ObjC.sel("wantsDefaultClipping"));
+        ensureInit();
+        return ObjC.msgSendBool(peer, Sels.wantsDefaultClipping);
     }
 
     /// [view canDrawConcurrently].
     public boolean canDrawConcurrently() {
-        return ObjC.msgSendBool(peer, ObjC.sel("canDrawConcurrently"));
+        ensureInit();
+        return ObjC.msgSendBool(peer, Sels.canDrawConcurrently);
     }
 
     /// [view setCanDrawConcurrently:].
     public void setCanDrawConcurrently(boolean flag) {
-        ObjC.msgSendVoidBool(peer, ObjC.sel("setCanDrawConcurrently:"), flag);
+        ensureInit();
+        ObjC.msgSendVoidBool(peer, Sels.setCanDrawConcurrently, flag);
     }
 
     /// [view needsLayout].
     public boolean needsLayout() {
-        return ObjC.msgSendBool(peer, ObjC.sel("needsLayout"));
+        ensureInit();
+        return ObjC.msgSendBool(peer, Sels.needsLayout);
     }
 
     /// [view setNeedsLayout:].
     public void setNeedsLayout(boolean flag) {
-        ObjC.msgSendVoidBool(peer, ObjC.sel("setNeedsLayout:"), flag);
+        ensureInit();
+        ObjC.msgSendVoidBool(peer, Sels.setNeedsLayout, flag);
     }
 
     /// [view layout] — lay out the view (called by layoutSubtreeIfNeeded).
     public void layout() {
-        ObjC.msgSendVoid(peer, ObjC.sel("layout"));
+        ensureInit();
+        ObjC.msgSendVoid(peer, Sels.layout);
     }
 
     /// [view updateLayer] — update the backing layer's content.
     public void updateLayer() {
-        ObjC.msgSendVoid(peer, ObjC.sel("updateLayer"));
+        ensureInit();
+        ObjC.msgSendVoid(peer, Sels.updateLayer);
     }
 
     /// [view makeBackingLayer] — create the layer for layer-backed drawing.
     public CALayer makeBackingLayer() {
-        return CALayer.wrap(ObjC.msgSendId(peer, ObjC.sel("makeBackingLayer")));
+        ensureInit();
+        return CALayer.wrap(ObjC.msgSendId(peer, Sels.makeBackingLayer));
     }
 
     /// [view centerScanRect:] — pixel-aligned rect for scanning.
     public NSRect centerScanRect(NSRect rect) {
         ensureInit();
         try {
-            return NSRect.fromSegment((MemorySegment) H.hConvBacking().invokeExact(ObjC.structSlot(), peer, ObjC.sel("centerScanRect:"), rect.toSegment()));
+            return NSRect.fromSegment((MemorySegment) H.hConvBacking().invokeExact(ObjC.structSlot(), peer, Sels.centerScanRect, rect.toSegment()));
         } catch (Throwable t) {
             throw new RuntimeException("centerScanRect: failed", t);
         }
@@ -1331,7 +1845,7 @@ public class NSView extends NSResponder {
     public NSRect adjustScroll(NSRect rect) {
         ensureInit();
         try {
-            return NSRect.fromSegment((MemorySegment) H.hConvBacking().invokeExact(ObjC.structSlot(), peer, ObjC.sel("adjustScroll:"), rect.toSegment()));
+            return NSRect.fromSegment((MemorySegment) H.hConvBacking().invokeExact(ObjC.structSlot(), peer, Sels.adjustScroll, rect.toSegment()));
         } catch (Throwable t) {
             throw new RuntimeException("adjustScroll: failed", t);
         }
@@ -1341,7 +1855,7 @@ public class NSView extends NSResponder {
     public NSRect convertRectFromBacking(NSRect rect) {
         ensureInit();
         try {
-            return NSRect.fromSegment((MemorySegment) H.hConvBacking().invokeExact(ObjC.structSlot(), peer, ObjC.sel("convertRectFromBacking:"), rect.toSegment()));
+            return NSRect.fromSegment((MemorySegment) H.hConvBacking().invokeExact(ObjC.structSlot(), peer, Sels.convertRectFromBacking, rect.toSegment()));
         } catch (Throwable t) {
             throw new RuntimeException("convertRectFromBacking: failed", t);
         }
@@ -1351,7 +1865,7 @@ public class NSView extends NSResponder {
     public NSSize convertSizeToBacking(NSSize size) {
         ensureInit();
         try {
-            MemorySegment s = (MemorySegment) H.hSizeSize().invokeExact(ObjC.structSlot(), peer, ObjC.sel("convertSizeToBacking:"), size.toSegment());
+            MemorySegment s = (MemorySegment) H.hSizeSize().invokeExact(ObjC.structSlot(), peer, Sels.convertSizeToBacking, size.toSegment());
             return NSSize.fromSegment(s);
         } catch (Throwable t) {
             throw new RuntimeException("convertSizeToBacking: failed", t);
@@ -1362,7 +1876,7 @@ public class NSView extends NSResponder {
     public NSSize convertSizeFromBacking(NSSize size) {
         ensureInit();
         try {
-            MemorySegment s = (MemorySegment) H.hSizeSize().invokeExact(ObjC.structSlot(), peer, ObjC.sel("convertSizeFromBacking:"), size.toSegment());
+            MemorySegment s = (MemorySegment) H.hSizeSize().invokeExact(ObjC.structSlot(), peer, Sels.convertSizeFromBacking, size.toSegment());
             return NSSize.fromSegment(s);
         } catch (Throwable t) {
             throw new RuntimeException("convertSizeFromBacking: failed", t);
@@ -1373,7 +1887,7 @@ public class NSView extends NSResponder {
     public NSSize convertSizeToLayer(NSSize size) {
         ensureInit();
         try {
-            MemorySegment s = (MemorySegment) H.hSizeSize().invokeExact(ObjC.structSlot(), peer, ObjC.sel("convertSizeToLayer:"), size.toSegment());
+            MemorySegment s = (MemorySegment) H.hSizeSize().invokeExact(ObjC.structSlot(), peer, Sels.convertSizeToLayer, size.toSegment());
             return NSSize.fromSegment(s);
         } catch (Throwable t) {
             throw new RuntimeException("convertSizeToLayer: failed", t);
@@ -1384,7 +1898,7 @@ public class NSView extends NSResponder {
     public NSSize convertSizeFromLayer(NSSize size) {
         ensureInit();
         try {
-            MemorySegment s = (MemorySegment) H.hSizeSize().invokeExact(ObjC.structSlot(), peer, ObjC.sel("convertSizeFromLayer:"), size.toSegment());
+            MemorySegment s = (MemorySegment) H.hSizeSize().invokeExact(ObjC.structSlot(), peer, Sels.convertSizeFromLayer, size.toSegment());
             return NSSize.fromSegment(s);
         } catch (Throwable t) {
             throw new RuntimeException("convertSizeFromLayer: failed", t);
@@ -1395,7 +1909,7 @@ public class NSView extends NSResponder {
     public void scrollPoint(NSPoint point) {
         ensureInit();
         try {
-            H.hSetPoint().invokeExact(peer, ObjC.sel("scrollPoint:"), point.toSegment());
+            H.hSetPoint().invokeExact(peer, Sels.scrollPoint, point.toSegment());
         } catch (Throwable t) {
             throw new RuntimeException("scrollPoint: failed", t);
         }
@@ -1405,7 +1919,7 @@ public class NSView extends NSResponder {
     public boolean autoscroll(NSEvent event) {
         ensureInit();
         try {
-            return (boolean) H.hBoolId().invokeExact(peer, ObjC.sel("autoscroll:"), event.peer());
+            return (boolean) H.hBoolId().invokeExact(peer, Sels.autoscroll, event.peer());
         } catch (Throwable t) {
             throw new RuntimeException("autoscroll: failed", t);
         }
@@ -1415,7 +1929,7 @@ public class NSView extends NSResponder {
     public NSView hitTest(NSPoint point) {
         ensureInit();
         try {
-            MemorySegment v = (MemorySegment) H.hIdPoint().invokeExact(peer, ObjC.sel("hitTest:"), point.toSegment());
+            MemorySegment v = (MemorySegment) H.hIdPoint().invokeExact(peer, Sels.hitTest, point.toSegment());
             return NSView.wrap(v);
         } catch (Throwable t) {
             throw new RuntimeException("hitTest: failed", t);
@@ -1426,7 +1940,7 @@ public class NSView extends NSResponder {
     public NSView viewWithTag(long tag) {
         ensureInit();
         try {
-            MemorySegment v = (MemorySegment) H.hObjectAtIndex().invokeExact(peer, ObjC.sel("viewWithTag:"), tag);
+            MemorySegment v = (MemorySegment) H.hObjectAtIndex().invokeExact(peer, Sels.viewWithTag, tag);
             return NSView.wrap(v);
         } catch (Throwable t) {
             throw new RuntimeException("viewWithTag: failed", t);
@@ -1435,29 +1949,33 @@ public class NSView extends NSResponder {
 
     /// [view tag] — the view's tag (0 when unset).
     public long tag() {
-        return ObjC.msgSendLong(peer, ObjC.sel("tag"));
+        ensureInit();
+        return ObjC.msgSendLong(peer, Sels.tag);
     }
 
     /// [view needsPanelToBecomeKey].
     public boolean needsPanelToBecomeKey() {
-        return ObjC.msgSendBool(peer, ObjC.sel("needsPanelToBecomeKey"));
+        ensureInit();
+        return ObjC.msgSendBool(peer, Sels.needsPanelToBecomeKey);
     }
 
     /// [view mouseDownCanMoveWindow].
     public boolean mouseDownCanMoveWindow() {
-        return ObjC.msgSendBool(peer, ObjC.sel("mouseDownCanMoveWindow"));
+        ensureInit();
+        return ObjC.msgSendBool(peer, Sels.mouseDownCanMoveWindow);
     }
 
     /// [view menuForEvent:] — context menu for an event (may be nil).
     public NSMenu menuForEvent(NSEvent event) {
-        return NSMenu.wrap(ObjC.msgSendIdId(peer, ObjC.sel("menuForEvent:"), event.peer()));
+        ensureInit();
+        return NSMenu.wrap(ObjC.msgSendIdId(peer, Sels.menuForEvent, event.peer()));
     }
 
     /// [view willOpenMenu:withEvent:].
     public void willOpenMenu(NSMenu menu, NSEvent event) {
         ensureInit();
         try {
-            H.hVoidIdId().invokeExact(peer, ObjC.sel("willOpenMenu:withEvent:"), menu.peer(), event.peer());
+            H.hVoidIdId().invokeExact(peer, Sels.willOpenMenu_withEvent, menu.peer(), event.peer());
         } catch (Throwable t) {
             throw new RuntimeException("willOpenMenu:withEvent: failed", t);
         }
@@ -1467,7 +1985,7 @@ public class NSView extends NSResponder {
     public void didCloseMenu(NSMenu menu, NSEvent event) {
         ensureInit();
         try {
-            H.hVoidIdId().invokeExact(peer, ObjC.sel("didCloseMenu:withEvent:"), menu.peer(), (MemorySegment) (event == null ? MemorySegment.NULL : event.peer()));
+            H.hVoidIdId().invokeExact(peer, Sels.didCloseMenu_withEvent, menu.peer(), (MemorySegment) (event == null ? MemorySegment.NULL : event.peer()));
         } catch (Throwable t) {
             throw new RuntimeException("didCloseMenu:withEvent: failed", t);
         }
@@ -1475,64 +1993,75 @@ public class NSView extends NSResponder {
 
     /// [+NSView defaultMenu] — the class default menu (may be nil).
     public static NSMenu defaultMenu() {
-        return NSMenu.wrap(ObjC.msgSendId(ObjC.cls("NSView"), ObjC.sel("defaultMenu")));
+        ensureInit();
+        return NSMenu.wrap(ObjC.msgSendId(ObjC.cls("NSView"), Sels.defaultMenu));
     }
 
     /// [view toolTip] — tooltip string (may be nil).
     public String toolTip() {
-        return ObjC.toString(ObjC.msgSendId(peer, ObjC.sel("toolTip")));
+        ensureInit();
+        return ObjC.toString(ObjC.msgSendId(peer, Sels.toolTip));
     }
 
     /// [view setToolTip:] (nil clears).
     public void setToolTip(String tip) {
-        ObjC.msgSendVoidId(peer, ObjC.sel("setToolTip:"), tip == null ? MemorySegment.NULL : ObjC.nsstring(tip));
+        ensureInit();
+        ObjC.msgSendVoidId(peer, Sels.setToolTip, tip == null ? MemorySegment.NULL : ObjC.nsstring(tip));
     }
 
     /// [view removeToolTip:].
     public void removeToolTip(long tag) {
-        ObjC.msgSendVoidLong(peer, ObjC.sel("removeToolTip:"), tag);
+        ensureInit();
+        ObjC.msgSendVoidLong(peer, Sels.removeToolTip, tag);
     }
 
     /// [view removeAllToolTips].
     public void removeAllToolTips() {
-        ObjC.msgSendVoid(peer, ObjC.sel("removeAllToolTips"));
+        ensureInit();
+        ObjC.msgSendVoid(peer, Sels.removeAllToolTips);
     }
 
     /// [view viewWillStartLiveResize].
     public void viewWillStartLiveResize() {
-        ObjC.msgSendVoid(peer, ObjC.sel("viewWillStartLiveResize"));
+        ensureInit();
+        ObjC.msgSendVoid(peer, Sels.viewWillStartLiveResize);
     }
 
     /// [view viewDidEndLiveResize].
     public void viewDidEndLiveResize() {
-        ObjC.msgSendVoid(peer, ObjC.sel("viewDidEndLiveResize"));
+        ensureInit();
+        ObjC.msgSendVoid(peer, Sels.viewDidEndLiveResize);
     }
 
     /// [view inLiveResize].
     public boolean inLiveResize() {
-        return ObjC.msgSendBool(peer, ObjC.sel("inLiveResize"));
+        ensureInit();
+        return ObjC.msgSendBool(peer, Sels.inLiveResize);
     }
 
     /// [view preservesContentDuringLiveResize].
     public boolean preservesContentDuringLiveResize() {
-        return ObjC.msgSendBool(peer, ObjC.sel("preservesContentDuringLiveResize"));
+        ensureInit();
+        return ObjC.msgSendBool(peer, Sels.preservesContentDuringLiveResize);
     }
 
     /// [view rectPreservedDuringLiveResize].
     public NSRect rectPreservedDuringLiveResize() {
-        return NSRect.fromSegment(ObjC.msgSendRect(peer, ObjC.sel("rectPreservedDuringLiveResize")));
+        ensureInit();
+        return NSRect.fromSegment(ObjC.msgSendRect(peer, Sels.rectPreservedDuringLiveResize));
     }
 
     /// [view prepareForReuse].
     public void prepareForReuse() {
-        ObjC.msgSendVoid(peer, ObjC.sel("prepareForReuse"));
+        ensureInit();
+        ObjC.msgSendVoid(peer, Sels.prepareForReuse);
     }
 
     /// [view prepareContentInRect:].
     public void prepareContentInRect(NSRect rect) {
         ensureInit();
         try {
-            H.hSetBounds().invokeExact(peer, ObjC.sel("prepareContentInRect:"), rect.toSegment());
+            H.hSetBounds().invokeExact(peer, Sels.prepareContentInRect, rect.toSegment());
         } catch (Throwable t) {
             throw new RuntimeException("prepareContentInRect: failed", t);
         }
@@ -1540,14 +2069,15 @@ public class NSView extends NSResponder {
 
     /// [view viewDidChangeEffectiveAppearance].
     public void viewDidChangeEffectiveAppearance() {
-        ObjC.msgSendVoid(peer, ObjC.sel("viewDidChangeEffectiveAppearance"));
+        ensureInit();
+        ObjC.msgSendVoid(peer, Sels.viewDidChangeEffectiveAppearance);
     }
 
     /// [view setKeyboardFocusRingNeedsDisplayInRect:].
     public void setKeyboardFocusRingNeedsDisplayInRect(NSRect rect) {
         ensureInit();
         try {
-            H.hSetBounds().invokeExact(peer, ObjC.sel("setKeyboardFocusRingNeedsDisplayInRect:"), rect.toSegment());
+            H.hSetBounds().invokeExact(peer, Sels.setKeyboardFocusRingNeedsDisplayInRect, rect.toSegment());
         } catch (Throwable t) {
             throw new RuntimeException("setKeyboardFocusRingNeedsDisplayInRect: failed", t);
         }
@@ -1555,174 +2085,207 @@ public class NSView extends NSResponder {
 
     /// [view drawFocusRingMask].
     public void drawFocusRingMask() {
-        ObjC.msgSendVoid(peer, ObjC.sel("drawFocusRingMask"));
+        ensureInit();
+        ObjC.msgSendVoid(peer, Sels.drawFocusRingMask);
     }
 
     /// [view noteFocusRingMaskChanged].
     public void noteFocusRingMaskChanged() {
-        ObjC.msgSendVoid(peer, ObjC.sel("noteFocusRingMaskChanged"));
+        ensureInit();
+        ObjC.msgSendVoid(peer, Sels.noteFocusRingMaskChanged);
     }
 
     /// [view focusRingMaskBounds].
     public NSRect focusRingMaskBounds() {
-        return NSRect.fromSegment(ObjC.msgSendRect(peer, ObjC.sel("focusRingMaskBounds")));
+        ensureInit();
+        return NSRect.fromSegment(ObjC.msgSendRect(peer, Sels.focusRingMaskBounds));
     }
 
     /// [view focusRingType] — NSFocusRingType.
     public long focusRingType() {
-        return ObjC.msgSendLong(peer, ObjC.sel("focusRingType"));
+        ensureInit();
+        return ObjC.msgSendLong(peer, Sels.focusRingType);
     }
 
     /// [view setFocusRingType:].
     public void setFocusRingType(long type) {
-        ObjC.msgSendVoidLong(peer, ObjC.sel("setFocusRingType:"), type);
+        ensureInit();
+        ObjC.msgSendVoidLong(peer, Sels.setFocusRingType, type);
     }
 
     /// [+NSView defaultFocusRingType].
     public static long defaultFocusRingType() {
-        return ObjC.msgSendLong(ObjC.cls("NSView"), ObjC.sel("defaultFocusRingType"));
+        ensureInit();
+        return ObjC.msgSendLong(ObjC.cls("NSView"), Sels.defaultFocusRingType);
     }
 
     /// [+NSView focusView] — the currently focused view (may be nil).
     public static NSView focusView() {
-        return NSView.wrap(ObjC.msgSendId(ObjC.cls("NSView"), ObjC.sel("focusView")));
+        ensureInit();
+        return NSView.wrap(ObjC.msgSendId(ObjC.cls("NSView"), Sels.focusView));
     }
 
     /// [view nextKeyView] (may be nil).
     public NSView nextKeyView() {
-        return NSView.wrap(ObjC.msgSendId(peer, ObjC.sel("nextKeyView")));
+        ensureInit();
+        return NSView.wrap(ObjC.msgSendId(peer, Sels.nextKeyView));
     }
 
     /// [view setNextKeyView:] (nil clears).
     public void setNextKeyView(NSView view) {
-        ObjC.msgSendVoidId(peer, ObjC.sel("setNextKeyView:"), view == null ? MemorySegment.NULL : view.peer());
+        ensureInit();
+        ObjC.msgSendVoidId(peer, Sels.setNextKeyView, view == null ? MemorySegment.NULL : view.peer());
     }
 
     /// [view previousKeyView] (may be nil).
     public NSView previousKeyView() {
-        return NSView.wrap(ObjC.msgSendId(peer, ObjC.sel("previousKeyView")));
+        ensureInit();
+        return NSView.wrap(ObjC.msgSendId(peer, Sels.previousKeyView));
     }
 
     /// [view nextValidKeyView] (may be nil).
     public NSView nextValidKeyView() {
-        return NSView.wrap(ObjC.msgSendId(peer, ObjC.sel("nextValidKeyView")));
+        ensureInit();
+        return NSView.wrap(ObjC.msgSendId(peer, Sels.nextValidKeyView));
     }
 
     /// [view previousValidKeyView] (may be nil).
     public NSView previousValidKeyView() {
-        return NSView.wrap(ObjC.msgSendId(peer, ObjC.sel("previousValidKeyView")));
+        ensureInit();
+        return NSView.wrap(ObjC.msgSendId(peer, Sels.previousValidKeyView));
     }
 
     /// [view layerContentsRedrawPolicy] — NSViewLayerContentsRedrawPolicy.
     public long layerContentsRedrawPolicy() {
-        return ObjC.msgSendLong(peer, ObjC.sel("layerContentsRedrawPolicy"));
+        ensureInit();
+        return ObjC.msgSendLong(peer, Sels.layerContentsRedrawPolicy);
     }
 
     /// [view setLayerContentsRedrawPolicy:].
     public void setLayerContentsRedrawPolicy(long policy) {
-        ObjC.msgSendVoidLong(peer, ObjC.sel("setLayerContentsRedrawPolicy:"), policy);
+        ensureInit();
+        ObjC.msgSendVoidLong(peer, Sels.setLayerContentsRedrawPolicy, policy);
     }
 
     /// [view layerContentsPlacement] — NSViewLayerContentsPlacement.
     public long layerContentsPlacement() {
-        return ObjC.msgSendLong(peer, ObjC.sel("layerContentsPlacement"));
+        ensureInit();
+        return ObjC.msgSendLong(peer, Sels.layerContentsPlacement);
     }
 
     /// [view setLayerContentsPlacement:].
     public void setLayerContentsPlacement(long placement) {
-        ObjC.msgSendVoidLong(peer, ObjC.sel("setLayerContentsPlacement:"), placement);
+        ensureInit();
+        ObjC.msgSendVoidLong(peer, Sels.setLayerContentsPlacement, placement);
     }
 
     /// [view wantsUpdateLayer].
     public boolean wantsUpdateLayer() {
-        return ObjC.msgSendBool(peer, ObjC.sel("wantsUpdateLayer"));
+        ensureInit();
+        return ObjC.msgSendBool(peer, Sels.wantsUpdateLayer);
     }
 
     /// [view canDrawSubviewsIntoLayer].
     public boolean canDrawSubviewsIntoLayer() {
-        return ObjC.msgSendBool(peer, ObjC.sel("canDrawSubviewsIntoLayer"));
+        ensureInit();
+        return ObjC.msgSendBool(peer, Sels.canDrawSubviewsIntoLayer);
     }
 
     /// [view setCanDrawSubviewsIntoLayer:].
     public void setCanDrawSubviewsIntoLayer(boolean flag) {
-        ObjC.msgSendVoidBool(peer, ObjC.sel("setCanDrawSubviewsIntoLayer:"), flag);
+        ensureInit();
+        ObjC.msgSendVoidBool(peer, Sels.setCanDrawSubviewsIntoLayer, flag);
     }
 
     /// [view layerUsesCoreImageFilters].
     public boolean layerUsesCoreImageFilters() {
-        return ObjC.msgSendBool(peer, ObjC.sel("layerUsesCoreImageFilters"));
+        ensureInit();
+        return ObjC.msgSendBool(peer, Sels.layerUsesCoreImageFilters);
     }
 
     /// [view setLayerUsesCoreImageFilters:].
     public void setLayerUsesCoreImageFilters(boolean flag) {
-        ObjC.msgSendVoidBool(peer, ObjC.sel("setLayerUsesCoreImageFilters:"), flag);
+        ensureInit();
+        ObjC.msgSendVoidBool(peer, Sels.setLayerUsesCoreImageFilters, flag);
     }
 
     /// [view shadow] — NSShadow (may be nil).
     public NSShadow shadow() {
-        return NSShadow.wrap(ObjC.msgSendId(peer, ObjC.sel("shadow")));
+        ensureInit();
+        return NSShadow.wrap(ObjC.msgSendId(peer, Sels.shadow));
     }
 
     /// [view setShadow:] (nil clears).
     public void setShadow(NSShadow shadow) {
-        ObjC.msgSendVoidId(peer, ObjC.sel("setShadow:"), shadow == null ? MemorySegment.NULL : shadow.peer());
+        ensureInit();
+        ObjC.msgSendVoidId(peer, Sels.setShadow, shadow == null ? MemorySegment.NULL : shadow.peer());
     }
 
     /// [view clipsToBounds].
     public boolean clipsToBounds() {
-        return ObjC.msgSendBool(peer, ObjC.sel("clipsToBounds"));
+        ensureInit();
+        return ObjC.msgSendBool(peer, Sels.clipsToBounds);
     }
 
     /// [view setClipsToBounds:].
     public void setClipsToBounds(boolean flag) {
-        ObjC.msgSendVoidBool(peer, ObjC.sel("setClipsToBounds:"), flag);
+        ensureInit();
+        ObjC.msgSendVoidBool(peer, Sels.setClipsToBounds, flag);
     }
 
     /// [view wantsRestingTouches].
     public boolean wantsRestingTouches() {
-        return ObjC.msgSendBool(peer, ObjC.sel("wantsRestingTouches"));
+        ensureInit();
+        return ObjC.msgSendBool(peer, Sels.wantsRestingTouches);
     }
 
     /// [view setWantsRestingTouches:].
     public void setWantsRestingTouches(boolean flag) {
-        ObjC.msgSendVoidBool(peer, ObjC.sel("setWantsRestingTouches:"), flag);
+        ensureInit();
+        ObjC.msgSendVoidBool(peer, Sels.setWantsRestingTouches, flag);
     }
 
     /// [view allowedTouchTypes] — NSTouchTypeMask.
     public long allowedTouchTypes() {
-        return ObjC.msgSendLong(peer, ObjC.sel("allowedTouchTypes"));
+        ensureInit();
+        return ObjC.msgSendLong(peer, Sels.allowedTouchTypes);
     }
 
     /// [view setAllowedTouchTypes:].
     public void setAllowedTouchTypes(long mask) {
-        ObjC.msgSendVoidLong(peer, ObjC.sel("setAllowedTouchTypes:"), mask);
+        ensureInit();
+        ObjC.msgSendVoidLong(peer, Sels.setAllowedTouchTypes, mask);
     }
 
     /// [view print:] (sender may be nil).
     public void print(NSObject sender) {
-        ObjC.msgSendVoidId(peer, ObjC.sel("print:"), sender == null ? MemorySegment.NULL : sender.peer());
+        ensureInit();
+        ObjC.msgSendVoidId(peer, Sels.print, sender == null ? MemorySegment.NULL : sender.peer());
     }
 
     /// [view pageHeader] — printing header (may be nil).
     public NSAttributedString pageHeader() {
-        return NSAttributedString.wrap(ObjC.msgSendId(peer, ObjC.sel("pageHeader")));
+        ensureInit();
+        return NSAttributedString.wrap(ObjC.msgSendId(peer, Sels.pageHeader));
     }
 
     /// [view pageFooter] — printing footer (may be nil).
     public NSAttributedString pageFooter() {
-        return NSAttributedString.wrap(ObjC.msgSendId(peer, ObjC.sel("pageFooter")));
+        ensureInit();
+        return NSAttributedString.wrap(ObjC.msgSendId(peer, Sels.pageFooter));
     }
 
     /// [view printJobTitle] (may be nil).
     public String printJobTitle() {
-        return ObjC.toString(ObjC.msgSendId(peer, ObjC.sel("printJobTitle")));
+        ensureInit();
+        return ObjC.toString(ObjC.msgSendId(peer, Sels.printJobTitle));
     }
 
     /// [view dataWithEPSInsideRect:] — EPS snapshot data.
     public NSData dataWithEPSInsideRect(NSRect rect) {
         ensureInit();
         try {
-            MemorySegment d = (MemorySegment) H.hIdRect().invokeExact(peer, ObjC.sel("dataWithEPSInsideRect:"), rect.toSegment());
+            MemorySegment d = (MemorySegment) H.hIdRect().invokeExact(peer, Sels.dataWithEPSInsideRect, rect.toSegment());
             return NSData.wrap(d);
         } catch (Throwable t) {
             throw new RuntimeException("dataWithEPSInsideRect: failed", t);
@@ -1733,7 +2296,7 @@ public class NSView extends NSResponder {
     public NSData dataWithPDFInsideRect(NSRect rect) {
         ensureInit();
         try {
-            MemorySegment d = (MemorySegment) H.hIdRect().invokeExact(peer, ObjC.sel("dataWithPDFInsideRect:"), rect.toSegment());
+            MemorySegment d = (MemorySegment) H.hIdRect().invokeExact(peer, Sels.dataWithPDFInsideRect, rect.toSegment());
             return NSData.wrap(d);
         } catch (Throwable t) {
             throw new RuntimeException("dataWithPDFInsideRect: failed", t);
@@ -1744,7 +2307,7 @@ public class NSView extends NSResponder {
     public void writeEPSInsideRectToPasteboard(NSRect rect, NSPasteboard pasteboard) {
         ensureInit();
         try {
-            H.hCacheDisplay().invokeExact(peer, ObjC.sel("writeEPSInsideRect:toPasteboard:"), rect.toSegment(), pasteboard.peer());
+            H.hCacheDisplay().invokeExact(peer, Sels.writeEPSInsideRect_toPasteboard, rect.toSegment(), pasteboard.peer());
         } catch (Throwable t) {
             throw new RuntimeException("writeEPSInsideRect:toPasteboard: failed", t);
         }
@@ -1754,7 +2317,7 @@ public class NSView extends NSResponder {
     public void writePDFInsideRectToPasteboard(NSRect rect, NSPasteboard pasteboard) {
         ensureInit();
         try {
-            H.hCacheDisplay().invokeExact(peer, ObjC.sel("writePDFInsideRect:toPasteboard:"), rect.toSegment(), pasteboard.peer());
+            H.hCacheDisplay().invokeExact(peer, Sels.writePDFInsideRect_toPasteboard, rect.toSegment(), pasteboard.peer());
         } catch (Throwable t) {
             throw new RuntimeException("writePDFInsideRect:toPasteboard: failed", t);
         }
@@ -1764,7 +2327,7 @@ public class NSView extends NSResponder {
     public void drawPageBorderWithSize(NSSize size) {
         ensureInit();
         try {
-            H.hSetSize().invokeExact(peer, ObjC.sel("drawPageBorderWithSize:"), size.toSegment());
+            H.hSetSize().invokeExact(peer, Sels.drawPageBorderWithSize, size.toSegment());
         } catch (Throwable t) {
             throw new RuntimeException("drawPageBorderWithSize: failed", t);
         }
@@ -1772,24 +2335,27 @@ public class NSView extends NSResponder {
 
     /// [view beginDocument].
     public void beginDocument() {
-        ObjC.msgSendVoid(peer, ObjC.sel("beginDocument"));
+        ensureInit();
+        ObjC.msgSendVoid(peer, Sels.beginDocument);
     }
 
     /// [view endDocument].
     public void endDocument() {
-        ObjC.msgSendVoid(peer, ObjC.sel("endDocument"));
+        ensureInit();
+        ObjC.msgSendVoid(peer, Sels.endDocument);
     }
 
     /// [view endPage].
     public void endPage() {
-        ObjC.msgSendVoid(peer, ObjC.sel("endPage"));
+        ensureInit();
+        ObjC.msgSendVoid(peer, Sels.endPage);
     }
 
     /// [view heightAdjustLimit] — printing height limit.
     public double heightAdjustLimit() {
         ensureInit();
         try {
-            return (double) H.hGetDouble().invokeExact(peer, ObjC.sel("heightAdjustLimit"));
+            return (double) H.hGetDouble().invokeExact(peer, Sels.heightAdjustLimit);
         } catch (Throwable t) {
             throw new RuntimeException("heightAdjustLimit failed", t);
         }
@@ -1799,7 +2365,7 @@ public class NSView extends NSResponder {
     public double widthAdjustLimit() {
         ensureInit();
         try {
-            return (double) H.hGetDouble().invokeExact(peer, ObjC.sel("widthAdjustLimit"));
+            return (double) H.hGetDouble().invokeExact(peer, Sels.widthAdjustLimit);
         } catch (Throwable t) {
             throw new RuntimeException("widthAdjustLimit failed", t);
         }
@@ -1807,14 +2373,15 @@ public class NSView extends NSResponder {
 
     /// [view registeredDraggedTypes] — accepted pasteboard types.
     public NSArray registeredDraggedTypes() {
-        return NSArray.wrap(ObjC.msgSendId(peer, ObjC.sel("registeredDraggedTypes")));
+        ensureInit();
+        return NSArray.wrap(ObjC.msgSendId(peer, Sels.registeredDraggedTypes));
     }
 
     /// [view enterFullScreenMode:withOptions:] (options may be nil).
     public boolean enterFullScreenMode(NSScreen screen, NSDictionary options) {
         ensureInit();
         try {
-            return (boolean) H.hBoolIdId().invokeExact(peer, ObjC.sel("enterFullScreenMode:withOptions:"),
+            return (boolean) H.hBoolIdId().invokeExact(peer, Sels.enterFullScreenMode_withOptions,
                     screen.peer(), (MemorySegment) (options == null ? MemorySegment.NULL : options.peer()));
         } catch (Throwable t) {
             throw new RuntimeException("enterFullScreenMode:withOptions: failed", t);
@@ -1825,7 +2392,7 @@ public class NSView extends NSResponder {
     public void exitFullScreenModeWithOptions(NSDictionary options) {
         ensureInit();
         try {
-            H.hVoidId().invokeExact(peer, ObjC.sel("exitFullScreenModeWithOptions:"), (MemorySegment) (options == null ? MemorySegment.NULL : options.peer()));
+            H.hVoidId().invokeExact(peer, Sels.exitFullScreenModeWithOptions, (MemorySegment) (options == null ? MemorySegment.NULL : options.peer()));
         } catch (Throwable t) {
             throw new RuntimeException("exitFullScreenModeWithOptions: failed", t);
         }
@@ -1833,49 +2400,57 @@ public class NSView extends NSResponder {
 
     /// [view isInFullScreenMode].
     public boolean isInFullScreenMode() {
-        return ObjC.msgSendBool(peer, ObjC.sel("isInFullScreenMode"));
+        ensureInit();
+        return ObjC.msgSendBool(peer, Sels.isInFullScreenMode);
     }
 
     /// [view addGestureRecognizer:].
     public void addGestureRecognizer(NSGestureRecognizer recognizer) {
-        ObjC.msgSendVoidId(peer, ObjC.sel("addGestureRecognizer:"), recognizer.peer());
+        ensureInit();
+        ObjC.msgSendVoidId(peer, Sels.addGestureRecognizer, recognizer.peer());
     }
 
     /// [view removeGestureRecognizer:].
     public void removeGestureRecognizer(NSGestureRecognizer recognizer) {
-        ObjC.msgSendVoidId(peer, ObjC.sel("removeGestureRecognizer:"), recognizer.peer());
+        ensureInit();
+        ObjC.msgSendVoidId(peer, Sels.removeGestureRecognizer, recognizer.peer());
     }
 
     /// [view gestureRecognizers].
     public NSArray gestureRecognizers() {
-        return NSArray.wrap(ObjC.msgSendId(peer, ObjC.sel("gestureRecognizers")));
+        ensureInit();
+        return NSArray.wrap(ObjC.msgSendId(peer, Sels.gestureRecognizers));
     }
 
     /// [view addTrackingArea:].
     public void addTrackingArea(NSTrackingArea area) {
-        ObjC.msgSendVoidId(peer, ObjC.sel("addTrackingArea:"), area.peer());
+        ensureInit();
+        ObjC.msgSendVoidId(peer, Sels.addTrackingArea, area.peer());
     }
 
     /// [view removeTrackingArea:].
     public void removeTrackingArea(NSTrackingArea area) {
-        ObjC.msgSendVoidId(peer, ObjC.sel("removeTrackingArea:"), area.peer());
+        ensureInit();
+        ObjC.msgSendVoidId(peer, Sels.removeTrackingArea, area.peer());
     }
 
     /// [view updateTrackingAreas].
     public void updateTrackingAreas() {
-        ObjC.msgSendVoid(peer, ObjC.sel("updateTrackingAreas"));
+        ensureInit();
+        ObjC.msgSendVoid(peer, Sels.updateTrackingAreas);
     }
 
     /// [view trackingAreas].
     public NSArray trackingAreas() {
-        return NSArray.wrap(ObjC.msgSendId(peer, ObjC.sel("trackingAreas")));
+        ensureInit();
+        return NSArray.wrap(ObjC.msgSendId(peer, Sels.trackingAreas));
     }
 
     /// [view addCursorRect:cursor:].
     public void addCursorRect(NSRect rect, NSCursor cursor) {
         ensureInit();
         try {
-            H.hCacheDisplay().invokeExact(peer, ObjC.sel("addCursorRect:cursor:"), rect.toSegment(), cursor.peer());
+            H.hCacheDisplay().invokeExact(peer, Sels.addCursorRect_cursor, rect.toSegment(), cursor.peer());
         } catch (Throwable t) {
             throw new RuntimeException("addCursorRect:cursor: failed", t);
         }
@@ -1885,7 +2460,7 @@ public class NSView extends NSResponder {
     public void removeCursorRect(NSRect rect, NSCursor cursor) {
         ensureInit();
         try {
-            H.hCacheDisplay().invokeExact(peer, ObjC.sel("removeCursorRect:cursor:"), rect.toSegment(), cursor.peer());
+            H.hCacheDisplay().invokeExact(peer, Sels.removeCursorRect_cursor, rect.toSegment(), cursor.peer());
         } catch (Throwable t) {
             throw new RuntimeException("removeCursorRect:cursor: failed", t);
         }
@@ -1893,19 +2468,21 @@ public class NSView extends NSResponder {
 
     /// [view discardCursorRects].
     public void discardCursorRects() {
-        ObjC.msgSendVoid(peer, ObjC.sel("discardCursorRects"));
+        ensureInit();
+        ObjC.msgSendVoid(peer, Sels.discardCursorRects);
     }
 
     /// [view resetCursorRects].
     public void resetCursorRects() {
-        ObjC.msgSendVoid(peer, ObjC.sel("resetCursorRects"));
+        ensureInit();
+        ObjC.msgSendVoid(peer, Sels.resetCursorRects);
     }
 
     /// [view displayLinkWithTarget:selector:] — display link driving the target (shape shares the (ID,ID,ID) descriptor).
     public CADisplayLink displayLink(MemorySegment target, MemorySegment selector) {
         ensureInit();
         try {
-            MemorySegment d = (MemorySegment) H.hIdIdId().invokeExact(peer, ObjC.sel("displayLinkWithTarget:selector:"), target, selector);
+            MemorySegment d = (MemorySegment) H.hIdIdId().invokeExact(peer, Sels.displayLinkWithTarget_selector, target, selector);
             return CADisplayLink.wrap(d);
         } catch (Throwable t) {
             throw new RuntimeException("displayLinkWithTarget:selector: failed", t);
@@ -1914,24 +2491,27 @@ public class NSView extends NSResponder {
 
     /// [view userInterfaceLayoutDirection] — NSUserInterfaceLayoutDirection.
     public long userInterfaceLayoutDirection() {
-        return ObjC.msgSendLong(peer, ObjC.sel("userInterfaceLayoutDirection"));
+        ensureInit();
+        return ObjC.msgSendLong(peer, Sels.userInterfaceLayoutDirection);
     }
 
     /// [view setUserInterfaceLayoutDirection:].
     public void setUserInterfaceLayoutDirection(long direction) {
-        ObjC.msgSendVoidLong(peer, ObjC.sel("setUserInterfaceLayoutDirection:"), direction);
+        ensureInit();
+        ObjC.msgSendVoidLong(peer, Sels.setUserInterfaceLayoutDirection, direction);
     }
 
     /// [view preparedContentRect].
     public NSRect preparedContentRect() {
-        return NSRect.fromSegment(ObjC.msgSendRect(peer, ObjC.sel("preparedContentRect")));
+        ensureInit();
+        return NSRect.fromSegment(ObjC.msgSendRect(peer, Sels.preparedContentRect));
     }
 
     /// [view setPreparedContentRect:].
     public void setPreparedContentRect(NSRect rect) {
         ensureInit();
         try {
-            H.hSetBounds().invokeExact(peer, ObjC.sel("setPreparedContentRect:"), rect.toSegment());
+            H.hSetBounds().invokeExact(peer, Sels.setPreparedContentRect, rect.toSegment());
         } catch (Throwable t) {
             throw new RuntimeException("setPreparedContentRect: failed", t);
         }
@@ -1939,24 +2519,27 @@ public class NSView extends NSResponder {
 
     /// [view allowsVibrancy].
     public boolean allowsVibrancy() {
-        return ObjC.msgSendBool(peer, ObjC.sel("allowsVibrancy"));
+        ensureInit();
+        return ObjC.msgSendBool(peer, Sels.allowsVibrancy);
     }
 
     /// [view safeAreaInsets] — NSEdgeInsets (32-byte struct, same ABI class as NSRect).
     public NSEdgeInsets safeAreaInsets() {
-        return NSEdgeInsets.fromSegment(ObjC.msgSendRect(peer, ObjC.sel("safeAreaInsets")));
+        ensureInit();
+        return NSEdgeInsets.fromSegment(ObjC.msgSendRect(peer, Sels.safeAreaInsets));
     }
 
     /// [view additionalSafeAreaInsets].
     public NSEdgeInsets additionalSafeAreaInsets() {
-        return NSEdgeInsets.fromSegment(ObjC.msgSendRect(peer, ObjC.sel("additionalSafeAreaInsets")));
+        ensureInit();
+        return NSEdgeInsets.fromSegment(ObjC.msgSendRect(peer, Sels.additionalSafeAreaInsets));
     }
 
     /// [view setAdditionalSafeAreaInsets:] — NSEdgeInsets by value (RECT shape).
     public void setAdditionalSafeAreaInsets(NSEdgeInsets insets) {
         ensureInit();
         try {
-            H.hSetBounds().invokeExact(peer, ObjC.sel("setAdditionalSafeAreaInsets:"), insets.toSegment());
+            H.hSetBounds().invokeExact(peer, Sels.setAdditionalSafeAreaInsets, insets.toSegment());
         } catch (Throwable t) {
             throw new RuntimeException("setAdditionalSafeAreaInsets: failed", t);
         }
@@ -1964,32 +2547,38 @@ public class NSView extends NSResponder {
 
     /// [view safeAreaRect].
     public NSRect safeAreaRect() {
-        return NSRect.fromSegment(ObjC.msgSendRect(peer, ObjC.sel("safeAreaRect")));
+        ensureInit();
+        return NSRect.fromSegment(ObjC.msgSendRect(peer, Sels.safeAreaRect));
     }
 
     /// [view safeAreaLayoutGuide] — NSLayoutGuide (unwrapped; no dedicated wrapper).
     public NSObject safeAreaLayoutGuide() {
-        return NSObject.wrap(ObjC.msgSendId(peer, ObjC.sel("safeAreaLayoutGuide")));
+        ensureInit();
+        return NSObject.wrap(ObjC.msgSendId(peer, Sels.safeAreaLayoutGuide));
     }
 
     /// [view layoutMarginsGuide] — NSLayoutGuide (unwrapped; no dedicated wrapper).
     public NSObject layoutMarginsGuide() {
-        return NSObject.wrap(ObjC.msgSendId(peer, ObjC.sel("layoutMarginsGuide")));
+        ensureInit();
+        return NSObject.wrap(ObjC.msgSendId(peer, Sels.layoutMarginsGuide));
     }
 
     /// [view prefersCompactControlSizeMetrics] (macOS 26+).
     public boolean prefersCompactControlSizeMetrics() {
-        return ObjC.msgSendBool(peer, ObjC.sel("prefersCompactControlSizeMetrics"));
+        ensureInit();
+        return ObjC.msgSendBool(peer, Sels.prefersCompactControlSizeMetrics);
     }
 
     /// [view setPrefersCompactControlSizeMetrics:] (macOS 26+).
     public void setPrefersCompactControlSizeMetrics(boolean flag) {
-        ObjC.msgSendVoidBool(peer, ObjC.sel("setPrefersCompactControlSizeMetrics:"), flag);
+        ensureInit();
+        ObjC.msgSendVoidBool(peer, Sels.setPrefersCompactControlSizeMetrics, flag);
     }
 
     /// [view isDrawingFindIndicator].
     public boolean isDrawingFindIndicator() {
-        return ObjC.msgSendBool(peer, ObjC.sel("isDrawingFindIndicator"));
+        ensureInit();
+        return ObjC.msgSendBool(peer, Sels.isDrawingFindIndicator);
     }
 
 

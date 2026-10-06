@@ -52,7 +52,7 @@ public final class NSTabViewItem extends NSObject {
     /// `[[NSTabViewItem alloc] initWithIdentifier:label]` + `setLabel:` — a new tab item.
     public static NSTabViewItem create(String label) {
         ensureInit();
-        MemorySegment p = ObjC.msgSendIdId(ObjC.cls("NSTabViewItem"), ObjC.sel("alloc"), MemorySegment.NULL);
+        MemorySegment p = ObjC.msgSendId(ObjC.cls("NSTabViewItem"), ObjC.sel("alloc"));
         try {
             p = (MemorySegment) hInitIdentifier.invokeExact(p, ObjC.sel("initWithIdentifier:"), ObjC.nsstring(label));
         } catch (Throwable t) {

@@ -289,9 +289,10 @@ public final class TextCoverageTest {
         TestKit.check(mgr.convertFontToFamily(helv, "Helvetica") != null, "convertFont:toFamily: non-nil");
         NSFont bigger = mgr.convertFontToSize(helv, 18);
         TestKit.check(bigger != null && Math.abs(bigger.pointSize() - 18) < 0.01, "convertFont:toSize:18 round-trip");
-        // NOTE: convertFontToHaveTrait / convertFontToNotHaveTrait / fontWithFamilyTraitsWeightSize
-        // need of(ID,ID,INT) and of(ID,ID,INT,INT,DOUBLE) — no Sig entries (grep: 0 matches),
-        // so they cannot run until the vocabulary grows (reported); not called here.
+        // convertFont:toHaveTrait: and fontWithFamily:traits:weight:size: now have Sig entries.
+        TestKit.check(mgr.convertFontToHaveTrait(helv, 0x1) != null, "convertFont:toHaveTrait: non-nil");
+        TestKit.check(mgr.fontWithFamilyTraitsWeightSize("Helvetica", 0, 5, 12) != null,
+                "fontWithFamily:traits:weight:size: non-nil");
         NSFont bold = NSFont.fontWithName("Helvetica-Bold", 12);
         TestKit.check(bold != null, "Helvetica-Bold direct lookup non-nil");
         if (bold != null) System.out.println("NOTE: bold fontName=" + bold.fontName());
@@ -565,7 +566,10 @@ public final class TextCoverageTest {
         lm.replaceTextStorage(storage2);
         TestKit.check(lm.textStorage() != null && lm.textStorage().peer().address() == storage2.peer().address(),
                 "replaceTextStorage swaps");
-        // NOTE: usedRectForTextContainer: needs of(RECT,ID) — no Sig shape (pre-existing gap); not called.
+        lm.ensureLayoutForTextContainer(c);
+        NSRect used = lm.usedRectForTextContainer(c);
+        TestKit.check(used.height() > 0 && used.width() >= 0,
+                "usedRectForTextContainer: non-empty for \"Other\" (got " + used + ")");
         TestKit.check(lm.delegate() == null || lm.delegate().address() == 0, "layoutManager delegate nil by default");
         lm.setDelegate(null);
         TestKit.check(lm.firstTextView() == null || true, "firstTextView did not crash (no view attached)");

@@ -30,13 +30,10 @@ public final class NSPrintInfo extends NSObject {
         return wrap(s);
     }
 
-    /// [NSPrintInfo defaultPrintInfo] fallback
+    /// Alias for {@link #sharedPrintInfo()}. AppKit has no +defaultPrintInfo:
+    /// sending it raises an unrecognized-selector abort that try/catch cannot catch.
     public static NSPrintInfo defaultPrintInfo() {
         ensureInit();
-        try {
-            MemorySegment s = ObjC.msgSendId(ObjC.cls("NSPrintInfo"), ObjC.sel("defaultPrintInfo"));
-            if (s != null && s.address() != 0) return wrap(s);
-        } catch (Exception ignored) {}
         return sharedPrintInfo();
     }
 

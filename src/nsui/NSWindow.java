@@ -698,7 +698,8 @@ public class NSWindow extends NSResponder {
 
     public void setDelegate(NSObject delegate) {
         ensureInit();
-        ObjC.msgSendVoidId(peer, Sels.setDelegate, delegate.peer());
+        ObjC.msgSendVoidId(peer, Sels.setDelegate,
+                delegate == null ? MemorySegment.NULL : delegate.peer());
     }
 
     /// [window delegate]
@@ -1167,10 +1168,13 @@ public class NSWindow extends NSResponder {
         return ObjC.toString(s);
     }
 
-    /// [window setFrameAutosaveName:].
-    public void setFrameAutosaveName(String name) {
+    /// [window setFrameAutosaveName:] -- returns the native BOOL (NO if another
+    /// window already owns the name).
+    public boolean setFrameAutosaveName(String name) {
         ensureInit();
-        ObjC.msgSendVoidId(peer, Sels.setFrameAutosaveName, ObjC.nsstring(name));
+        try {
+            return (boolean) H.hBoolId().invokeExact(peer, Sels.setFrameAutosaveName, (MemorySegment) ObjC.nsstring(name));
+        } catch (Throwable t) { throw new RuntimeException("setFrameAutosaveName: failed", t); }
     }
 
     /// [window isDocumentEdited].
@@ -2845,10 +2849,12 @@ ensureInit(); return ObjC.msgSendBool(peer, Sels.hasDynamicDepthLimit); }
     /// void wrapper discards; check `firstResponder()` afterwards if acceptance
     /// matters. Views created via `NSView.create` accept only while a key
     /// listener is registered (`NSView.setKeyListener`).
-    public void makeFirstResponder(NSView responder) {
+    public boolean makeFirstResponder(NSView responder) {
         ensureInit();
-        ObjC.msgSendVoidId(peer, Sels.makeFirstResponder,
-                (MemorySegment)(responder == null ? MemorySegment.NULL : responder.peer()));
+        try {
+            return (boolean) H.hBoolId().invokeExact(peer, Sels.makeFirstResponder,
+                    (MemorySegment)(responder == null ? MemorySegment.NULL : responder.peer()));
+        } catch (Throwable t) { throw new RuntimeException("makeFirstResponder: failed", t); }
     }
 
     /// firstResponder — the window's current first responder, wrapped as an

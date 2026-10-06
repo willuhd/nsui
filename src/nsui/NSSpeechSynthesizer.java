@@ -83,9 +83,12 @@ public final class NSSpeechSynthesizer extends NSObject {
         return ObjC.toString(ObjC.msgSendId(peer, ObjC.sel("voice")));
     }
 
-    /// setVoice: (nil selects the default voice).
-    public void setVoice(String voice) {
-        ObjC.msgSendVoidId(peer, ObjC.sel("setVoice:"),
-                voice == null ? MemorySegment.NULL : ObjC.nsstring(voice));
+    /// setVoice: -- returns the native BOOL (NO if the voice is unavailable).
+    /// nil selects the default voice.
+    public boolean setVoice(String voice) {
+        try {
+            return (boolean) ObjC.handle(Sig.of(Ret.BOOL, Arg.ID)).invokeExact(peer, ObjC.sel("setVoice:"),
+                    (MemorySegment) (voice == null ? MemorySegment.NULL : ObjC.nsstring(voice)));
+        } catch (Throwable t) { throw new RuntimeException("setVoice: failed", t); }
     }
 }

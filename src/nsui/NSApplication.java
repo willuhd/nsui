@@ -31,8 +31,13 @@ public final class NSApplication extends NSObject {
         return shared;
     }
 
-    public void setActivationPolicy(long policy) {
-        ObjC.msgSendVoidLong(peer, ObjC.sel("setActivationPolicy:"), policy);
+    /// setActivationPolicy: -- returns the native BOOL (YES on success). The old
+    /// void overload discarded it, so a rejected policy looked like success.
+    public boolean setActivationPolicy(long policy) {
+        try {
+            return (boolean) ObjC.handle(Sig.of(Ret.BOOL, Arg.INT)).invokeExact(peer,
+                    ObjC.sel("setActivationPolicy:"), policy);
+        } catch (Throwable t) { throw new RuntimeException("setActivationPolicy: failed", t); }
     }
 
     public long activationPolicy() {
@@ -86,7 +91,8 @@ public final class NSApplication extends NSObject {
     }
 
     public void setDelegate(NSObject delegate) {
-        ObjC.msgSendVoidId(peer, ObjC.sel("setDelegate:"), delegate.peer());
+        ObjC.msgSendVoidId(peer, ObjC.sel("setDelegate:"),
+                delegate == null ? MemorySegment.NULL : delegate.peer());
     }
 
     /// [application delegate] — the app delegate (id, may be nil).
@@ -101,7 +107,8 @@ public final class NSApplication extends NSObject {
     }
 
     public void setMainMenu(NSMenu menu) {
-        ObjC.msgSendVoidId(peer, ObjC.sel("setMainMenu:"), menu.peer());
+        ObjC.msgSendVoidId(peer, ObjC.sel("setMainMenu:"),
+                menu == null ? MemorySegment.NULL : menu.peer());
     }
 
     public MemorySegment mainMenu() {
@@ -109,7 +116,8 @@ public final class NSApplication extends NSObject {
     }
 
     public void setHelpMenu(NSMenu menu) {
-        ObjC.msgSendVoidId(peer, ObjC.sel("setHelpMenu:"), menu.peer());
+        ObjC.msgSendVoidId(peer, ObjC.sel("setHelpMenu:"),
+                menu == null ? MemorySegment.NULL : menu.peer());
     }
 
     public MemorySegment helpMenu() {
@@ -217,12 +225,9 @@ public final class NSApplication extends NSObject {
     public NSAppearance effectiveAppearance() { return NSAppearance.wrap(ObjC.msgSendId(peer, ObjC.sel("effectiveAppearance"))); }
     public void setAppearance(NSAppearance ap) { ObjC.msgSendVoidId(peer, ObjC.sel("setAppearance:"), ap==null?MemorySegment.NULL:ap.peer()); }
 
-    /// setActivationPolicy: returning BOOL per header (YES on success).
+    /// Alias for {@link #setActivationPolicy(long)} kept for callers that adopted it.
     public boolean trySetActivationPolicy(long policy) {
-        try {
-            return (boolean) ObjC.handle(Sig.of(Ret.BOOL, Arg.INT)).invokeExact(peer,
-                    ObjC.sel("setActivationPolicy:"), policy);
-        } catch (Throwable t) { throw new RuntimeException("setActivationPolicy: failed", t); }
+        return setActivationPolicy(policy);
     }
 
     /// unhideWithoutActivation.

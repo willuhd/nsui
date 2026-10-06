@@ -14,8 +14,9 @@ import static nsui.objc.Sig.Ret;
 ///   draggingFormation (+ setter), animatesToStartingPositionsOnCancelOrFail
 ///   (+ setter) and draggingLeaderIndex (+ setter).
 /// - Omitted: enumerateDraggingItemsWithOptions:… (block-taking method needs
-///   upcall machinery). `sourceOperationMask` below is kept for
-///   compatibility but natively lives on NSDraggingInfo, not the session.
+///   upcall machinery), and sourceOperationMask (it lives on the NSDraggingInfo
+///   protocol, not on NSDraggingSession, which does not respond to it -- a
+///   wrapper would abort the process).
 public final class NSDraggingSession extends NSObject {
 
             private record Handles(MethodHandle hDraggingPasteboard, MethodHandle hSourceOperationMask, MethodHandle hDraggingLocation) {}
@@ -57,13 +58,6 @@ public final class NSDraggingSession extends NSObject {
         ensureInit();
         try { return (long) handles.hSourceOperationMask().invokeExact(peer, ObjC.sel("draggingSequenceNumber")); }
         catch (Throwable t) { throw new RuntimeException("draggingSequenceNumber failed", t); }
-    }
-
-    /// sourceOperationMask
-    public long sourceOperationMask() {
-        ensureInit();
-        try { return (long) handles.hSourceOperationMask().invokeExact(peer, ObjC.sel("sourceOperationMask")); }
-        catch (Throwable t) { throw new RuntimeException("sourceOperationMask failed", t); }
     }
 
     /// draggingLocation — location in screen coordinates (if available).

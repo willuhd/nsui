@@ -43,7 +43,7 @@ import static nsui.objc.Sig.Ret;
 public final class NSEvent extends NSObject {
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
-            private record Handles(MethodHandle hLocation, MethodHandle hDouble, MethodHandle hBool, MethodHandle hCharsByModifiers) {}
+            private record Handles(MethodHandle hLocation, MethodHandle hDouble, MethodHandle hBool, MethodHandle hCharsByModifiers, MethodHandle hFloat) {}
     private static volatile Handles handles;
 
     NSEvent(MemorySegment peer) {
@@ -57,7 +57,8 @@ public final class NSEvent extends NSObject {
                 ObjC.handle(Sig.of(Ret.POINT)),
                 ObjC.handle(Sig.of(Ret.DOUBLE)),
                 ObjC.handle(Sig.of(Ret.BOOL)),
-                ObjC.handle(Sig.of(Sig.Ret.ID, Sig.Arg.INT))
+                ObjC.handle(Sig.of(Sig.Ret.ID, Sig.Arg.INT)),
+                ObjC.handle(Sig.of(Ret.FLOAT))
         );
     }
 
@@ -169,9 +170,10 @@ public final class NSEvent extends NSObject {
     /// [event data2]
     public long data2() { return ObjC.msgSendLong(peer, ObjC.sel("data2")); }
 
-    /// [event pressure] — float but returned as double via handle.
+    /// [event pressure] — declared `float` in AppKit; the DOUBLE handle read the
+    /// wrong register. FLOAT handle, widened to double for the Java API.
     public double pressure() {
-        try { return (double) handles.hDouble().invokeExact(peer, ObjC.sel("pressure")); } catch (Throwable t) { throw new RuntimeException("pressure failed", t); }
+        try { return (double) (float) handles.hFloat().invokeExact(peer, ObjC.sel("pressure")); } catch (Throwable t) { throw new RuntimeException("pressure failed", t); }
     }
 
     /// [event deltaX]
@@ -226,9 +228,9 @@ public final class NSEvent extends NSObject {
     /// [event deviceID] — NSUInteger
     public long deviceID() { return ObjC.msgSendLong(peer, ObjC.sel("deviceID")); }
 
-    /// [event rotation] — float degrees
+    /// [event rotation] — float degrees (FLOAT handle)
     public double rotation() {
-        try { return (double) handles.hDouble().invokeExact(peer, ObjC.sel("rotation")); } catch (Throwable t) { throw new RuntimeException("rotation failed", t); }
+        try { return (double) (float) handles.hFloat().invokeExact(peer, ObjC.sel("rotation")); } catch (Throwable t) { throw new RuntimeException("rotation failed", t); }
     }
 
     /// [event absoluteX]
@@ -249,9 +251,9 @@ public final class NSEvent extends NSObject {
         } catch (Throwable t) { throw new RuntimeException("tilt failed", t); }
     }
 
-    /// [event tangentialPressure]
+    /// [event tangentialPressure] — float (FLOAT handle)
     public double tangentialPressure() {
-        try { return (double) handles.hDouble().invokeExact(peer, ObjC.sel("tangentialPressure")); } catch (Throwable t) { throw new RuntimeException("tangentialPressure failed", t); }
+        try { return (double) (float) handles.hFloat().invokeExact(peer, ObjC.sel("tangentialPressure")); } catch (Throwable t) { throw new RuntimeException("tangentialPressure failed", t); }
     }
 
     /// [event stage] — pressure stage

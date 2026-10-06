@@ -19,7 +19,7 @@ import static nsui.objc.Sig.Ret;
 public class NSControl extends NSView {
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
-    private record Handles(MethodHandle hSendActionOn, MethodHandle hSizeThatFits, MethodHandle hDouble, MethodHandle hSetDouble, MethodHandle hSendActionTo, MethodHandle hBool, MethodHandle hExpansionFrame, MethodHandle hDrawExpansion) {}
+    private record Handles(MethodHandle hSendActionOn, MethodHandle hSizeThatFits, MethodHandle hDouble, MethodHandle hSetDouble, MethodHandle hSendActionTo, MethodHandle hBool, MethodHandle hExpansionFrame, MethodHandle hDrawExpansion, MethodHandle hFloat, MethodHandle hSetFloat) {}
     private static volatile Handles H;
 
     protected NSControl(MemorySegment peer) {
@@ -37,7 +37,9 @@ public class NSControl extends NSView {
                 ObjC.handle(Sig.of(Ret.BOOL, Arg.ID, Arg.ID)),
                 ObjC.handle(Sig.of(Ret.BOOL)),
                 ObjC.handle(Sig.of(Ret.RECT, Arg.RECT)),
-                ObjC.handle(Sig.of(Ret.VOID, Arg.RECT, Arg.ID)));
+                ObjC.handle(Sig.of(Ret.VOID, Arg.RECT, Arg.ID)),
+                ObjC.handle(Sig.of(Ret.FLOAT)),
+                ObjC.handle(Sig.of(Ret.VOID, Arg.FLOAT)));
     }
 
     // ---- existing API (kept) ----
@@ -164,15 +166,19 @@ public class NSControl extends NSView {
     public void setIntegerValue(long v) {
         ObjC.msgSendVoidLong(peer, ObjC.sel("setIntegerValue:"), v);
     }
+    /// [control floatValue] — `float` in AppKit; reading it through the DOUBLE handle
+    /// returned the wrong register. FLOAT handle, no widening round-trip.
     public float floatValue() {
         ensureInit();
         try {
-            return (float) (double) H.hDouble().invokeExact(peer, ObjC.sel("floatValue"));
+            return (float) H.hFloat().invokeExact(peer, ObjC.sel("floatValue"));
         } catch (Throwable t) { throw new RuntimeException("floatValue failed", t); }
     }
+    /// [control setFloatValue:] — `float` in AppKit; a double argument was reinterpreted
+    /// (1.5f arrived as 0). FLOAT handle.
     public void setFloatValue(float v) {
         ensureInit();
-        try { H.hSetDouble().invokeExact(peer, ObjC.sel("setFloatValue:"), (double) v); } catch (Throwable t) { throw new RuntimeException("setFloatValue: failed", t); }
+        try { H.hSetFloat().invokeExact(peer, ObjC.sel("setFloatValue:"), v); } catch (Throwable t) { throw new RuntimeException("setFloatValue: failed", t); }
     }
     public double doubleValue() {
         ensureInit();

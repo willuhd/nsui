@@ -64,7 +64,7 @@ public final class MenuBarStatusTest {
             check(bar.isKindOfClass("NSStatusBar"), "NSStatusBar isKindOfClass NSStatusBar");
             double thick = bar.thickness();
             check(thick > 0, "NSStatusBar thickness >0 (got " + thick + ")");
-            try { bar.isVertical(); check(true, "NSStatusBar isVertical no crash"); } catch (Throwable t) { check(false, "isVertical threw: " + t); }
+            try { bar.isVertical(); TestKit.probe("NSStatusBar isVertical no crash"); } catch (Throwable t) { check(false, "isVertical threw: " + t); }
             check(NSStatusBar.VARIABLE_LENGTH == -1.0, "NSStatusBar.VARIABLE_LENGTH == -1");
             check(NSStatusBar.SQUARE_LENGTH == -2.0, "NSStatusBar.SQUARE_LENGTH == -2");
         } catch (Throwable t) {
@@ -93,7 +93,7 @@ public final class MenuBarStatusTest {
             NSStatusItem itemConv = bar.statusItem();
             check(itemConv != null && itemConv.peer().address() != 0, "NSStatusBar.statusItem() convenience non-nil");
             bar.removeStatusItem(itemConv);
-            check(true, "removeStatusItem convenience item no crash");
+            TestKit.probe("removeStatusItem convenience item no crash");
         } catch (Throwable t) {
             check(false, "statusItem creation threw: " + t);
             t.printStackTrace(System.out);
@@ -103,9 +103,9 @@ public final class MenuBarStatusTest {
         if (itemVar != null) {
             try {
                 NSButton btn = itemVar.button();
-                check(true, "NSStatusItem button() no crash (button=" + (btn == null ? "null" : "non-nil addr=" + Long.toHexString(btn.peer().address())) + ")");
+                TestKit.probe("NSStatusItem button() no crash");
                 if (btn == null) {
-                    check(true, "button may be nil before runloop — skipping title/image checks (no crash is pass)");
+                    TestKit.skipCase("button may be nil before runloop — skipping title/image checks (no crash is pass)");
                 } else {
                     check(btn.isKindOfClass("NSButton") || btn.isKindOfClass("NSStatusBarButton") || respondsTo(btn.peer(), "setTitle:"), "button isKindOfClass NSButton/NSStatusBarButton (or responds to setTitle:)");
 
@@ -122,12 +122,12 @@ public final class MenuBarStatusTest {
                     if (named == null) named = NSImage.imageNamed("NSFolder");
                     try {
                         btn.setImage(named);
-                        check(true, "button setImage(named=" + named + ") no crash (image=" + btn.image() + ")");
+                        TestKit.probe("button setImage(named=" + named + ") no crash (image=" + btn.image() + ")");
                     } catch (Throwable t) { check(false, "button setImage threw: " + t); }
                     // convenience setImage via item
                     try {
                         itemVar.setImage(named);
-                        check(true, "NSStatusItem setImage convenience no crash");
+                        TestKit.probe("NSStatusItem setImage convenience no crash");
                     } catch (Throwable t) { check(false, "NSStatusItem setImage threw: " + t); }
                     // setImage null should clear
                     try { btn.setImage(null); check(btn.image() == null, "button setImage(null) clears image"); } catch (Throwable t) { check(false, "clear image threw: " + t); }
@@ -138,11 +138,10 @@ public final class MenuBarStatusTest {
                         String tt = itemVar.toolTip();
                         // toolTip may be null if selector absent; accept either but no crash is pass
                         if (tt != null) check("Tray Tip".equals(tt), "toolTip round-trip Tray Tip (got \"" + tt + "\")");
-                        else check(true, "toolTip accessor no crash (got null, selector may be absent)");
+                        else TestKit.skipCase("toolTip accessor no crash (got null, selector may be absent)");
                         // also via button direct
                         if (respondsTo(btn.peer(), "setToolTip:")) {
-                            ObjC.msgSendVoidId(btn.peer(), ObjC.sel("setToolTip:"), ObjC.nsstring("Direct Tip"));
-                            check(true, "button setToolTip direct no crash");
+                            TestKit.noThrow("button setToolTip direct no crash", () -> ObjC.msgSendVoidId(btn.peer(), ObjC.sel("setToolTip:"), ObjC.nsstring("Direct Tip")));
                         }
                     } catch (Throwable t) { check(false, "toolTip threw: " + t); }
 
@@ -169,8 +168,7 @@ public final class MenuBarStatusTest {
 
                     // unregistered selector must be no-op (DelegateProxy forwarding)
                     try {
-                        ObjC.msgSendVoidId(target, ObjC.sel("unregisteredAction:"), btn.peer());
-                        check(true, "unregistered selector on status target no crash");
+                        TestKit.noThrow("unregistered selector on status target no crash", () -> ObjC.msgSendVoidId(target, ObjC.sel("unregisteredAction:"), btn.peer()));
                     } catch (Throwable t) { check(false, "unregistered selector threw: " + t); }
 
                     // verify button wrap path (no reflection) — button() used NSButton.wrap not getDeclaredConstructor
@@ -211,21 +209,17 @@ public final class MenuBarStatusTest {
                 } catch (Throwable t) { check(false, "autoenablesItems threw: " + t); }
 
                 try {
-                    menu.setShowsSearchField(true);
-                    check(true, "NSMenu setShowsSearchField(true) no crash (showsSearchField=" + menu.showsSearchField() + ")");
-                    menu.setShowsSearchField(false);
-                    check(true, "NSMenu setShowsSearchField(false) no crash");
+                    TestKit.noThrow("NSMenu setShowsSearchField(true) no crash (showsSearchField=" + menu.showsSearchField() + ")", () -> menu.setShowsSearchField(true));
+                    TestKit.noThrow("NSMenu setShowsSearchField(false) no crash", () -> menu.setShowsSearchField(false));
                     // compat alias
                     menu.setShowsSearchFieldCompat(true);
-                    menu.setShowsSearchFieldCompat(false);
-                    check(true, "NSMenu setShowsSearchFieldCompat no crash");
+                    TestKit.noThrow("NSMenu setShowsSearchFieldCompat no crash", () -> menu.setShowsSearchFieldCompat(false));
                 } catch (Throwable t) { check(false, "showsSearchField threw: " + t); }
 
                 // items with image
                 NSMenuItem m1 = menu.addItemWithTitle("First", "", "");
                 NSImage img1 = NSImage.imageNamed("NSFolder");
-                if (img1 != null) m1.setImage(img1);
-                check(true, "menu item First setImage no crash (image=" + m1.image() + ")");
+                TestKit.noThrow("menu item First setImage no crash (image=" + m1.image() + ")", () -> { if (img1 != null) m1.setImage(img1); });
 
                 NSMenuItem m2 = NSMenuItem.withTitle("Second", "", "");
                 NSImage img2 = NSImage.imageNamed("NSApplicationIcon");
@@ -289,7 +283,7 @@ public final class MenuBarStatusTest {
                 itemVar.setBehavior(origBehavior);
 
                 boolean vis = itemVar.isVisible();
-                check(true, "NSStatusItem isVisible accessor no crash (got " + vis + ")");
+                TestKit.probe("NSStatusItem isVisible accessor no crash");
                 try {
                     itemVar.setVisible(!vis);
                     check(itemVar.isVisible() == !vis, "NSStatusItem setVisible toggle to " + !vis);
@@ -316,8 +310,8 @@ public final class MenuBarStatusTest {
         // ---------------- cleanup status items ----------------
         if (bar != null) {
             try {
-                if (itemVar != null) { bar.removeStatusItem(itemVar); check(true, "removeStatusItem var no crash"); }
-                if (itemSquare != null) { bar.removeStatusItem(itemSquare); check(true, "removeStatusItem square no crash"); }
+                if (itemVar != null) { bar.removeStatusItem(itemVar); TestKit.probe("removeStatusItem var no crash"); }
+                if (itemSquare != null) { bar.removeStatusItem(itemSquare); TestKit.probe("removeStatusItem square no crash"); }
             } catch (Throwable t) { check(false, "removeStatusItem threw: " + t); }
         }
 

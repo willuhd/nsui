@@ -86,23 +86,21 @@ public final class AttributedLayerTest {
                 // verify attribute round-trip (font at index 0 should be not null)
                 MemorySegment fetched = ms.attribute("NSFont", 0);
                 // may be null if attribute name mismatch (AppKit uses NSFontAttributeName), but should not throw
-                TestKit.check(true, "addAttribute NSFont with NSRange(0,5) did not throw (fetched=" + (fetched==null? "null" : "0x"+Long.toHexString(fetched.address())) + ")");
+                TestKit.probe("addAttribute NSFont with NSRange(0,5) did not throw (fetched=" + (fetched==null? "null" : "0x"+Long.toHexString(fetched.address())) + ")");
                 // try canonical name
                 ms.addAttribute("NSFontAttributeName", font.peer(), new NSRange(0, 5));
-                TestKit.check(true, "addAttribute NSFontAttributeName with NSRange did not throw");
+                TestKit.probe("addAttribute NSFontAttributeName with NSRange did not throw");
             } else {
                 TestKit.check(false, "NSFont.systemFontOfSize(12) returned null");
             }
 
             // addAttribute with NSColor and NSRange loc/len overload
             NSColor red = NSColor.redColor();
-            ms.addAttribute("NSForegroundColorAttributeName", red.peer(), 6, 5);
-            TestKit.check(true, "addAttribute NSForegroundColorAttributeName with loc/len overload did not throw");
+            TestKit.noThrow("addAttribute NSForegroundColorAttributeName with loc/len overload did not throw", () -> ms.addAttribute("NSForegroundColorAttributeName", red.peer(), 6, 5));
 
             // effectiveRange out buffer
             MemorySegment rangeOut = java.lang.foreign.Arena.global().allocate(16);
-            ms.attribute("NSForegroundColorAttributeName", 6, rangeOut);
-            TestKit.check(true, "attribute with effectiveRange out buffer did not throw");
+            TestKit.noThrow("attribute with effectiveRange out buffer did not throw", () -> ms.attribute("NSForegroundColorAttributeName", 6, rangeOut));
 
         } catch (Throwable t) {
             String m = t.getMessage() == null ? "" : t.getMessage().toLowerCase();
@@ -224,26 +222,22 @@ public final class AttributedLayerTest {
 
             // null handling — must not throw WrongMethodType
             try {
-                layer.setBackgroundColor((NSColor) null);
-                TestKit.check(true, "CALayer setBackgroundColor((NSColor)null) did not throw");
+                TestKit.noThrow("CALayer setBackgroundColor((NSColor)null) did not throw", () -> layer.setBackgroundColor((NSColor) null));
             } catch (Throwable tt) {
                 TestKit.check(false, "CALayer setBackgroundColor((NSColor)null) threw: " + tt + " (WrongMethodType? " + tt.getClass().getName() + ")");
             }
             try {
-                layer.setBackgroundColor((MemorySegment) null);
-                TestKit.check(true, "CALayer setBackgroundColor((MemorySegment)null) did not throw");
+                TestKit.noThrow("CALayer setBackgroundColor((MemorySegment)null) did not throw", () -> layer.setBackgroundColor((MemorySegment) null));
             } catch (Throwable tt) {
                 TestKit.check(false, "CALayer setBackgroundColor((MemorySegment)null) threw: " + tt);
             }
             try {
-                layer.setBorderColor((NSColor) null);
-                TestKit.check(true, "CALayer setBorderColor((NSColor)null) did not throw");
+                TestKit.noThrow("CALayer setBorderColor((NSColor)null) did not throw", () -> layer.setBorderColor((NSColor) null));
             } catch (Throwable tt) {
                 TestKit.check(false, "CALayer setBorderColor((NSColor)null) threw: " + tt);
             }
             try {
-                layer.setBorderColor((MemorySegment) null);
-                TestKit.check(true, "CALayer setBorderColor((MemorySegment)null) did not throw");
+                TestKit.noThrow("CALayer setBorderColor((MemorySegment)null) did not throw", () -> layer.setBorderColor((MemorySegment) null));
             } catch (Throwable tt) {
                 TestKit.check(false, "CALayer setBorderColor((MemorySegment)null) threw: " + tt);
             }
@@ -296,7 +290,7 @@ public final class AttributedLayerTest {
                 if (Double.isNaN(cr) || Double.isNaN(bw) || Double.isNaN(op)) throw new AssertionError("NaN layer value");
             }
             long elapsed = System.currentTimeMillis() - start;
-            TestKit.check(true, "stress 1000 iterations of attributed string + layer ops completed in " + elapsed + " ms");
+            TestKit.check(elapsed >= 0 && elapsed < 60000, "stress 1000 iterations of attributed string + layer ops completed in " + elapsed + " ms");
 
             // NSTextView stress: create once and repeatedly setAttributedString
             NSTextView tv = NSTextView.create(new NSRect(0, 0, 200, 100));
@@ -309,7 +303,7 @@ public final class AttributedLayerTest {
                     if (!str.contains("loop-")) throw new AssertionError("textStorage loop mismatch got \""+str+"\"");
                 }
             }
-            TestKit.check(true, "NSTextView textStorage stress 200 setAttributedString loops passed");
+            TestKit.probe("NSTextView textStorage stress 200 setAttributedString loops passed");
 
         } catch (Throwable t) {
             String m = t.getMessage() == null ? "" : t.getMessage().toLowerCase();

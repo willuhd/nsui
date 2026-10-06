@@ -49,8 +49,7 @@ public final class HelpColorListTest {
                 "NSHelpManager context help string round-trip");
         help.removeContextHelpForObject(target);
         TestKit.check(help.contextHelpForObject(target) == null, "NSHelpManager contextHelpForObject nil after remove");
-        help.removeContextHelpForObject(target);
-        TestKit.check(true, "NSHelpManager removeContextHelpForObject twice no-throw");
+        TestKit.noThrow("NSHelpManager removeContextHelpForObject twice no-throw", () -> help.removeContextHelpForObject(target));
 
         TestKit.check(respondsTo(help.peer(), "openHelpAnchor:inBook:"),
                 "NSHelpManager respondsTo openHelpAnchor:inBook: (not invoked: opens Help Viewer)");
@@ -59,10 +58,9 @@ public final class HelpColorListTest {
 
         NSBundle main = NSBundle.mainBundle();
         if (main == null) {
-            TestKit.check(true, "NSHelpManager registerBooksInBundle skipped (no mainBundle)");
+            TestKit.skipCase("NSHelpManager registerBooksInBundle skipped (no mainBundle)");
         } else {
-            boolean registered = help.registerBooksInBundle(main);
-            TestKit.check(true, "NSHelpManager registerBooksInBundle(mainBundle) no-throw, returned " + registered);
+            boolean registered = TestKit.attempt("NSHelpManager registerBooksInBundle(mainBundle) no-throw, returned ", () -> help.registerBooksInBundle(main));
         }
 
         // ---------------- NSColorList ----------------
@@ -91,8 +89,7 @@ public final class HelpColorListTest {
         list.removeColorWithKey("TestRed");
         TestKit.check(list.colorWithKey("TestRed") == null, "NSColorList colorWithKey nil after remove");
         TestKit.check(list.allKeys().count() == 0, "NSColorList allKeys 0 after remove");
-        list.removeColorWithKey("TestRed");
-        TestKit.check(true, "NSColorList removeColorWithKey: absent key no-throw");
+        TestKit.noThrow("NSColorList removeColorWithKey: absent key no-throw", () -> list.removeColorWithKey("TestRed"));
 
         TestKit.end();
     }

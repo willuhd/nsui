@@ -123,7 +123,7 @@ public final class DockSheetTest {
     private static void testDockTile(NSApplication app) {
         System.out.println("\n--- NSApplication.dockTile ---");
         if (app == null) {
-            check(true, "SKIP dockTile (no app/headless)");
+            TestKit.skipCase("SKIP dockTile (no app/headless)");
             return;
         }
         MemorySegment tile = null;
@@ -145,7 +145,7 @@ public final class DockSheetTest {
                 check(clsName != null && clsName.contains("DockTile"), "dockTile className contains DockTile (got \"" + clsName + "\")");
             } catch (Throwable t) {
                 System.out.println("  NOTE dockTile className probe threw (guarded): " + t);
-                check(true, "dockTile probe guarded (no crash on className)");
+                TestKit.skipCase("dockTile probe guarded (no crash on className)");
             }
             try {
                 // dockTile should respond to display
@@ -153,8 +153,8 @@ public final class DockSheetTest {
                 try {
                     responds = (boolean) ObjC.handle(Sig.of(Sig.Ret.BOOL, Sig.Arg.ID)).invokeExact(tile, ObjC.sel("respondsToSelector:"), ObjC.sel("display"));
                 } catch (Throwable ignore) { }
-                check(true, "dockTile respondsToSelector probe no crash (responds display=" + responds + ")");
-            } catch (Throwable t) { check(true, "dockTile second probe guarded"); }
+                TestKit.probe("dockTile respondsToSelector probe no crash (responds display=" + responds + ")");
+            } catch (Throwable t) { TestKit.skipCase("dockTile second probe guarded"); }
         }
     }
 
@@ -164,9 +164,9 @@ public final class DockSheetTest {
     private static void testApplicationDockMenu(NSApplication app) throws Throwable {
         System.out.println("\n--- NSApplicationDelegate applicationDockMenu: (IdArg) ---");
         if (app == null) {
-            check(true, "SKIP applicationDockMenu (no app/headless)");
+            TestKit.skipCase("SKIP applicationDockMenu (no app/headless)");
             // Still verify the dispatch machinery exists without an app
-            check(true, "SKIP applicationDockMenu vocabulary check deferred to sig section");
+            TestKit.skipCase("SKIP applicationDockMenu vocabulary check deferred to sig section");
             return;
         }
 
@@ -277,24 +277,22 @@ public final class DockSheetTest {
         // Restore previous delegate if any (don't leak test delegate as app's de-facto delegate)
         try {
             if (prevDel != null && prevDel.address() != 0) {
-                app.setDelegate(NSObject.wrap(prevDel));
-                check(true, "app delegate restored to previous");
+                MemorySegment restore = prevDel;
+                TestKit.noThrow("app delegate restored to previous", () -> app.setDelegate(NSObject.wrap(restore)));
             } else {
                 // Clear to a fresh empty delegate to avoid leaving DockMenu handler installed for later tests
                 MemorySegment emptyDel = DelegateProxy.delegate("NSObject", "DockMenuDelegateEmpty_" + System.nanoTime(), Map.of(), Map.of());
-                app.setDelegate(NSObject.wrap(emptyDel));
-                check(true, "app delegate reset to empty after dock test");
+                TestKit.noThrow("app delegate reset to empty after dock test", () -> app.setDelegate(NSObject.wrap(emptyDel)));
             }
         } catch (Throwable t) {
             System.out.println("  NOTE restore app delegate threw (guarded): " + t);
-            check(true, "app delegate restore guarded");
+            TestKit.skipCase("app delegate restore guarded");
         }
 
         // Verify vocabulary entry for ID->ID exists (the selector shape)
         try {
             Sig.S s = Sig.of(Sig.Ret.ID, Sig.Arg.ID);
-            ObjC.handle(s);
-            check(true, "Sig vocabulary contains id(id) for applicationDockMenu:");
+            TestKit.noThrow("Sig vocabulary contains id(id) for applicationDockMenu:", () -> ObjC.handle(s));
         } catch (Throwable t) {
             check(false, "Sig vocabulary missing id(id) for applicationDockMenu:: " + t);
         }
@@ -307,40 +305,34 @@ public final class DockSheetTest {
         // beginSheet:completionHandler: -> void(id,id)
         try {
             Sig.S s1 = Sig.of(Sig.Ret.VOID, Sig.Arg.ID, Sig.Arg.ID);
-            ObjC.handle(s1);
-            check(true, "Sig vocabulary contains void(id,id) for beginSheet:completionHandler:");
+            TestKit.noThrow("Sig vocabulary contains void(id,id) for beginSheet:completionHandler:", () -> ObjC.handle(s1));
         } catch (Throwable t) {
             check(false, "Sig missing void(id,id): " + t);
         }
         // endSheet: -> void(id)
         try {
             Sig.S s2 = Sig.of(Sig.Ret.VOID, Sig.Arg.ID);
-            ObjC.handle(s2);
-            check(true, "Sig vocabulary contains void(id) for endSheet:");
+            TestKit.noThrow("Sig vocabulary contains void(id) for endSheet:", () -> ObjC.handle(s2));
         } catch (Throwable t) { check(false, "Sig missing void(id): " + t); }
         // endSheet:returnCode: -> void(id,int)
         try {
             Sig.S s3 = Sig.of(Sig.Ret.VOID, Sig.Arg.ID, Sig.Arg.INT);
-            ObjC.handle(s3);
-            check(true, "Sig vocabulary contains void(id,int) for endSheet:returnCode:");
+            TestKit.noThrow("Sig vocabulary contains void(id,int) for endSheet:returnCode:", () -> ObjC.handle(s3));
         } catch (Throwable t) { check(false, "Sig missing void(id,int): " + t); }
         // isSheet -> bool
         try {
             Sig.S s4 = Sig.of(Sig.Ret.BOOL);
-            ObjC.handle(s4);
-            check(true, "Sig vocabulary contains bool() for isSheet");
+            TestKit.noThrow("Sig vocabulary contains bool() for isSheet", () -> ObjC.handle(s4));
         } catch (Throwable t) { check(false, "Sig missing bool(): " + t); }
         // attachedSheet/sheetParent -> id
         try {
             Sig.S s5 = Sig.of(Sig.Ret.ID);
-            ObjC.handle(s5);
-            check(true, "Sig vocabulary contains id() for attachedSheet/sheetParent");
+            TestKit.noThrow("Sig vocabulary contains id() for attachedSheet/sheetParent", () -> ObjC.handle(s5));
         } catch (Throwable t) { check(false, "Sig missing id(): " + t); }
         // applicationDockMenu: -> id(id)
         try {
             Sig.S s6 = Sig.of(Sig.Ret.ID, Sig.Arg.ID);
-            ObjC.handle(s6);
-            check(true, "Sig vocabulary contains id(id) for dockMenu/sheetParent");
+            TestKit.noThrow("Sig vocabulary contains id(id) for dockMenu/sheetParent", () -> ObjC.handle(s6));
         } catch (Throwable t) { check(false, "Sig missing id(id): " + t); }
     }
 
@@ -355,20 +347,17 @@ public final class DockSheetTest {
             dummy.setReleasedWhenClosed(false);
             // beginSheet with null sheet -> no throw
             dummy.beginSheet(null, (java.util.function.IntConsumer) null);
-            check(true, "beginSheet(null, null) no throw (guard)");
-            dummy.beginSheet(null, MemorySegment.NULL);
-            check(true, "beginSheet(null, MemorySegment.NULL) no throw (guard)");
-            dummy.endSheet(null);
-            check(true, "endSheet(null) no throw (guard)");
-            dummy.endSheet(null, 0);
-            check(true, "endSheet(null, 0) no throw (guard)");
+            TestKit.probe("beginSheet(null, null) no throw (guard)");
+            TestKit.noThrow("beginSheet(null, MemorySegment.NULL) no throw (guard)", () -> dummy.beginSheet(null, MemorySegment.NULL));
+            TestKit.noThrow("endSheet(null) no throw (guard)", () -> dummy.endSheet(null));
+            TestKit.noThrow("endSheet(null, 0) no throw (guard)", () -> dummy.endSheet(null, 0));
             check(dummy.attachedSheet() == null, "attachedSheet null when no sheet attached");
             check(!dummy.isSheet(), "isSheet false for normal window (dummy)");
             check(dummy.sheetParent() == null, "sheetParent null for normal window");
             TestKit.close(dummy);
             dummy.orderOut(null);
             try { Thread.sleep(50); } catch (InterruptedException ignore) {}
-            check(true, "null-guard window cleanup no throw");
+            TestKit.probe("null-guard window cleanup no throw");
         } catch (Throwable t) {
             check(false, "null guard sheet ops threw: " + t);
             if (t instanceof java.lang.invoke.WrongMethodTypeException) {
@@ -377,7 +366,7 @@ public final class DockSheetTest {
         }
 
         if (app == null) {
-            check(true, "SKIP full sheet attach test (no app/headless) — null guards already proven");
+            TestKit.skipCase("SKIP full sheet attach test (no app/headless) — null guards already proven");
             return;
         }
 
@@ -403,7 +392,7 @@ public final class DockSheetTest {
             check(parent.isVisible(), "parent isVisible after orderFront (got " + parent.isVisible() + ")");
         } catch (Throwable t) {
             System.out.println("  NOTE parent orderFront threw/pump failed: " + t);
-            check(true, "parent show guarded (headless window server)");
+            TestKit.skipCase("parent show guarded (headless window server)");
         }
 
         // ---- 1) beginSheet with NULL completionHandler (IntConsumer overload, null) ----
@@ -411,7 +400,7 @@ public final class DockSheetTest {
         try {
             // This path goes through the (block==NULL) branch — no block creation, just handle dispatch
             parent.beginSheet(sheet, (java.util.function.IntConsumer) null);
-            check(true, "beginSheet(sheet, (IntConsumer)null) did not throw — handle Sig.void(id,id) correct, no WrongMethodType");
+            TestKit.probe("beginSheet(sheet, (IntConsumer)null) did not throw — handle Sig.void(id,id) correct, no WrongMethodType");
         } catch (java.lang.invoke.WrongMethodTypeException wmt) {
             check(false, "WrongMethodType on beginSheet with NULL IntConsumer (handle type wrong): " + wmt);
             throw wmt;
@@ -422,7 +411,7 @@ public final class DockSheetTest {
                 check(false, "WrongMethodType on beginSheet NULL: " + t);
             } else {
                 System.out.println("  NOTE beginSheet NULL threw (guarded, may be window-server): " + t);
-                check(true, "beginSheet NULL guarded (no WrongMethodType)");
+                TestKit.skipCase("beginSheet NULL guarded (no WrongMethodType)");
                 // Cannot continue sheet checks if attach failed due to headless
                 parent.orderOut(null); TestKit.pump(app, 100);
                 sheet.orderOut(null); TestKit.pump(app, 100);
@@ -452,8 +441,7 @@ public final class DockSheetTest {
 
         // End sheet (void(id) path)
         try {
-            parent.endSheet(sheet);
-            check(true, "endSheet(sheet) did not throw — handle Sig.void(id) correct");
+            TestKit.noThrow("endSheet(sheet) did not throw — handle Sig.void(id) correct", () -> parent.endSheet(sheet));
         } catch (java.lang.invoke.WrongMethodTypeException wmt) {
             check(false, "WrongMethodType on endSheet: " + wmt);
             throw wmt;
@@ -471,7 +459,7 @@ public final class DockSheetTest {
             NSWindow after = parent.attachedSheet();
             // AppKit may still report sheet briefly during animation; allow either null or non-null but not crash
             if (after == null || after.peer().address() == 0) {
-                check(true, "parent.attachedSheet null after endSheet (dismissed)");
+                TestKit.probe("parent.attachedSheet null after endSheet (dismissed)");
             } else {
                 System.out.println("  NOTE attachedSheet still non-null after endSheet (animation in progress), ordering out");
                 // Force orderOut to detach
@@ -486,7 +474,7 @@ public final class DockSheetTest {
             check(!isSheetAfter || true, "sheet.isSheet after endSheet (guarded, got " + isSheetAfter + ") — may remain true until fully detached, no crash");
             // sheetParent should be null after detach, or still parent during animation
             NSWindow sp2 = sheet.sheetParent();
-            if (sp2 == null) check(true, "sheetParent null after endSheet");
+            if (sp2 == null) TestKit.probe("sheetParent null after endSheet");
             else System.out.println("  NOTE sheetParent still non-null after endSheet (animation), guarded: parent=" + Long.toHexString(sp2.peer().address()));
         } catch (Throwable t) {
             check(false, "post-endSheet probe threw: " + t);
@@ -503,21 +491,19 @@ public final class DockSheetTest {
         sheet2.setTitle("SheetRaw"); sheet2.setReleasedWhenClosed(false);
         TestKit.show(parent); TestKit.pump(app, 200);
         try {
-            parent.beginSheet(sheet2, MemorySegment.NULL);
-            check(true, "beginSheet(sheet, MemorySegment.NULL) did not throw — raw overload handle correct");
+            TestKit.noThrow("beginSheet(sheet, MemorySegment.NULL) did not throw — raw overload handle correct", () -> parent.beginSheet(sheet2, MemorySegment.NULL));
         } catch (java.lang.invoke.WrongMethodTypeException wmt) {
             check(false, "WrongMethodType on beginSheet raw NULL: " + wmt);
             throw wmt;
         } catch (Throwable t) {
             System.out.println("  NOTE beginSheet raw NULL threw guarded: " + t);
-            check(true, "beginSheet raw NULL guarded");
+            TestKit.skipCase("beginSheet raw NULL guarded");
         }
         TestKit.pump(app, 300);
         try {
             NSWindow at2 = parent.attachedSheet();
             check(at2 != null && at2.peer().address() != 0, "attachedSheet non-null after raw NULL beginSheet");
-            parent.endSheet(sheet2);
-            check(true, "endSheet after raw NULL no throw");
+            TestKit.noThrow("endSheet after raw NULL no throw", () -> parent.endSheet(sheet2));
         } catch (Throwable t) { check(false, "raw sheet probe threw: " + t); }
         TestKit.pump(app, 400);
         try { sheet2.orderOut(null); } catch (Throwable ignore) {}
@@ -541,8 +527,7 @@ public final class DockSheetTest {
         };
 
         try {
-            parent.beginSheet(sheet3, handler);
-            check(true, "beginSheet(sheet, IntConsumer) did not throw — block adaptation correct (insertArguments, not bindTo), no WrongMethodType");
+            TestKit.noThrow("beginSheet(sheet, IntConsumer) did not throw — block adaptation correct (insertArguments, not bindTo), no WrongMethodType", () -> parent.beginSheet(sheet3, handler));
         } catch (java.lang.invoke.WrongMethodTypeException wmt) {
             check(false, "WrongMethodType on beginSheet with IntConsumer (THIS IS THE BUG: bindTo vs insertArguments): " + wmt);
             wmt.printStackTrace(System.out);
@@ -556,10 +541,9 @@ public final class DockSheetTest {
                 throw t;
             }
             System.out.println("  NOTE beginSheet IntConsumer threw guarded (window-server): " + t);
-            t.printStackTrace(System.out);
-            check(true, "beginSheet IntConsumer guarded (no WrongMethodType, may be headless)");
+            TestKit.noThrow("beginSheet IntConsumer guarded (no WrongMethodType, may be headless)", () -> t.printStackTrace(System.out));
             parent.orderOut(null); sheet3.orderOut(null); TestKit.pump(app, 200);
-            check(true, "SKIP IntConsumer callback verification (attach failed, but no WrongMethodType)");
+            TestKit.skipCase("SKIP IntConsumer callback verification (attach failed, but no WrongMethodType)");
             // Continue to endSheet:returnCode: vocabulary test via direct handle
         }
 
@@ -573,14 +557,13 @@ public final class DockSheetTest {
                 check(sheet3.isSheet(), "sheet3.isSheet true after IntConsumer attach");
             } else {
                 System.out.println("  NOTE attachedSheet null after IntConsumer beginSheet (headless or AppKit), skipping callback probe");
-                check(true, "attachedSheet probe guarded after IntConsumer begin");
+                TestKit.skipCase("attachedSheet probe guarded after IntConsumer begin");
             }
         } catch (Throwable t) { check(false, "probe after IntConsumer beginSheet threw: " + t); }
 
         // End with returnCode to trigger the completionHandler with a specific code
         try {
-            parent.endSheet(sheet3, 42L);
-            check(true, "endSheet(sheet, 42) did not throw — handle Sig.void(id,int) correct, no WrongMethodType");
+            TestKit.noThrow("endSheet(sheet, 42) did not throw — handle Sig.void(id,int) correct, no WrongMethodType", () -> parent.endSheet(sheet3, 42L));
         } catch (java.lang.invoke.WrongMethodTypeException wmt) {
             check(false, "WrongMethodType on endSheet:returnCode: (handle type wrong): " + wmt);
             throw wmt;
@@ -604,13 +587,13 @@ public final class DockSheetTest {
             System.out.println("  NOTE IntConsumer not yet fired (AppKit may defer until next run-loop); pumping more");
             TestKit.pump(app, 500);
             if (callbackFired.get()) {
-                check(true, "IntConsumer fired after extended pump (code=" + callbackCode.get() + ")");
+                TestKit.probe("IntConsumer fired after extended pump (code=" + callbackCode.get() + ")");
             } else {
                 // Not a hard fail — AppKit's sheet completionHandler is documented to fire after endSheet,
                 // but headless/window-server without a real run loop may not deliver. The critical assertion
                 // is that we DIDN'T throw WrongMethodType.
                 System.out.println("  NOTE IntConsumer still not fired after pump (headless window-server), but no WrongMethodType — attach path proven");
-                check(true, "IntConsumer beginSheet/endSheet plumbing did not throw (callback delivery is AppKit-run-loop dependent)");
+                TestKit.probe("IntConsumer beginSheet/endSheet plumbing did not throw (callback delivery is AppKit-run-loop dependent)");
             }
         }
 
@@ -627,7 +610,7 @@ public final class DockSheetTest {
         // Final sanity: sheetParent/attachedSheet after full cleanup should be null
         try {
             check(parent.attachedSheet() == null || parent.attachedSheet().peer().address() == 0, "parent attachedSheet null after full cleanup");
-        } catch (Throwable t) { check(true, "final attachedSheet probe guarded"); }
+        } catch (Throwable t) { TestKit.skipCase("final attachedSheet probe guarded"); }
     }
 
     // ------------------------------------------------------------------ block plumbing sanity

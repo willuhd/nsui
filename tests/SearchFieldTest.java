@@ -134,7 +134,7 @@ public final class SearchFieldTest {
             field.setCentersPlaceholder(false);
             boolean afterFalse = field.centersPlaceholder();
             System.out.println("  centersPlaceholder after set false = " + afterFalse);
-            TestKit.check(true, "centersPlaceholder setter/getter did not crash (true=" + afterTrue + " false=" + afterFalse + ")");
+            TestKit.probe("centersPlaceholder setter/getter did not crash (true=" + afterTrue + " false=" + afterFalse + ")");
             field.setCentersPlaceholder(origCenter);
             TestKit.check(field.centersPlaceholder() == origCenter || true, "centersPlaceholder restored (or no-op acknowledged)");
         } catch (Throwable t) {

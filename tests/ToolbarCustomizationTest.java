@@ -130,7 +130,7 @@ public final class ToolbarCustomizationTest {
                         MethodHandle hIsKind = ObjC.handle(Sig.of(Ret.BOOL, Arg.ID));
                         isToolbarItem = (boolean) hIsKind.invokeExact(itemSeg, ObjC.sel("isKindOfClass:"), ObjC.cls("NSToolbarItem"));
                     } catch (Throwable ignored) {}
-                    check(true, "toolbar:itemFor... returned item isKindOfClass NSToolbarItem check=" + isToolbarItem + " (non-fatal)");
+                    TestKit.probe("toolbar:itemFor... returned item isKindOfClass NSToolbarItem check=" + isToolbarItem + " (non-fatal)");
                 }
             } catch (Throwable t) {
                 check(false, "toolbar:itemForItemIdentifier:willBeInsertedIntoToolbar: invoke failed: " + t);
@@ -174,7 +174,7 @@ public final class ToolbarCustomizationTest {
                     if (it == null) throw new AssertionError("stress item null iter " + i);
                 }
                 long elapsed = System.nanoTime() - start;
-                check(true, "stress 100 iterations delegate create+call completed in " + (elapsed / 1_000_000) + "ms");
+                TestKit.probe("stress 100 iterations delegate create+call completed in " + (elapsed / 1_000_000) + "ms");
             } catch (Throwable t) {
                 check(false, "stress 100 iterations failed: " + t);
                 t.printStackTrace(System.out);

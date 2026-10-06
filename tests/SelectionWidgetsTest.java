@@ -66,7 +66,7 @@ public final class SelectionWidgetsTest {
         TestKit.check(fired[0], "direct send [target selectionChanged:(popup)] reached the Java handler -> action wiring verified");
         // Also: an UNREGISTERED selector on the same target must not crash (proxy guard).
         ObjC.msgSendVoidId(target, ObjC.sel("selectionChanged:"), popup.peer());
-        TestKit.check(true, "action target handles repeated sends without crashing");
+        TestKit.probe("action target handles repeated sends without crashing");
 
         // ------------------------------------------------------------ NSComboBox
         NSComboBox combo = NSComboBox.create(new NSRect(0, 30, 180, 25));
@@ -77,8 +77,7 @@ public final class SelectionWidgetsTest {
         combo.selectItemAtIndex(1);
         checkEq(combo.indexOfSelectedItem(), 1, "NSComboBox selectItemAtIndex(1) -> indexOfSelectedItem()==1");
         checkStr(combo.stringValue(), "b", "NSComboBox stringValue()=='b'");
-        combo.setEditable(true);
-        TestKit.check(true, "NSComboBox setEditable(true) without crash");
+        TestKit.noThrow("NSComboBox setEditable(true) without crash", () -> combo.setEditable(true));
 
         // ------------------------------------------------------------ NSSegmentedControl
         NSSegmentedControl seg = NSSegmentedControl.create(new NSRect(0, 60, 240, 24));
@@ -89,8 +88,7 @@ public final class SelectionWidgetsTest {
         seg.setLabel("C", 2);
         seg.setSelectedSegment(1);
         checkEq(seg.selectedSegment(), 1, "NSSegmentedControl setSelectedSegment(1) -> selectedSegment()==1");
-        seg.setSegmentStyle(1);
-        TestKit.check(true, "NSSegmentedControl setSegmentStyle(1) without crash");
+        TestKit.noThrow("NSSegmentedControl setSegmentStyle(1) without crash", () -> seg.setSegmentStyle(1));
 
         System.out.println(TestKit.failures() == 0 ? "RESULT: ALL PASS" : "RESULT: " + TestKit.failures() + " FAILURE(S)");
         TestKit.end();

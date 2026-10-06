@@ -35,11 +35,73 @@ public final class TestKit {
     // ---------------------------------------------------------- reporting
 
     private static int failures;
+    private static int caseSkips;
+    private static int probes;
 
     /// Record one assertion. Prints immediately so logs stay useful on crash.
     public static void check(boolean ok, String msg) {
         System.out.println((ok ? "PASS" : "FAIL") + ": " + msg);
         if (!ok) failures++;
+    }
+
+    /// A body that may throw anything (AppKit calls can raise).
+    public interface Body { void run() throws Throwable; }
+
+    /// A body that produces a value and may throw anything.
+    public interface Supply<T> { T get() throws Throwable; }
+
+    /// Assert a call does not throw - a real assertion that can fail, unlike the
+    /// old always-true probe on a no-crash message.
+    public static void noThrow(String what, Body body) {
+        try {
+            body.run();
+            System.out.println("PASS: " + what);
+        } catch (Throwable t) {
+            check(false, what + " threw: " + t);
+        }
+    }
+
+    /// noThrow for the T v = obj.getter() shape: returns the value (null on throw).
+    public static <T> T attempt(String what, Supply<T> body) {
+        try {
+            T v = body.get();
+            System.out.println("PASS: " + what);
+            return v;
+        } catch (Throwable t) {
+            check(false, what + " threw: " + t);
+            return null;
+        }
+    }
+
+    /// A case that cannot run on this OS/session (selector absent, headless, nil
+    /// precondition). Counted and reported separately: never a pass, never a
+    /// failure. Replaces the old always-true SKIP probe.
+    public static void skipCase(String why) {
+        caseSkips++;
+        System.out.println("SKIP-CASE: " + why);
+    }
+
+    /// A call exercised but with no assertable oracle (a bare no-crash probe on an
+    /// environment-defined getter). Counted and reported separately so it can never
+    /// inflate the assertion count a real check would.
+    public static void probe(String what) {
+        probes++;
+        System.out.println("PROBE: " + what);
+    }
+
+    /// Negative test: assert the body throws (a subtype of) the expected type.
+    public static void expectThrows(String what, Class<? extends Throwable> expected, Body body) {
+        try {
+            body.run();
+            check(false, what + " did not throw (expected " + expected.getSimpleName() + ")");
+        } catch (Throwable t) {
+            if (expected.isInstance(t)) {
+                System.out.println("PASS: " + what + " threw " + t.getClass().getSimpleName());
+            } else {
+                check(false, what + " threw " + t.getClass().getSimpleName()
+                        + " (expected " + expected.getSimpleName() + ")");
+            }
+        }
     }
 
     /// Failures so far (for custom summary lines; prefer {@code end()}).
@@ -49,6 +111,8 @@ public final class TestKit {
 
     /// Print the final verdict and exit honestly: 0 iff every check passed.
     public static void end() {
+        if (caseSkips > 0) System.out.println("RESULT: " + caseSkips + " CASE SKIP(S)");
+        if (probes > 0) System.out.println("RESULT: " + probes + " PROBE(S) (exercised, no oracle)");
         System.out.println(failures == 0 ? "RESULT: ALL PASS" : "RESULT: " + failures + " FAILURE(S)");
         System.exit(failures == 0 ? 0 : 1);
     }

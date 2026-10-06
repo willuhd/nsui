@@ -41,8 +41,7 @@ public final class ColorFontTest {
         // setFill / setStroke outside a graphics context must NOT crash (may warn / no-op).
         try {
             c.setFill();
-            c.setStroke();
-            TestKit.check(true, "setFill()/setStroke() outside a graphics context did not crash");
+            TestKit.noThrow("setFill()/setStroke() outside a graphics context did not crash", () -> c.setStroke());
         } catch (Throwable t) {
             TestKit.check(false, "setFill()/setStroke() threw outside a graphics context: " + t);
         }

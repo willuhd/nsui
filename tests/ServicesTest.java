@@ -51,7 +51,7 @@ public final class ServicesTest {
         try {
             NSSharingService mail = NSSharingService.named("com.apple.share.Mail.compose");
             if (mail == null) {
-                TestKit.check(true, "mail service absent on this system (SKIP by nil)");
+                TestKit.skipCase("mail service absent on this system (SKIP by nil)");
             } else {
                 TestKit.check(mail.title() != null && !mail.title().isEmpty(),
                         "mail service title (got \"" + mail.title() + "\")");

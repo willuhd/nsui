@@ -41,7 +41,7 @@ public final class SmallWidgetsTest {
         picker.setDateValue(now);
         MemorySegment gotDate = picker.dateValue();
         TestKit.check(gotDate != null && gotDate.address() != 0, "NSDatePicker.dateValue() non-nil after setDateValue(now)");
-        TestKit.check(true, "NSDatePicker style(1)/elements(0x3)/setDateValue no crash");
+        TestKit.probe("NSDatePicker style(1)/elements(0x3)/setDateValue no crash");
 
         // ------------------------------------------------------------ NSColorWell
         NSColorWell well = NSColorWell.create(new NSRect(0, 0, 60, 24));
@@ -56,8 +56,7 @@ public final class SmallWidgetsTest {
             TestKit.check(seg != null && seg.address() != 0, "NSColorWell.colorSegment() non-nil");
         }
         well.activate(true);
-        well.deactivate();
-        TestKit.check(true, "NSColorWell activate(true)/deactivate() no crash");
+        TestKit.noThrow("NSColorWell activate(true)/deactivate() no crash", () -> well.deactivate());
 
         // ------------------------------------------------------------ NSBox
         NSBox box = NSBox.create(new NSRect(0, 0, 200, 120));
@@ -67,7 +66,7 @@ public final class SmallWidgetsTest {
         box.setBoxType(0L);         // NSBoxPrimary
         box.setBorderType(0L);      // NSNoBorder
         box.setTitlePosition(0L);   // NSNoTitle
-        TestKit.check(true, "NSBox boxType/borderType/titlePosition setters no crash");
+        TestKit.probe("NSBox boxType/borderType/titlePosition setters no crash");
         System.out.println("  NSBox title after setTitlePosition(0)/setBoxType(0) = \"" + box.title() + "\"");
 
         // ------------------------------------------------------------ NSStepper

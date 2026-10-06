@@ -57,14 +57,8 @@ public final class EdgeTest {
 
     /// cstring must reject embedded NUL (it would silently truncate in C).
     private static void cstringNul() {
-        try {
-            ObjC.cstring("a\0b");
-            TestKit.check(false, "cstring with NUL should throw");
-        } catch (IllegalArgumentException e) {
-            TestKit.check(true, "cstring with NUL throws IllegalArgumentException");
-        } catch (Throwable t) {
-            TestKit.check(false, "cstring with NUL threw wrong type: " + t);
-        }
+        TestKit.expectThrows("cstring with NUL throws IllegalArgumentException",
+                IllegalArgumentException.class, () -> ObjC.cstring("a\0b"));
     }
 
     /// 16 MB cap: truncate-at-cap and return. (Was a proven crash before the
@@ -126,22 +120,10 @@ public final class EdgeTest {
     private static void invokeGuard() {
         MemorySegment[] seven = new MemorySegment[7];
         for (int i = 0; i < 7; i++) seven[i] = MemorySegment.NULL;
-        try {
-            ObjC.invoke(null, null, seven);
-            TestKit.check(false, "invoke with 7 args should throw");
-        } catch (IllegalArgumentException e) {
-            TestKit.check(true, "invoke with 7 args throws IllegalArgumentException");
-        } catch (Throwable t) {
-            TestKit.check(false, "invoke with 7 args threw wrong type: " + t);
-        }
-        try {
-            ObjC.invokeVoid(null, null, seven);
-            TestKit.check(false, "invokeVoid with 7 args should throw");
-        } catch (IllegalArgumentException e) {
-            TestKit.check(true, "invokeVoid with 7 args throws IllegalArgumentException");
-        } catch (Throwable t) {
-            TestKit.check(false, "invokeVoid with 7 args threw wrong type: " + t);
-        }
+        TestKit.expectThrows("invoke with 7 args throws IllegalArgumentException",
+                IllegalArgumentException.class, () -> ObjC.invoke(null, null, seven));
+        TestKit.expectThrows("invokeVoid with 7 args throws IllegalArgumentException",
+                IllegalArgumentException.class, () -> ObjC.invokeVoid(null, null, seven));
     }
 
     /// sel/cls caches (ConcurrentHashMap) under 4-thread read pressure.

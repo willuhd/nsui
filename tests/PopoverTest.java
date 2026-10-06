@@ -142,11 +142,10 @@ public final class PopoverTest {
                 // try set appearance to Aqua if available
                 MemorySegment aqua = ObjC.msgSendIdId(ObjC.cls("NSAppearance"), ObjC.sel("appearanceNamed:"), ObjC.nsstring("NSAppearanceNameAqua"));
                 if (aqua != null && aqua.address() != 0) {
-                    pop.setAppearance(aqua);
-                    check(true, "NSPopover setAppearance AQUA no crash");
+                    TestKit.noThrow("NSPopover setAppearance AQUA no crash", () -> pop.setAppearance(aqua));
                     pop.setAppearance((nsui.NSObject) null);
                 } else {
-                    check(true, "NSPopover Aqua appearance not found, skip");
+                    TestKit.skipCase("NSPopover Aqua appearance not found, skip");
                 }
             } catch (Throwable t) {
                 check(false, "NSPopover appearance threw: " + t);
@@ -155,16 +154,14 @@ public final class PopoverTest {
             // close when not shown should not throw and isShown stays false
             try {
                 pop.close();
-                check(pop.isShown() == false, "NSPopover close when not shown keeps isShown false");
-                check(true, "NSPopover close didn't throw when not shown");
+                TestKit.noThrow("NSPopover close didn't throw when not shown", () -> check(pop.isShown() == false, "NSPopover close when not shown keeps isShown false"));
             } catch (Throwable t) {
                 check(false, "NSPopover close threw: " + t);
             }
 
             // performClose: when not shown
             try {
-                pop.performClose(null);
-                check(true, "NSPopover performClose: didn't throw when not shown");
+                TestKit.noThrow("NSPopover performClose: didn't throw when not shown", () -> pop.performClose(null));
                 check(pop.isShown() == false, "NSPopover isShown still false after performClose:");
             } catch (Throwable t) {
                 check(false, "NSPopover performClose: threw: " + t);
@@ -200,7 +197,7 @@ public final class PopoverTest {
                 if (hasWindow) {
                     try {
                         pop.showRelativeToRect(rect, anchor, 1);
-                        check(true, "NSPopover showRelativeToRect:ofView:preferredEdge: didn't throw (edge 1, with window)");
+                        TestKit.probe("NSPopover showRelativeToRect:ofView:preferredEdge: didn't throw (edge 1, with window)");
                         try { if (pop.isShown()) pop.close(); } catch (Throwable ignore) {}
                     } catch (Throwable inner) {
                         System.out.println("  NOTE showRelativeToRect threw (guarded): " + inner);
@@ -210,17 +207,16 @@ public final class PopoverTest {
                     }
                 } else {
                     System.out.println("  NOTE anchor has no window, skipping showRelativeToRect invocation (selector exists, invocation would abort)");
-                    check(true, "NSPopover showRelativeToRect skipped (no window) but selector exists — guarded");
+                    TestKit.skipCase("NSPopover showRelativeToRect skipped (no window) but selector exists — guarded");
                 }
                 // verify Sig vocabulary entry exists
                 try {
                     Sig.S s = Sig.of(Ret.VOID, Arg.RECT, Arg.ID, Arg.INT);
-                    ObjC.handle(s);
-                    check(true, "Sig vocabulary contains void(rect,id,int) for showRelativeToRect:ofView:preferredEdge:");
+                    TestKit.noThrow("Sig vocabulary contains void(rect,id,int) for showRelativeToRect:ofView:preferredEdge:", () -> ObjC.handle(s));
                 } catch (Throwable t2) {
                     check(false, "Sig vocabulary missing void(rect,id,int): " + t2);
                 }
-                check(true, "NSPopover preferredEdge values 0..3 handled (guarded)");
+                TestKit.skipCase("NSPopover preferredEdge values 0..3 handled (guarded)");
                 try { if (win != null) TestKit.close(win); } catch (Throwable ignore) {}
             } catch (Throwable t) {
                 check(false, "NSPopover showRelativeToRect outer threw: " + t);

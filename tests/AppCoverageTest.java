@@ -98,8 +98,7 @@ public final class AppCoverageTest {
                 String cleared = null;
                 try { cleared = tile.badgeLabel(); } catch (Throwable t) { cleared = null; }
                 TestKit.check(cleared == null || cleared.isEmpty(), "NSDockTile badge cleared (got \"" + cleared + "\")");
-                tile.display();
-                TestKit.check(true, "NSDockTile display no crash after badge clear");
+                TestKit.noThrow("NSDockTile display no crash after badge clear", () -> tile.display());
             } finally {
                 try {
                     tile.setBadgeLabel(origBadge);
@@ -112,7 +111,7 @@ public final class AppCoverageTest {
                 tile.setShowsApplicationBadge(!origShows);
                 boolean toggled = tile.showsApplicationBadge();
                 System.out.println("  showsApplicationBadge orig=" + origShows + " after-toggle=" + toggled);
-                TestKit.check(true, "NSDockTile showsApplicationBadge set/get no crash");
+                TestKit.probe("NSDockTile showsApplicationBadge set/get no crash");
                 tile.setShowsApplicationBadge(origShows);
                 TestKit.check(tile.showsApplicationBadge() == origShows || true, "NSDockTile showsApplicationBadge restore no crash");
             } catch (Throwable t) { TestKit.check(false, "showsApplicationBadge threw: " + t); }
@@ -124,7 +123,7 @@ public final class AppCoverageTest {
             try {
                 var cv = tile.contentView();
                 System.out.println("  dockTile contentView = " + cv);
-                TestKit.check(true, "NSDockTile contentView no crash");
+                TestKit.probe("NSDockTile contentView no crash");
             } catch (Throwable t) { TestKit.check(false, "contentView threw: " + t); }
             try {
                 MemorySegment owner = tile.owner();
@@ -148,11 +147,11 @@ public final class AppCoverageTest {
                     + " active=" + cur.isActive() + " hidden=" + cur.isHidden()
                     + " finishedLaunching=" + cur.isFinishedLaunching() + " ownsMenuBar=" + cur.ownsMenuBar()
                     + " policy=" + cur.activationPolicy() + " arch=" + cur.executableArchitecture());
-            TestKit.check(true, "NSRunningApplication state getters no crash");
+            TestKit.probe("NSRunningApplication state getters no crash");
             try {
                 var icon = cur.icon();
                 System.out.println("  current icon = " + icon);
-                TestKit.check(true, "NSRunningApplication icon no crash");
+                TestKit.probe("NSRunningApplication icon no crash");
             } catch (Throwable t) { TestKit.check(false, "icon threw: " + t); }
             TestKit.check(cur.bundleURL() != null || true, "bundleURL probe no crash");
             TestKit.check(cur.executableURL() != null || true, "executableURL probe no crash");
@@ -170,7 +169,7 @@ public final class AppCoverageTest {
                     var arr = NSRunningApplication.runningApplicationsWithBundleIdentifier(bid);
                     TestKit.check(arr != null, "runningApplicationsWithBundleIdentifier(own) non-nil");
                 } else {
-                    TestKit.check(true, "NOTE own bundleIdentifier nil (bare binary) — lookup skipped, no crash is pass");
+                    TestKit.skipCase("NOTE own bundleIdentifier nil (bare binary) — lookup skipped, no crash is pass");
                 }
             } catch (Throwable t) { TestKit.check(false, "runningApplicationsWithBundleIdentifier threw: " + t); }
             // activateWithOptions with 0 (no-op options) — must not steal focus in hidden test? Use only when already active?
@@ -211,7 +210,7 @@ public final class AppCoverageTest {
             try {
                 String loc = main.localizedStringForKey("nsui-missing-key", "fallback", null);
                 System.out.println("  localizedStringForKey(missing) = " + loc);
-                TestKit.check(true, "localizedStringForKey no crash");
+                TestKit.probe("localizedStringForKey no crash");
             } catch (Throwable t) { TestKit.check(false, "localizedStringForKey threw: " + t); }
         } catch (Throwable t) {
             TestKit.check(false, "NSBundle section threw: " + t);
@@ -263,12 +262,12 @@ public final class AppCoverageTest {
                 try { named = NSSound.soundNamed("Glass"); } catch (Throwable t) { named = null; }
             }
             if (named == null) {
-                TestKit.check(true, "NOTE NSSound.soundNamed(Tink/Glass) nil on this system — existence probe no crash is pass (NO playback attempted)");
+                TestKit.skipCase("NOTE NSSound.soundNamed(Tink/Glass) nil on this system — existence probe no crash is pass (NO playback attempted)");
             } else {
                 TestKit.check(named.peer().address() != 0, "NSSound.soundNamed existence non-nil (NO playback)");
                 TestKit.check(named.isKindOfClass("NSSound"), "soundNamed isKindOfClass NSSound");
                 System.out.println("  soundNamed name = " + named.name());
-                TestKit.check(true, "NSSound name probe no crash (NO play/pause/stop called)");
+                TestKit.skipCase("NSSound name probe no crash (NO play/pause/stop called)");
             }
             // Unknown name must be nil-safe, still no playback.
             NSSound miss = null;
@@ -292,7 +291,7 @@ public final class AppCoverageTest {
                 try {
                     String voice = synth.voice();
                     System.out.println("  synth voice = " + voice);
-                    TestKit.check(true, "NSSpeechSynthesizer voice probe no crash");
+                    TestKit.probe("NSSpeechSynthesizer voice probe no crash");
                 } catch (Throwable t) { TestKit.check(false, "voice threw: " + t); }
             }
         } catch (Throwable t) {
@@ -302,9 +301,8 @@ public final class AppCoverageTest {
 
         // ---------------------------------------------------------- NSHapticFeedbackManager (required: no-crash call)
         try {
-            NSHapticFeedbackManager.performFeedbackPattern(
-                    NSHapticFeedbackManager.PATTERN_GENERIC, NSHapticFeedbackManager.TIME_NOW);
-            TestKit.check(true, "NSHapticFeedbackManager.performFeedbackPattern no crash (suppressed when finger off trackpad)");
+            TestKit.noThrow("NSHapticFeedbackManager.performFeedbackPattern no crash (suppressed when finger off trackpad)", () -> NSHapticFeedbackManager.performFeedbackPattern(
+                    NSHapticFeedbackManager.PATTERN_GENERIC, NSHapticFeedbackManager.TIME_NOW));
         } catch (Throwable t) {
             TestKit.check(false, "NSHapticFeedbackManager threw: " + t);
             t.printStackTrace(System.out);
@@ -313,14 +311,14 @@ public final class AppCoverageTest {
         // ---------------------------------------------------------- NSApplication (safe getters only)
         try {
             System.out.println("  isRunning=" + app.isRunning() + " (may be false before finishLaunching; no-crash is pass)");
-            TestKit.check(true, "NSApplication isRunning probe no crash");
+            TestKit.probe("NSApplication isRunning probe no crash");
             long pol = app.activationPolicy();
             System.out.println("  activationPolicy=" + pol + " presentationOptions=" + app.presentationOptions());
-            TestKit.check(true, "NSApplication activationPolicy/presentationOptions no crash");
+            TestKit.probe("NSApplication activationPolicy/presentationOptions no crash");
             try {
                 boolean ok = app.trySetActivationPolicy(pol);
                 System.out.println("  trySetActivationPolicy(current) = " + ok);
-                TestKit.check(true, "NSApplication trySetActivationPolicy no crash");
+                TestKit.probe("NSApplication trySetActivationPolicy no crash");
             } catch (Throwable t) { TestKit.check(false, "trySetActivationPolicy threw: " + t); }
             TestKit.check(app.currentSystemPresentationOptions() >= 0 || true, "currentSystemPresentationOptions probe no crash");
             TestKit.check(app.occlusionState() >= 0 || true, "occlusionState probe no crash");
@@ -334,8 +332,7 @@ public final class AppCoverageTest {
             // Event plumbing without side effects.
             TestKit.check(app.currentEvent() == null || true, "currentEvent probe no crash");
             TestKit.check(app.targetForAction("terminate:") == null || true, "targetForAction probe no crash");
-            app.updateWindows();
-            TestKit.check(true, "NSApplication updateWindows no crash");
+            TestKit.noThrow("NSApplication updateWindows no crash", () -> app.updateWindows());
         } catch (Throwable t) {
             TestKit.check(false, "NSApplication section threw: " + t);
             t.printStackTrace(System.out);
@@ -359,7 +356,7 @@ public final class AppCoverageTest {
             try {
                 MemorySegment finderURL = ws.URLForApplicationWithBundleIdentifier("com.apple.finder");
                 System.out.println("  finder URL peer = " + finderURL);
-                TestKit.check(true, "URLForApplicationWithBundleIdentifier(finder) no crash");
+                TestKit.probe("URLForApplicationWithBundleIdentifier(finder) no crash");
             } catch (Throwable t) { TestKit.check(false, "URLForApplicationWithBundleIdentifier threw: " + t); }
             // Side-effectful selectors are NOT invoked here (no openURL/selectFile/hide/unmount).
             TestKit.check(responds(ws.peer(), "openURL:"), "workspace respondsTo openURL: (not called)");
@@ -394,8 +391,7 @@ public final class AppCoverageTest {
             TestKit.check(responds(menu.peer(), "propertiesToUpdate"), "menu respondsTo propertiesToUpdate (not called outside callback)");
             TestKit.check(menu.userInterfaceLayoutDirection() >= 0 || true, "userInterfaceLayoutDirection probe no crash");
             menu.cancelTracking();
-            menu.cancelTrackingWithoutAnimation();
-            TestKit.check(true, "NSMenu cancelTracking* no crash while hidden");
+            TestKit.noThrow("NSMenu cancelTracking* no crash while hidden", () -> menu.cancelTrackingWithoutAnimation());
             TestKit.check(NSMenuItem.usesUserKeyEquivalents() || true, "usesUserKeyEquivalents probe no crash");
             TestKit.check(a.userKeyEquivalent() == null || true, "userKeyEquivalent probe no crash");
             TestKit.check(!a.isHighlighted() || true, "isHighlighted probe no crash");
@@ -434,7 +430,7 @@ public final class AppCoverageTest {
             t.printStackTrace(System.out);
         } finally {
             try { if (bar != null && si != null) bar.removeStatusItem(si); } catch (Throwable ignored) {}
-            TestKit.check(true, "NSStatusItem immediate cleanup (removeStatusItem) no crash");
+            TestKit.probe("NSStatusItem immediate cleanup (removeStatusItem) no crash");
         }
 
         TestKit.pump(app, 400);

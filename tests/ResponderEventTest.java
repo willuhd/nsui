@@ -122,7 +122,7 @@ public final class ResponderEventTest {
             view.mouseDown(null);
             view.keyDown(null);
             view.flagsChanged(null);
-            check(true, "event pass-throughs (mouseDown/keyDown/flagsChanged with nil event) no-crash");
+            TestKit.probe("event pass-throughs (mouseDown/keyDown/flagsChanged with nil event) no-crash");
 
             view.setMouseListener(null);
             view.setKeyListener(null);
@@ -182,7 +182,7 @@ public final class ResponderEventTest {
             NSResponder fr = win.firstResponder();
             check(fr != null, "firstResponder non-null after makeFirstResponder");
             if (fr != null && fr.peer().address() == content.peer().address()) {
-                check(true, "makeFirstResponder(view) accepted (firstResponder == view)");
+                TestKit.probe("makeFirstResponder(view) accepted (firstResponder == view)");
             } else {
                 System.out.println("NOTE: firstResponder is not the view (window not shown/key yet): "
                         + (fr == null ? "null" : fr.toString()) + " — no-error assertion still holds");
@@ -208,8 +208,7 @@ public final class ResponderEventTest {
             check(combo == 643L, "tracking option bits compose to 643 (got " + combo + ")");
             NSView tracked = NSView.create(new NSRect(0, 0, 40, 40), (ctx, dirty) -> { });
             tracked.enableMouseTracking();
-            tracked.enableMouseTracking(); // dedup guard: second call is a no-op
-            check(true, "enableMouseTracking no-crash (called twice, idempotent)");
+            TestKit.noThrow("enableMouseTracking no-crash (called twice, idempotent)", () -> tracked.enableMouseTracking());
         } catch (Throwable t) {
             check(false, "enableMouseTracking section threw: " + t);
             t.printStackTrace(System.out);

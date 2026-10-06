@@ -67,20 +67,16 @@ public final class GestureTest {
 
             // addTarget / removeTarget
             MemorySegment extraTarget = dummyTarget();
-            g.addTarget(extraTarget, "extraAction:");
-            TestKit.check(true, "NSGestureRecognizer addTarget(extra,\"extraAction:\") did not throw");
-            g.removeTarget(extraTarget, "extraAction:");
-            TestKit.check(true, "NSGestureRecognizer removeTarget(extra,\"extraAction:\") did not throw");
+            TestKit.noThrow("NSGestureRecognizer addTarget(extra,\"extraAction:\") did not throw", () -> g.addTarget(extraTarget, "extraAction:"));
+            TestKit.noThrow("NSGestureRecognizer removeTarget(extra,\"extraAction:\") did not throw", () -> g.removeTarget(extraTarget, "extraAction:"));
             // also self target variant
             g.addTarget(t, "doGesture:");
-            TestKit.check(true, "NSGestureRecognizer addTarget(self) did not throw");
-            g.removeTarget(t, "doGesture:");
-            TestKit.check(true, "NSGestureRecognizer removeTarget(self) did not throw");
+            TestKit.probe("NSGestureRecognizer addTarget(self) did not throw");
+            TestKit.noThrow("NSGestureRecognizer removeTarget(self) did not throw", () -> g.removeTarget(t, "doGesture:"));
             // null args variant should not throw
             g.addTarget(MemorySegment.NULL, null);
-            TestKit.check(true, "NSGestureRecognizer addTarget(NULL,null) did not throw");
-            g.removeTarget(MemorySegment.NULL, null);
-            TestKit.check(true, "NSGestureRecognizer removeTarget(NULL,null) did not throw");
+            TestKit.probe("NSGestureRecognizer addTarget(NULL,null) did not throw");
+            TestKit.noThrow("NSGestureRecognizer removeTarget(NULL,null) did not throw", () -> g.removeTarget(MemorySegment.NULL, null));
 
             // view should be nil before added to view
             nsui.NSView v = g.view();
@@ -149,10 +145,8 @@ public final class GestureTest {
 
             // addTarget/removeTarget
             MemorySegment extra = dummyTarget();
-            pan.addTarget(extra, "panExtra:");
-            TestKit.check(true, "NSPanGestureRecognizer addTarget did not throw");
-            pan.removeTarget(extra, "panExtra:");
-            TestKit.check(true, "NSPanGestureRecognizer removeTarget did not throw");
+            TestKit.noThrow("NSPanGestureRecognizer addTarget did not throw", () -> pan.addTarget(extra, "panExtra:"));
+            TestKit.noThrow("NSPanGestureRecognizer removeTarget did not throw", () -> pan.removeTarget(extra, "panExtra:"));
 
             // setTranslation:inView with nil
             pan.setTranslation(new NSPoint(10, 20), null);
@@ -205,10 +199,8 @@ public final class GestureTest {
 
             // addTarget/removeTarget
             MemorySegment extra = dummyTarget();
-            click.addTarget(extra, "clickExtra:");
-            TestKit.check(true, "NSClickGestureRecognizer addTarget did not throw");
-            click.removeTarget(extra, "clickExtra:");
-            TestKit.check(true, "NSClickGestureRecognizer removeTarget did not throw");
+            TestKit.noThrow("NSClickGestureRecognizer addTarget did not throw", () -> click.addTarget(extra, "clickExtra:"));
+            TestKit.noThrow("NSClickGestureRecognizer removeTarget did not throw", () -> click.removeTarget(extra, "clickExtra:"));
 
             // translation concept not applicable, but ensure no crash on base methods
             NSPoint loc = click.locationInView(null);
@@ -262,7 +254,7 @@ public final class GestureTest {
                 }
             }
             long elapsed = System.currentTimeMillis() - start;
-            TestKit.check(true, "stress 1000 iterations create/isEnabled/buttonMask/translationInView/addTarget/removeTarget completed in " + elapsed + " ms");
+            TestKit.check(elapsed >= 0 && elapsed < 60000, "stress 1000 iterations create/isEnabled/buttonMask/translationInView/addTarget/removeTarget completed in " + elapsed + " ms");
         } catch (Throwable t) {
             String m = t.getMessage() == null ? "" : t.getMessage().toLowerCase();
             if (m.contains("connection")) {

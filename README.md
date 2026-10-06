@@ -14,7 +14,7 @@ NSUI talks directly to the ObjC runtime. Every AppKit call is an `objc_msgSend` 
 
 ```bash
 ./build.sh          # compiles to out/classes
-./tests.sh          # full suite (71 tests), exit 0 iff all pass
+./tests.sh          # full suite (72 tests), exit 0 iff all pass
 ./tests.sh Bench    # run only matching tests (substring filter)
 ```
 
@@ -23,7 +23,9 @@ windows, run-loop pump, nanoTime benchmark tripwires) — no JUnit, no JMH, by d
 Windows stay hidden unless a test proves it needs visibility; only NSEventTest and
 ButtonTest take key status. `tests/BenchTest.java` holds the hot-path benchmarks.
 `tests/SignatureConformanceTest.java` parses the wrapper sources and checks every declared
-`Sig` shape against the real runtime type encoding (`method_getTypeEncoding`).
+`Sig` shape against the real runtime type encoding (`method_getTypeEncoding`);
+`tests/AssertionQualityTest.java` fails if any always-true `check(true, ...)` reappears.
+`BenchTest` covers dispatch, marshalling, Foundation, controls/layers, upcall callbacks and Metal.
 
 If running on the JVM, these 2 flags are needed:
 

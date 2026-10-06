@@ -89,7 +89,7 @@ public final class ImageSliderTest {
         imageView.setImageFrameStyle(0L);
         view.addSubview(imageView);             // view IS the content view (setContentView above)
         TestKit.pump(app);
-        TestKit.check(true, "NSImageView created + setImage + setImageScaling(3) without crash");
+        TestKit.probe("NSImageView created + setImage + setImageScaling(3) without crash");
 
         // ------------------------------------------------------------ NSSlider
         NSSlider slider = NSSlider.create(new NSRect(10, 165, 200, 20));
@@ -104,7 +104,7 @@ public final class ImageSliderTest {
         TestKit.check(!slider.isEnabled(), "NSSlider.isEnabled() == false after setEnabled(false)");
         view.addSubview(slider);
         TestKit.pump(app);
-        TestKit.check(true, "NSSlider configured + added without crash");
+        TestKit.probe("NSSlider configured + added without crash");
 
         // ------------------------------------------------------------ NSProgressIndicator
         NSProgressIndicator pi = NSProgressIndicator.create(new NSRect(10, 140, 200, 18));
@@ -115,11 +115,10 @@ public final class ImageSliderTest {
         pi.setDoubleValue(0.5);
         pi.setStyle(0L);          // NSProgressIndicatorBarStyle
         pi.startAnimation();
-        pi.stopAnimation();
-        TestKit.check(true, "NSProgressIndicator range set + startAnimation/stopAnimation without crash");
+        TestKit.noThrow("NSProgressIndicator range set + startAnimation/stopAnimation without crash", () -> pi.stopAnimation());
         view.addSubview(pi);
         TestKit.pump(app);
-        TestKit.check(true, "NSProgressIndicator added to view without crash");
+        TestKit.probe("NSProgressIndicator added to view without crash");
 
         TestKit.close(window);
         System.out.println(TestKit.failures() == 0 ? "RESULT: ALL PASS" : "RESULT: " + TestKit.failures() + " FAILURE(S)");

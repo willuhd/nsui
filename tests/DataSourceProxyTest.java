@@ -187,7 +187,7 @@ public final class DataSourceProxyTest {
             int pulled = cellCalls[0] - before;
             System.out.println("REAL-WINDOW DISPLAY: data-source cell callbacks during display pass = " + pulled);
             if (pulled > 0) {
-                TestKit.check(true, "NSTableView display pass pulled " + pulled + " cell value(s) through the live dataSource");
+                TestKit.probe("NSTableView display pass pulled " + pulled + " cell value(s) through the live dataSource");
             } else {
                 System.out.println("NOTE: no cell callbacks during display pass (headless window server) — direct-send proof still holds");
             }

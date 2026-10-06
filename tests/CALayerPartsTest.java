@@ -45,8 +45,7 @@ public final class CALayerPartsTest {
 
         try {
             CAScrollLayer sl = CAScrollLayer.create();
-            sl.scrollToPoint(new NSPoint(10, 20));
-            TestKit.check(true, "scrollToPoint no-crash");
+            TestKit.noThrow("scrollToPoint no-crash", () -> sl.scrollToPoint(new NSPoint(10, 20)));
             sl.setScrollMode("none");
             TestKit.check("none".equals(sl.scrollMode()), "scrollMode round-trip");
         } catch (Throwable t) {
@@ -138,8 +137,7 @@ public final class CALayerPartsTest {
             TestKit.check(dl.isPaused(), "display link paused round-trip");
             dl.setPreferredFramesPerSecond(30);
             TestKit.check(dl.preferredFramesPerSecond() == 30, "display link fps round-trip");
-            dl.invalidate();
-            TestKit.check(true, "display link invalidate no-crash");
+            TestKit.noThrow("display link invalidate no-crash", () -> dl.invalidate());
         } catch (Throwable t) {
             TestKit.check(false, "displaylink section threw: " + t);
         }

@@ -214,7 +214,7 @@ public class NSControl extends NSView {
     /// setTarget: — the object that receives the action message.
     public void setTarget(MemorySegment target) {
         ensureInit();
-        ObjC.msgSendVoidId(peer, Sels.setTarget, target);
+        ObjC.msgSendVoidId(peer, Sels.setTarget, (MemorySegment) (target == null ? MemorySegment.NULL : target));
     }
 
     /// [control target] — the action target (id).

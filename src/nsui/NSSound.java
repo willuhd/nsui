@@ -43,9 +43,9 @@ public final class NSSound extends NSObject {
         return ObjC.msgSendBool(peer, ObjC.sel("resume"));
     }
 
-    /// stop.
-    public void stop() {
-        ObjC.msgSendVoid(peer, ObjC.sel("stop"));
+    /// stop -- returns the native BOOL (whether playback stopped).
+    public boolean stop() {
+        return ObjC.msgSendBool(peer, ObjC.sel("stop"));
     }
 
     /// isPlaying.

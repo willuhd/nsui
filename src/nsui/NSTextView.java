@@ -134,10 +134,9 @@ public class NSTextView extends NSText {
         return NSAttributedString.wrap(ObjC.msgSendId(peer, ObjC.sel("attributedString")));
     }
     public void setAttributedStringValue(NSAttributedString value) {
-        // NSTextView uses setAttributedString:; also support attributedStringValue for control-like usage
-        // Try attributedString first, fallback to setAttributedStringValue if available
-        MemorySegment sel = ObjC.sel("setAttributedString:");
-        ObjC.msgSendVoidId(peer, sel, (MemorySegment) (value == null ? MemorySegment.NULL : value.peer()));
+        // NSTextView implements neither setAttributedStringValue: nor setAttributedString:
+        // (verified against the runtime) — both route through its textStorage.
+        setAttributedString(value);
     }
 
     /// [textView textStorage] -> NSTextStorage (NSMutableAttributedString)

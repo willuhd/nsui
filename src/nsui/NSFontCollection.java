@@ -13,7 +13,7 @@ import static nsui.objc.Sig.Ret;
 /// mutate the Font Book library and take NSError** — omitted deliberately.)
 public final class NSFontCollection extends NSObject {
 
-    private record Handles(MethodHandle hWithDescriptors, MethodHandle hMatching) {}
+    private record Handles(MethodHandle hWithDescriptors, MethodHandle hMatching, MethodHandle hMatchingName) {}
     private static volatile Handles handles;
 
     private NSFontCollection(MemorySegment peer) {
@@ -30,7 +30,8 @@ public final class NSFontCollection extends NSObject {
         if (handles != null) return;
         handles = new Handles(
                 ObjC.handle(Sig.of(Ret.ID, Arg.ID)),
-                ObjC.handle(Sig.of(Ret.ID, Arg.ID, Arg.ID)));
+                ObjC.handle(Sig.of(Ret.ID, Arg.ID, Arg.ID)),
+                ObjC.handle(Sig.of(Ret.ID, Arg.ID, Arg.INT)));
     }
 
     /// fontCollectionWithDescriptors: — query by descriptor array.
@@ -45,15 +46,12 @@ public final class NSFontCollection extends NSObject {
         }
     }
 
-    /// fontCollectionWithName:visibility: — a named library collection.
-    // NOTE: the true shape (NSString*,NSUInteger)->id, i.e. ID(ID,INT), has no vocabulary
-    // entry (grep MISS in Sig.java) and Sig.java is not in this batch, so this call cannot
-    // succeed until the vocabulary gains that shape — reported to parent. Prefer
-    // withDescriptors/withName(String) for now.
+    /// fontCollectionWithName:visibility: — a named library collection
+    /// (NSString*, NSUInteger) -> id, previously routed through the ID(ID,ID) handle.
     public static NSFontCollection withName(String name, long visibility) {
         ensureInit();
         try {
-            return wrap((MemorySegment) handles.hMatching().invokeExact(
+            return wrap((MemorySegment) handles.hMatchingName().invokeExact(
                     ObjC.cls("NSFontCollection"), ObjC.sel("fontCollectionWithName:visibility:"),
                     ObjC.nsstring(name), visibility));
         } catch (Throwable t) {

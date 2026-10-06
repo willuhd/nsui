@@ -123,9 +123,6 @@ public class NSLayoutConstraint extends NSObject {
     /// constant — the constant component.
     public double constant() {
         ensureInit();
-        if (hConstant == null) {
-            return ObjC.msgSendId(peer, ObjC.sel("constant")).address(); // fallback should not happen
-        }
         try {
             return (double) hConstant.invokeExact(peer, ObjC.sel("constant"));
         } catch (Throwable t) {
@@ -165,13 +162,7 @@ public class NSLayoutConstraint extends NSObject {
             MethodHandle h = ObjC.handle(Sig.of(Ret.FLOAT));
             return (float) h.invokeExact(peer, ObjC.sel("priority"));
         } catch (Throwable t) {
-            // fallback via double
-            try {
-                MethodHandle hd = ObjC.handle(Sig.of(Ret.DOUBLE));
-                return (float) (double) hd.invokeExact(peer, ObjC.sel("priority"));
-            } catch (Throwable t2) {
-                throw new RuntimeException("priority failed", t2);
-            }
+            throw new RuntimeException("priority failed", t);
         }
     }
 
@@ -180,13 +171,7 @@ public class NSLayoutConstraint extends NSObject {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.FLOAT));
             h.invokeExact(peer, ObjC.sel("setPriority:"), p);
         } catch (Throwable t) {
-            // fallback double
-            try {
-                MethodHandle hd = ObjC.handle(Sig.of(Ret.VOID, Arg.DOUBLE));
-                hd.invokeExact(peer, ObjC.sel("setPriority:"), (double) p);
-            } catch (Throwable t2) {
-                throw new RuntimeException("setPriority: failed", t2);
-            }
+            throw new RuntimeException("setPriority: failed", t);
         }
     }
 

@@ -227,8 +227,9 @@ public final class EventCoverageTest {
         TestKit.check(ev.windowNumber() >= 0, "synthetic windowNumber() >= 0");
         TestKit.check(ev.subtype() >= 0, "synthetic subtype() readable");
         TestKit.check(ev.eventNumber() >= 0, "synthetic eventNumber() readable");
-        // pressure() is valid on mouse events, but the native float return is
-        // read through the DOUBLE handle (pre-existing), so no-throw only.
+        // pressure() is a float in AppKit and is now read through the FLOAT handle; its
+        // exact value is event-dependent, so this stays a no-throw probe. The declared-vs-real
+        // shape is pinned by SignatureConformanceTest.
         noThrow("synthetic pressure() no-throw", ev::pressure);
         noThrow("synthetic delta/hasPrecise/momentum no-throw", () -> {
             ev.deltaX();

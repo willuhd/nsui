@@ -544,6 +544,11 @@ public final class ControlsCoverageTest {
             sl.setMaxValue(100.0);
             sl.setDoubleValue(42.0);
             TestKit.check(Math.abs(sl.doubleValue() - 42.0) < 0.01, "NSSlider doubleValue round-trip 42.0");
+            // floatValue is a float in AppKit; the old DOUBLE handle read the wrong register.
+            sl.setFloatValue(1.5f);
+            TestKit.check(Math.abs(sl.floatValue() - 1.5f) < 1e-6f,
+                    "NSControl floatValue 1.5 round-trip (got " + sl.floatValue() + ")");
+            sl.setDoubleValue(42.0);
             // neutralValue (guard: 26.0+; DOUBLE shapes in vocabulary)
             if (responds(sl.peer(), "neutralValue")) {
                 sl.setNeutralValue(10.0);

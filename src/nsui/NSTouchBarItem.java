@@ -13,12 +13,12 @@ import static nsui.objc.Sig.Ret;
 /// SDK: $(xcrun --show-sdk-path)/System/Library/Frameworks/AppKit.framework/Headers/NSTouchBarItem.h
 /// Coverage: COMPLETE after this batch — identifier/visibilityPriority/view/viewController/
 /// customizationLabel/visible plus the four NSTouchBarItemIdentifier* extern constants below.
-/// All shapes are the registered (ID ())/(VOID,ID)/(INT ())/(VOID,INT)/(BOOL ())/(VOID,BOOL) family
+/// All shapes are the registered (ID ())/(VOID,ID)/(FLOAT ())/(VOID,FLOAT)/(BOOL ())/(VOID,BOOL) family
 /// (grep Sig.java per shape). OMITTED: -initWithCoder: (NSCoding archiving, out of scope for a
 /// stateless wrapper); -init is NS_UNAVAILABLE by design (use create(identifier)).
 public class NSTouchBarItem extends NSObject {
 
-            private record Handles(MethodHandle hInitId, MethodHandle hId, MethodHandle hVoidId, MethodHandle hBool, MethodHandle hVoidBool) {}
+            private record Handles(MethodHandle hInitId, MethodHandle hId, MethodHandle hVoidId, MethodHandle hBool, MethodHandle hVoidBool, MethodHandle hFloat, MethodHandle hSetFloat) {}
     private static volatile Handles handles;
 
     protected NSTouchBarItem(MemorySegment peer) {
@@ -37,7 +37,9 @@ public class NSTouchBarItem extends NSObject {
                 ObjC.handle(Sig.of(Ret.ID)),
                 ObjC.handle(Sig.of(Ret.VOID, Arg.ID)),
                 ObjC.handle(Sig.of(Ret.BOOL)),
-                ObjC.handle(Sig.of(Ret.VOID, Arg.BOOL))
+                ObjC.handle(Sig.of(Ret.VOID, Arg.BOOL)),
+                ObjC.handle(Sig.of(Ret.FLOAT)),
+                ObjC.handle(Sig.of(Ret.VOID, Arg.FLOAT))
         );
     }
 
@@ -65,13 +67,18 @@ public class NSTouchBarItem extends NSObject {
         }
     }
 
-    /// visibilityPriority — long.
-    public long visibilityPriority() {
-        return ObjC.msgSendLong(peer, ObjC.sel("visibilityPriority"));
+    /// visibilityPriority — `NSTouchBarItem.Priority` is a **float** in AppKit; the
+    /// old long read/write hit the integer register and returned garbage.
+    public float visibilityPriority() {
+        ensureInit();
+        try { return (float) handles.hFloat().invokeExact(peer, ObjC.sel("visibilityPriority")); }
+        catch (Throwable t) { throw new RuntimeException("visibilityPriority failed", t); }
     }
 
-    public void setVisibilityPriority(long p) {
-        ObjC.msgSendVoidLong(peer, ObjC.sel("setVisibilityPriority:"), p);
+    public void setVisibilityPriority(float p) {
+        ensureInit();
+        try { handles.hSetFloat().invokeExact(peer, ObjC.sel("setVisibilityPriority:"), p); }
+        catch (Throwable t) { throw new RuntimeException("setVisibilityPriority: failed", t); }
     }
 
     /// isVisible — guarded; returns false if selector absent (not all items expose it).

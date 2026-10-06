@@ -12,7 +12,7 @@ import static nsui.objc.Sig.Ret;
 /// pixel format, pull drawables per frame. Lives in QuartzCore (loaded here).
 public class CAMetalLayer extends CALayer {
 
-    private record Handles(MethodHandle hGetSize) {}
+    private record Handles(MethodHandle hGetSize, MethodHandle hSetSize) {}
     private static volatile Handles handles;
 
     protected CAMetalLayer(MemorySegment peer) {
@@ -28,7 +28,7 @@ public class CAMetalLayer extends CALayer {
     private static synchronized void ensureInit() {
         if (handles != null) return;
         try { ObjC.ensureFramework("QuartzCore"); } catch (Throwable ignored) {}
-        handles = new Handles(ObjC.handle(Sig.of(Ret.SIZE)));
+        handles = new Handles(ObjC.handle(Sig.of(Ret.SIZE)), ObjC.handle(Sig.of(Ret.VOID, Arg.SIZE)));
     }
 
     /// [[CAMetalLayer alloc] init].
@@ -57,9 +57,14 @@ public class CAMetalLayer extends CALayer {
         ObjC.msgSendVoidBool(peer, ObjC.sel("setFramebufferOnly:"), flag);
     }
 
-    /// setDrawableSize:.
+    /// setDrawableSize: — `CGSize` is passed **by value** (`v32@0:8{CGSize=dd}16`).
+    /// Sending the NSSize as an object pointer left the SIMD registers untouched, so
+    /// the layer kept a garbage drawable size.
     public void setDrawableSize(NSSize size) {
-        ObjC.msgSendVoidId(peer, ObjC.sel("setDrawableSize:"), size.toSegment());
+        ensureInit();
+        try {
+            handles.hSetSize().invokeExact(peer, ObjC.sel("setDrawableSize:"), size.toSegment());
+        } catch (Throwable t) { throw new RuntimeException("setDrawableSize: failed", t); }
     }
 
     /// drawableSize.

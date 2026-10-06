@@ -235,6 +235,12 @@ public final class Sig {
         of(Ret.VOID, Arg.ID, Arg.RECT),                     // NSWorkspace iconForFileType etc alt
         of(Ret.BOOL, Arg.ID, Arg.BOOL),                     // NSWorkspace openURL with flag variant
         of(Ret.ID, Arg.RECT, Arg.INT),                      // NSGridView helper (rect,int)->id
-        of(Ret.VOID, Arg.SIZE, Arg.BOOL)                    // NSAnimationContext / shadow helper
+        of(Ret.VOID, Arg.SIZE, Arg.BOOL),                   // NSAnimationContext / shadow helper
+        // --- ABI gaps surfaced by the type-encoding conformance test ---
+        of(Ret.ID, Arg.BOOL),                                // NSFontManager fontPanel:
+        of(Ret.ID, Arg.ID, Arg.INT),                         // convertFont:toHaveTrait: / MPS initWithDevice:kernelDiameter:
+        of(Ret.ID, Arg.ID, Arg.INT, Arg.INT, Arg.DOUBLE),    // fontWithFamily:traits:weight:size:
+        of(Ret.RECT, Arg.ID),                                // NSLayoutManager usedRectForTextContainer:
+        of(Ret.VOID, Arg.INT, Arg.RANGE, Arg.INT)            // NSTextStorage edited:range:changeInLength:
     );
 }

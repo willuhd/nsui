@@ -68,16 +68,17 @@ public final class TouchBarWindowDocTest {
             String gotId = item.identifier();
             check(iid.equals(gotId), "NSTouchBarItem identifier round-trip (got \"" + gotId + "\")");
 
-            // visibilityPriority round-trip: just verify setter doesn't crash and getter returns consistent value
+            // visibilityPriority is a float (NSTouchBarItem.Priority) — assert a real round-trip.
             try {
-                item.setVisibilityPriority(1);
-                long vp = item.visibilityPriority();
-                check(true, "NSTouchBarItem setVisibilityPriority/getVisibilityPriority no crash (got " + vp + ")");
-                // try round-trip second value
-                item.setVisibilityPriority(0);
-                long vp2 = item.visibilityPriority();
-                check(true, "NSTouchBarItem visibilityPriority second set/get no crash (got " + vp2 + ")");
+                item.setVisibilityPriority(1.5f);
+                float vp = item.visibilityPriority();
+                check(Math.abs(vp - 1.5f) < 1e-6f, "NSTouchBarItem visibilityPriority round-trip 1.5 (got " + vp + ")");
+                item.setVisibilityPriority(0f);
+                float vp2 = item.visibilityPriority();
+                check(Math.abs(vp2) < 1e-6f, "NSTouchBarItem visibilityPriority reset to 0 (got " + vp2 + ")");
                 item.setVisibilityPriority(vp);
+                check(Math.abs(item.visibilityPriority() - vp) < 1e-6f,
+                        "NSTouchBarItem visibilityPriority restored (got " + item.visibilityPriority() + ")");
             } catch (Throwable t) { check(false, "NSTouchBarItem visibilityPriority threw: " + t); }
 
             // visible toggle — guarded, may be no-op if selector absent

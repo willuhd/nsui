@@ -260,10 +260,10 @@ public final class FullCoverageTest {
             check(fm.convertFontToSize(f,14)!=null, "convertToSize");
             check(fm.traitsOfFont(f)>=0, "traitsOfFont");
             check(fm.weightOfFont(f)>=0, "weightOfFont");
-            try { check(fm.fontWithFamilyTraitsWeightSize("Helvetica",0,5,12)!=null, "fontWithFamily"); } catch (Throwable tt) { String all = (String.valueOf(tt) + " " + String.valueOf(tt.getCause())).toLowerCase(); if (all.contains("vocabulary")) check(true, "SKIP fontWithFamilyTraitsWeightSize (vocab missing): "+tt.getMessage()); else check(false, "fontWithFamily threw: "+tt); }
+            check(fm.fontWithFamilyTraitsWeightSize("Helvetica",0,5,12)!=null, "fontWithFamily:traits:weight:size: resolves Helvetica");
             check(fm.availableFonts().address()!=0, "availableFonts");
             check(fm.availableFontFamilies().address()!=0, "availableFamilies");
-            try { check(fm.fontPanel(true)!=null || true, "fontPanel"); } catch (Throwable tt) { String all = (String.valueOf(tt) + " " + String.valueOf(tt.getCause())).toLowerCase(); if (all.contains("vocabulary")) check(true, "SKIP fontPanel (vocab missing): "+tt.getMessage()); else check(false, "fontPanel threw: "+tt); }
+            check(fm.fontPanel(true)!=null, "fontPanel(true) non-nil");
             try { fm.setEnabled(true); check(fm.isEnabled(), "isEnabled"); } catch (Throwable tt) { check(true, "SKIP setEnabled: "+tt.getMessage()); }
         } catch (Throwable t) {
             String all = (String.valueOf(t) + " " + String.valueOf(t.getCause())).toLowerCase();

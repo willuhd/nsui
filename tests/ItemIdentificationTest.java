@@ -78,7 +78,7 @@ public final class ItemIdentificationTest {
             }
         }
         if (stressOk) {
-            TestKit.check(true, "stress 200 iterations identifier round-trip no crash");
+            TestKit.probe("stress 200 iterations identifier round-trip no crash");
         }
 
         System.out.println(TestKit.failures() == 0 ? "RESULT: ALL PASS" : "RESULT: " + TestKit.failures() + " FAILURE(S)");

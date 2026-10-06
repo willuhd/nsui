@@ -101,7 +101,7 @@ public final class ScreenPanelTest {
 
                 // worksWhenModal — inherited accessor must respond without crashing (default false)
                 boolean works = panel.worksWhenModal();
-                check(true, "worksWhenModal accessor no crash (got " + works + ")");
+                TestKit.probe("worksWhenModal accessor no crash (got " + works + ")");
             }
 
             check(NSPanel.wrap(null) == null && NSPanel.wrap(MemorySegment.NULL) == null,

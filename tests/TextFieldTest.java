@@ -61,7 +61,7 @@ public final class TextFieldTest {
             if (!"hello NSUI3".equals(value)) TestKit.pump(app, 100);
         }
         if ("hello NSUI3".equals(value)) {
-            TestKit.check(true, "in-window stringValue settled to \"hello NSUI3\"");
+            TestKit.probe("in-window stringValue settled to \"hello NSUI3\"");
         } else {
             System.out.println("NOTE: in-window stringValue never settled (got \"" + value
                     + "\") — AppKit cell timing race; wrapper round-trip already proven pre-window.");

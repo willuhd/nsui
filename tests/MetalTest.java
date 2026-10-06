@@ -56,7 +56,7 @@ public final class MetalTest {
             TestKit.skip("no Metal GPU on this machine");
             return;
         }
-        TestKit.check(true, "system default GPU resolves");
+        TestKit.probe("system default GPU resolves");
 
         MTLCommandQueue queue;
         MTLLibrary library;

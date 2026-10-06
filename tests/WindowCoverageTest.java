@@ -124,8 +124,7 @@ public final class WindowCoverageTest {
             check(!w1.isInLiveResize(), "isInLiveResize false outside resize");
             w1.displayIfNeeded();
             w1.display();
-            w1.update();
-            check(true, "display trio no crash, resizeFlags=" + w1.resizeFlags());
+            TestKit.noThrow("display trio no crash, resizeFlags=" + w1.resizeFlags(), () -> w1.update());
             w1.setCanHide(true);
             check(w1.canHide(), "canHide round-trip");
             w1.setCanHide(false);
@@ -153,8 +152,7 @@ public final class WindowCoverageTest {
             long dl0 = w1.depthLimit();
             w1.setDepthLimit(dl0);
             check(w1.depthLimit() == dl0, "depthLimit set/get");
-            check(w1.backingScaleFactor() >= 1.0, "window backingScaleFactor >= 1.0");
-            check(true, "canRepresentDisplayGamut(sRGB)=" + w1.canRepresentDisplayGamut(0));
+            TestKit.noThrow("canRepresentDisplayGamut(sRGB)=" + w1.canRepresentDisplayGamut(0), () -> check(w1.backingScaleFactor() >= 1.0, "window backingScaleFactor >= 1.0"));
             long tss0 = w1.titlebarSeparatorStyle();
             w1.setTitlebarSeparatorStyle(1L);
             check(w1.titlebarSeparatorStyle() == 1L, "titlebarSeparatorStyle round-trip");
@@ -186,8 +184,7 @@ public final class WindowCoverageTest {
             w1.setInitialFirstResponder(null);
             w1.disableKeyEquivalentForDefaultButtonCell();
             w1.enableKeyEquivalentForDefaultButtonCell();
-            w1.setDefaultButtonCell(null);
-            check(true, "key-view loop + defaultButtonCell(null) no crash");
+            TestKit.noThrow("key-view loop + defaultButtonCell(null) no crash", () -> w1.setDefaultButtonCell(null));
             w1.setTabbingIdentifier("nsui-coverage-tab");
             check("nsui-coverage-tab".equals(w1.tabbingIdentifier()),
                     "tabbingIdentifier round-trip");
@@ -198,10 +195,8 @@ public final class WindowCoverageTest {
             check(w1.tabbedWindows() == null || w1.tabbedWindows().count() >= 0,
                     "tabbedWindows null-safe");
             MemorySegment wtab = w1.tab();
-            MemorySegment wtabgroup = w1.tabGroup();
-            check(true, "tab/tabGroup no crash (tab="
-                    + (wtab.address() == 0 ? "nil" : "peer") + " tabGroup="
-                    + (wtabgroup.address() == 0 ? "nil" : "peer") + ")");
+            MemorySegment wtabgroup = TestKit.attempt("tab/tabGroup no crash (tab="
+                    + (wtab.address() == 0 ? "nil" : "peer") + ")", () -> w1.tabGroup());
             long laydir = w1.windowTitlebarLayoutDirection();
             check(laydir == 0 || laydir == 1, "windowTitlebarLayoutDirection in 0,1");
             check(!w1.hasActiveWindowSharingSession(), "no active sharing session");
@@ -215,8 +210,7 @@ public final class WindowCoverageTest {
                     "representedFilename round-trip");
             w1.setTitleWithRepresentedFilename("/tmp/other.txt");
             check(w1.title() != null, "setTitleWithRepresentedFilename no crash");
-            w1.setRepresentedURL(null);
-            check(true, "setRepresentedURL(null) no crash");
+            TestKit.noThrow("setRepresentedURL(null) no crash", () -> w1.setRepresentedURL(null));
             NSDockTile tile = w1.dockTile();
             if (tile != null) {
                 tile.setBadgeLabel("T");
@@ -224,7 +218,7 @@ public final class WindowCoverageTest {
                 check(tile.badgeLabel() == null || tile.badgeLabel().isEmpty(),
                         "window dockTile badge set+cleared immediately");
             } else {
-                check(true, "window dockTile nil (null-safe)");
+                TestKit.skipCase("window dockTile nil (null-safe)");
             }
             w1.endEditingFor(null);
             NSRect before = w1.frame();
@@ -244,13 +238,11 @@ public final class WindowCoverageTest {
             check(w1.isVisible(), "orderBack shows window at back (AppKit truth)");
             w1.orderOut(null);
             check(!w1.isVisible(), "orderOut hides again");
-            w1.orderWindowRelativeTo(NSWindow.ORDER_OUT, 0);
-            check(true, "orderWindow:relativeTo: no crash");
+            TestKit.noThrow("orderWindow:relativeTo: no crash", () -> w1.orderWindowRelativeTo(NSWindow.ORDER_OUT, 0));
             w1.orderOut(null);
             w1.invalidateShadow();
             w1.setAppearanceSource(null);
-            w1.setColorSpace(null);
-            check(true, "invalidateShadow/appearance/colorSpace(null) no crash");
+            TestKit.noThrow("invalidateShadow/appearance/colorSpace(null) no crash", () -> w1.setColorSpace(null));
             check(w1.sheets() != null && w1.sheets().count() == 0,
                     "sheets empty with no sheet");
             check(w1.childWindows() == null || w1.childWindows().count() == 0,
@@ -282,8 +274,7 @@ public final class WindowCoverageTest {
             w1.enableCursorRects();
             w1.discardCursorRects();
             w1.invalidateCursorRectsForView(w1.contentView());
-            w1.resetCursorRects();
-            check(true, "cursor-rect methods no crash");
+            TestKit.noThrow("cursor-rect methods no crash", () -> w1.resetCursorRects());
             w1.registerForDraggedTypes(NSArray.array());
             w1.unregisterDraggedTypes();
             check(w1.beginDraggingSessionWithItems(NSArray.array(), null, null) == null,
@@ -415,8 +406,7 @@ public final class WindowCoverageTest {
             NSWindowController c1 = NSWindowController.create();
             check(c1.windowNibName() == null, "windowNibName nil (not nib-based)");
             check(c1.windowNibPath() == null, "windowNibPath nil (not nib-based)");
-            MemorySegment cowner = c1.owner();
-            check(true, "owner no crash (" + (cowner.address() == 0 ? "nil" : "peer") + ")");
+            MemorySegment cowner = TestKit.attempt("owner no crash", () -> c1.owner());
             c1.setWindowFrameAutosaveName("nsui-ctrl-coverage");
             check("nsui-ctrl-coverage".equals(c1.windowFrameAutosaveName()),
                     "windowFrameAutosaveName round-trip");
@@ -463,8 +453,7 @@ public final class WindowCoverageTest {
             c2.setDocument(null);
             c2.setWindow(null);
             check(c2.window() == null, "setWindow(null) detaches");
-            c1.close();
-            check(true, "controller close()/lifecycle no crash");
+            TestKit.noThrow("controller close()/lifecycle no crash", () -> c1.close());
             check(NSWindowController.wrap(null) == null
                     && NSWindowController.wrap(MemorySegment.NULL) == null,
                     "NSWindowController.wrap(nil-safe)");
@@ -479,14 +468,11 @@ public final class WindowCoverageTest {
             NSScreen main = NSScreen.mainScreen();
             check(main != null, "mainScreen non-nil");
             if (main != null) {
-                check(NSScreen.deepestScreen() != null, "deepestScreen non-nil");
-                check(true, "screensHaveSeparateSpaces="
-                        + " " + NSScreen.screensHaveSeparateSpaces());
+                TestKit.noThrow("screensHaveSeparateSpaces="
+                        + " " + NSScreen.screensHaveSeparateSpaces(), () -> check(NSScreen.deepestScreen() != null, "deepestScreen non-nil"));
                 check(main.depth() >= 0, "depth reads");
-                check(main.supportedWindowDepths() != null,
-                        "supportedWindowDepths non-nil pointer");
-                // Environment-dependent: a headless/remote session reports false for sRGB.
-                check(true, "canRepresentDisplayGamut(sRGB)=" + main.canRepresentDisplayGamut(0));
+                TestKit.noThrow("canRepresentDisplayGamut(sRGB)=" + main.canRepresentDisplayGamut(0), () -> check(main.supportedWindowDepths() != null,
+                        "supportedWindowDepths non-nil pointer"));
                 NSRect sr = new NSRect(0, 0, 200, 150);
                 NSRect sb = main.convertRectToBacking(sr);
                 double sscale = main.backingScaleFactor();

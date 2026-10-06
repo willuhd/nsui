@@ -94,9 +94,8 @@ public final class TouchBarMenuTest {
 
             // view null no crash
             item.setView(null);
-            check(true, "NSTouchBarItem setView(null) no crash");
-            item.view();
-            check(true, "NSTouchBarItem view() no crash");
+            TestKit.probe("NSTouchBarItem setView(null) no crash");
+            TestKit.noThrow("NSTouchBarItem view() no crash", () -> item.view());
         } catch (Throwable t) {
             check(false, "NSTouchBarItem section threw: " + t);
             t.printStackTrace(System.out);
@@ -121,9 +120,7 @@ public final class TouchBarMenuTest {
 
             // setView null clears
             custom.setView((NSView) null);
-            NSView cleared = custom.view();
-            // view may be null or non-nil depending on implementation, but no crash is pass; check that null set didn't throw
-            check(true, "NSCustomTouchBarItem setView(null) no crash (view after=" + (cleared==null?"null":Long.toHexString(cleared.peer().address())) + ")");
+            NSView cleared = TestKit.attempt("NSCustomTouchBarItem setView(null) no crash", () -> custom.view());
 
             // re-set for later delegate test
             custom.setView(btn);
@@ -134,7 +131,7 @@ public final class TouchBarMenuTest {
             String cl = custom.customizationLabel();
             // may be null if not set via customizationLabel path, but check no crash and if present equals
             if (cl != null) check("MyLabel".equals(cl), "NSCustomTouchBarItem customizationLabel round-trip (got \"" + cl + "\")");
-            else check(true, "NSCustomTouchBarItem customizationLabel accessor no crash (got null)");
+            else TestKit.probe("NSCustomTouchBarItem customizationLabel accessor no crash (got null)");
         } catch (Throwable t) {
             check(false, "NSCustomTouchBarItem section threw: " + t);
             t.printStackTrace(System.out);
@@ -228,7 +225,7 @@ public final class TouchBarMenuTest {
             try {
                 MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.ID, Arg.ID));
                 MemorySegment nilResult = (MemorySegment) h.invokeExact(delegate, ObjC.sel("touchBar:makeItemForIdentifier:"), bar.peer(), MemorySegment.NULL);
-                check(true, "touchBar:makeItemForIdentifier: with NULL identifier no crash (result=" + (nilResult==null?"null":Long.toHexString(nilResult.address())) + ")");
+                TestKit.probe("touchBar:makeItemForIdentifier: with NULL identifier no crash (result=" + (nilResult==null?"null":Long.toHexString(nilResult.address())) + ")");
             } catch (Throwable t) {
                 check(false, "touchBar:makeItemForIdentifier: NULL identifier threw: " + t);
             }
@@ -271,9 +268,9 @@ public final class TouchBarMenuTest {
             try {
                 // centersPlaceholder may be true or false depending on OS, but setter should not crash
                 boolean cp = field.centersPlaceholder();
-                check(true, "gallery field centersPlaceholder accessor no crash (got " + cp + ")");
+                TestKit.probe("gallery field centersPlaceholder accessor no crash (got " + cp + ")");
                 // if setter succeeded, it should be true; if not, still pass as OS version may not support
-                if (cp) check(true, "gallery field centersPlaceholder true (set succeeded)");
+                if (cp) TestKit.check(cp, "gallery field centersPlaceholder true (set succeeded)");
             } catch (Throwable t) { check(false, "centersPlaceholder threw: " + t); }
 
             // convenience addGallerySearchFieldItem at end
@@ -368,7 +365,7 @@ public final class TouchBarMenuTest {
             } catch (Throwable t) {
                 String msg = String.valueOf(t.getMessage()).toLowerCase();
                 if (msg.contains("main thread")) {
-                    check(true, "SKIP NSStatusItem not on main thread (needs -XstartOnFirstThread): " + t.getMessage());
+                    TestKit.skipCase("SKIP NSStatusItem not on main thread (needs -XstartOnFirstThread): " + t.getMessage());
                     System.out.println(TestKit.failures() == 0 ? "RESULT: ALL PASS (" + asserts + " assertions)" : "RESULT: " + TestKit.failures() + " of " + asserts + " assertions FAILED");
                     TestKit.end();
                     return;
@@ -379,20 +376,18 @@ public final class TouchBarMenuTest {
             NSButton btn = item.button();
             // button may be nil before runloop, but setSFSymbol should not crash either way
             if (btn == null) {
-                check(true, "statusItem button may be nil before runloop — testing setSFSymbol no crash path");
+                TestKit.skipCase("statusItem button may be nil before runloop — testing setSFSymbol no crash path");
                 try {
-                    item.setSFSymbol("magnifyingglass");
-                    check(true, "NSStatusItem setSFSymbol magnifyingglass no crash (button nil case)");
+                    TestKit.noThrow("NSStatusItem setSFSymbol magnifyingglass no crash (button nil case)", () -> item.setSFSymbol("magnifyingglass"));
                 } catch (Throwable t) { check(false, "setSFSymbol threw with nil button: " + t); }
                 try {
-                    NSImage img = item.setSFSymbolAndGet("star.fill");
-                    check(true, "setSFSymbolAndGet star.fill no crash (img=" + img + ")");
+                    NSImage img = TestKit.attempt("setSFSymbolAndGet star.fill no crash", () -> item.setSFSymbolAndGet("star.fill"));
                     if (img != null) {
                         check(img.isValid(), "SF Symbol star.fill image isValid true");
                     } else {
                         // If symbol not found, imageNamed fallback may also be null — check that we didn't throw and that null is handled
                         System.out.println("  NOTE: star.fill symbol returned null (fallback also null) — no crash is pass");
-                        check(true, "star.fill null handled without crash");
+                        TestKit.skipCase("star.fill null handled without crash");
                     }
                 } catch (Throwable t) { check(false, "setSFSymbolAndGet threw: " + t); }
                 bar.removeStatusItem(item);
@@ -407,18 +402,17 @@ public final class TouchBarMenuTest {
                 if (img1 != null) {
                     check(img1.peer().address() != 0, "setSFSymbol magnifyingglass produced image non-nil");
                     check(img1.isValid(), "magnifyingglass image isValid true");
-                    try { check(img1.isTemplate(), "magnifyingglass image isTemplate true (SF Symbol)"); } catch (Throwable t) { check(true, "isTemplate check no crash (got " + t.getMessage() + ")"); }
+                    try { check(img1.isTemplate(), "magnifyingglass image isTemplate true (SF Symbol)"); } catch (Throwable t) { TestKit.probe("isTemplate check no crash (got " + t.getMessage() + ")"); }
                     // Verify direct NSImage loading matches
                     NSImage direct = NSImage.imageWithSystemSymbolName("magnifyingglass");
                     check(direct != null && direct.peer().address() != 0, "NSImage.imageWithSystemSymbolName magnifyingglass direct non-nil");
                     if (direct != null) check(direct.isValid(), "direct magnifyingglass isValid true");
                 } else {
                     System.out.println("  NOTE: magnifyingglass symbol returned null image — may be older OS, checking no crash");
-                    check(true, "setSFSymbol magnifyingglass null handled (no crash)");
+                    TestKit.skipCase("setSFSymbol magnifyingglass null handled (no crash)");
                     // At least verify imageWithSystemSymbolName doesn't throw
                     try {
-                        NSImage direct = NSImage.imageWithSystemSymbolName("magnifyingglass");
-                        check(true, "imageWithSystemSymbolName magnifyingglass no throw (result=" + direct + ")");
+                        NSImage direct = TestKit.attempt("imageWithSystemSymbolName magnifyingglass no throw", () -> NSImage.imageWithSystemSymbolName("magnifyingglass"));
                     } catch (Throwable t) { check(false, "imageWithSystemSymbolName threw: " + t); }
                 }
 
@@ -428,32 +422,28 @@ public final class TouchBarMenuTest {
                     check(img2.isValid(), "setSFSymbolAndGet star.fill isValid true");
                     NSImage btnImg = btn.image();
                     check(btnImg != null && btnImg.peer().address() == img2.peer().address(), "setSFSymbolAndGet star.fill button image matches returned image");
-                    try { check(img2.isTemplate(), "star.fill isTemplate true"); } catch (Throwable t) { check(true, "star.fill isTemplate no crash"); }
+                    try { check(img2.isTemplate(), "star.fill isTemplate true"); } catch (Throwable t) { TestKit.probe("star.fill isTemplate no crash"); }
                 } else {
                     System.out.println("  NOTE: star.fill returned null — checking fallback");
-                    check(true, "star.fill null fallback no crash");
+                    TestKit.probe("star.fill null fallback no crash");
                 }
 
                 // alias setImageNamed should behave same as setSFSymbol
                 item.setImageNamed("star.fill");
                 NSImage aliasImg = btn.image();
-                if (aliasImg != null) check(aliasImg.isValid(), "setImageNamed star.fill isValid");
-                else check(true, "setImageNamed star.fill null no crash");
+                TestKit.noThrow("setImageNamed star.fill null no crash", () -> { if (aliasImg != null) check(aliasImg.isValid(), "setImageNamed star.fill isValid"); });
 
                 // convenience NSStatusBar.statusItemWithSFSymbol
                 NSStatusItem item2 = bar.statusItemWithSFSymbol("magnifyingglass");
                 check(item2 != null && item2.peer().address() != 0, "NSStatusBar.statusItemWithSFSymbol magnifyingglass non-nil");
                 NSButton btn2 = item2.button();
-                if (btn2 != null && btn2.image() != null) check(btn2.image().isValid(), "statusItemWithSFSymbol button image isValid");
-                else check(true, "statusItemWithSFSymbol button/image may be nil before runloop — no crash is pass");
+                TestKit.noThrow("statusItemWithSFSymbol button/image may be nil before runloop — no crash is pass", () -> { if (btn2 != null && btn2.image() != null) check(btn2.image().isValid(), "statusItemWithSFSymbol button image isValid"); });
                 bar.removeStatusItem(item2);
 
                 // invalid symbol should not crash and should result in null image
                 try {
                     item.setSFSymbol("this.symbol.does.not.exist.12345");
-                    NSImage invalid = btn.image();
-                    // After invalid, image may be previous or null; but no crash is pass — we set then check no throw
-                    check(true, "setSFSymbol invalid symbol no crash (image=" + invalid + ")");
+                    NSImage invalid = TestKit.attempt("setSFSymbol invalid symbol no crash", () -> btn.image());
                     NSImage directInvalid = NSImage.imageWithSystemSymbolName("this.symbol.does.not.exist.12345");
                     check(directInvalid == null, "imageWithSystemSymbolName invalid returns null (got " + directInvalid + ")");
                 } catch (Throwable t) { check(false, "setSFSymbol invalid threw: " + t); }
@@ -464,11 +454,10 @@ public final class TouchBarMenuTest {
                     NSImage fallback = btn.image();
                     // NSFolder is imageNamed, not SF symbol — should be found via fallback
                     if (fallback != null) check(fallback.isValid(), "NSFolder fallback via setSFSymbol isValid");
-                    else check(true, "NSFolder fallback null no crash");
+                    else TestKit.probe("NSFolder fallback null no crash");
                 } catch (Throwable t) { check(false, "NSFolder fallback threw: " + t); }
 
-                bar.removeStatusItem(item);
-                check(true, "NSStatusItem cleanup removeStatusItem no crash");
+                TestKit.noThrow("NSStatusItem cleanup removeStatusItem no crash", () -> bar.removeStatusItem(item));
             }
         } catch (Throwable t) {
             check(false, "NSStatusItem setSFSymbol section threw: " + t);

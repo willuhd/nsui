@@ -121,7 +121,7 @@ public final class AppearanceTest {
             }
         }
         if (stressOk) {
-            TestKit.check(true, "stress 200 iterations appearanceNamed+name no crash");
+            TestKit.probe("stress 200 iterations appearanceNamed+name no crash");
         }
 
         System.out.println(TestKit.failures() == 0 ? "RESULT: ALL PASS" : "RESULT: " + TestKit.failures() + " FAILURE(S)");

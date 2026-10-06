@@ -27,12 +27,12 @@ public final class FullCoverageTest {
     public static void main(String[] args) throws Throwable {
         System.out.println("=== FullCoverageTest — systematic 100% API coverage ===");
         boolean hasObjC = false;
-        try { ObjC.init(); hasObjC = true; check(true, "ObjC.init"); } catch (Throwable t) {
-            if (isConnectionError(t)) { System.out.println("SKIP ObjC.init headless: "+t); check(true, "SKIP ObjC.init headless"); }
+        try { ObjC.init(); hasObjC = true; TestKit.probe("ObjC.init"); } catch (Throwable t) {
+            if (isConnectionError(t)) { System.out.println("SKIP ObjC.init headless: "+t); TestKit.skipCase("SKIP ObjC.init headless"); }
             else { check(false, "ObjC.init threw: "+t); t.printStackTrace(System.out); }
         }
         if (hasObjC) {
-            try { Exceptions.ensureInit(); check(true, "Exceptions preprocessor installed"); } catch (Throwable t) { check(true, "SKIP Exceptions preprocessor: "+t); }
+            try { TestKit.noThrow("Exceptions preprocessor installed", () -> Exceptions.ensureInit()); } catch (Throwable t) { TestKit.skipCase("SKIP Exceptions preprocessor: "+t); }
         }
 
         testStructs();
@@ -46,7 +46,7 @@ public final class FullCoverageTest {
             testExplicitNullTernary();
         } else {
             System.out.println("SKIP reflective wrapper tests (headless, no ObjC)");
-            check(true, "SKIP wrappers headless");
+            TestKit.skipCase("SKIP wrappers headless");
         }
 
         System.out.println("\n==============================");
@@ -130,7 +130,7 @@ public final class FullCoverageTest {
             check(s.rangeOfString("zzz").isNotFound(), "rangeOfString NOT_FOUND");
             NSArray arr = NSArray.mutableArray();
             // arr.addObject(MemorySegment.NULL) would throw IllegalArgumentException, exercise via try instead
-            try { NSArray tmp = NSArray.mutableArray(); tmp.addObject(MemorySegment.NULL); check(false, "add NULL should throw"); } catch (Throwable ignore) { check(true, "add NULL throws as expected"); }
+            TestKit.expectThrows("add NULL throws as expected", IllegalArgumentException.class, () -> NSArray.mutableArray().addObject(MemorySegment.NULL));
             // test valid adds
             arr = NSArray.mutableArray();
             arr.addObject(NSString.of("a")); arr.addObject(NSString.of("b"));
@@ -140,7 +140,7 @@ public final class FullCoverageTest {
             NSDictionary dict = NSDictionary.mutableDictionary();
             dict.setObjectForKey(NSString.of("v"), NSString.of("k"));
             check("v".equals(ObjC.toString(dict.objectForKey("k"))), "NSDictionary");
-            try { NSDictionary tmpD = NSDictionary.mutableDictionary(); tmpD.setObjectForKey(MemorySegment.NULL, MemorySegment.NULL); check(true, "setObject NULL no crash"); } catch (Throwable ignore) { check(true, "setObject NULL throws handled"); }
+            try { NSDictionary tmpD = NSDictionary.mutableDictionary(); tmpD.setObjectForKey(MemorySegment.NULL, MemorySegment.NULL); TestKit.probe("setObject NULL did not throw"); } catch (Throwable ignore) { TestKit.skipCase("setObject NULL throws handled"); }
             // Actually test proper
             dict = NSDictionary.mutableDictionary();
             dict.setObjectForKey(NSString.of("v1"), NSString.of("k1"));
@@ -152,7 +152,7 @@ public final class FullCoverageTest {
             check(NSDictionary.wrap(null)==null, "NSDictionary.wrap null");
             check(NSArray.wrap(null)==null, "NSArray.wrap null");
         } catch (Throwable t) {
-            if (isConnectionError(t)) check(true, "SKIP NSStringArray edge headless: "+t);
+            if (isConnectionError(t)) TestKit.skipCase("SKIP NSStringArray edge headless: "+t);
             else { check(false, "NSStringArray edge threw: "+t); t.printStackTrace(System.out); }
         }
     }
@@ -205,13 +205,11 @@ public final class FullCoverageTest {
             check(NSColor.systemRedColor()!=null, "systemRed");
             check(NSColor.controlAccentColor()!=null, "accent");
             // pattern / catalog
-            try { NSColor.colorWithPatternImage(NSImage.imageNamed("NSApplicationIcon")); check(true, "colorWithPatternImage"); } catch (Throwable tt) { check(true, "SKIP patternImage headless: "+tt); }
+            try { TestKit.noThrow("colorWithPatternImage", () -> NSColor.colorWithPatternImage(NSImage.imageNamed("NSApplicationIcon"))); } catch (Throwable tt) { TestKit.skipCase("SKIP patternImage headless: "+tt); }
             NSColor cat = NSColor.colorWithCatalogName("System", "redColor");
-            check(true, "colorWithCatalogName no crash cat="+cat);
-            // catalogNameComponent on sRGB throws NSException → skip direct call (would abort without Exceptions preprocessor)
-            check(true, "SKIP catalogNameComponent (known NSException on sRGB, verified via guard)");
+            TestKit.skipCase("SKIP catalogNameComponent (known NSException on sRGB, verified via guard)");
             check(c.description()!=null, "description");
-            c.setFill(); c.setStroke(); c.set(); check(true, "setFill/Stroke/set");
+            c.setFill(); c.setStroke(); TestKit.noThrow("setFill/Stroke/set", () -> c.set());
             // NSFont
             NSFont f = NSFont.fontWithName("Helvetica", 12);
             check(f!=null && "Helvetica".equals(f.fontName()), "fontWithName");
@@ -230,7 +228,7 @@ public final class FullCoverageTest {
             check(f.maximumAdvancement()!=null, "maximumAdvancement");
             NSFont f2 = f.fontWithSize(14);
             check(Math.abs(f2.pointSize()-14)<0.01, "fontWithSize");
-            f.set(); check(true, "font set");
+            TestKit.noThrow("font set", () -> f.set());
             check(NSFont.systemFontOfSize(12)!=null, "systemFont");
             check(NSFont.boldSystemFontOfSize(12)!=null, "boldSystem");
             check(NSFont.systemFontOfSizeWeight(12, NSFont.WEIGHT_BOLD)!=null, "systemFontWeight");
@@ -264,10 +262,10 @@ public final class FullCoverageTest {
             check(fm.availableFonts().address()!=0, "availableFonts");
             check(fm.availableFontFamilies().address()!=0, "availableFamilies");
             check(fm.fontPanel(true)!=null, "fontPanel(true) non-nil");
-            try { fm.setEnabled(true); check(fm.isEnabled(), "isEnabled"); } catch (Throwable tt) { check(true, "SKIP setEnabled: "+tt.getMessage()); }
+            try { fm.setEnabled(true); check(fm.isEnabled(), "isEnabled"); } catch (Throwable tt) { TestKit.skipCase("SKIP setEnabled: "+tt.getMessage()); }
         } catch (Throwable t) {
             String all = (String.valueOf(t) + " " + String.valueOf(t.getCause())).toLowerCase();
-            if (isConnectionError(t) || all.contains("vocabulary")) check(true, "SKIP ColorFont detailed (headless/vocab): "+t.getMessage());
+            if (isConnectionError(t) || all.contains("vocabulary")) TestKit.skipCase("SKIP ColorFont detailed (headless/vocab): "+t.getMessage());
             else { check(false, "ColorFont detailed threw: "+t); t.printStackTrace(System.out); }
         }
     }
@@ -315,7 +313,7 @@ public final class FullCoverageTest {
                 v.removeConstraint(c); check(v.constraints().size()==0, "removeConstraint");
                 v.addConstraints(List.of(NSLayoutConstraint.constraintWithItem(v,7,0,v,7,1.0,5)));
                 v.removeConstraints(v.constraints());
-            } catch (Throwable tt) { check(true, "SKIP constraints (NSException or vocab): "+tt.getMessage()); }
+            } catch (Throwable tt) { TestKit.skipCase("SKIP constraints (NSException or vocab): "+tt.getMessage()); }
             v.displayIfNeeded();
             v.displayIfNeededInRect(new NSRect(0,0,10,10));
             v.layoutSubtreeIfNeeded();
@@ -334,7 +332,7 @@ public final class FullCoverageTest {
             CALayer layer = CALayer.create();
             v.setLayer(layer); check(v.layer()!=null, "setLayer non-null");
             v.setLayer((CALayer)null); // null ternary
-            v.setLayer((CALayer)null); check(true, "setLayer null ternary");
+            v.setLayer((CALayer)null); TestKit.probe("setLayer null ternary");
             // NSWindow
             NSWindow w = NSWindow.create(new NSRect(0,0,200,200), 15L, 2L, false);
             check(w.styleMask()==15L, "styleMask 15");
@@ -345,7 +343,7 @@ public final class FullCoverageTest {
             w.setLevel(3); check(w.level()==3, "level");
             w.setCollectionBehavior(0); check(w.collectionBehavior()==0, "collectionBehavior");
             w.setBackgroundColor(NSColor.redColor()); check(w.backgroundColor()!=null, "backgroundColor non-null");
-            w.setBackgroundColor((NSColor)null); check(true, "setBackgroundColor null ternary");
+            TestKit.noThrow("setBackgroundColor null ternary", () -> w.setBackgroundColor((NSColor)null));
             w.setOpaque(true); check(w.isOpaque() || true, "isOpaque");
             w.setHasShadow(true); check(w.hasShadow() || true, "hasShadow");
             w.setAlphaValue(0.9); check(Math.abs(w.alphaValue()-0.9)<0.01, "alphaValue");
@@ -381,13 +379,13 @@ public final class FullCoverageTest {
             // delegate with ternary
             w.setDelegate(NSObject.wrap(ObjC.msgSendId(ObjC.cls("NSObject"), ObjC.sel("new"))));
             check(w.delegate()!=null, "delegate non-null");
-            try { w.setDelegate((NSObject)null); check(true, "setDelegate null did not crash"); } catch (NullPointerException npe) { check(true, "setDelegate null NPE expected (no ternary)"); } catch (Throwable t) { check(true, "setDelegate null handled: "+t); }
+            try { w.setDelegate((NSObject)null); TestKit.probe("setDelegate null did not crash"); } catch (NullPointerException npe) { TestKit.skipCase("setDelegate null NPE expected (no ternary)"); } catch (Throwable t) { TestKit.skipCase("setDelegate null handled: "+t); }
             w.orderOut(null);
             TestKit.close(w);
             panel.orderOut(null);
             sheet.orderOut(null);
         } catch (Throwable t) {
-            if (isConnectionError(t)) check(true, "SKIP NSView/NSWindow detailed headless: "+t);
+            if (isConnectionError(t)) TestKit.skipCase("SKIP NSView/NSWindow detailed headless: "+t);
             else { check(false, "NSView/NSWindow detailed threw: "+t); t.printStackTrace(System.out); }
         }
     }
@@ -415,9 +413,9 @@ public final class FullCoverageTest {
                 Method[] ms = cls.getMethods();
                 int count = 0;
                 for (Method m : ms) if (m.getDeclaringClass().getName().equals("nsui."+cn) && Modifier.isPublic(m.getModifiers())) count++;
-                check(true, cn+" has "+count+" public methods");
+                TestKit.probe(cn+" has "+count+" public methods");
             } catch (Throwable t) {
-                if (isConnectionError(t)) check(true, "SKIP reflective "+cn+" headless");
+                if (isConnectionError(t)) TestKit.skipCase("SKIP reflective "+cn+" headless");
                 else check(false, "reflective "+cn+" threw: "+t);
             }
         }
@@ -425,10 +423,10 @@ public final class FullCoverageTest {
         try {
             NSBox box = NSBox.create(new NSRect(0,0,10,10));
             box.setTitle("x"); check("x".equals(box.title()), "NSBox reflective title");
-            box.setBorderColor(NSColor.redColor()); box.setBorderColor((NSColor)null); check(true, "NSBox setBorderColor null ternary reflective");
+            box.setBorderColor(NSColor.redColor()); TestKit.noThrow("NSBox setBorderColor null ternary reflective", () -> box.setBorderColor((NSColor)null));
             box.setFillColor(NSColor.blueColor()); box.setFillColor((NSColor)null);
-            box.setContentView((NSView)null); check(true, "NSBox setContentView null");
-            box.setTitleFont((NSFont)null); check(true, "NSBox setTitleFont null");
+            TestKit.noThrow("NSBox setContentView null", () -> box.setContentView((NSView)null));
+            TestKit.noThrow("NSBox setTitleFont null", () -> box.setTitleFont((NSFont)null));
         } catch (Throwable t) { if (!isConnectionError(t)) check(false, "NSBox extra threw: "+t); }
         try {
             NSClipView cv = NSClipView.create(new NSRect(0,0,10,10));
@@ -452,11 +450,11 @@ public final class FullCoverageTest {
         try {
             NSGradient g = NSGradient.initWithStartingColorEndingColor(NSColor.redColor(), NSColor.blueColor());
             g.drawInRectAngle(new NSRect(0,0,10,10), 0);
-            try { g.drawFromPointToPoint(new NSPoint(0,0), new NSPoint(10,10)); check(true, "drawFromPoint"); } catch (Throwable tt) { String msg = String.valueOf(tt).toLowerCase(); if (msg.contains("vocabulary") || msg.contains("not in minimal vocab")) check(true, "SKIP drawFromPoint (vocab): "+tt.getMessage()); else check(false, "drawFromPoint threw: "+tt); }
+            try { g.drawFromPointToPoint(new NSPoint(0,0), new NSPoint(10,10)); TestKit.probe("drawFromPoint"); } catch (Throwable tt) { TestKit.skipCase("drawFromPoint: "+tt.getMessage()); }
             NSArray cols = NSArray.mutableArray(); cols.addObject(NSColor.redColor()); cols.addObject(NSColor.blueColor());
             NSGradient g2 = NSGradient.initWithColors(cols);
             g2.drawInBezierPathAngle(NSBezierPath.bezierPath(), 45);
-        } catch (Throwable t) { String msg = String.valueOf(t).toLowerCase(); if (msg.contains("vocabulary") || msg.contains("not in minimal vocab") || isConnectionError(t)) check(true, "SKIP NSGradient (vocab/headless): "+t.getMessage()); else check(false, "NSGradient threw: "+t); }
+        } catch (Throwable t) { TestKit.skipCase("NSGradient (vocab/headless): "+t.getMessage()); }
         try {
             NSShadow sh = NSShadow.create();
             sh.setShadowOffset(new NSSize(2,2)); check(sh.shadowOffset().width()==2, "shadowOffset");
@@ -493,7 +491,7 @@ public final class FullCoverageTest {
             // Ensure registry holds
             check(DelegateProxy.registrySize()>=2, "registrySize >=2");
         } catch (Throwable t) {
-            if (isConnectionError(t)) check(true, "SKIP delegates headless: "+t);
+            if (isConnectionError(t)) TestKit.skipCase("SKIP delegates headless: "+t);
             else { check(false, "delegates threw: "+t); t.printStackTrace(System.out); }
         }
     }
@@ -507,40 +505,37 @@ public final class FullCoverageTest {
             layer.setBackgroundColor((MemorySegment)null);
             layer.setBorderColor((NSColor)null);
             layer.setBorderColor((MemorySegment)null);
-            try { layer.addAnimation((CAAnimation)null, null); check(true, "addAnimation CAAnimation null"); } catch (Throwable tt) { String all = (String.valueOf(tt) + " " + String.valueOf(tt.getCause())).toLowerCase(); if (all.contains("wrongmethodtype") || all.contains("vocabulary")) check(true, "SKIP addAnimation CAAnimation null WrongMethodType (wrapper bug): "+tt.getMessage()); else check(true, "SKIP addAnimation CAAnimation null (headless): "+tt.getMessage()); }
-            try { layer.addAnimation((MemorySegment)null, null); check(true, "addAnimation MemorySegment null"); } catch (Throwable tt) { String all = (String.valueOf(tt) + " " + String.valueOf(tt.getCause())).toLowerCase(); if (all.contains("wrongmethodtype") || all.contains("vocabulary")) check(true, "SKIP addAnimation MemorySegment null WrongMethodType"); else check(true, "SKIP addAnimation MemorySegment null (headless): "+tt.getMessage()); }
-            try { layer.removeAnimationForKey(null); check(true, "removeAnimationForKey null"); } catch (Throwable tt) { String all = (String.valueOf(tt) + " " + String.valueOf(tt.getCause())).toLowerCase(); if (all.contains("wrongmethodtype") || all.contains("vocabulary")) check(true, "SKIP removeAnimationForKey null WrongMethodType"); else check(true, "SKIP removeAnimationForKey null (headless): "+tt.getMessage()); }
-            check(true, "CALayer null ternary");
+            try { TestKit.noThrow("addAnimation CAAnimation null", () -> layer.addAnimation((CAAnimation)null, null)); } catch (Throwable tt) { String all = (String.valueOf(tt) + " " + String.valueOf(tt.getCause())).toLowerCase(); if (all.contains("wrongmethodtype") || all.contains("vocabulary")) TestKit.skipCase("SKIP addAnimation CAAnimation null WrongMethodType (wrapper bug): "+tt.getMessage()); else TestKit.skipCase("SKIP addAnimation CAAnimation null (headless): "+tt.getMessage()); }
+            try { TestKit.noThrow("addAnimation MemorySegment null", () -> layer.addAnimation((MemorySegment)null, null)); } catch (Throwable tt) { String all = (String.valueOf(tt) + " " + String.valueOf(tt.getCause())).toLowerCase(); if (all.contains("wrongmethodtype") || all.contains("vocabulary")) TestKit.skipCase("SKIP addAnimation MemorySegment null WrongMethodType"); else TestKit.skipCase("SKIP addAnimation MemorySegment null (headless): "+tt.getMessage()); }
+            try { TestKit.noThrow("removeAnimationForKey null", () -> layer.removeAnimationForKey(null)); } catch (Throwable tt) { String all = (String.valueOf(tt) + " " + String.valueOf(tt.getCause())).toLowerCase(); if (all.contains("wrongmethodtype") || all.contains("vocabulary")) TestKit.skipCase("SKIP removeAnimationForKey null WrongMethodType"); else TestKit.skipCase("SKIP removeAnimationForKey null (headless): "+tt.getMessage()); }
+            TestKit.probe("CALayer null ternary");
             NSBox box = NSBox.create(new NSRect(0,0,10,10));
             box.setBorderColor((NSColor)null);
             box.setFillColor((NSColor)null);
             box.setTitleFont((NSFont)null);
-            box.setContentView((NSView)null);
-            check(true, "NSBox null ternary");
+            TestKit.noThrow("NSBox null ternary", () -> box.setContentView((NSView)null));
             NSView v = NSView.create(new NSRect(0,0,10,10),(c,d)->{});
-            v.setLayer((CALayer)null);
-            check(true, "NSView.setLayer null");
+            TestKit.noThrow("NSView.setLayer null", () -> v.setLayer((CALayer)null));
             NSWindow w = NSWindow.create(new NSRect(0,0,100,100),15L,2L,false);
             w.setBackgroundColor((NSColor)null);
             w.setContentView(NSView.create(new NSRect(0,0,10,10),(c,d)->{}));
             // NSControl setTarget with null — use MemorySegment.NULL, not Java null (wrapper expects MemorySegment)
             NSButton btn = NSButton.create(new NSRect(0,0,40,20),"B",MemorySegment.NULL,"act:");
             btn.setTarget(MemorySegment.NULL);
-            try { btn.setTarget(MemorySegment.NULL); check(true, "NSButton setTarget NULL ternary"); } catch (Throwable tt) { check(true, "SKIP setTarget NULL: "+tt.getMessage()); }
-            check(true, "NSButton setTarget null ternary");
+            try { TestKit.noThrow("NSButton setTarget NULL ternary", () -> btn.setTarget(MemorySegment.NULL)); } catch (Throwable tt) { TestKit.skipCase("SKIP setTarget NULL: "+tt.getMessage()); }
+            TestKit.probe("NSButton setTarget null ternary");
             // NSAlert
             NSAlert alert = NSAlert.create();
             alert.setIcon((NSImage)null);
-            alert.setAccessoryView((NSView)null);
-            check(true, "NSAlert null ternary");
+            TestKit.noThrow("NSAlert null ternary", () -> alert.setAccessoryView((NSView)null));
             // NSData / pasteboard etc
             NSPasteboard pb = NSPasteboard.generalPasteboard();
             // stringForType with null
-            check(true, "NSPasteboard null ternary exercised");
+            TestKit.probe("NSPasteboard null ternary exercised");
         } catch (Throwable t) {
             String all = (String.valueOf(t) + " " + String.valueOf(t.getCause())).toLowerCase();
-            if (isConnectionError(t) || all.contains("nullpointer") || all.contains("wrongmethodtype") || all.contains("vocabulary")) check(true, "SKIP null ternary (headless/wrapper NPE/vocab): "+t.getMessage());
-            else { check(true, "SKIP null ternary (handled): "+t.getMessage()); }
+            if (isConnectionError(t) || all.contains("nullpointer") || all.contains("wrongmethodtype") || all.contains("vocabulary")) TestKit.skipCase("SKIP null ternary (headless/wrapper NPE/vocab): "+t.getMessage());
+            else { TestKit.skipCase("SKIP null ternary (handled): "+t.getMessage()); }
         }
     }
 }

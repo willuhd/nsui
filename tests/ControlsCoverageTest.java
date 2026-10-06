@@ -104,8 +104,7 @@ public final class ControlsCoverageTest {
         hello.setMaxAcceleratorLevel(2L);
         MemorySegment symCfg = hello.symbolConfiguration();
         TestKit.check(symCfg == null || symCfg.address() == 0, "symbolConfiguration nil by default");
-        hello.setSymbolConfiguration(MemorySegment.NULL);
-        TestKit.check(true, "setSymbolConfiguration(NULL) no crash");
+        TestKit.noThrow("setSymbolConfiguration(NULL) no crash", () -> hello.setSymbolConfiguration(MemorySegment.NULL));
         hello.setTintProminence(1L);
         TestKit.check(hello.tintProminence() == 1L, "tintProminence 1 round-trip (macOS 26+)");
         hello.setTintProminence(0L);
@@ -114,27 +113,20 @@ public final class ControlsCoverageTest {
         hello.setBorderShape(0L);
         hello.setKeyEquivalent("\r");
         TestKit.check(!hello.performKeyEquivalent(null), "performKeyEquivalent(nil) == false, no crash");
-        hello.compressWithPrioritizedCompressionOptions(NSArray.array());
-        TestKit.check(true, "compressWithPrioritizedCompressionOptions(empty) no crash");
-        MemorySegment active = hello.activeCompressionOptions();
-        TestKit.check(true, "activeCompressionOptions no crash (nil=" + (active == null || active.address() == 0) + ")");
+        TestKit.noThrow("compressWithPrioritizedCompressionOptions(empty) no crash", () -> hello.compressWithPrioritizedCompressionOptions(NSArray.array()));
+        MemorySegment active = TestKit.attempt("activeCompressionOptions no crash", () -> hello.activeCompressionOptions());
 
         // ------------------------------------------------------------ NSControl (via hello)
         hello.setTag(42L);
         TestKit.check(hello.tag() == 42L, "NSControl tag 42 round-trip");
         TestKit.check(hello.currentEditor() == null, "currentEditor null when idle");
-        boolean aborted = hello.abortEditing();
-        TestKit.check(true, "abortEditing no crash (returned " + aborted + ")");
-        hello.validateEditing();
-        TestKit.check(true, "validateEditing no crash");
-        hello.endEditing(null);
-        TestKit.check(true, "endEditing(nil) no crash");
+        boolean aborted = TestKit.attempt("abortEditing no crash", () -> hello.abortEditing());
+        TestKit.noThrow("validateEditing no crash", () -> hello.validateEditing());
+        TestKit.noThrow("endEditing(nil) no crash", () -> hello.endEditing(null));
         NSRect expansion = hello.expansionFrameWithFrame(new NSRect(0, 0, 120, 24));
         TestKit.check(expansion != null, "expansionFrameWithFrame non-nil");
-        hello.drawWithExpansionFrameInView(new NSRect(0, 0, 120, 24), null);
-        TestKit.check(true, "drawWithExpansionFrame:inView: no crash");
-        MemorySegment cellClass = NSControl.cellClass();
-        TestKit.check(true, "NSControl.cellClass no crash (nil=" + (cellClass == null || cellClass.address() == 0) + ")");
+        TestKit.noThrow("drawWithExpansionFrame:inView: no crash", () -> hello.drawWithExpansionFrameInView(new NSRect(0, 0, 120, 24), null));
+        MemorySegment cellClass = TestKit.attempt("NSControl.cellClass no crash", () -> NSControl.cellClass());
         MemorySegment cell = hello.cell();
         TestKit.check(cell != null && cell.address() != 0, "button.cell() non-nil");
         MemorySegment selCell = hello.selectedCell();
@@ -142,8 +134,7 @@ public final class ControlsCoverageTest {
         System.out.println("  button.selectedTag() = " + hello.selectedTag());
         hello.updateCell(cell);
         hello.updateCellInside(cell);
-        hello.selectCell(cell);
-        TestKit.check(true, "updateCell/updateCellInside/selectCell no crash");
+        TestKit.noThrow("updateCell/updateCellInside/selectCell no crash", () -> hello.selectCell(cell));
 
         // ------------------------------------------------------------ NSComboButton
         NSComboButton comboBtn = NSComboButton.create(new NSRect(0, 0, 160, 32));
@@ -179,8 +170,7 @@ public final class ControlsCoverageTest {
         NSColorWell styled = NSColorWell.colorWellWithStyle(0L);
         content.addSubview(styled);
         TestKit.check(styled.colorWellStyle() == 0L, "colorWellWithStyle(0) style round-trip");
-        styled.drawWellInside(new NSRect(0, 0, 20, 20));
-        TestKit.check(true, "drawWellInside no crash");
+        TestKit.noThrow("drawWellInside no crash", () -> styled.drawWellInside(new NSRect(0, 0, 20, 20)));
         styled.setImage(null);
         TestKit.check(styled.image() == null, "NSColorWell image nil round-trip");
         styled.setPulldownAction("pulldown:");
@@ -208,8 +198,7 @@ public final class ControlsCoverageTest {
         combo.insertItemWithObjectValueAtIndex("w", 0L);
         TestKit.check(combo.numberOfItems() == 4L, "insertItemWithObjectValue:atIndex: -> 4 items");
         combo.scrollItemAtIndexToTop(0L);
-        combo.scrollItemAtIndexToVisible(3L);
-        TestKit.check(true, "scrollItemAtIndexToTop/ToVisible no crash");
+        TestKit.noThrow("scrollItemAtIndexToTop/ToVisible no crash", () -> combo.scrollItemAtIndexToVisible(3L));
         combo.setIntercellSpacing(NSSize.make(4.0, 5.0));
         NSSize spacing = combo.intercellSpacing();
         TestKit.check(Math.abs(spacing.width() - 4.0) < 1e-6 && Math.abs(spacing.height() - 5.0) < 1e-6,
@@ -312,7 +301,7 @@ public final class ControlsCoverageTest {
                 TestKit.check(field.allowsWritingTools() == !o, "NSTextField allowsWritingTools toggled");
                 field.setAllowsWritingTools(o);
             } else {
-                TestKit.check(true, "NOTE allowsWritingTools absent on this OS (no-crash pass)");
+                TestKit.skipCase("NOTE allowsWritingTools absent on this OS (no-crash pass)");
             }
             // allowsWritingToolsAffordance (guard: 15.4+)
             if (responds(field.peer(), "allowsWritingToolsAffordance")) {
@@ -321,7 +310,7 @@ public final class ControlsCoverageTest {
                 TestKit.check(field.allowsWritingToolsAffordance() == !o, "NSTextField allowsWritingToolsAffordance toggled");
                 field.setAllowsWritingToolsAffordance(o);
             } else {
-                TestKit.check(true, "NOTE allowsWritingToolsAffordance absent on this OS (no-crash pass)");
+                TestKit.skipCase("NOTE allowsWritingToolsAffordance absent on this OS (no-crash pass)");
             }
             // allowsCharacterPickerTouchBarItem (10.12.2+; guarded like TouchBar)
             if (responds(field.peer(), "allowsCharacterPickerTouchBarItem")) {
@@ -330,25 +319,23 @@ public final class ControlsCoverageTest {
                 TestKit.check(field.allowsCharacterPickerTouchBarItem() == !o, "NSTextField allowsCharacterPickerTouchBarItem toggled");
                 field.setAllowsCharacterPickerTouchBarItem(o);
             } else {
-                TestKit.check(true, "NOTE allowsCharacterPickerTouchBarItem absent (no-crash pass)");
+                TestKit.skipCase("NOTE allowsCharacterPickerTouchBarItem absent (no-crash pass)");
             }
             // placeholderStrings / placeholderAttributedStrings (guard: 26.0+)
             if (responds(field.peer(), "placeholderStrings")) {
                 NSArray before = field.placeholderStrings();
                 System.out.println("  placeholderStrings before = " + (before == null ? "nil" : ("count=" + before.count())));
-                field.setPlaceholderStrings(null);
-                TestKit.check(true, "NSTextField placeholderStrings getter/setter no crash");
+                TestKit.noThrow("NSTextField placeholderStrings getter/setter no crash", () -> field.setPlaceholderStrings(null));
                 field.setPlaceholderStrings(before);
             } else {
-                TestKit.check(true, "NOTE placeholderStrings absent on this OS (no-crash pass)");
+                TestKit.skipCase("NOTE placeholderStrings absent on this OS (no-crash pass)");
             }
             if (responds(field.peer(), "placeholderAttributedStrings")) {
                 NSArray b = field.placeholderAttributedStrings();
                 System.out.println("  placeholderAttributedStrings before = " + (b == null ? "nil" : ("count=" + b.count())));
-                field.setPlaceholderAttributedStrings(null);
-                TestKit.check(true, "NSTextField placeholderAttributedStrings getter/setter no crash");
+                TestKit.noThrow("NSTextField placeholderAttributedStrings getter/setter no crash", () -> field.setPlaceholderAttributedStrings(null));
             } else {
-                TestKit.check(true, "NOTE placeholderAttributedStrings absent on this OS (no-crash pass)");
+                TestKit.skipCase("NOTE placeholderAttributedStrings absent on this OS (no-crash pass)");
             }
             // resolvesNaturalAlignmentWithBaseWritingDirection (guard: 26.0+)
             if (responds(field.peer(), "resolvesNaturalAlignmentWithBaseWritingDirection")) {
@@ -358,20 +345,20 @@ public final class ControlsCoverageTest {
                         "NSTextField resolvesNaturalAlignmentWithBaseWritingDirection toggled");
                 field.setResolvesNaturalAlignmentWithBaseWritingDirection(o);
             } else {
-                TestKit.check(true, "NOTE resolvesNaturalAlignmentWithBaseWritingDirection absent (no-crash pass)");
+                TestKit.skipCase("NOTE resolvesNaturalAlignmentWithBaseWritingDirection absent (no-crash pass)");
             }
             // editing notifications with NULL (VOID,ID / BOOL,ID in vocabulary)
             try {
                 boolean b = field.textShouldBeginEditing(null);
                 System.out.println("  textShouldBeginEditing(NULL) = " + b);
-                TestKit.check(true, "NSTextField textShouldBeginEditing(NULL) no crash");
+                TestKit.probe("NSTextField textShouldBeginEditing(NULL) no crash");
             } catch (Throwable t) {
                 TestKit.check(false, "textShouldBeginEditing(NULL) threw: " + t);
             }
             try {
                 boolean b = field.textShouldEndEditing(null);
                 System.out.println("  textShouldEndEditing(NULL) = " + b);
-                TestKit.check(true, "NSTextField textShouldEndEditing(NULL) no crash");
+                TestKit.probe("NSTextField textShouldEndEditing(NULL) no crash");
             } catch (Throwable t) {
                 TestKit.check(false, "textShouldEndEditing(NULL) threw: " + t);
             }
@@ -401,14 +388,13 @@ public final class ControlsCoverageTest {
                 NSRect cb = sf.cancelButtonBounds();
                 TestKit.check(cb != null, "NSSearchField cancelButtonBounds non-null (" + cb + ")");
             } else {
-                TestKit.check(true, "NOTE search bounds absent on this OS (no-crash pass)");
+                TestKit.skipCase("NOTE search bounds absent on this OS (no-crash pass)");
             }
             // typed recentSearches (ID shapes)
             NSArray rec = sf.recentSearchesArray();
             System.out.println("  recentSearchesArray = " + (rec == null ? "nil" : ("count=" + rec.count())));
-            TestKit.check(true, "NSSearchField recentSearchesArray no crash");
-            sf.setRecentSearches((NSArray) null);
-            TestKit.check(true, "NSSearchField setRecentSearches(null-array) no crash");
+            TestKit.probe("NSSearchField recentSearchesArray no crash");
+            TestKit.noThrow("NSSearchField setRecentSearches(null-array) no crash", () -> sf.setRecentSearches((NSArray) null));
             // delegate inherited from NSTextField (same selectors)
             MemorySegment d = sf.delegate();
             System.out.println("  search delegate before = " + d);
@@ -456,7 +442,7 @@ public final class ControlsCoverageTest {
                 TestKit.check(seg.isSpringLoaded() == !o, "springLoaded toggled");
                 seg.setSpringLoaded(o);
             } else {
-                TestKit.check(true, "NOTE springLoaded absent (no-crash pass)");
+                TestKit.skipCase("NOTE springLoaded absent (no-crash pass)");
             }
             // doubleValueForSelectedSegment (DOUBLE () in vocabulary; valid ONLY for
             // trackingMode MomentaryAccelerator per header — set it first, then restore).
@@ -466,15 +452,15 @@ public final class ControlsCoverageTest {
                 try {
                     double dv = seg.doubleValueForSelectedSegment();
                     System.out.println("  doubleValueForSelectedSegment (accelerator) = " + dv);
-                    TestKit.check(true, "doubleValueForSelectedSegment no crash in accelerator mode (got " + dv + ")");
+                    TestKit.probe("doubleValueForSelectedSegment no crash in accelerator mode (got " + dv + ")");
                 } catch (Throwable t) {
                     System.out.println("  NOTE doubleValueForSelectedSegment threw even in accelerator mode: " + t.getMessage());
-                    TestKit.check(true, "doubleValueForSelectedSegment no-crash noted");
+                    TestKit.skipCase("doubleValueForSelectedSegment no-crash noted");
                 } finally {
                     seg.setTrackingMode(origTM);
                 }
             } else {
-                TestKit.check(true, "NOTE doubleValueForSelectedSegment absent (no-crash pass)");
+                TestKit.skipCase("NOTE doubleValueForSelectedSegment absent (no-crash pass)");
             }
             // selectedSegmentBezelColor (ID shapes; 10.12.2+)
             if (responds(seg.peer(), "selectedSegmentBezelColor")) {
@@ -483,10 +469,9 @@ public final class ControlsCoverageTest {
                 seg.setSelectedSegmentBezelColor(NSColor.redColor());
                 NSColor after = seg.selectedSegmentBezelColor();
                 TestKit.check(after != null && after.peer().address() != 0, "selectedSegmentBezelColor non-nil after set");
-                seg.setSelectedSegmentBezelColor(before);
-                TestKit.check(true, "selectedSegmentBezelColor restore no crash");
+                TestKit.noThrow("selectedSegmentBezelColor restore no crash", () -> seg.setSelectedSegmentBezelColor(before));
             } else {
-                TestKit.check(true, "NOTE selectedSegmentBezelColor absent (no-crash pass)");
+                TestKit.skipCase("NOTE selectedSegmentBezelColor absent (no-crash pass)");
             }
             // indexOfSelectedItem (INT () in vocabulary)
             seg.setSelectedSegment(2);
@@ -496,7 +481,7 @@ public final class ControlsCoverageTest {
                 seg.setAlignmentForSegment(2L, 0);
                 TestKit.check(seg.alignmentForSegment(0) == 2L, "alignmentForSegment round-trip == 2 (center)");
             } else {
-                TestKit.check(true, "NOTE alignmentForSegment absent (no-crash pass)");
+                TestKit.skipCase("NOTE alignmentForSegment absent (no-crash pass)");
             }
             // segmentDistribution (10.13+)
             if (responds(seg.peer(), "segmentDistribution")) {
@@ -509,18 +494,17 @@ public final class ControlsCoverageTest {
                 TestKit.check(seg.segmentDistribution() == 1L, "segmentDistribution typed setter fill(1)");
                 seg.setSegmentDistribution(before);
             } else {
-                TestKit.check(true, "NOTE segmentDistribution absent (no-crash pass)");
+                TestKit.skipCase("NOTE segmentDistribution absent (no-crash pass)");
             }
             // compress + activeCompressionOptions (10.13+)
             if (responds(seg.peer(), "compressWithPrioritizedCompressionOptions:")) {
                 NSArray empty = NSArray.array();
-                seg.compressWithPrioritizedCompressionOptions(empty);
-                TestKit.check(true, "compressWithPrioritizedCompressionOptions(empty) no crash");
+                TestKit.noThrow("compressWithPrioritizedCompressionOptions(empty) no crash", () -> seg.compressWithPrioritizedCompressionOptions(empty));
                 MemorySegment ac = seg.activeCompressionOptions();
                 System.out.println("  activeCompressionOptions = " + ac);
-                TestKit.check(true, "activeCompressionOptions no crash");
+                TestKit.probe("activeCompressionOptions no crash");
             } else {
-                TestKit.check(true, "NOTE compression APIs absent (no-crash pass)");
+                TestKit.skipCase("NOTE compression APIs absent (no-crash pass)");
             }
             // borderShape (guard: 26.0+)
             if (responds(seg.peer(), "borderShape")) {
@@ -529,7 +513,7 @@ public final class ControlsCoverageTest {
                 TestKit.check(seg.borderShape() == 0L, "borderShape set Automatic(0) round-trip");
                 seg.setBorderShape(before);
             } else {
-                TestKit.check(true, "NOTE borderShape absent on this OS (no-crash pass)");
+                TestKit.skipCase("NOTE borderShape absent on this OS (no-crash pass)");
             }
         } catch (Throwable t) {
             TestKit.check(false, "NSSegmentedControl section threw: " + t);
@@ -554,10 +538,10 @@ public final class ControlsCoverageTest {
                 sl.setNeutralValue(10.0);
                 TestKit.check(Math.abs(sl.neutralValue() - 10.0) < 0.01, "NSSlider neutralValue round-trip 10.0");
             } else {
-                TestKit.check(true, "NOTE neutralValue absent on this OS (no-crash pass)");
+                TestKit.skipCase("NOTE neutralValue absent on this OS (no-crash pass)");
             }
             // acceptsFirstMouse (BOOL,ID in vocabulary)
-            TestKit.check(true, "NSSlider acceptsFirstMouse(NULL) = " + sl.acceptsFirstMouse(null) + " (no crash)");
+            TestKit.probe("NSSlider acceptsFirstMouse(NULL) = " + sl.acceptsFirstMouse(null) + " (no crash)");
             // tintProminence (guard: 26.0+)
             if (responds(sl.peer(), "tintProminence")) {
                 long before = sl.tintProminence();
@@ -565,17 +549,17 @@ public final class ControlsCoverageTest {
                 TestKit.check(sl.tintProminence() == 0L, "NSSlider tintProminence Automatic(0) round-trip");
                 sl.setTintProminence(before);
             } else {
-                TestKit.check(true, "NOTE tintProminence absent on this OS (no-crash pass)");
+                TestKit.skipCase("NOTE tintProminence absent on this OS (no-crash pass)");
             }
             // tickMarkValueAtIndex (DOUBLE,INT in vocabulary)
             sl.setNumberOfTickMarks(5L);
             try {
                 double tv = sl.tickMarkValueAtIndex(0);
                 System.out.println("  tickMarkValueAtIndex(0) = " + tv);
-                TestKit.check(true, "NSSlider tickMarkValueAtIndex(0) no crash (got " + tv + ")");
+                TestKit.probe("NSSlider tickMarkValueAtIndex(0) no crash (got " + tv + ")");
             } catch (Throwable t) {
                 System.out.println("  NOTE tickMarkValueAtIndex threw (tick setup?): " + t.getMessage());
-                TestKit.check(true, "NSSlider tickMarkValueAtIndex no-crash noted");
+                TestKit.skipCase("NSSlider tickMarkValueAtIndex no-crash noted");
             }
             sl.setNumberOfTickMarks(0L);
             // sliderWithTarget factory (ID,ID,ID in vocabulary)
@@ -613,9 +597,8 @@ public final class ControlsCoverageTest {
             TestKit.check(dd >= 0.0, "NSTokenField.defaultCompletionDelay >= 0 (got " + dd + ")");
             MemorySegment cs = tf.tokenizingCharacterSet();
             System.out.println("  tokenizingCharacterSet = " + cs);
-            TestKit.check(true, "NSTokenField tokenizingCharacterSet getter no crash");
-            tf.setTokenizingCharacterSet(null);
-            TestKit.check(true, "NSTokenField setTokenizingCharacterSet(null) reset no crash");
+            TestKit.probe("NSTokenField tokenizingCharacterSet getter no crash");
+            TestKit.noThrow("NSTokenField setTokenizingCharacterSet(null) reset no crash", () -> tf.setTokenizingCharacterSet(null));
             MemorySegment dcs = NSTokenField.defaultTokenizingCharacterSet();
             TestKit.check(dcs != null && dcs.address() != 0, "NSTokenField.defaultTokenizingCharacterSet non-nil");
             // delegate inherited (same selectors as NSTextField)
@@ -642,7 +625,7 @@ public final class ControlsCoverageTest {
             // placeholderAttributedString (ID shapes)
             MemorySegment pa = pc.placeholderAttributedString();
             System.out.println("  path placeholderAttributedString = " + pa);
-            TestKit.check(true, "NSPathControl placeholderAttributedString getter no crash");
+            TestKit.probe("NSPathControl placeholderAttributedString getter no crash");
             pc.setPlaceholderAttributedString((MemorySegment) null);
             TestKit.check(pc.placeholderAttributedString() == null || pc.placeholderAttributedString().address() == 0,
                     "NSPathControl placeholderAttributedString nil after clear");
@@ -653,15 +636,14 @@ public final class ControlsCoverageTest {
             // pathItems (ID shapes)
             MemorySegment items = pc.pathItems();
             System.out.println("  pathItems = " + items);
-            TestKit.check(true, "NSPathControl pathItems getter no crash");
+            TestKit.probe("NSPathControl pathItems getter no crash");
             NSArray arr = pc.pathItemsArray();
             System.out.println("  pathItemsArray count = " + (arr == null ? "nil" : arr.count()));
-            TestKit.check(true, "NSPathControl pathItemsArray no crash");
+            TestKit.probe("NSPathControl pathItemsArray no crash");
             // backgroundColor (ID shapes)
             pc.setBackgroundColor(NSColor.clearColor());
             TestKit.check(pc.backgroundColor() != null, "NSPathControl backgroundColor non-nil after set");
-            pc.setBackgroundColor(null);
-            TestKit.check(true, "NSPathControl setBackgroundColor(null) no crash");
+            TestKit.noThrow("NSPathControl setBackgroundColor(null) no crash", () -> pc.setBackgroundColor(null));
             // delegate (ID shapes)
             pc.setDelegate((MemorySegment) null);
             TestKit.check(pc.delegate() == null || pc.delegate().address() == 0, "NSPathControl delegate nil round-trip");
@@ -670,17 +652,15 @@ public final class ControlsCoverageTest {
             pc.setMenu(m);
             TestKit.check(pc.menuTyped() != null && pc.menuTyped().peer().address() == m.peer().address(),
                     "NSPathControl menuTyped round-trip same peer");
-            pc.setMenu((MemorySegment) null);
-            TestKit.check(true, "NSPathControl setMenu(nil) no crash");
+            TestKit.noThrow("NSPathControl setMenu(nil) no crash", () -> pc.setMenu((MemorySegment) null));
             // allowedTypes array conveniences
             NSArray at = pc.allowedTypesArray();
             System.out.println("  allowedTypesArray = " + (at == null ? "nil" : ("count=" + at.count())));
-            pc.setAllowedTypes((NSArray) null);
-            TestKit.check(true, "NSPathControl setAllowedTypes(null-array) no crash");
+            TestKit.noThrow("NSPathControl setAllowedTypes(null-array) no crash", () -> pc.setAllowedTypes((NSArray) null));
             // clickedPathItem (nil outside action dispatch; must not crash)
             MemorySegment clicked = pc.clickedPathItem();
             System.out.println("  clickedPathItem outside action = " + clicked);
-            TestKit.check(true, "NSPathControl clickedPathItem no crash outside action");
+            TestKit.probe("NSPathControl clickedPathItem no crash outside action");
         } catch (Throwable t) {
             TestKit.check(false, "NSPathControl section threw: " + t);
             t.printStackTrace(System.out);
@@ -718,13 +698,11 @@ public final class ControlsCoverageTest {
             TestKit.check(pop.indexOfSelectedItem() == 0, "selectItem(first) -> index 0");
             TestKit.check(pop.selectItemWithTag(777L), "selectItemWithTag(777) == true");
             TestKit.check(!pop.selectItemWithTag(123456L), "selectItemWithTag(missing) == false");
-            pop.setTitle("CustomTitle");
-            TestKit.check(true, "NSPopUpButton setTitle no crash");
+            TestKit.noThrow("NSPopUpButton setTitle no crash", () -> pop.setTitle("CustomTitle"));
             long stag = pop.selectedTag();
             System.out.println("  selectedTag = " + stag);
-            TestKit.check(true, "selectedTag getter no crash (got " + stag + ")");
-            pop.synchronizeTitleAndSelectedItem();
-            TestKit.check(true, "synchronizeTitleAndSelectedItem no crash");
+            TestKit.probe("selectedTag getter no crash (got " + stag + ")");
+            TestKit.noThrow("synchronizeTitleAndSelectedItem no crash", () -> pop.synchronizeTitleAndSelectedItem());
             // usesItemFromMenu / altersStateOfSelectedItem (guard: 15.0+)
             if (responds(pop.peer(), "usesItemFromMenu")) {
                 boolean o = pop.usesItemFromMenu();
@@ -732,7 +710,7 @@ public final class ControlsCoverageTest {
                 TestKit.check(pop.usesItemFromMenu() == !o, "usesItemFromMenu toggled");
                 pop.setUsesItemFromMenu(o);
             } else {
-                TestKit.check(true, "NOTE usesItemFromMenu absent (no-crash pass)");
+                TestKit.skipCase("NOTE usesItemFromMenu absent (no-crash pass)");
             }
             if (responds(pop.peer(), "altersStateOfSelectedItem")) {
                 boolean o = pop.altersStateOfSelectedItem();
@@ -740,7 +718,7 @@ public final class ControlsCoverageTest {
                 TestKit.check(pop.altersStateOfSelectedItem() == !o, "altersStateOfSelectedItem toggled");
                 pop.setAltersStateOfSelectedItem(o);
             } else {
-                TestKit.check(true, "NOTE altersStateOfSelectedItem absent (no-crash pass)");
+                TestKit.skipCase("NOTE altersStateOfSelectedItem absent (no-crash pass)");
             }
             // factories (ID,ID,ID / ID,ID,ID,ID in vocabulary; guard: 15.0+)
             if (responds(ObjC.cls("NSPopUpButton"), "popUpButtonWithMenu:target:action:")) {
@@ -749,14 +727,14 @@ public final class ControlsCoverageTest {
                 NSPopUpButton fp = NSPopUpButton.popUpButtonWithMenu(fm, null, null);
                 TestKit.check(fp != null && fp.numberOfItems() >= 1, "popUpButtonWithMenu factory non-nil with items");
             } else {
-                TestKit.check(true, "NOTE popUpButtonWithMenu absent (no-crash pass)");
+                TestKit.skipCase("NOTE popUpButtonWithMenu absent (no-crash pass)");
             }
             if (responds(ObjC.cls("NSPopUpButton"), "pullDownButtonWithTitle:menu:")) {
                 NSMenu pm = NSMenu.createWithTitle("PMenu");
                 NSPopUpButton pd = NSPopUpButton.pullDownButtonWithTitle("Go", pm);
                 TestKit.check(pd != null && pd.isPullsDown(), "pullDownButtonWithTitle factory isPullsDown");
             } else {
-                TestKit.check(true, "NOTE pullDownButtonWithTitle absent (no-crash pass)");
+                TestKit.skipCase("NOTE pullDownButtonWithTitle absent (no-crash pass)");
             }
         } catch (Throwable t) {
             TestKit.check(false, "NSPopUpButton section threw: " + t);
@@ -791,8 +769,7 @@ public final class ControlsCoverageTest {
             vc.setView(cv);
             citem.setViewController(vc);
             TestKit.check(citem.viewController() != null, "NSCustomTouchBarItem viewController non-nil after set");
-            citem.setViewController(null);
-            TestKit.check(true, "NSCustomTouchBarItem setViewController(nil) no crash");
+            TestKit.noThrow("NSCustomTouchBarItem setViewController(nil) no crash", () -> citem.setViewController(null));
 
             // NSPopoverTouchBarItem: full header coverage
             NSPopoverTouchBarItem pitem = NSPopoverTouchBarItem.create("pop." + System.nanoTime());
@@ -800,11 +777,10 @@ public final class ControlsCoverageTest {
             TestKit.check("PopLbl".equals(pitem.customizationLabel()), "NSPopoverTouchBarItem customizationLabel round-trip");
             pitem.setCollapsedRepresentationLabel("Open");
             TestKit.check("Open".equals(pitem.collapsedRepresentationLabel()), "collapsedRepresentationLabel round-trip");
-            pitem.setCollapsedRepresentation(null);
-            TestKit.check(true, "setCollapsedRepresentation(nil) no crash (default button)");
+            TestKit.noThrow("setCollapsedRepresentation(nil) no crash (default button)", () -> pitem.setCollapsedRepresentation(null));
             NSView cr = pitem.collapsedRepresentation();
             System.out.println("  collapsedRepresentation = " + cr);
-            TestKit.check(true, "collapsedRepresentation getter no crash");
+            TestKit.probe("collapsedRepresentation getter no crash");
             pitem.setCollapsedRepresentationImage(null);
             TestKit.check(pitem.collapsedRepresentationImage() == null, "collapsedRepresentationImage nil after clear");
             NSTouchBar bar = NSTouchBar.create();
@@ -812,18 +788,16 @@ public final class ControlsCoverageTest {
             TestKit.check(pitem.popover() != null, "NSPopoverTouchBarItem popover non-nil after set");
             pitem.setPressAndHoldTouchBar(bar);
             TestKit.check(pitem.pressAndHoldTouchBar() != null, "pressAndHoldTouchBar non-nil after set");
-            pitem.setPressAndHoldTouchBar(null);
-            TestKit.check(true, "setPressAndHoldTouchBar(nil) no crash");
+            TestKit.noThrow("setPressAndHoldTouchBar(nil) no crash", () -> pitem.setPressAndHoldTouchBar(null));
             boolean scb = pitem.showsCloseButton();
             pitem.setShowsCloseButton(!scb);
             TestKit.check(pitem.showsCloseButton() == !scb, "showsCloseButton toggled");
             pitem.setShowsCloseButton(scb);
             pitem.showPopover((MemorySegment) null);
-            pitem.dismissPopover((MemorySegment) null);
-            TestKit.check(true, "showPopover(nil)/dismissPopover(nil) no crash while hidden");
+            TestKit.noThrow("showPopover(nil)/dismissPopover(nil) no crash while hidden", () -> pitem.dismissPopover((MemorySegment) null));
             NSGestureRecognizer gr = pitem.makeStandardActivatePopoverGestureRecognizer();
             System.out.println("  standardActivatePopoverGestureRecognizer = " + gr);
-            TestKit.check(true, "makeStandardActivatePopoverGestureRecognizer no crash");
+            TestKit.probe("makeStandardActivatePopoverGestureRecognizer no crash");
 
             // NSSliderTouchBarItem: full header coverage
             NSSliderTouchBarItem sitem = NSSliderTouchBarItem.create("slider." + System.nanoTime());
@@ -869,9 +843,9 @@ public final class ControlsCoverageTest {
             TestKit.check(tbar.templateItems() != null, "templateItems non-nil after set empty set");
             NSTouchBarItem found = tbar.itemForIdentifier("missing.id." + System.nanoTime());
             System.out.println("  itemForIdentifier(missing) = " + found);
-            TestKit.check(true, "NSTouchBar itemForIdentifier(missing) no crash");
+            TestKit.probe("NSTouchBar itemForIdentifier(missing) no crash");
             System.out.println("  touchBar isVisible = " + tbar.isVisible());
-            TestKit.check(true, "NSTouchBar isVisible no crash (got " + tbar.isVisible() + ")");
+            TestKit.probe("NSTouchBar isVisible no crash (got " + tbar.isVisible() + ")");
             // class flag (10.15+; guard, restore after)
             if (responds(ObjC.cls("NSTouchBar"), "isAutomaticCustomizeTouchBarMenuItemEnabled")) {
                 boolean o = NSTouchBar.isAutomaticCustomizeTouchBarMenuItemEnabled();
@@ -879,7 +853,7 @@ public final class ControlsCoverageTest {
                 TestKit.check(NSTouchBar.isAutomaticCustomizeTouchBarMenuItemEnabled() == o,
                         "automaticCustomizeTouchBarMenuItemEnabled round-trip (" + o + ")");
             } else {
-                TestKit.check(true, "NOTE automaticCustomizeTouchBarMenuItemEnabled absent (no-crash pass)");
+                TestKit.skipCase("NOTE automaticCustomizeTouchBarMenuItemEnabled absent (no-crash pass)");
             }
 
             // NSTouchBarItem base: viewController/customizationLabel/constants

@@ -106,7 +106,7 @@ public final class TouchBarItemsTest {
                 item.setEnabled(true);
                 check(item.isEnabled(), "NSButtonTouchBarItem setEnabled(true)/isEnabled round-trip");
             } else {
-                check(true, "SKIP setEnabled/isEnabled (selector absent on this OS)");
+                TestKit.skipCase("SKIP setEnabled/isEnabled (selector absent on this OS)");
             }
 
             // bare alloc/init variant
@@ -130,10 +130,10 @@ public final class TouchBarItemsTest {
 
             MemorySegment autoSlider = item.slider();
             if (autoSlider != null && autoSlider.address() != 0) {
-                check(true, "NSSliderTouchBarItem auto-created slider present");
+                TestKit.probe("NSSliderTouchBarItem auto-created slider present");
             } else {
                 System.out.println("  NOTE: slider not auto-created before setSlider on this OS");
-                check(true, "NSSliderTouchBarItem slider() nil before setSlider tolerated");
+                TestKit.skipCase("NSSliderTouchBarItem slider() nil before setSlider tolerated");
             }
 
             // pair with NSSlider.create(NSRect) — install a custom slider
@@ -160,8 +160,7 @@ public final class TouchBarItemsTest {
                 double dv = item.doubleValue();
                 check(dv == 7.5, "NSSliderTouchBarItem setDoubleValue/doubleValue round-trip (got " + dv + ")");
             } else {
-                item.setDoubleValue(7.5);
-                check(true, "SKIP doubleValue round-trip (selector absent on this OS, no-crash pass)");
+                TestKit.noThrow("SKIP doubleValue round-trip (selector absent on this OS, no-crash pass)", () -> item.setDoubleValue(7.5));
             }
 
             // factory variant with target/action
@@ -211,8 +210,7 @@ public final class TouchBarItemsTest {
 
             // unhosted show/dismiss must be safe no-ops
             item.showPopover();
-            item.dismissPopover();
-            check(true, "NSPopoverTouchBarItem showPopover/dismissPopover no crash (unhosted)");
+            TestKit.noThrow("NSPopoverTouchBarItem showPopover/dismissPopover no crash (unhosted)", () -> item.dismissPopover());
         } catch (Throwable t) {
             check(false, "NSPopoverTouchBarItem section threw: " + t);
             t.printStackTrace(System.out);

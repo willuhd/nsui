@@ -75,7 +75,7 @@ public final class SecureTextFieldTest {
             if (!"s3cr3t!".equals(value)) TestKit.pump(app, 100);
         }
         if ("s3cr3t!".equals(value)) {
-            TestKit.check(true, "in-window stringValue settled to \"s3cr3t!\"");
+            TestKit.probe("in-window stringValue settled to \"s3cr3t!\"");
         } else {
             System.out.println("NOTE: in-window stringValue never settled (got \"" + value + "\") — AppKit cell timing race; wrapper round-trip already proven pre-window.");
         }

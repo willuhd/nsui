@@ -150,8 +150,7 @@ public final class MediaCoverageTest {
             NSPasteboard pb = NSPasteboard.pasteboardWithName("sa-mediacoverage");
             check(pb != null, "private pasteboard non-nil");
             pb.clearContents();
-            NSColor.redColor().writeToPasteboard(pb);
-            check(true, "writeToPasteboard no-throw");
+            TestKit.noThrow("writeToPasteboard no-throw", () -> NSColor.redColor().writeToPasteboard(pb));
             // Server-mediated color bytes read back nil in this session (writeToPasteboard:
             // leaves zero types on a fresh named pasteboard, though the string channel
             // round-trips fine) — unproven here, so only the nil-safe read is pinned.
@@ -203,13 +202,13 @@ public final class MediaCoverageTest {
             check(img.backgroundColor() != null, "backgroundColor set/get non-nil");
             img.setBackgroundColor(null);
             img.recache();
-            check(true, "recache did not throw");
+            TestKit.probe("recache did not throw");
             NSArray types = NSImage.imageTypes();
             check(types != null && types.count() > 0, "imageTypes non-empty");
             check(NSImage.imageUnfilteredTypes() != null, "imageUnfilteredTypes readable");
             try {
                 MemorySegment lc = img.layerContentsForContentsScale(1.0);
-                check(true, "layerContentsForContentsScale no-throw (nil-safe: " + (lc == null) + ")");
+                TestKit.probe("layerContentsForContentsScale no-throw");
             } catch (Throwable t) {
                 check(false, "layerContentsForContentsScale threw: " + t);
             }
@@ -261,12 +260,8 @@ public final class MediaCoverageTest {
             check(iv.image() != null, "image set/get non-nil");
             NSImageView iv2 = NSImageView.imageViewWithImage(icon);
             check(iv2 != null && iv2.image() != null, "imageViewWithImage non-nil");
-            try {
-                NSImageView.imageViewWithImage(null);
-                check(false, "imageViewWithImage(null) should reject nil");
-            } catch (IllegalArgumentException expected) {
-                check(true, "imageViewWithImage(null) rejects nil in Java (no native crash)");
-            }
+            TestKit.expectThrows("imageViewWithImage(null) rejects nil in Java (no native crash)",
+                    IllegalArgumentException.class, () -> NSImageView.imageViewWithImage(null));
             iv.setContentTintColor(NSColor.redColor());
             check(iv.contentTintColor() != null, "contentTintColor round-trip non-nil");
             iv.setContentTintColor(null);
@@ -355,15 +350,13 @@ public final class MediaCoverageTest {
             NSGradient gl = NSGradient.initWithColorsAtLocations(colors, new double[]{0.0, 0.5, 1.0});
             check(gl != null && gl.numberOfColorStops() == 3, "located stops == 3");
             try {
-                g.drawInRectAngle(new NSRect(0, 0, 32, 32), 45.0);
-                check(true, "drawInRect:angle: no-throw (nil context)");
+                TestKit.noThrow("drawInRect:angle: no-throw (nil context)", () -> g.drawInRectAngle(new NSRect(0, 0, 32, 32), 45.0));
             } catch (Throwable t) {
                 check(false, "drawInRect:angle: threw: " + t);
             }
             try {
                 NSBezierPath path = NSBezierPath.bezierPathWithRect(new NSRect(0, 0, 32, 32));
-                g.drawInBezierPathAngle(path, 0.0);
-                check(true, "drawInBezierPath:angle: no-throw (nil context)");
+                TestKit.noThrow("drawInBezierPath:angle: no-throw (nil context)", () -> g.drawInBezierPathAngle(path, 0.0));
             } catch (Throwable t) {
                 check(false, "drawInBezierPath:angle: threw: " + t);
             }
@@ -425,8 +418,7 @@ public final class MediaCoverageTest {
                 p.addClip();
                 NSBezierPath.fillRect(new NSRect(0, 0, 4, 4));
                 NSBezierPath.strokeRect(new NSRect(0, 0, 4, 4));
-                NSBezierPath.clipRect(new NSRect(0, 0, 4, 4));
-                check(true, "stroke/fill/clip class draws no-throw (nil context)");
+                TestKit.noThrow("stroke/fill/clip class draws no-throw (nil context)", () -> NSBezierPath.clipRect(new NSRect(0, 0, 4, 4)));
             } catch (Throwable t) {
                 check(false, "draw section threw: " + t);
             }
@@ -475,8 +467,7 @@ public final class MediaCoverageTest {
             s.setShadowColor(NSColor.blackColor());
             check(s.shadowColor() != null, "shadowColor round-trip non-nil");
             try {
-                s.set();
-                check(true, "set() no-throw (nil context)");
+                TestKit.noThrow("set() no-throw (nil context)", () -> s.set());
             } catch (Throwable t) {
                 check(false, "shadow set() threw: " + t);
             }
@@ -489,15 +480,13 @@ public final class MediaCoverageTest {
         // ---------------- NSGraphicsContext (bitmap-backed, then cleared) ----------------
         NSGraphicsContext prev = null;
         try {
-            prev = NSGraphicsContext.currentContext();
-            check(true, "currentContext readable headless (nil-safe: " + (prev == null) + ")");
+            prev = TestKit.attempt("currentContext readable headless", () -> NSGraphicsContext.currentContext());
             check(NSGraphicsContext.currentContextDrawingToScreen() == false
                     || NSGraphicsContext.currentContextDrawingToScreen() == true,
                     "currentContextDrawingToScreen no-crash");
             try {
                 NSGraphicsContext.saveCurrentGraphicsState();
-                NSGraphicsContext.restoreCurrentGraphicsState();
-                check(true, "class save/restore no-throw");
+                TestKit.noThrow("class save/restore no-throw", () -> NSGraphicsContext.restoreCurrentGraphicsState());
             } catch (Throwable t) {
                 check(false, "class save/restore threw: " + t);
             }
@@ -514,8 +503,7 @@ public final class MediaCoverageTest {
             try {
                 ctx.saveGraphicsState();
                 ctx.restoreGraphicsState();
-                ctx.flushGraphics();
-                check(true, "save/restore/flush no-throw");
+                TestKit.noThrow("save/restore/flush no-throw", () -> ctx.flushGraphics());
             } catch (Throwable t) {
                 check(false, "ctx save/restore/flush threw: " + t);
             }
@@ -542,8 +530,7 @@ public final class MediaCoverageTest {
                 NSBezierPath.fillRect(new NSRect(0, 0, 8, 8));
                 NSGradient.initWithStartingColorEndingColor(NSColor.blackColor(), NSColor.whiteColor())
                         .drawInRectAngle(new NSRect(0, 0, 8, 8), 45.0);
-                NSColor.redColor().drawSwatchInRect(new NSRect(0, 0, 8, 8));
-                check(true, "real-ctx draws no-throw");
+                TestKit.noThrow("real-ctx draws no-throw", () -> NSColor.redColor().drawSwatchInRect(new NSRect(0, 0, 8, 8)));
             } catch (Throwable t) {
                 check(false, "real-ctx draws threw: " + t);
             }
@@ -551,7 +538,7 @@ public final class MediaCoverageTest {
                     || NSGraphicsContext.graphicsContextWithAttributes(null) != null,
                     "graphicsContextWithAttributes(null) no-crash");
             NSGraphicsContext.setCurrentContext(prev);
-            check(true, "context restored");
+            TestKit.probe("context restored");
         } catch (Throwable t) {
             check(false, "graphics section threw: " + t);
             t.printStackTrace(System.out);
@@ -580,15 +567,13 @@ public final class MediaCoverageTest {
             try {
                 NSAnimationContext.beginGrouping();
                 NSAnimationContext.currentContext().setDuration(0.1);
-                NSAnimationContext.endGrouping();
-                check(true, "begin/end grouping no-throw");
+                TestKit.noThrow("begin/end grouping no-throw", () -> NSAnimationContext.endGrouping());
             } catch (Throwable t) {
                 check(false, "grouping threw: " + t);
             }
             try {
-                NSAnimationContext.runAnimationGroup(() -> {
-                }, 0.2);
-                check(true, "runAnimationGroup helper no-throw");
+                TestKit.noThrow("runAnimationGroup helper no-throw", () -> NSAnimationContext.runAnimationGroup(() -> {
+                }, 0.2));
             } catch (Throwable t) {
                 check(false, "runAnimationGroup threw: " + t);
             }
@@ -631,8 +616,7 @@ public final class MediaCoverageTest {
                     "isSetOnMouseEntered no-crash");
             try {
                 NSCursor.arrowCursor().push();
-                NSCursor.popCursor();
-                check(true, "balanced push/popCursor no-throw");
+                TestKit.noThrow("balanced push/popCursor no-throw", () -> NSCursor.popCursor());
             } catch (Throwable t) {
                 check(false, "push/pop threw: " + t);
             }

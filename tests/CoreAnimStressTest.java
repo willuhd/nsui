@@ -241,8 +241,7 @@ public final class CoreAnimStressTest {
             CATransaction.setAnimationDuration(0.01);
             CATransaction.setCompletionBlock(fired::incrementAndGet);
             l.setPosition(new NSPoint(9, 9));
-            CATransaction.commit();
-            check(true, "setCompletionBlock(Runnable) registered without crash");
+            TestKit.noThrow("setCompletionBlock(Runnable) registered without crash", () -> CATransaction.commit());
             // pump: flush + short sleeps give the runloop chances to deliver the callback
             long deadline = System.currentTimeMillis() + 1500;
             while (fired.get() == 0 && System.currentTimeMillis() < deadline) {
@@ -250,10 +249,10 @@ public final class CoreAnimStressTest {
                 Thread.sleep(20);
             }
             if (fired.get() > 0) {
-                check(true, "completion block fired (" + fired.get() + "x) after commit+flush pump");
+                TestKit.probe("completion block fired (" + fired.get() + "x) after commit+flush pump");
             } else {
                 System.out.println("NOTE: completion block did not fire within 1.5s (runloop-dependent) — no crash is pass");
-                check(true, "completion block no-crash path (did not fire; informational)");
+                TestKit.skipCase("completion block no-crash path (did not fire; informational)");
             }
         } catch (Throwable t) {
             check(false, "completion block section threw: " + t);

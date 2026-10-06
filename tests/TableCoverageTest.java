@@ -95,11 +95,11 @@ public final class TableCoverageTest {
             check(tv.style() == 4, "style Plain round-trip");
             tv.setStyle(0);
             check(tv.style() == 0, "style restore Automatic");
-            try { tv.effectiveStyle(); check(true, "effectiveStyle no throw"); }
+            try { TestKit.noThrow("effectiveStyle no throw", () -> tv.effectiveStyle()); }
             catch (Throwable t) { check(false, "effectiveStyle threw: " + t); }
 
             check(tv.rowSizeStyle() == 0, "rowSizeStyle default Custom(0)");
-            try { tv.effectiveRowSizeStyle(); check(true, "effectiveRowSizeStyle no throw"); }
+            try { TestKit.noThrow("effectiveRowSizeStyle no throw", () -> tv.effectiveRowSizeStyle()); }
             catch (Throwable t) { check(false, "effectiveRowSizeStyle threw: " + t); }
 
             tv.setIntercellSpacing(new NSSize(7, 9));
@@ -166,7 +166,7 @@ public final class TableCoverageTest {
             check(tv.highlightedTableColumn() == null, "highlightedTableColumn cleared");
 
             check(tv.indicatorImageInTableColumn(c1) == null, "indicatorImage initial nil");
-            try { tv.setIndicatorImage(null, c1); check(true, "setIndicatorImage(null) no throw"); }
+            try { TestKit.noThrow("setIndicatorImage(null) no throw", () -> tv.setIndicatorImage(null, c1)); }
             catch (Throwable t) { check(false, "setIndicatorImage(null) threw: " + t); }
 
             check(tv.numberOfSelectedColumns() == 0, "numberOfSelectedColumns 0");
@@ -175,29 +175,28 @@ public final class TableCoverageTest {
             check(!isNil(tv.selectedRowIndexes()), "selectedRowIndexes non-nil");
             check(!isNil(tv.hiddenRowIndexes()), "hiddenRowIndexes non-nil");
             check(isNil(tv.registeredNibsByIdentifier()), "registeredNibsByIdentifier nil");
-            try { tv.registerNib(null, "probe"); check(true, "registerNib(null) no throw"); }
+            try { TestKit.noThrow("registerNib(null) no throw", () -> tv.registerNib(null, "probe")); }
             catch (Throwable t) { check(false, "registerNib(null) threw: " + t); }
             check(!isNil(tv.columnIndexesInRect(new NSRect(0, 0, 400, 200))),
                     "columnIndexesInRect non-nil");
 
             NSView foreign = NSView.create(new NSRect(0, 0, 10, 10), (ctx, dr) -> {});
-            try { tv.rowForView(foreign); check(true, "rowForView(foreign view) no throw"); }
+            try { TestKit.noThrow("rowForView(foreign view) no throw", () -> tv.rowForView(foreign)); }
             catch (Throwable t) { check(false, "rowForView threw: " + t); }
-            try { tv.columnForView(foreign); check(true, "columnForView(foreign view) no throw"); }
+            try { TestKit.noThrow("columnForView(foreign view) no throw", () -> tv.columnForView(foreign)); }
             catch (Throwable t) { check(false, "columnForView threw: " + t); }
             check(tv.makeViewWithIdentifier("NoSuchIdentifierXYZ", null) == null,
                     "makeViewWithIdentifier unknown nil");
 
-            try { tv.tile(); tv.sizeLastColumnToFit(); tv.noteNumberOfRowsChanged(); check(true, "tile/sizeLastColumnToFit/noteNumberOfRowsChanged no throw"); }
+            try { tv.tile(); tv.sizeLastColumnToFit(); TestKit.noThrow("tile/sizeLastColumnToFit/noteNumberOfRowsChanged no throw", () -> tv.noteNumberOfRowsChanged()); }
             catch (Throwable t) { check(false, "tile family threw: " + t); }
             try {
                 tv.reloadDataForRowIndexes(NSIndexSet.indexSet().peer(), NSIndexSet.indexSet().peer());
-                tv.noteHeightOfRowsWithIndexesChanged(NSIndexSet.indexSet().peer());
-                check(true, "reloadDataForRowIndexes/noteHeightOfRows(empty) no throw");
+                TestKit.noThrow("reloadDataForRowIndexes/noteHeightOfRows(empty) no throw", () -> tv.noteHeightOfRowsWithIndexesChanged(NSIndexSet.indexSet().peer()));
             } catch (Throwable t) { check(false, "reload family threw: " + t); }
-            try { tv.beginUpdates(); tv.endUpdates(); check(true, "begin/endUpdates no throw"); }
+            try { tv.beginUpdates(); TestKit.noThrow("begin/endUpdates no throw", () -> tv.endUpdates()); }
             catch (Throwable t) { check(false, "begin/endUpdates threw: " + t); }
-            try { tv.setDropRow(-1, 0); check(true, "setDropRow(-1,DropOn) no throw"); }
+            try { TestKit.noThrow("setDropRow(-1,DropOn) no throw", () -> tv.setDropRow(-1, 0)); }
             catch (Throwable t) { check(false, "setDropRow threw: " + t); }
             tv.selectRowIndexes(NSIndexSet.indexSet().peer(), false);
             check(tv.selectedRow() == -1 && tv.numberOfSelectedRows() == 0,
@@ -258,11 +257,11 @@ public final class TableCoverageTest {
             ov.setStronglyReferencesItems(false);
             check(!ov.stronglyReferencesItems(), "stronglyReferencesItems false");
             ov.setStronglyReferencesItems(true);
-            try { ov.reloadItem(null); check(true, "reloadItem(null) no throw"); }
+            try { TestKit.noThrow("reloadItem(null) no throw", () -> ov.reloadItem(null)); }
             catch (Throwable t) { check(false, "reloadItem(null) threw: " + t); }
-            try { ov.setDropItem(null, -1); check(true, "setDropItem(null,-1) no throw"); }
+            try { TestKit.noThrow("setDropItem(null,-1) no throw", () -> ov.setDropItem(null, -1)); }
             catch (Throwable t) { check(false, "setDropItem threw: " + t); }
-            try { ov.expandItem(null); ov.collapseItem(null); check(true, "expand/collapse(null) no throw"); }
+            try { ov.expandItem(null); TestKit.noThrow("expand/collapse(null) no throw", () -> ov.collapseItem(null)); }
             catch (Throwable t) { check(false, "expand/collapse(null) threw: " + t); }
             check(ov.rowForItem(null) == -1, "rowForItem(null) == -1");
             MemorySegment item0 = ov.itemAtRow(0);
@@ -282,10 +281,10 @@ public final class TableCoverageTest {
             check(cv.numberOfSections() == 1, "numberOfSections == 1 (got " + cv.numberOfSections() + ")");
             check(cv.numberOfItemsInSection(0) == 0, "numberOfItemsInSection(0) == 0");
             check(isNil(cv.collectionViewLayout()), "collectionViewLayout initial nil (lazy)");
-            try { cv.setCollectionViewLayout(null); check(true, "setCollectionViewLayout(null) no throw"); }
+            try { TestKit.noThrow("setCollectionViewLayout(null) no throw", () -> cv.setCollectionViewLayout(null)); }
             catch (Throwable t) { check(false, "setCollectionViewLayout(null) threw: " + t); }
             check(!isNil(cv.backgroundColors()), "backgroundColors initial non-nil");
-            try { cv.setBackgroundColors(null); check(true, "setBackgroundColors(null) no throw"); }
+            try { TestKit.noThrow("setBackgroundColors(null) no throw", () -> cv.setBackgroundColors(null)); }
             catch (Throwable t) { check(false, "setBackgroundColors(null) threw: " + t); }
             check(!isNil(cv.backgroundColors()), "backgroundColors reset to default after null");
             check(!isNil(cv.content()), "content initial non-nil");
@@ -306,7 +305,7 @@ public final class TableCoverageTest {
                     "indexPathsForVisibleSupplementaryElementsOfKind non-nil");
             check(!isNil(cv.visibleSupplementaryViewsOfKind("Hd")), "visibleSupplementaryViewsOfKind non-nil");
             check(isNil(cv.prefetchDataSource()), "prefetchDataSource initial nil");
-            try { cv.setPrefetchDataSource(null); check(true, "setPrefetchDataSource(null) no throw"); }
+            try { TestKit.noThrow("setPrefetchDataSource(null) no throw", () -> cv.setPrefetchDataSource(null)); }
             catch (Throwable t) { check(false, "setPrefetchDataSource(null) threw: " + t); }
             NSView bgv = NSView.create(new NSRect(0, 0, 40, 40), (ctx, dr) -> {});
             cv.setBackgroundView(bgv);
@@ -322,8 +321,7 @@ public final class TableCoverageTest {
                 cv.registerClassForItem(ObjC.cls("NSCollectionViewItem"), "probeItem");
                 cv.registerNibForItem(null, "probeNib");
                 cv.registerClassForSupplementaryView(null, "Hd", "supp");
-                cv.registerNibForSupplementaryView(null, "Hd", "supp");
-                check(true, "registerClass/Nib (item + supplementary) no throw");
+                TestKit.noThrow("registerClass/Nib (item + supplementary) no throw", () -> cv.registerNibForSupplementaryView(null, "Hd", "supp"));
             } catch (Throwable t) { check(false, "register threw: " + t); }
             MethodHandle hPath = ObjC.handle(Sig.of(Ret.ID, Arg.INT, Arg.INT));
             MemorySegment ip = null;
@@ -341,27 +339,24 @@ public final class TableCoverageTest {
             try {
                 cv.selectItemsAtIndexPaths(emptySet, 0);
                 cv.deselectItemsAtIndexPaths(emptySet);
-                cv.scrollToItemsAtIndexPaths(emptySet, 0);
-                check(true, "select/deselect/scroll(empty set) no throw");
+                TestKit.noThrow("select/deselect/scroll(empty set) no throw", () -> cv.scrollToItemsAtIndexPaths(emptySet, 0));
             } catch (Throwable t) { check(false, "select family threw: " + t); }
             try {
                 cv.insertSections(NSIndexSet.indexSet().peer());
                 cv.deleteSections(NSIndexSet.indexSet().peer());
                 cv.reloadSections(NSIndexSet.indexSet().peer());
-                cv.moveSection(0, 0);
-                check(true, "section mutations(empty) no throw");
+                TestKit.noThrow("section mutations(empty) no throw", () -> cv.moveSection(0, 0));
             } catch (Throwable t) { check(false, "section mutations threw: " + t); }
             try {
                 cv.insertItemsAtIndexPaths(null);
                 cv.deleteItemsAtIndexPaths(null);
-                cv.reloadItemsAtIndexPaths(null);
-                check(true, "item mutations(nil) no throw");
+                TestKit.noThrow("item mutations(nil) no throw", () -> cv.reloadItemsAtIndexPaths(null));
             } catch (Throwable t) { check(false, "item mutations threw: " + t); }
-            try { cv.selectAll(null); cv.deselectAll(null); check(true, "selectAll/deselectAll(null) no throw"); }
+            try { cv.selectAll(null); TestKit.noThrow("selectAll/deselectAll(null) no throw", () -> cv.deselectAll(null)); }
             catch (Throwable t) { check(false, "selectAll family threw: " + t); }
-            try { cv.toggleSectionCollapse(bgv.peer()); check(true, "toggleSectionCollapse(view) no throw"); }
+            try { TestKit.noThrow("toggleSectionCollapse(view) no throw", () -> cv.toggleSectionCollapse(bgv.peer())); }
             catch (Throwable t) { check(false, "toggleSectionCollapse threw: " + t); }
-            try { cv.reloadData(); check(true, "reloadData no throw"); }
+            try { TestKit.noThrow("reloadData no throw", () -> cv.reloadData()); }
             catch (Throwable t) { check(false, "reloadData threw: " + t); }
 
             NSCollectionViewItem standalone = NSCollectionViewItem.create();

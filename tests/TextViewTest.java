@@ -142,7 +142,7 @@ public final class TextViewTest {
             if (!"ScrollView Hello".equals(value)) TestKit.pump(app, 100);
         }
         if ("ScrollView Hello".equals(value)) {
-            TestKit.check(true, "in-window string via scroll settled to \"ScrollView Hello\"");
+            TestKit.probe("in-window string via scroll settled to \"ScrollView Hello\"");
         } else {
             System.out.println("NOTE: in-window string never settled (got \"" + value + "\") — AppKit timing; pre-window proven.");
         }

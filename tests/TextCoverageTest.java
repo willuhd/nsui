@@ -250,8 +250,7 @@ public final class TextCoverageTest {
         TestKit.check(NSFont.labelFontSize() > 0, "labelFontSize > 0");
         TestKit.check(NSFont.systemFontSizeForControlSize(0) > 0, "systemFontSizeForControlSize(0) > 0");
         try {
-            helv.set();
-            TestKit.check(true, "set (no context) did not crash");
+            TestKit.noThrow("set (no context) did not crash", () -> helv.set());
         } catch (Throwable t) {
             TestKit.check(false, "set threw: " + t);
         }
@@ -310,8 +309,7 @@ public final class TextCoverageTest {
         System.out.println("NOTE: currentFontAction=" + mgr.currentFontAction()
                 + " convertFontTraits(0)=" + mgr.convertFontTraits(0));
         TestKit.check(mgr.convertAttributes(null) == null || true, "convertAttributes(NULL) did not crash");
-        mgr.setSelectedAttributesIsMultiple(null, false);
-        TestKit.check(true, "setSelectedAttributes:isMultiple:(NULL) did not crash");
+        TestKit.noThrow("setSelectedAttributes:isMultiple:(NULL) did not crash", () -> mgr.setSelectedAttributesIsMultiple(null, false));
 
         // target/action raw round-trip (restores the same value — no behavior change).
         MemorySegment t0 = mgr.target();
@@ -402,8 +400,7 @@ public final class TextCoverageTest {
                 "fresh container textLayoutManager nil (TextKit 1)");
         System.out.println("NOTE: isSimpleRectangularTextContainer=" + c.isSimpleRectangularTextContainer());
         TestKit.check(c.exclusionPaths() != null, "exclusionPaths non-nil by default");
-        c.setExclusionPaths(null);
-        TestKit.check(true, "setExclusionPaths(NULL) did not crash");
+        TestKit.noThrow("setExclusionPaths(NULL) did not crash", () -> c.setExclusionPaths(null));
 
         // ---- trio wiring: storage -> layoutManager -> container -> textView ----
         NSTextStorage storage = NSTextStorage.create("Hello");
@@ -424,8 +421,7 @@ public final class TextCoverageTest {
                 "textStorageObserver nil by default");
         storage.setTextStorageObserver(null);
         storage.invalidateAttributesInRange(new NSRange(0, 5));
-        storage.ensureAttributesAreFixed(new NSRange(0, 5));
-        TestKit.check(true, "invalidate/ensureAttributes did not crash");
+        TestKit.noThrow("invalidate/ensureAttributes did not crash", () -> storage.ensureAttributesAreFixed(new NSRange(0, 5)));
         storage.processEditing();
         TestKit.check(storage.editedMask() == 0, "editedMask still 0 after processEditing");
 
@@ -487,8 +483,7 @@ public final class TextCoverageTest {
         lm.ensureLayoutForGlyphRange(new NSRange(0, 5));
         lm.ensureLayoutForBoundingRectInTextContainer(new NSRect(0, 0, 300, 200), c);
         lm.invalidateDisplayForCharacterRange(new NSRange(0, 5));
-        lm.invalidateDisplayForGlyphRange(new NSRange(0, 5));
-        TestKit.check(true, "ensure*/invalidateDisplay* did not crash");
+        TestKit.noThrow("ensure*/invalidateDisplay* did not crash", () -> lm.invalidateDisplayForGlyphRange(new NSRange(0, 5)));
 
         boolean bg0 = lm.backgroundLayoutEnabled();
         lm.setBackgroundLayoutEnabled(!bg0);
@@ -523,11 +518,9 @@ public final class TextCoverageTest {
         long tb = lm.typesetterBehavior();
         lm.setTypesetterBehavior(tb);
         TestKit.check(lm.typesetterBehavior() == tb, "typesetterBehavior round-trip");
-        lm.setTypesetter(lm.typesetter());
-        TestKit.check(true, "setTypesetter(same) did not crash");
+        TestKit.noThrow("setTypesetter(same) did not crash", () -> lm.setTypesetter(lm.typesetter()));
         lm.textContainerChangedGeometry(c);
-        lm.textContainerChangedTextView(c);
-        TestKit.check(true, "textContainerChanged* did not crash");
+        TestKit.noThrow("textContainerChanged* did not crash", () -> lm.textContainerChangedTextView(c));
 
         TestKit.check(lm.isValidGlyphIndex(0), "isValidGlyphIndex(0)");
         System.out.println("NOTE: CGGlyphAtIndex(0)=" + lm.cgGlyphAtIndex(0)
@@ -543,8 +536,7 @@ public final class TextCoverageTest {
                 + " extraContainer=" + (lm.extraLineFragmentTextContainer() == null ? "nil" : "set"));
         lm.setTextContainerForGlyphRange(c, new NSRange(0, 5));
         lm.setNotShownAttributeForGlyphAtIndex(false, 0);
-        lm.setDrawsOutsideLineFragmentForGlyphAtIndex(false, 0);
-        TestKit.check(true, "glyph-attribute setters did not crash");
+        TestKit.noThrow("glyph-attribute setters did not crash", () -> lm.setDrawsOutsideLineFragmentForGlyphAtIndex(false, 0));
 
         // temporary-attribute round-trip through the layout manager
         lm.addTemporaryAttributeValueForCharacterRange(
@@ -554,11 +546,9 @@ public final class TextCoverageTest {
         TestKit.check(tmp != null && tmp.address() != 0, "temporaryAttribute readable back");
         TestKit.check(lm.temporaryAttributesAtCharacterIndexEffectiveRange(0, null) != null,
                 "temporaryAttributesAtCharacterIndex non-nil");
-        lm.removeTemporaryAttributeForCharacterRange("NSForegroundColorAttributeName", new NSRange(0, 5));
-        TestKit.check(true, "removeTemporaryAttribute did not crash");
+        TestKit.noThrow("removeTemporaryAttribute did not crash", () -> lm.removeTemporaryAttributeForCharacterRange("NSForegroundColorAttributeName", new NSRange(0, 5)));
         lm.setTemporaryAttributesForCharacterRange(null, new NSRange(0, 5));
-        lm.addTemporaryAttributesForCharacterRange(null, new NSRange(0, 5));
-        TestKit.check(true, "set/addTemporaryAttributes(NULL) did not crash");
+        TestKit.noThrow("set/addTemporaryAttributes(NULL) did not crash", () -> lm.addTemporaryAttributesForCharacterRange(null, new NSRange(0, 5)));
 
         TestKit.check(lm.defaultLineHeightForFont(NSFont.systemFontOfSize(12)) > 0, "defaultLineHeightForFont > 0");
         System.out.println("NOTE: defaultBaselineOffset=" + lm.defaultBaselineOffsetForFont(NSFont.systemFontOfSize(12)));
@@ -595,8 +585,7 @@ public final class TextCoverageTest {
         tv.setSelectedRange(new NSRange(0, 5));
         TestKit.check(tv.selectedRange().location() == 0 && tv.selectedRange().length() == 5,
                 "selectedRange round-trip (got " + tv.selectedRange() + ")");
-        tv.scrollRangeToVisible(new NSRange(0, 5));
-        TestKit.check(true, "scrollRangeToVisible did not crash");
+        TestKit.noThrow("scrollRangeToVisible did not crash", () -> tv.scrollRangeToVisible(new NSRange(0, 5)));
 
         boolean ufp0 = tv.usesFontPanel();
         tv.setUsesFontPanel(!ufp0);
@@ -618,10 +607,8 @@ public final class TextCoverageTest {
         tv.setBaseWritingDirection(wd0);
 
         tv.setTextColorRange(NSColor.redColor(), new NSRange(0, 5));
-        tv.setFontRange(NSFont.systemFontOfSize(12), new NSRange(0, 5));
-        TestKit.check(true, "setTextColor:range:/setFont:range: did not crash");
-        tv.setTextColor(NSColor.redColor(), new NSRange(0, 5));
-        TestKit.check(true, "textView setTextColor:range: (storage path) did not crash");
+        TestKit.noThrow("setTextColor:range:/setFont:range: did not crash", () -> tv.setFontRange(NSFont.systemFontOfSize(12), new NSRange(0, 5)));
+        TestKit.noThrow("textView setTextColor:range: (storage path) did not crash", () -> tv.setTextColor(NSColor.redColor(), new NSRange(0, 5)));
 
         NSSize max0 = tv.maxSize();
         tv.setMaxSize(new NSSize(1000, 1000));
@@ -639,8 +626,7 @@ public final class TextCoverageTest {
         tv.setVerticallyResizable(!vr0);
         TestKit.check(tv.isVerticallyResizable() == !vr0, "verticallyResizable toggles");
         tv.setVerticallyResizable(vr0);
-        tv.sizeToFit();
-        TestKit.check(true, "sizeToFit did not crash");
+        TestKit.noThrow("sizeToFit did not crash", () -> tv.sizeToFit());
         TestKit.check(tv.delegateSegment() == null || tv.delegateSegment().address() == 0,
                 "text delegate nil by default");
         tv.setDelegate(null);
@@ -659,8 +645,7 @@ public final class TextCoverageTest {
         tv.setTextContainerInset(inset0);
         TestKit.check(tv.textContainerOrigin() != null, "textContainerOrigin readable");
         tv.invalidateTextContainerOrigin();
-        tv.setConstrainedFrameSize(new NSSize(200, 100));
-        TestKit.check(true, "invalidateOrigin/setConstrainedFrameSize did not crash");
+        TestKit.noThrow("invalidateOrigin/setConstrainedFrameSize did not crash", () -> tv.setConstrainedFrameSize(new NSSize(200, 100)));
         NSTextContainer fresh = NSTextContainer.create(new NSSize(300, 200));
         tv.replaceTextContainer(fresh);
         TestKit.check(tv.textContainer().peer().address() == fresh.peer().address(),
@@ -691,8 +676,7 @@ public final class TextCoverageTest {
         tv.updateTouchBarItemIdentifiers();
         tv.updateTextTouchBarItems();
         tv.updateCandidates();
-        tv.updateQuickLookPreviewPanel();
-        TestKit.check(true, "harmless actions did not crash");
+        TestKit.noThrow("harmless actions did not crash", () -> tv.updateQuickLookPreviewPanel());
         // NOTE: copy:/cut:/paste:*, pasteAs*, showGuessPanel, checkSpelling:,
         // performFindPanelAction:, orderFront*Panel, complete:, start/stopSpeaking,
         // toggleQuickLookPreviewPanel, orderFrontSharingServicePicker touch the
@@ -712,8 +696,7 @@ public final class TextCoverageTest {
         tv.outline(null);
         tv.changeColor(null);
         tv.changeAttributes(null);
-        tv.changeDocumentBackgroundColor(null);
-        TestKit.check(true, "font-menu commands did not crash");
+        TestKit.noThrow("font-menu commands did not crash", () -> tv.changeDocumentBackgroundColor(null));
 
         // selection state
         NSArray sel = NSArray.mutableArray();
@@ -735,8 +718,7 @@ public final class TextCoverageTest {
         TestKit.check(tv.linkTextAttributes() != null, "linkTextAttributes non-nil");
         tv.setLinkTextAttributes(null);
         tv.setMarkedTextAttributes(null);
-        tv.updateInsertionPointStateAndRestartTimer(false);
-        TestKit.check(true, "selection/text-attribute calls did not crash");
+        TestKit.noThrow("selection/text-attribute calls did not crash", () -> tv.updateInsertionPointStateAndRestartTimer(false));
 
         // spell/grammar/substitution/find state (flag round-trips; UI actions skipped)
         boolean sc0 = tv.isContinuousSpellCheckingEnabled();
@@ -829,8 +811,7 @@ public final class TextCoverageTest {
         TestKit.check(tv.enabledTextCheckingTypes() == (etc0 == 0 ? 1 : 0), "enabledTextCheckingTypes set/get");
         tv.setEnabledTextCheckingTypes(etc0);
         tv.checkTextInSelection(null);
-        tv.checkTextInDocument(null);
-        TestKit.check(true, "checkTextIn* did not crash");
+        TestKit.noThrow("checkTextIn* did not crash", () -> tv.checkTextInDocument(null));
         boolean fp0 = tv.usesFindPanel();
         tv.setUsesFindPanel(!fp0);
         TestKit.check(tv.usesFindPanel() == !fp0, "usesFindPanel toggles");
@@ -853,12 +834,10 @@ public final class TextCoverageTest {
         TestKit.check(tv.acceptableDragTypes() != null, "acceptableDragTypes non-nil");
         TestKit.check(tv.validRequestorForSendTypeReturnType(null, null) == null || true,
                 "validRequestorForSendType did not crash");
-        NSTextView.registerForServices();
-        TestKit.check(true, "registerForServices did not crash");
+        TestKit.noThrow("registerForServices did not crash", () -> NSTextView.registerForServices());
         NSArray ql = tv.quickLookPreviewableItemsInRanges(NSArray.array());
         TestKit.check(ql == null || ql.count() == 0, "quickLookPreviewableItems(empty) empty");
-        tv.orderFrontSubstitutionsPanel(null);
-        TestKit.check(true, "orderFrontSubstitutionsPanel(NULL) did not crash");
+        TestKit.noThrow("orderFrontSubstitutionsPanel(NULL) did not crash", () -> tv.orderFrontSubstitutionsPanel(null));
 
         // TouchBar flags (no UI construction)
         boolean tc0 = tv.isAutomaticTextCompletionEnabled();
@@ -899,8 +878,7 @@ public final class TextCoverageTest {
 
         // layout orientation (stays horizontal throughout)
         tv.setLayoutOrientation(0);
-        tv.changeLayoutOrientation(null);
-        TestKit.check(true, "layoutOrientation calls did not crash");
+        TestKit.noThrow("layoutOrientation calls did not crash", () -> tv.changeLayoutOrientation(null));
         TestKit.check(NSTextView.stronglyReferencesTextStorage(), "stronglyReferencesTextStorage == YES");
         boolean am0 = tv.usesAdaptiveColorMappingForDarkAppearance();
         tv.setUsesAdaptiveColorMappingForDarkAppearance(!am0);
@@ -916,8 +894,7 @@ public final class TextCoverageTest {
         System.out.println("NOTE: rangeForUserParagraphAttributeChange=" + tv.rangeForUserParagraphAttributeChange());
         TestKit.check(tv.shouldChangeTextInRangesReplacementStrings(null, null) || true,
                 "shouldChangeTextInRanges(NULL,NULL) did not crash");
-        tv.clickedOnLinkAtIndex(null, 0);
-        TestKit.check(true, "clickedOnLink(NULL,0) did not crash");
+        TestKit.noThrow("clickedOnLink(NULL,0) did not crash", () -> tv.clickedOnLinkAtIndex(null, 0));
         tv.setLayoutOrientation(0);
 
         // ---- RTFD file round-trip under a unique /tmp/sa-* dir ----
@@ -937,10 +914,8 @@ public final class TextCoverageTest {
             TestKit.check("file round trip".equals(reader.string()), "RTFD file string round-trip");
             MemorySegment rtfd = fileView.rtfdFromRange(new NSRange(0, "file round trip".length()));
             TestKit.check(rtfd != null && rtfd.address() != 0, "RTFDFromRange non-nil");
-            fileView.replaceCharactersInRangeWithRTFD(new NSRange(0, 0), null);
-            TestKit.check(true, "replaceCharactersInRange:withRTFD:(NULL) did not crash");
-            fileView.replaceCharactersInRangeWithRTF(new NSRange(0, 0), null);
-            TestKit.check(true, "replaceCharactersInRange:withRTF:(NULL) did not crash");
+            TestKit.noThrow("replaceCharactersInRange:withRTFD:(NULL) did not crash", () -> fileView.replaceCharactersInRangeWithRTFD(new NSRange(0, 0), null));
+            TestKit.noThrow("replaceCharactersInRange:withRTF:(NULL) did not crash", () -> fileView.replaceCharactersInRangeWithRTF(new NSRange(0, 0), null));
         }
 
         content.addSubview(tv);

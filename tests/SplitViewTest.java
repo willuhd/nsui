@@ -66,7 +66,7 @@ public final class SplitViewTest {
         } catch (Throwable t) {
             System.out.println("  subviews count check skipped: " + t);
             // still pass if no exception on addArrangedSubview
-            check(true, "addArrangedSubview did not throw");
+            TestKit.probe("addArrangedSubview did not throw");
         }
 
         // setPosition:ofDividerAtIndex: — needs window + layout
@@ -88,7 +88,7 @@ public final class SplitViewTest {
             split.setPositionOfDividerAtIndex(150.0, 0);
             // also test alias
             split.setPosition(120.0, 0);
-            check(true, "setPosition:ofDividerAtIndex: did not throw");
+            TestKit.probe("setPosition:ofDividerAtIndex: did not throw");
         } catch (Throwable t) {
             check(false, "setPosition:ofDividerAtIndex: threw: " + t);
         }

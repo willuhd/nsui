@@ -37,21 +37,19 @@ public final class TouchBarWindowDocTest {
 
             // itemIdentifiers should not crash (may be nil -> empty NSArray)
             try {
-                NSArray ids = bar.itemIdentifiers();
-                check(true, "NSTouchBar itemIdentifiers no crash (ids=" + ids + ")");
+                NSArray ids = TestKit.attempt("NSTouchBar itemIdentifiers no crash", () -> bar.itemIdentifiers());
                 if (ids != null) {
                     check(ids.count() == 0 || true, "NSTouchBar itemIdentifiers count accessible (count=" + (ids==null? "null": ids.count()) + ")");
                 }
             } catch (Throwable t) { check(false, "NSTouchBar itemIdentifiers threw: " + t); }
 
             // defaultItemIdentifiers alias no crash
-            try { bar.defaultItemIdentifiers(); check(true, "NSTouchBar defaultItemIdentifiers no crash"); } catch (Throwable t){ check(false, "defaultItemIdentifiers threw: "+t); }
+            try { TestKit.noThrow("NSTouchBar defaultItemIdentifiers no crash", () -> bar.defaultItemIdentifiers()); } catch (Throwable t){ check(false, "defaultItemIdentifiers threw: "+t); }
 
             // setDefaultItemIdentifiers empty
             try {
                 NSArray empty = NSArray.mutableArray();
-                bar.setDefaultItemIdentifiers(empty);
-                check(true, "NSTouchBar setDefaultItemIdentifiers empty no crash");
+                TestKit.noThrow("NSTouchBar setDefaultItemIdentifiers empty no crash", () -> bar.setDefaultItemIdentifiers(empty));
             } catch (Throwable t){ check(false, "setDefaultItemIdentifiers threw: "+t); }
 
         } catch (Throwable t) {
@@ -84,15 +82,13 @@ public final class TouchBarWindowDocTest {
             // visible toggle — guarded, may be no-op if selector absent
             try {
                 boolean v = item.isVisible();
-                item.setVisible(!v);
-                // if selector exists, should toggle; if not, isVisible stays false — just check no crash
-                check(true, "NSTouchBarItem isVisible/setVisible no crash (v=" + v + " after=" + item.isVisible() + ")");
+                TestKit.noThrow("NSTouchBarItem isVisible/setVisible no crash (v=" + v + " after=" + item.isVisible() + ")", () -> item.setVisible(!v));
                 item.setVisible(v);
             } catch (Throwable t) { check(false, "NSTouchBarItem isVisible threw: " + t); }
 
             // view null no crash
-            try { item.setView(null); check(true, "NSTouchBarItem setView null no crash"); } catch (Throwable t){ check(false, "setView null threw: "+t); }
-            try { item.view(); check(true, "NSTouchBarItem view accessor no crash"); } catch (Throwable t){ check(false, "view threw: "+t); }
+            try { TestKit.noThrow("NSTouchBarItem setView null no crash", () -> item.setView(null)); } catch (Throwable t){ check(false, "setView null threw: "+t); }
+            try { TestKit.noThrow("NSTouchBarItem view accessor no crash", () -> item.view()); } catch (Throwable t){ check(false, "view threw: "+t); }
 
         } catch (Throwable t) {
             check(false, "NSTouchBarItem section threw: " + t);
@@ -138,11 +134,11 @@ public final class TouchBarWindowDocTest {
             }
             // clear document
             wc.setDocument(null);
-            check(true, "NSWindowController setDocument null no crash");
+            TestKit.probe("NSWindowController setDocument null no crash");
 
             // showWindow: should not crash (no visible window required, just selector dispatch)
-            try { wc2.showWindow(); check(true, "NSWindowController showWindow() no crash"); } catch (Throwable t){ check(false, "showWindow threw: "+t); }
-            try { wc2.showWindow(null); check(true, "NSWindowController showWindow(null) no crash"); } catch (Throwable t){ check(false, "showWindow null threw: "+t); }
+            try { TestKit.noThrow("NSWindowController showWindow() no crash", () -> wc2.showWindow()); } catch (Throwable t){ check(false, "showWindow threw: "+t); }
+            try { TestKit.noThrow("NSWindowController showWindow(null) no crash", () -> wc2.showWindow(null)); } catch (Throwable t){ check(false, "showWindow null threw: "+t); }
 
             // cleanup windows to avoid leaks
             win.setReleasedWhenClosed(false);
@@ -171,7 +167,7 @@ public final class TouchBarWindowDocTest {
             NSArray after = doc.windowControllers();
             check(after != null && after.count() == 1, "NSDocument addWindowController count 1 (got " + (after==null? "null": after.count()) + ")");
             // displayName no crash
-            try { doc.displayName(); check(true, "NSDocument displayName no crash (got \"" + doc.displayName() + "\")"); } catch (Throwable t){ check(false, "displayName threw: "+t); }
+            try { TestKit.noThrow("NSDocument displayName no crash (got \"" + doc.displayName() + "\")", () -> doc.displayName()); } catch (Throwable t){ check(false, "displayName threw: "+t); }
 
             // remove
             doc.removeWindowController(wc);
@@ -204,7 +200,7 @@ public final class TouchBarWindowDocTest {
             NSSearchField field = NSSearchField.create(new NSRect(0,0,200,22));
             check(field != null && field.peer().address() != 0, "NSSearchField for template non-nil");
             // initially may be nil or non-nil; just check accessor no crash
-            try { field.searchMenuTemplate(); check(true, "NSSearchField searchMenuTemplate accessor no crash before set"); } catch (Throwable t){ check(false, "searchMenuTemplate threw: "+t); }
+            try { TestKit.noThrow("NSSearchField searchMenuTemplate accessor no crash before set", () -> field.searchMenuTemplate()); } catch (Throwable t){ check(false, "searchMenuTemplate threw: "+t); }
 
             tmpl.installOn(field);
             NSMenu got = field.searchMenuTemplateAsMenu();

@@ -48,7 +48,7 @@ public final class DraggingTest {
             // registerForDraggedTypes no throw
             try {
                 testView.registerForDraggedTypes(List.of("public.plain-text"));
-                check(true, "NSView.registerForDraggedTypes([public.plain-text]) no throw");
+                TestKit.probe("NSView.registerForDraggedTypes([public.plain-text]) no throw");
             } catch (Throwable t) {
                 check(false, "registerForDraggedTypes threw: " + t);
                 t.printStackTrace(System.out);
@@ -56,7 +56,7 @@ public final class DraggingTest {
 
             try {
                 testView.registerForDraggedTypes(List.of("public.png", "public.tiff"));
-                check(true, "registerForDraggedTypes([png,tiff]) no throw (overwrite)");
+                TestKit.probe("registerForDraggedTypes([png,tiff]) no throw (overwrite)");
             } catch (Throwable t) {
                 check(false, "second registerForDraggedTypes threw: " + t);
             }
@@ -64,7 +64,7 @@ public final class DraggingTest {
             // unregister no throw
             try {
                 testView.unregisterDraggedTypes();
-                check(true, "NSView.unregisterDraggedTypes no throw");
+                TestKit.probe("NSView.unregisterDraggedTypes no throw");
             } catch (Throwable t) {
                 check(false, "unregisterDraggedTypes threw: " + t);
             }
@@ -72,9 +72,9 @@ public final class DraggingTest {
             // re-register after unregister
             try {
                 testView.registerForDraggedTypes(List.of("public.utf8-plain-text"));
-                check(true, "register after unregister no throw");
+                TestKit.probe("register after unregister no throw");
                 testView.unregisterDraggedTypes();
-                check(true, "second unregister no throw");
+                TestKit.probe("second unregister no throw");
             } catch (Throwable t) {
                 check(false, "re-register/unregister threw: " + t);
             }
@@ -82,13 +82,13 @@ public final class DraggingTest {
             // empty / null handling no throw
             try {
                 testView.registerForDraggedTypes(List.of());
-                check(true, "registerForDraggedTypes([]) empty no throw");
+                TestKit.probe("registerForDraggedTypes([]) empty no throw");
                 testView.registerForDraggedTypes(null);
-                check(true, "registerForDraggedTypes(null) no throw (graceful)");
+                TestKit.probe("registerForDraggedTypes(null) no throw (graceful)");
             } catch (Throwable t) {
                 // null may throw NPE but we check our implementation handles gracefully; if it throws, not fatal for test but mark
                 System.out.println("  NOTE register null/empty threw: " + t + " (acceptable if implementation requires non-null)");
-                check(true, "register empty/null handled (threw but not fatal)");
+                TestKit.skipCase("register empty/null handled (threw but not fatal)");
             }
 
         } catch (Throwable t) {
@@ -141,9 +141,9 @@ public final class DraggingTest {
             try {
                 MethodHandle hVoid = ObjC.handle(Sig.of(Ret.VOID, Arg.ID));
                 hVoid.invokeExact(del, ObjC.sel("draggingExited:"), MemorySegment.NULL);
-                check(true, "draggingExited: void no throw");
+                TestKit.probe("draggingExited: void no throw");
                 hVoid.invokeExact(del, ObjC.sel("concludeDragOperation:"), MemorySegment.NULL);
-                check(true, "concludeDragOperation: void no throw");
+                TestKit.probe("concludeDragOperation: void no throw");
             } catch (Throwable t) {
                 check(false, "void dragging selectors threw: " + t);
             }
@@ -171,7 +171,7 @@ public final class DraggingTest {
             } catch (Throwable t) {
                 // may fail due to shape mismatch (2-arg native); treat as non-fatal but check registry at least
                 System.out.println("  NOTE sourceOperationMask invoke failed (shape approx): " + t);
-                check(true, "sourceOperationMask invoke handled (approx shape, may fail gracefully)");
+                TestKit.skipCase("sourceOperationMask invoke handled (approx shape, may fail gracefully)");
             }
             try {
                 MethodHandle hBool = ObjC.handle(Sig.of(Ret.BOOL, Arg.ID));
@@ -225,7 +225,7 @@ public final class DraggingTest {
                     check(item != null && item.peer().address() != 0, "NSDraggingItem creation non-nil");
                 } catch (Throwable t) {
                     System.out.println("  NOTE NSDraggingItem creation failed: " + t);
-                    check(true, "NSDraggingItem creation handled (may fail without window server)");
+                    TestKit.skipCase("NSDraggingItem creation handled (may fail without window server)");
                 }
 
                 // Test beginDraggingSessionWithItems with null event/source — should return null gracefully or not throw
@@ -239,12 +239,11 @@ public final class DraggingTest {
                     };
                     List<NSDraggingItem> items = (item == null) ? List.of() : List.of(item);
                     NSDraggingSession sess = viewForDrag.beginDraggingSessionWithItems(items, null, srcWrapper);
-                    // sess may be null if AppKit requires event/window; that's graceful
-                    check(true, "beginDraggingSessionWithItems no throw (returned " + (sess == null ? "null" : "session peer " + sess.peer()) + ")");
+                    TestKit.probe("beginDraggingSessionWithItems no throw");
                     if (sess != null) {
                         check(sess.peer().address() != 0, "beginDraggingSession returned non-nil session");
                         // draggingPasteboard no throw
-                        try { sess.draggingPasteboard(); check(true, "draggingPasteboard accessor no throw"); } catch (Throwable tt) { check(false, "draggingPasteboard threw: " + tt); }
+                        try { TestKit.noThrow("draggingPasteboard accessor no throw", () -> sess.draggingPasteboard()); } catch (Throwable tt) { check(false, "draggingPasteboard threw: " + tt); }
                     }
                 } catch (Throwable t) {
                     // Should not throw RuntimeException with "failed" but may be InvocationTarget due to no window server
@@ -258,7 +257,7 @@ public final class DraggingTest {
                     try { win.setReleasedWhenClosed(true); TestKit.close(win); } catch (Throwable ignored) {}
                 }
             } else {
-                check(true, "hasWindow false — skip beginDraggingSession (no window server)");
+                TestKit.skipCase("hasWindow false — skip beginDraggingSession (no window server)");
             }
         } catch (Throwable t) {
             check(false, "beginDraggingSession section threw: " + t);
@@ -279,7 +278,7 @@ public final class DraggingTest {
                 }
             }
             long elapsed = System.nanoTime() - start;
-            check(true, "stress 200 register/unregister completed in " + (elapsed / 1_000_000) + "ms");
+            TestKit.probe("stress 200 register/unregister completed in " + (elapsed / 1_000_000) + "ms");
         } catch (Throwable t) {
             check(false, "stress register/unregister failed: " + t);
             t.printStackTrace(System.out);

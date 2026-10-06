@@ -156,16 +156,14 @@ public final class PanelsCoverageTest {
             save.setTagNames(List.of("coverage-a", "coverage-b"));
             List<String> tags = save.tagNames();
             check(tags != null && tags.contains("coverage-a"), "NSSavePanel tagNames round-trip contains coverage-a (got " + tags + ")");
-            save.setTagNames(null);
-            check(true, "NSSavePanel setTagNames(null) no crash");
+            TestKit.noThrow("NSSavePanel setTagNames(null) no crash", () -> save.setTagNames(null));
             boolean origCT = save.showsContentTypes();
             save.setShowsContentTypes(!origCT);
             check(save.showsContentTypes() == !origCT, "NSSavePanel showsContentTypes toggle");
             save.setShowsContentTypes(origCT);
             save.setAllowedContentTypes(List.of("public.plain-text"));
             check(save.allowedContentTypesPeer() != null, "NSSavePanel allowedContentTypesPeer non-nil after set");
-            save.setCurrentContentType(null);
-            check(true, "NSSavePanel setCurrentContentType(null) no crash (resets)");
+            TestKit.noThrow("NSSavePanel setCurrentContentType(null) no crash (resets)", () -> save.setCurrentContentType(null));
             check(save.currentContentTypePeer() != null || true, "NSSavePanel currentContentTypePeer accessor no crash");
             save.setDelegate((MemorySegment) null);
             check(save.delegatePeer() == null || save.delegatePeer().address() == 0, "NSSavePanel delegatePeer null after setDelegate(null)");
@@ -282,7 +280,7 @@ public final class PanelsCoverageTest {
                 info.setJobDisposition(origDisp2);
                 check(origDisp2.equals(info.jobDisposition()), "NSPrintInfo jobDisposition round-trip current value (" + origDisp2 + ")");
             } else {
-                check(true, "NSPrintInfo jobDisposition null (headless default) — skip round-trip");
+                TestKit.skipCase("NSPrintInfo jobDisposition null (headless default) — skip round-trip");
             }
             // setPrinter(null) need not read back null (AppKit may substitute the default printer) —
             // verify no-crash only.
@@ -324,8 +322,7 @@ public final class PanelsCoverageTest {
             op.setJobTitle(null);
             check(op.jobTitle() == null || true, "NSPrintOperation jobTitle null no crash");
             check(op.printPanel() != null || true, "NSPrintOperation printPanel accessor no crash");
-            op.setPrintPanel(null);
-            check(true, "NSPrintOperation setPrintPanel(null) no crash");
+            TestKit.noThrow("NSPrintOperation setPrintPanel(null) no crash", () -> op.setPrintPanel(null));
             // AppKit lazily creates a default PDF panel, so setPDFPanel(null) need not read back null —
             // verify no-crash only.
             op.setPDFPanel(null);
@@ -381,20 +378,16 @@ public final class PanelsCoverageTest {
             NSViewController acc = NSViewController.create();
             panel.addAccessoryController(acc);
             check(panel.accessoryControllers().size() >= 1, "NSPrintPanel accessoryControllers size>=1 after add");
-            panel.removeAccessoryController(acc);
-            check(true, "NSPrintPanel removeAccessoryController no crash");
+            TestKit.noThrow("NSPrintPanel removeAccessoryController no crash", () -> panel.removeAccessoryController(acc));
             panel.setDefaultButtonTitle("PrintIt");
             check("PrintIt".equals(panel.defaultButtonTitle()), "NSPrintPanel defaultButtonTitle round-trip");
-            panel.setDefaultButtonTitle(null);
-            check(true, "NSPrintPanel setDefaultButtonTitle(null) no crash");
+            TestKit.noThrow("NSPrintPanel setDefaultButtonTitle(null) no crash", () -> panel.setDefaultButtonTitle(null));
             panel.setHelpAnchor("print-anchor");
             check("print-anchor".equals(panel.helpAnchor()), "NSPrintPanel helpAnchor round-trip");
-            panel.setHelpAnchor(null);
-            check(true, "NSPrintPanel setHelpAnchor(null) no crash");
+            TestKit.noThrow("NSPrintPanel setHelpAnchor(null) no crash", () -> panel.setHelpAnchor(null));
             panel.setJobStyleHint(NSPrintPanel.PHOTO_JOB_STYLE_HINT);
             check(NSPrintPanel.PHOTO_JOB_STYLE_HINT.equals(panel.jobStyleHint()), "NSPrintPanel jobStyleHint round-trip");
-            panel.setJobStyleHint(null);
-            check(true, "NSPrintPanel setJobStyleHint(null) no crash");
+            TestKit.noThrow("NSPrintPanel setJobStyleHint(null) no crash", () -> panel.setJobStyleHint(null));
             check(panel.printInfo() != null || true, "NSPrintPanel printInfo accessor no crash");
             check(panel.accessoryControllersPeer() != null || true, "NSPrintPanel accessoryControllersPeer no crash");
             check(responds(panel.peer(), "runModal"), "NSPrintPanel respondsTo runModal (never invoking modal)");
@@ -464,14 +457,12 @@ public final class PanelsCoverageTest {
                 cp.setMaximumLinearExposure(origExp);
             } catch (Throwable ignore) { expOk = true; }
             check(expOk, "NSColorPanel maximumLinearExposure get/set no crash");
-            cp.attachColorList((MemorySegment) null);
-            check(true, "NSColorPanel attachColorList(null) no crash");
-            cp.detachColorList((MemorySegment) null);
-            check(true, "NSColorPanel detachColorList(null) no crash");
+            TestKit.noThrow("NSColorPanel attachColorList(null) no crash", () -> cp.attachColorList((MemorySegment) null));
+            TestKit.noThrow("NSColorPanel detachColorList(null) no crash", () -> cp.detachColorList((MemorySegment) null));
             check(cp.isVisible() == false, "NSColorPanel isVisible false (never shown)");
             // orderFrontColorPanel: is header-declared but the shared panel does not respond on this OS
             // (verified: NO while orderFront: is YES); the wrapper guards to a no-op — verify it does not throw.
-            try { cp.orderFrontColorPanel((MemorySegment) null); check(true, "NSColorPanel orderFrontColorPanel(null) guarded no-op no crash"); }
+            try { TestKit.noThrow("NSColorPanel orderFrontColorPanel(null) guarded no-op no crash", () -> cp.orderFrontColorPanel((MemorySegment) null)); }
             catch (Throwable t) { check(false, "NSColorPanel orderFrontColorPanel threw: " + t); }
             check(responds(NSColorPanel.class != null ? ObjC.cls("NSColorPanel") : null, "setPickerMask:"), "NSColorPanel class respondsTo setPickerMask:");
             check(NSColorPanel.wrap(null) == null, "NSColorPanel.wrap(null)==null");
@@ -499,7 +490,7 @@ public final class PanelsCoverageTest {
             // The NSPanel-backed placeholder does not implement performFindPanelAction: (verified: NO) —
             // the wrapper guards to a no-op, so verify the guarded call does not crash.
             check(!responds(find.peer(), "performFindPanelAction:"), "NSFindPanel placeholder does NOT respondTo performFindPanelAction:");
-            try { find.performFindPanelAction(null); check(true, "NSFindPanel performFindPanelAction(null) guarded no-op no crash"); }
+            try { TestKit.noThrow("NSFindPanel performFindPanelAction(null) guarded no-op no crash", () -> find.performFindPanelAction(null)); }
             catch (Throwable t) { check(false, "NSFindPanel performFindPanelAction threw: " + t); }
             check(NSFindPanel.wrap(null) == null, "NSFindPanel.wrap(null)==null");
         } catch (Throwable t) {
@@ -532,8 +523,7 @@ public final class PanelsCoverageTest {
             check(tb.isVisible() == !origVis || true, "NSToolbar setVisible no crash (got " + tb.isVisible() + ")");
             tb.setVisible(origVis);
             boolean origBase = tb.showsBaselineSeparator();
-            tb.setShowsBaselineSeparator(!origBase);
-            check(true, "NSToolbar setShowsBaselineSeparator no crash");
+            TestKit.noThrow("NSToolbar setShowsBaselineSeparator no crash", () -> tb.setShowsBaselineSeparator(!origBase));
             tb.setShowsBaselineSeparator(origBase);
             boolean origDisp = tb.allowsDisplayModeCustomization();
             tb.setAllowsDisplayModeCustomization(!origDisp);
@@ -552,8 +542,7 @@ public final class PanelsCoverageTest {
             tb.setAutosavesConfiguration(!origAuto);
             check(tb.autosavesConfiguration() == !origAuto, "NSToolbar autosavesConfiguration toggle");
             tb.setAutosavesConfiguration(origAuto);
-            tb.setSelectedItemIdentifier("cov-a");
-            check(true, "NSToolbar setSelectedItemIdentifier no crash");
+            TestKit.noThrow("NSToolbar setSelectedItemIdentifier no crash", () -> tb.setSelectedItemIdentifier("cov-a"));
             tb.setSelectedItemIdentifier(null);
             check(tb.items() != null || true, "NSToolbar items accessor no crash");
             check(tb.visibleItems() != null || true, "NSToolbar visibleItems accessor no crash");
@@ -704,7 +693,7 @@ public final class PanelsCoverageTest {
             check(pop.hasFullSizeContent() == !origFull, "NSPopover hasFullSizeContent toggle");
             pop.setHasFullSizeContent(origFull);
             pop.setAppearance((NSObject) null);
-            check(true, "NSPopover setAppearance(null) no crash");
+            TestKit.probe("NSPopover setAppearance(null) no crash");
             pop.close();
             check(!pop.isShown(), "NSPopover close when not shown keeps isShown false");
             pop.performClose((NSObject) null);

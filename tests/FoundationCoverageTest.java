@@ -124,8 +124,7 @@ public final class FoundationCoverageTest {
         d.setValueForKey(NSString.of("x"), null);
         TestKit.check(d.count() == 0, "KVC null key no-op");
         s.willChangeValueForKey("k");
-        s.didChangeValueForKey("k");
-        TestKit.check(true, "KVO manual notify no-throw");
+        TestKit.noThrow("KVO manual notify no-throw", () -> s.didChangeValueForKey("k"));
         long v0 = NSObject.version("NSArray");
         NSObject.setVersion("NSArray", v0 + 1);
         TestKit.check(NSObject.version("NSArray") == v0 + 1, "version set/get");

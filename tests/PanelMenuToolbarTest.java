@@ -72,10 +72,7 @@ public final class PanelMenuToolbarTest {
             boolean sh = alert.showsHelp();
             alert.setShowsHelp(!sh);
             check(alert.showsHelp() == !sh, "NSAlert showsHelp toggle");
-            alert.setShowsHelp(sh);
-
-            // accessoryView nil check
-            check(true, "NSAlert accessoryView accessor no crash (view=" + alert.accessoryView() + ")");
+            TestKit.noThrow("NSAlert accessoryView accessor no crash (view=" + alert.accessoryView() + ")", () -> alert.setShowsHelp(sh));
 
             // window (panel) non-nil
             NSWindow w = alert.window();
@@ -86,7 +83,7 @@ public final class PanelMenuToolbarTest {
             boolean responds = respondsTo(alert.peer(), "runModal");
             check(responds, "NSAlert respondsToSelector: runModal (would work, not invoking to avoid blocking)");
             // icon / suppressionButton access no crash
-            try { alert.icon(); check(true, "NSAlert icon accessor no crash"); } catch (Throwable t) { check(false, "NSAlert icon threw: " + t); }
+            try { TestKit.noThrow("NSAlert icon accessor no crash", () -> alert.icon()); } catch (Throwable t) { check(false, "NSAlert icon threw: " + t); }
 
         } catch (Throwable t) {
             check(false, "NSAlert section threw: " + t);
@@ -132,8 +129,7 @@ public final class PanelMenuToolbarTest {
             String dir = save.directoryURLString();
             check(dir != null && dir.contains("tmp"), "NSSavePanel directoryURL /tmp round-trip (got \"" + dir + "\")");
 
-            save.setAllowedFileTypes("txt", "png");
-            check(true, "NSSavePanel setAllowedFileTypes no crash");
+            TestKit.noThrow("NSSavePanel setAllowedFileTypes no crash", () -> save.setAllowedFileTypes("txt", "png"));
 
             boolean respondsSave = respondsTo(save.peer(), "runModal");
             check(respondsSave, "NSSavePanel respondsToSelector: runModal");
@@ -206,8 +202,7 @@ public final class PanelMenuToolbarTest {
             // insertItem (NSMenuItem) variant doesn't throw
             NSMenuItem extra = NSMenuItem.withTitle("Extra", "", "");
             try {
-                menu.insertItem(extra, 1);
-                check(true, "NSMenu insertItem:atIndex: did not throw");
+                TestKit.noThrow("NSMenu insertItem:atIndex: did not throw", () -> menu.insertItem(extra, 1));
                 check(menu.numberOfItems() == 3, "NSMenu numberOfItems 3 after insertItem (got " + menu.numberOfItems() + ")");
             } catch (Throwable t) {
                 check(false, "NSMenu insertItem:atIndex: threw: " + t);
@@ -218,8 +213,7 @@ public final class PanelMenuToolbarTest {
             submenu.addItemWithTitle("SubItem", "", "");
             check(submenu.numberOfItems() == 1, "NSMenu submenu numberOfItems 1");
             try {
-                menu.setSubmenuForItem(submenu, first);
-                check(true, "NSMenu setSubmenu:forItem: did not throw");
+                TestKit.noThrow("NSMenu setSubmenu:forItem: did not throw", () -> menu.setSubmenuForItem(submenu, first));
                 check(first.hasSubmenu(), "NSMenuItem hasSubmenu after setSubmenuForItem");
                 NSMenu gotSub = first.submenu();
                 check(gotSub != null && gotSub.peer().address() != 0, "NSMenuItem submenu non-nil after set");
@@ -232,8 +226,7 @@ public final class PanelMenuToolbarTest {
             submenu2.addItemWithTitle("Sub2Item", "", "");
             NSMenuItem third = menu.itemAtIndex(1);
             try {
-                menu.setSubmenu(third, submenu2);
-                check(true, "NSMenu setSubmenu (item.setSubmenu) did not throw");
+                TestKit.noThrow("NSMenu setSubmenu (item.setSubmenu) did not throw", () -> menu.setSubmenu(third, submenu2));
             } catch (Throwable t) {
                 check(false, "NSMenu setSubmenu threw: " + t);
             }
@@ -257,7 +250,7 @@ public final class PanelMenuToolbarTest {
             double thick = bar.thickness();
             check(thick > 0, "NSStatusBar thickness >0 (got " + thick + ")");
             // isVertical no crash
-            try { bar.isVertical(); check(true, "NSStatusBar isVertical no crash"); } catch (Throwable t) { check(false, "NSStatusBar isVertical threw: " + t); }
+            try { TestKit.noThrow("NSStatusBar isVertical no crash", () -> bar.isVertical()); } catch (Throwable t) { check(false, "NSStatusBar isVertical threw: " + t); }
 
             NSStatusItem item = null;
             try {
@@ -275,18 +268,17 @@ public final class PanelMenuToolbarTest {
                 check(item2 != null && item2.peer().address() != 0, "NSStatusBar statusItem() (VARIABLE_LENGTH) non-nil");
                 // cleanup second
                 bar.removeStatusItem(item2);
-                check(true, "NSStatusBar removeStatusItem(item2) no throw");
+                TestKit.probe("NSStatusBar removeStatusItem(item2) no throw");
             } catch (Throwable t) {
                 // not fatal - may be limited on this OS
                 System.out.println("  NOTE statusItem() convenience threw: " + t);
-                check(true, "NSStatusBar statusItem() handled (threw but not fatal)");
+                TestKit.skipCase("NSStatusBar statusItem() handled (threw but not fatal)");
             }
 
             if (item != null) {
                 try {
                     NSButton btn = item.button();
-                    // button may be nil if not yet in run loop; just check no crash
-                    check(true, "NSStatusItem button() no crash (button=" + (btn == null ? "null" : "non-nil") + ")");
+                    TestKit.probe("NSStatusItem button() no crash");
                 } catch (Throwable t) { check(false, "NSStatusItem button() threw: " + t); }
 
                 try {
@@ -295,10 +287,10 @@ public final class PanelMenuToolbarTest {
                     item.setMenu(sm);
                     check(item.menu() != null, "NSStatusItem setMenu/menu round-trip non-nil");
                     item.setMenu(null);
-                    check(true, "NSStatusItem setMenu(null) no crash");
+                    TestKit.probe("NSStatusItem setMenu(null) no crash");
                 } catch (Throwable t) { check(false, "NSStatusItem setMenu threw: " + t); }
 
-                try { bar.removeStatusItem(item); check(true, "NSStatusBar removeStatusItem no throw"); } catch (Throwable t) { check(false, "NSStatusBar removeStatusItem threw: " + t); }
+                try { bar.removeStatusItem(item); TestKit.probe("NSStatusBar removeStatusItem no throw"); } catch (Throwable t) { check(false, "NSStatusBar removeStatusItem threw: " + t); }
             }
 
         } catch (Throwable t) {
@@ -331,23 +323,21 @@ public final class PanelMenuToolbarTest {
                 boolean sb = tb.showsBaselineSeparator();
                 System.out.println("  showsBaselineSeparator after set true = " + sb);
                 // On some configurations the getter may still be false until attached to window; just verify no crash
-                check(true, "NSToolbar setShowsBaselineSeparator true no crash (got " + sb + ")");
-                tb.setShowsBaselineSeparator(false);
-                check(true, "NSToolbar setShowsBaselineSeparator false no crash");
+                TestKit.probe("NSToolbar setShowsBaselineSeparator true no crash (got " + sb + ")");
+                TestKit.noThrow("NSToolbar setShowsBaselineSeparator false no crash", () -> tb.setShowsBaselineSeparator(false));
             } catch (Throwable t) { check(false, "NSToolbar showsBaselineSeparator threw: " + t); }
 
             // insertItem doesn't throw (even without delegate, should not crash)
             try {
-                tb.insertItemWithItemIdentifier("item1", 0);
-                check(true, "NSToolbar insertItemWithItemIdentifier:atIndex: did not throw");
+                TestKit.noThrow("NSToolbar insertItemWithItemIdentifier:atIndex: did not throw", () -> tb.insertItemWithItemIdentifier("item1", 0));
             } catch (Throwable t) {
                 // Some OS versions raise if delegate missing; still should not crash JVM
                 System.out.println("  NOTE NSToolbar insert threw: " + t);
-                check(true, "NSToolbar insertItem handled (threw but not fatal: " + t.getMessage() + ")");
+                TestKit.skipCase("NSToolbar insertItem handled (threw but not fatal: " + t.getMessage() + ")");
             }
 
-            try { tb.removeItemAtIndex(0); check(true, "NSToolbar removeItemAtIndex no throw"); } catch (Throwable t) { check(true, "NSToolbar removeItemAtIndex threw but handled: " + t); }
-            try { tb.items(); check(true, "NSToolbar items accessor no crash"); } catch (Throwable t) { check(false, "NSToolbar items threw: " + t); }
+            try { TestKit.noThrow("NSToolbar removeItemAtIndex no throw", () -> tb.removeItemAtIndex(0)); } catch (Throwable t) { TestKit.skipCase("NSToolbar removeItemAtIndex threw but handled: " + t); }
+            try { TestKit.noThrow("NSToolbar items accessor no crash", () -> tb.items()); } catch (Throwable t) { check(false, "NSToolbar items threw: " + t); }
 
         } catch (Throwable t) {
             check(false, "NSToolbar section threw: " + t);

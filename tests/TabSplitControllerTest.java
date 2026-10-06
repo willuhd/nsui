@@ -109,10 +109,8 @@ public final class TabSplitControllerTest {
         svc.removeSplitViewItem(sitem2);
         TestKit.check(svc.splitViewItems().count() == 0, "NSSplitViewController removeSplitViewItem -> count 0");
 
-        svc.toggleSidebar(null);
-        TestKit.check(true, "NSSplitViewController toggleSidebar:null no-throw (no sidebar)");
-        svc.toggleInspector(null);
-        TestKit.check(true, "NSSplitViewController toggleInspector:null no-throw (no inspector)");
+        TestKit.noThrow("NSSplitViewController toggleSidebar:null no-throw (no sidebar)", () -> svc.toggleSidebar(null));
+        TestKit.noThrow("NSSplitViewController toggleInspector:null no-throw (no inspector)", () -> svc.toggleInspector(null));
 
         TestKit.end();
     }

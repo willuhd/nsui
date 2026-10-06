@@ -103,10 +103,8 @@ public final class TokenToolbarItemTest {
         TestKit.check(searchItem.preferredWidthForSearchField() == origWidth,
                 "NSSearchToolbarItem preferredWidthForSearchField restored to " + origWidth);
 
-        searchItem.beginSearchInteraction();
-        TestKit.check(true, "NSSearchToolbarItem beginSearchInteraction no-throw (windowless)");
-        searchItem.endSearchInteraction();
-        TestKit.check(true, "NSSearchToolbarItem endSearchInteraction no-throw (windowless)");
+        TestKit.noThrow("NSSearchToolbarItem beginSearchInteraction no-throw (windowless)", () -> searchItem.beginSearchInteraction());
+        TestKit.noThrow("NSSearchToolbarItem endSearchInteraction no-throw (windowless)", () -> searchItem.endSearchInteraction());
 
         TestKit.end();
     }

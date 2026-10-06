@@ -221,7 +221,7 @@ public final class NSRangeEdgeInsetsTest {
             }
         }
         long ms = (System.nanoTime() - t0) / 1_000_000;
-        TestKit.check(true, "100k NSRange+NSEdgeInsets round-trips completed in " + ms + " ms");
+        TestKit.check(ms >= 0 && ms < 60000, "100k NSRange+NSEdgeInsets round-trips completed in " + ms + " ms");
 
         // also stress inside a single Scratch turn (bump reuse)
         Scratch.beginTurn();
@@ -238,7 +238,7 @@ public final class NSRangeEdgeInsetsTest {
             Scratch.endTurn();
         }
         long ms2 = (System.nanoTime() - t0) / 1_000_000;
-        TestKit.check(true, "100k scratch NSRange round-trips in " + ms2 + " ms, used after reset=" + Scratch.used());
+        TestKit.probe("100k scratch NSRange round-trips in " + ms2 + " ms, used after reset=" + Scratch.used());
         TestKit.check(Scratch.used() == 0, "Scratch reset to 0 after stress turn");
 
         // ---- additional edge cases (FullCoverage expansion) ----

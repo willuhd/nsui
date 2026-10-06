@@ -77,8 +77,7 @@ public final class ViewCoverageTest {
         content.replaceSubview(sib, repl);
         TestKit.check(content.subviews().count() == 2, "NSView replaceSubview keeps count 2");
         TestKit.check(repl.superview() != null, "NSView replaced view has superview");
-        sib.removeFromSuperviewWithoutNeedingDisplay();
-        TestKit.check(true, "NSView removeFromSuperviewWithoutNeedingDisplay no-throw (detached view)");
+        TestKit.noThrow("NSView removeFromSuperviewWithoutNeedingDisplay no-throw (detached view)", () -> sib.removeFromSuperviewWithoutNeedingDisplay());
         repl.removeFromSuperview();
         TestKit.check(repl.superview() == null, "NSView removeFromSuperview clears superview");
         TestKit.check(content.subviews().count() == 1, "NSView subviews count 1 after removal");
@@ -102,8 +101,7 @@ public final class ViewCoverageTest {
         v.updateLayer();
         TestKit.check(v.makeBackingLayer() != null, "NSView makeBackingLayer non-nil");
         v.viewWillMoveToWindow(null);
-        v.viewDidMoveToWindow();
-        TestKit.check(true, "NSView view-move/layout no-throws");
+        TestKit.noThrow("NSView view-move/layout no-throws", () -> v.viewDidMoveToWindow());
 
         // frame / bounds math
         v.setFrameOrigin(new NSPoint(20, 30));
@@ -117,8 +115,7 @@ public final class ViewCoverageTest {
         v.setBounds(new NSRect(0, 0, 200, 160));
         v.translateOriginToPoint(new NSPoint(0, 0));
         v.scaleUnitSquareToSize(new NSSize(1, 1));
-        v.setBounds(new NSRect(0, 0, 200, 160));
-        TestKit.check(true, "NSView bounds math no-throws");
+        TestKit.noThrow("NSView bounds math no-throws", () -> v.setBounds(new NSRect(0, 0, 200, 160)));
         v.rotateByAngle(0);
         double rot = v.frameRotation();
         v.setFrameRotation(rot + 10);
@@ -139,8 +136,7 @@ public final class ViewCoverageTest {
         TestKit.check(v.postsBoundsChangedNotifications() == !pbc, "NSView postsBoundsChangedNotifications toggle");
         v.setPostsBoundsChangedNotifications(pbc);
         v.resizeSubviewsWithOldSize(new NSSize(200, 160));
-        v.resizeWithOldSuperviewSize(new NSSize(500, 400));
-        TestKit.check(true, "NSView resize* no-throws");
+        TestKit.noThrow("NSView resize* no-throws", () -> v.resizeWithOldSuperviewSize(new NSSize(500, 400)));
 
         // display
         v.setNeedsDisplay(true);
@@ -160,8 +156,7 @@ public final class ViewCoverageTest {
         boolean nl = v.needsLayout();
         v.setNeedsLayout(true);
         TestKit.check(v.needsLayout(), "NSView setNeedsLayout(true)");
-        v.setNeedsLayout(nl);
-        TestKit.check(true, "NSView display batch no-throws");
+        TestKit.noThrow("NSView display batch no-throws", () -> v.setNeedsLayout(nl));
 
         // rect/size conversions (expressible subset)
         NSRect cs = v.centerScanRect(new NSRect(0, 0, 100, 100));
@@ -182,7 +177,7 @@ public final class ViewCoverageTest {
 
         // scrolling / hit testing
         v.scrollPoint(new NSPoint(5, 5));
-        TestKit.check(true, "NSView scrollPoint no-throw");
+        TestKit.probe("NSView scrollPoint no-throw");
         TestKit.check(v.hitTest(new NSPoint(10, 10)) != null, "NSView hitTest inside non-nil");
         TestKit.check(v.tag() == -1, "NSView default tag -1 (got " + v.tag() + ")");
         TestKit.check(v.viewWithTag(999999) == null, "NSView viewWithTag unknown -> nil");
@@ -195,8 +190,7 @@ public final class ViewCoverageTest {
         v.setToolTip(null);
         TestKit.check(v.toolTip() == null, "NSView toolTip nil after clear");
         v.removeToolTip(12345);
-        v.removeAllToolTips();
-        TestKit.check(true, "NSView tooltip remove no-throws");
+        TestKit.noThrow("NSView tooltip remove no-throws", () -> v.removeAllToolTips());
 
         // live resize / focus ring
         TestKit.check(!v.inLiveResize(), "NSView inLiveResize false outside resize");
@@ -269,12 +263,10 @@ public final class ViewCoverageTest {
         TestKit.check(Double.isFinite(v.widthAdjustLimit()), "NSView widthAdjustLimit finite");
         TestKit.check(v.dataWithPDFInsideRect(new NSRect(0, 0, 50, 50)) != null, "NSView dataWithPDFInsideRect non-nil");
         TestKit.check(v.dataWithEPSInsideRect(new NSRect(0, 0, 50, 50)) != null, "NSView dataWithEPSInsideRect non-nil");
-        v.drawPageBorderWithSize(new NSSize(10, 10));
-        TestKit.check(true, "NSView drawPageBorderWithSize no-throw");
+        TestKit.noThrow("NSView drawPageBorderWithSize no-throw", () -> v.drawPageBorderWithSize(new NSSize(10, 10)));
         TestKit.check(v.registeredDraggedTypes().count() == 0, "NSView registeredDraggedTypes initially empty");
         TestKit.check(!v.isInFullScreenMode(), "NSView isInFullScreenMode false");
-        v.exitFullScreenModeWithOptions(null);
-        TestKit.check(true, "NSView exitFullScreenModeWithOptions:null no-throw");
+        TestKit.noThrow("NSView exitFullScreenModeWithOptions:null no-throw", () -> v.exitFullScreenModeWithOptions(null));
 
         // gestures / tracking / cursors
         NSGestureRecognizer gr = NSGestureRecognizer.create(null, "dummyAction:");
@@ -295,8 +287,7 @@ public final class ViewCoverageTest {
         v.addCursorRect(new NSRect(0, 0, 50, 50), cursor);
         v.removeCursorRect(new NSRect(0, 0, 50, 50), cursor);
         v.discardCursorRects();
-        v.resetCursorRects();
-        TestKit.check(true, "NSView cursor-rect batch no-throws");
+        TestKit.noThrow("NSView cursor-rect batch no-throws", () -> v.resetCursorRects());
 
         // layout direction / safe area / misc
         long dir = v.userInterfaceLayoutDirection();
@@ -330,8 +321,7 @@ public final class ViewCoverageTest {
         TestKit.check(clip.documentView() != null && clip.documentView().peer().address() == doc.peer().address(), "NSClipView documentView round-trip");
         TestKit.check(Double.isFinite(clip.documentRect().width()), "NSClipView documentRect finite");
         TestKit.check(Double.isFinite(clip.documentVisibleRect().width()), "NSClipView documentVisibleRect finite");
-        clip.scrollToPoint(new NSPoint(0, 0));
-        TestKit.check(true, "NSClipView scrollToPoint no-throw");
+        TestKit.noThrow("NSClipView scrollToPoint no-throw", () -> clip.scrollToPoint(new NSPoint(0, 0)));
         clip.setDocumentCursor(null);
         TestKit.check(clip.documentCursor() == null, "NSClipView documentCursor nil after clear");
         clip.setDocumentCursor(NSCursor.arrowCursor());
@@ -385,10 +375,8 @@ public final class ViewCoverageTest {
         TestKit.check(Double.isFinite(box.borderRect().width()), "NSBox borderRect finite");
         TestKit.check(Double.isFinite(box.titleRect().width()), "NSBox titleRect finite");
         TestKit.check(box.titleCell() == null || box.titleCell().peer().address() != 0, "NSBox titleCell no-throw");
-        box.setFrameFromContentFrame(new NSRect(0, 0, 120, 80));
-        TestKit.check(true, "NSBox setFrameFromContentFrame no-throw");
-        box.sizeToFit();
-        TestKit.check(true, "NSBox sizeToFit no-throw");
+        TestKit.noThrow("NSBox setFrameFromContentFrame no-throw", () -> box.setFrameFromContentFrame(new NSRect(0, 0, 120, 80)));
+        TestKit.noThrow("NSBox sizeToFit no-throw", () -> box.sizeToFit());
     }
 
     private static void stackViewTests(NSView content) {
@@ -425,9 +413,8 @@ public final class ViewCoverageTest {
         TestKit.check(stack.detachedViews().count() == 0, "NSStackView detachedViews empty");
         stack.setCustomSpacingAfterView(20, a);
         TestKit.check(stack.customSpacingAfterView(a) == 20, "NSStackView customSpacing round-trip 20");
-        stack.setCustomSpacingAfterView(NSStackView.SPACING_USE_DEFAULT, a);
-        TestKit.check(true, "NSStackView customSpacing reset to default no-throw");
-        TestKit.check(true, "NSStackView clipping/hugging priorities omitted (NSLayoutPriority is float; shapes unregistered)");
+        TestKit.noThrow("NSStackView customSpacing reset to default no-throw", () -> stack.setCustomSpacingAfterView(NSStackView.SPACING_USE_DEFAULT, a));
+        TestKit.probe("NSStackView clipping/hugging priorities omitted (NSLayoutPriority is float; shapes unregistered)");
 
         // gravity areas (distribution gravityAreas mode) — every view in exactly one gravity
         stack.addViewInGravity(c, 1);
@@ -465,10 +452,8 @@ public final class ViewCoverageTest {
         TestKit.check(split.autosaveName() == null, "NSSplitView autosaveName nil after clear");
         TestKit.check(Double.isFinite(split.dividerThickness()), "NSSplitView dividerThickness finite");
         TestKit.check(split.dividerColor() == null || split.dividerColor().peer().address() != 0, "NSSplitView dividerColor no-throw");
-        split.adjustSubviews();
-        TestKit.check(true, "NSSplitView adjustSubviews no-throw");
-        split.drawDividerInRect(new NSRect(0, 0, 10, 300));
-        TestKit.check(true, "NSSplitView drawDividerInRect no-throw");
+        TestKit.noThrow("NSSplitView adjustSubviews no-throw", () -> split.adjustSubviews());
+        TestKit.noThrow("NSSplitView drawDividerInRect no-throw", () -> split.drawDividerInRect(new NSRect(0, 0, 10, 300)));
 
         NSView p1 = NSView.create(new NSRect(0, 0, 200, 300), (ctx, d) -> {});
         NSView p2 = NSView.create(new NSRect(0, 0, 200, 300), (ctx, d) -> {});
@@ -477,7 +462,7 @@ public final class ViewCoverageTest {
         TestKit.check(split.subviews().count() == 2, "NSSplitView addArrangedSubview x2 -> subviews 2");
         TestKit.check(split.arrangedSubviews().count() == 2, "NSSplitView arrangedSubviews 2");
         TestKit.check(!split.isSubviewCollapsed(p1), "NSSplitView isSubviewCollapsed false");
-        TestKit.check(true, "NSSplitView holdingPriority* omitted (NSLayoutPriority is float; shapes unregistered)");
+        TestKit.probe("NSSplitView holdingPriority* omitted (NSLayoutPriority is float; shapes unregistered)");
         boolean aas = split.arrangesAllSubviews();
         split.setArrangesAllSubviews(!aas);
         TestKit.check(split.arrangesAllSubviews() == !aas, "NSSplitView arrangesAllSubviews toggle");
@@ -494,8 +479,7 @@ public final class ViewCoverageTest {
         double max = split.maxPossiblePositionOfDividerAtIndex(0);
         TestKit.check(Double.isFinite(min) && Double.isFinite(max) && min <= max, "NSSplitView min/max divider positions sane (" + min + " <= " + max + ")");
         split.setPositionOfDividerAtIndex(150, 0);
-        split.setPosition(140, 0);
-        TestKit.check(true, "NSSplitView setPosition batch no-throw");
+        TestKit.noThrow("NSSplitView setPosition batch no-throw", () -> split.setPosition(140, 0));
         TestKit.close(win);
     }
 
@@ -560,8 +544,7 @@ public final class ViewCoverageTest {
         tabs.selectLastTabViewItem(null);
         tabs.selectNextTabViewItem(null);
         tabs.selectPreviousTabViewItem(null);
-        tabs.takeSelectedTabViewItemFromSender(null);
-        TestKit.check(true, "NSTabView select*/take* null-sender no-throws");
+        TestKit.noThrow("NSTabView select*/take* null-sender no-throws", () -> tabs.takeSelectedTabViewItemFromSender(null));
         TestKit.check(tabs.tabViewItemAtPoint(new NSPoint(5, 5)) == null || true, "NSTabView tabViewItemAtPoint no-throw");
         // font / type / position / border / items / control size
         NSFont f = NSFont.systemFontOfSize(12);
@@ -673,8 +656,7 @@ public final class ViewCoverageTest {
         NSVisualEffectView v = NSVisualEffectView.create(new NSRect(0, 0, 200, 120));
         TestKit.check(v.interiorBackgroundStyle() >= 0, "NSVisualEffectView interiorBackgroundStyle non-negative");
         v.viewDidMoveToWindow();
-        v.viewWillMoveToWindow(null);
-        TestKit.check(true, "NSVisualEffectView window-move no-throws");
+        TestKit.noThrow("NSVisualEffectView window-move no-throws", () -> v.viewWillMoveToWindow(null));
         long m = v.material();
         v.setMaterial(NSVisualEffectView.Material.sidebar);
         TestKit.check(v.materialEnum() == NSVisualEffectView.Material.sidebar, "NSVisualEffectView materialEnum sidebar");
@@ -715,18 +697,15 @@ public final class ViewCoverageTest {
         vc.viewDidDisappear();
         vc.updateViewConstraints();
         vc.viewWillLayout();
-        vc.viewDidLayout();
-        TestKit.check(true, "NSViewController lifecycle batch no-throws");
+        TestKit.noThrow("NSViewController lifecycle batch no-throws", () -> vc.viewDidLayout());
         vc.setPreferredContentSize(new NSSize(300, 200));
         TestKit.check(vc.preferredContentSize().width() == 300 && vc.preferredContentSize().height() == 200, "NSViewController preferredContentSize round-trip");
         TestKit.check(vc.commitEditing(), "NSViewController commitEditing true (no editors)");
-        vc.discardEditing();
-        TestKit.check(true, "NSViewController commitEditingWithDelegate: untested (needs a delegate implementing the 3-arg commit protocol)");
+        TestKit.noThrow("NSViewController commitEditingWithDelegate: untested (needs a delegate implementing the 3-arg commit protocol)", () -> vc.discardEditing());
         TestKit.check(vc.presentingViewController() == null, "NSViewController presentingViewController nil");
         var presented = vc.presentedViewControllers();
         TestKit.check(presented == null || presented.count() == 0, "NSViewController presentedViewControllers empty");
-        vc.dismissController(null);
-        TestKit.check(true, "NSViewController dismissController:null no-throw");
+        TestKit.noThrow("NSViewController dismissController:null no-throw", () -> vc.dismissController(null));
         TestKit.check(vc.parentViewController() == null, "NSViewController parentViewController nil");
         TestKit.check(vc.childViewControllers().count() == 0, "NSViewController childViewControllers initially 0");
         NSViewController k1 = NSViewController.create();
@@ -748,8 +727,7 @@ public final class ViewCoverageTest {
         NSSize mm = new NSSize(320, 240);
         vc.setPreferredContentSize(mm);
         vc.preferredContentSizeDidChangeForViewController(vc);
-        vc.viewWillTransitionToSize(new NSSize(640, 480));
-        TestKit.check(true, "NSViewController container/transition no-throws");
+        TestKit.noThrow("NSViewController container/transition no-throws", () -> vc.viewWillTransitionToSize(new NSSize(640, 480)));
         TestKit.check(vc.storyboard() == null, "NSViewController storyboard nil (code-created)");
         TestKit.check(vc.extensionContext() == null, "NSViewController extensionContext nil");
         TestKit.check(vc.sourceItemView() == null, "NSViewController sourceItemView nil by default");

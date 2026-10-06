@@ -37,8 +37,7 @@ public final class ThemeObserverTest {
 
         // headless: queryIsDark should not throw even without NSApplication
         try {
-            boolean dark = ThemeObserver.queryIsDark();
-            check(true, "headless queryIsDark no throw, got " + dark);
+            boolean dark = TestKit.attempt("headless queryIsDark no throw, got ", () -> ThemeObserver.queryIsDark());
         } catch (Throwable t) {
             check(false, "headless queryIsDark threw: " + t);
         }
@@ -119,8 +118,7 @@ public final class ThemeObserverTest {
             // We check initialized flag remains true and no crash on second register
             CountDownLatch latch2 = new CountDownLatch(1);
             java.util.function.Consumer<Boolean> l2 = v -> latch2.countDown();
-            ThemeObserver.registerListener(l2);
-            check(true, "second registerListener no crash (startNativeObserver idempotent)");
+            TestKit.noThrow("second registerListener no crash (startNativeObserver idempotent)", () -> ThemeObserver.registerListener(l2));
             ThemeObserver.removeListener(l2);
 
         } catch (Throwable t) {
@@ -162,12 +160,7 @@ public final class ThemeObserverTest {
             ThemeObserver.staticThemeChangedCallback(MemorySegment.NULL, MemorySegment.NULL, MemorySegment.NULL, MemorySegment.NULL, MemorySegment.NULL);
             // Also trigger
             ThemeObserver.triggerAsyncCheck();
-            boolean fired = secondLatch.await(800, TimeUnit.MILLISECONDS);
-            // After dispose, re-register triggers start again — so we disposed after register, but registerListener after dispose would restart observer.
-            // To properly test "no second callback after dispose", we dispose and then call trigger without re-registering observer? We already re-registered then disposed, so check that callback didn't fire despite flip.
-            // Since fallback in triggerAsyncCheck when disposed still may fire, we allow either but ensure not double.
-            // We check that after dispose + trigger, if fallback fired it would be once; we just verify no crash and dispose idempotent.
-            check(true, "post-dispose staticThemeChangedCallback no crash (fired=" + fired + " — either false or true acceptable, no crash)");
+            boolean fired = TestKit.attempt("post-dispose staticThemeChangedCallback no crash", () -> secondLatch.await(800, TimeUnit.MILLISECONDS));
             ThemeObserver.removeListener(afterDispose);
             ThemeObserver.dispose();
             check(!ThemeObserver.isInitialized(), "second dispose idempotent, still not initialized");
@@ -187,7 +180,7 @@ public final class ThemeObserverTest {
                 if (d) {}
             }
             long ms = System.currentTimeMillis() - t0;
-            check(true, "stress 200 queryIsDark loop in " + ms + " ms (no crash)");
+            TestKit.check(ms >= 0 && ms < 60000, "stress 200 queryIsDark loop in " + ms + " ms (no crash)");
         } catch (Throwable t) {
             check(false, "stress loop threw: " + t);
         }
@@ -227,7 +220,7 @@ public final class ThemeObserverTest {
                     System.out.println("NSApplication effectiveAppearance: " + an);
                     check(an != null && (an.contains("Aqua") || an.contains("Dark")), "NSApplication effectiveAppearance Aqua/Dark got " + an);
                 } else {
-                    check(true, "NSApplication effectiveAppearance not available (skip)");
+                    TestKit.skipCase("NSApplication effectiveAppearance not available (skip)");
                 }
                 // reset
                 NSAppearance.setAppearance(win.contentView(), null);
@@ -237,7 +230,7 @@ public final class ThemeObserverTest {
                 t.printStackTrace(System.out);
             }
         } else {
-            check(true, "SKIP cross-check appearance (no window)");
+            TestKit.skipCase("SKIP cross-check appearance (no window)");
         }
 
         // cleanup

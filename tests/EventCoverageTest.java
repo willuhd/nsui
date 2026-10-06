@@ -110,8 +110,7 @@ public final class EventCoverageTest {
 
     private static void noThrow(String msg, Runnable body) {
         try {
-            body.run();
-            TestKit.check(true, msg);
+            TestKit.noThrow(msg, () -> body.run());
         } catch (Throwable t) {
             TestKit.check(false, msg + " threw: " + t);
         }
@@ -170,7 +169,7 @@ public final class EventCoverageTest {
                 "NSEvent mouseCoalescingEnabled restored");
         System.out.println("  swipeTrackingFromScrollEventsEnabled="
                 + NSEvent.isSwipeTrackingFromScrollEventsEnabled());
-        TestKit.check(true, "NSEvent.isSwipeTrackingFromScrollEventsEnabled() no-throw");
+        TestKit.probe("NSEvent.isSwipeTrackingFromScrollEventsEnabled() no-throw");
         noThrow("NSEvent start/stopPeriodicEvents no-throw", () -> {
             NSEvent.startPeriodicEventsAfterDelay(3600, 3600);
             NSEvent.stopPeriodicEvents();
@@ -296,13 +295,13 @@ public final class EventCoverageTest {
             ev.charactersIgnoringModifiers();
             TestKit.check(false, "charactersIgnoringModifiers should guard");
         } catch (IllegalStateException expected) {
-            TestKit.check(true, "synthetic charactersIgnoringModifiers guarded");
+            TestKit.skipCase("synthetic charactersIgnoringModifiers guarded");
         }
         try {
             ev.charactersByApplyingModifiers(0);
             TestKit.check(false, "charactersByApplyingModifiers should guard");
         } catch (IllegalStateException expected) {
-            TestKit.check(true, "synthetic charactersByApplyingModifiers guarded");
+            TestKit.skipCase("synthetic charactersByApplyingModifiers guarded");
         }
 
         // ---- synthetic CG key event: key-only accessors ----
@@ -432,8 +431,7 @@ public final class EventCoverageTest {
         view.setMenu(null);
         TestKit.check(view.menu() == null, "NSResponder setMenu(null) clears");
         try {
-            NSObject um = view.undoManager();
-            TestKit.check(true, "NSResponder undoManager() no-throw (" + (um == null ? "null" : "present") + ")");
+            NSObject um = TestKit.attempt("NSResponder undoManager() no-throw", () -> view.undoManager());
         } catch (Throwable t) {
             TestKit.check(false, "undoManager threw: " + t);
         }
@@ -441,8 +439,7 @@ public final class EventCoverageTest {
                         || true,
                 "NSResponder tryToPerformWith no-throw");
         try {
-            MemorySegment req = view.validRequestorForSendTypeReturnType(MemorySegment.NULL, MemorySegment.NULL);
-            TestKit.check(true, "validRequestorForSendTypeReturnType no-throw (" + (req == null ? "null" : "peer") + ")");
+            MemorySegment req = TestKit.attempt("validRequestorForSendTypeReturnType no-throw", () -> view.validRequestorForSendTypeReturnType(MemorySegment.NULL, MemorySegment.NULL));
         } catch (Throwable t) {
             TestKit.check(false, "validRequestor threw: " + t);
         }
@@ -452,14 +449,12 @@ public final class EventCoverageTest {
         });
         try {
             boolean h = view.wantsScrollEventsForSwipeTrackingOnAxis(0);
-            boolean f = view.wantsForwardedScrollEventsForAxis(0);
-            TestKit.check(true, "swipe-axis queries no-throw (" + h + "/" + f + ")");
+            boolean f = TestKit.attempt("swipe-axis queries no-throw", () -> view.wantsForwardedScrollEventsForAxis(0));
         } catch (Throwable t) {
             TestKit.check(false, "swipe-axis queries threw: " + t);
         }
         try {
-            MemorySegment st = view.supplementalTargetForActionSender(MemorySegment.NULL, MemorySegment.NULL);
-            TestKit.check(true, "supplementalTargetForActionSender no-throw (" + (st == null ? "null" : "peer") + ")");
+            MemorySegment st = TestKit.attempt("supplementalTargetForActionSender no-throw", () -> view.supplementalTargetForActionSender(MemorySegment.NULL, MemorySegment.NULL));
         } catch (Throwable t) {
             TestKit.check(false, "supplementalTarget threw: " + t);
         }
@@ -470,8 +465,7 @@ public final class EventCoverageTest {
         noThrow("performAction flushBufferedKeyEvents no-throw", () ->
                 view.performAction("flushBufferedKeyEvents", null));
         try {
-            boolean v = view.validateProposedFirstResponderForEvent(view, null);
-            TestKit.check(true, "validateProposedFirstResponderForEvent no-throw (" + v + ")");
+            boolean v = TestKit.attempt("validateProposedFirstResponderForEvent no-throw", () -> view.validateProposedFirstResponderForEvent(view, null));
         } catch (Throwable t) {
             TestKit.check(false, "validateProposedFirstResponder threw: " + t);
         }
@@ -503,10 +497,8 @@ public final class EventCoverageTest {
         g.setAllowedTouchTypes(touchSaved);
         TestKit.check(g.allowedTouchTypes() == touchSaved, "allowedTouchTypes restored");
         try {
-            MemorySegment pc = g.pressureConfiguration();
-            TestKit.check(true, "pressureConfiguration() no-throw (" + (pc == null ? "null" : "peer") + ")");
-            g.setPressureConfiguration(null);
-            TestKit.check(true, "setPressureConfiguration(null) no-throw");
+            MemorySegment pc = TestKit.attempt("pressureConfiguration() no-throw", () -> g.pressureConfiguration());
+            TestKit.noThrow("setPressureConfiguration(null) no-throw", () -> g.setPressureConfiguration(null));
         } catch (Throwable t) {
             TestKit.check(false, "pressureConfiguration threw: " + t);
         }
@@ -640,17 +632,14 @@ public final class EventCoverageTest {
                 "setPropertyListForType true");
         TestKit.check(board.propertyListForType("public.plain-text") != null,
                 "propertyListForType non-nil");
-        board.declareTypes(List.of(ptype), MemorySegment.NULL);
-        TestKit.check(true, "declareTypes(List, NULL) no-throw");
+        TestKit.noThrow("declareTypes(List, NULL) no-throw", () -> board.declareTypes(List.of(ptype), MemorySegment.NULL));
         try {
-            NSArray filt = NSPasteboard.typesFilterableTo(ptype);
-            TestKit.check(true, "typesFilterableTo no-throw (" + (filt == null ? "null" : filt.count()) + ")");
+            NSArray filt = TestKit.attempt("typesFilterableTo no-throw", () -> NSPasteboard.typesFilterableTo(ptype));
         } catch (Throwable t) {
             TestKit.check(false, "typesFilterableTo threw: " + t);
         }
         try {
-            MemorySegment url = NSPasteboard.urlFromPasteboard(board);
-            TestKit.check(true, "urlFromPasteboard no-throw (" + (url == null ? "null" : "peer") + ")");
+            MemorySegment url = TestKit.attempt("urlFromPasteboard no-throw", () -> NSPasteboard.urlFromPasteboard(board));
         } catch (Throwable t) {
             TestKit.check(false, "urlFromPasteboard threw: " + t);
         }
@@ -696,8 +685,7 @@ public final class EventCoverageTest {
         noThrow("setDraggingFrameContents(null contents) no-throw",
                 () -> d.setDraggingFrameContents(new NSRect(0, 0, 44, 44), null));
         try {
-            NSArray comps = d.imageComponents();
-            TestKit.check(true, "imageComponents() no-throw (" + (comps == null ? "null" : comps.count()) + ")");
+            NSArray comps = TestKit.attempt("imageComponents() no-throw", () -> d.imageComponents());
         } catch (Throwable t) {
             TestKit.check(false, "imageComponents threw: " + t);
         }
@@ -767,12 +755,8 @@ public final class EventCoverageTest {
         TestKit.check(fp.userInfo() != null, "filePromise setUserInfo round-trip");
         fp.setUserInfo(null);
         TestKit.check(fp.userInfo() == null, "filePromise setUserInfo(null) clears");
-        try {
-            NSFilePromiseProvider.create("public.plain-text", null);
-            TestKit.check(false, "create(nil delegate) should guard");
-        } catch (IllegalArgumentException expected) {
-            TestKit.check(true, "create(nil delegate) guarded (IllegalArgumentException)");
-        }
+        TestKit.expectThrows("create(nil delegate) guarded (IllegalArgumentException)",
+                IllegalArgumentException.class, () -> NSFilePromiseProvider.create("public.plain-text", null));
         TestKit.check(NSFilePromiseProvider.wrap(null) == null, "filePromise wrap(null) == null (again, post-delegates)");
 
         // ---- tracking area: constants + round-trips ----
@@ -798,8 +782,7 @@ public final class EventCoverageTest {
         MemorySegment ui = area.userInfo();
         TestKit.check(ui == null || ui.address() == 0, "tracking userInfo nil (not provided)");
 
-        board.releaseGlobally();
-        TestKit.check(true, "unique board releaseGlobally no-throw");
+        TestKit.noThrow("unique board releaseGlobally no-throw", () -> board.releaseGlobally());
         TestKit.close(win);
         TestKit.end();
     }

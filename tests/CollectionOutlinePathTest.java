@@ -59,8 +59,7 @@ public final class CollectionOutlinePathTest {
             if (gotPv != null) check(gotPv.peer().address() == pv.peer().address(), "NSCollectionViewItem view peer matches setView");
 
             try {
-                cv.setItemPrototype(proto);
-                check(true, "NSCollectionView setItemPrototype(proto) did not throw");
+                TestKit.noThrow("NSCollectionView setItemPrototype(proto) did not throw", () -> cv.setItemPrototype(proto));
                 MemorySegment ip = cv.itemPrototype();
                 check(ip != null && ip.address() != 0, "NSCollectionView itemPrototype non-nil after set");
             } catch (Throwable t) {
@@ -69,13 +68,12 @@ public final class CollectionOutlinePathTest {
 
             // clear prototype
             try {
-                cv.setItemPrototype((MemorySegment) null);
-                check(true, "NSCollectionView setItemPrototype(null) did not throw");
+                TestKit.noThrow("NSCollectionView setItemPrototype(null) did not throw", () -> cv.setItemPrototype((MemorySegment) null));
                 // restore
                 cv.setItemPrototype(proto);
             } catch (Throwable t) { check(false, "NSCollectionView clear prototype threw: " + t); }
 
-            try { cv.reloadData(); check(true, "NSCollectionView reloadData no throw"); } catch (Throwable t) { check(false, "NSCollectionView reloadData threw: " + t); }
+            try { TestKit.noThrow("NSCollectionView reloadData no throw", () -> cv.reloadData()); } catch (Throwable t) { check(false, "NSCollectionView reloadData threw: " + t); }
 
         } catch (Throwable t) {
             check(false, "NSCollectionView section threw: " + t);
@@ -111,8 +109,7 @@ public final class CollectionOutlinePathTest {
                 String s = ObjC.toString(ro);
                 check("hello".equals(s), "NSCollectionViewItem representedObject string hello (got \"" + s + "\")");
             }
-            item.setRepresentedObject(null);
-            check(true, "NSCollectionViewItem setRepresentedObject(null) no throw");
+            TestKit.noThrow("NSCollectionViewItem setRepresentedObject(null) no throw", () -> item.setRepresentedObject(null));
 
         } catch (Throwable t) {
             check(false, "NSCollectionViewItem section threw: " + t);
@@ -135,41 +132,34 @@ public final class CollectionOutlinePathTest {
 
             // expand/collapse/isItemExpanded with null item should not throw
             try {
-                ov.expandItem(null);
-                check(true, "NSOutlineView expandItem(null) did not throw");
+                TestKit.noThrow("NSOutlineView expandItem(null) did not throw", () -> ov.expandItem(null));
             } catch (Throwable t) { check(false, "NSOutlineView expandItem(null) threw: " + t); }
 
             try {
-                ov.expandItem(null, true);
-                check(true, "NSOutlineView expandItem(null, true) did not throw");
+                TestKit.noThrow("NSOutlineView expandItem(null, true) did not throw", () -> ov.expandItem(null, true));
             } catch (Throwable t) { check(false, "NSOutlineView expandItem expandChildren threw: " + t); }
 
             try {
-                ov.collapseItem(null);
-                check(true, "NSOutlineView collapseItem(null) did not throw");
+                TestKit.noThrow("NSOutlineView collapseItem(null) did not throw", () -> ov.collapseItem(null));
             } catch (Throwable t) { check(false, "NSOutlineView collapseItem(null) threw: " + t); }
 
             try {
-                ov.collapseItem(null, true);
-                check(true, "NSOutlineView collapseItem(null, true) did not throw");
+                TestKit.noThrow("NSOutlineView collapseItem(null, true) did not throw", () -> ov.collapseItem(null, true));
             } catch (Throwable t) { check(false, "NSOutlineView collapseItem collapseChildren threw: " + t); }
 
             try {
-                boolean expanded = ov.isItemExpanded(null);
-                // For nil item, AppKit returns true (root expanded) on some versions; just verify no throw
-                check(true, "NSOutlineView isItemExpanded(null) no throw (got " + expanded + ")");
+                boolean expanded = TestKit.attempt("NSOutlineView isItemExpanded(null) no throw", () -> ov.isItemExpanded(null));
                 // round-trip: collapse then check, expand then check
                 ov.collapseItem(null);
                 boolean afterCollapse = ov.isItemExpanded(null);
                 ov.expandItem(null);
                 boolean afterExpand = ov.isItemExpanded(null);
                 System.out.println("  isItemExpanded after collapse=" + afterCollapse + " after expand=" + afterExpand);
-                check(true, "NSOutlineView expand/collapse isItemExpanded round-trip no crash");
+                TestKit.probe("NSOutlineView expand/collapse isItemExpanded round-trip no crash");
             } catch (Throwable t) { check(false, "NSOutlineView isItemExpanded threw: " + t); }
 
             try {
-                boolean expandable = ov.isExpandable(null);
-                check(true, "NSOutlineView isExpandable(null) no throw (got " + expandable + ")");
+                boolean expandable = TestKit.attempt("NSOutlineView isExpandable(null) no throw", () -> ov.isExpandable(null));
             } catch (Throwable t) { check(false, "NSOutlineView isExpandable threw: " + t); }
 
             try {
@@ -181,13 +171,11 @@ public final class CollectionOutlinePathTest {
             } catch (Throwable t) { check(false, "NSOutlineView indentationPerLevel threw: " + t); }
 
             try {
-                long n = ov.numberOfChildrenOfItem(null);
-                check(true, "NSOutlineView numberOfChildrenOfItem(null) no throw (got " + n + ")");
+                long n = TestKit.attempt("NSOutlineView numberOfChildrenOfItem(null) no throw", () -> ov.numberOfChildrenOfItem(null));
             } catch (Throwable t) { check(false, "NSOutlineView numberOfChildrenOfItem threw: " + t); }
 
             try {
-                long lvl = ov.levelForItem(null);
-                check(true, "NSOutlineView levelForItem(null) no throw (got " + lvl + ")");
+                long lvl = TestKit.attempt("NSOutlineView levelForItem(null) no throw", () -> ov.levelForItem(null));
             } catch (Throwable t) { check(false, "NSOutlineView levelForItem threw: " + t); }
 
         } catch (Throwable t) {
@@ -222,7 +210,7 @@ public final class CollectionOutlinePathTest {
             // null clears
             pc.setURLPath(null);
             // On some versions URL becomes nil after null; accept either nil or still non-nil but don't crash
-            try { pc.URL(); check(true, "NSPathControl URL after setURLPath(null) no crash"); } catch (Throwable t) { check(false, "NSPathControl URL after null threw: " + t); }
+            try { TestKit.noThrow("NSPathControl URL after setURLPath(null) no crash", () -> pc.URL()); } catch (Throwable t) { check(false, "NSPathControl URL after null threw: " + t); }
 
             // Restore tmp for later checks
             pc.setURLPath("/tmp");
@@ -236,7 +224,7 @@ public final class CollectionOutlinePathTest {
             pc.setEditable(editable);
 
             // doubleAction placeholder no crash
-            try { pc.setDoubleAction(null); check(true, "NSPathControl setDoubleAction(null) no crash"); } catch (Throwable t) { check(false, "NSPathControl setDoubleAction threw: " + t); }
+            try { TestKit.noThrow("NSPathControl setDoubleAction(null) no crash", () -> pc.setDoubleAction(null)); } catch (Throwable t) { check(false, "NSPathControl setDoubleAction threw: " + t); }
 
         } catch (Throwable t) {
             check(false, "NSPathControl section threw: " + t);
@@ -248,7 +236,7 @@ public final class CollectionOutlinePathTest {
             MemorySegment cls = ObjC.cls("NSSplitView");
             boolean present = cls != null && cls.address() != 0;
             if (!present) {
-                check(true, "NSSplitView class not present — skip (not failure)");
+                TestKit.skipCase("NSSplitView class not present — skip (not failure)");
             } else {
                 NSSplitView split = NSSplitView.create(new NSRect(0, 0, 200, 100));
                 check(split != null && split.peer().address() != 0, "NSSplitView.create non-nil");
@@ -264,15 +252,14 @@ public final class CollectionOutlinePathTest {
                 NSView pane1 = NSView.create(new NSRect(0, 0, 100, 100), (ctx, dr) -> {});
                 NSView pane2 = NSView.create(new NSRect(0, 0, 100, 100), (ctx, dr) -> {});
                 split.addArrangedSubview(pane1);
-                split.addArrangedSubview(pane2);
-                check(true, "NSSplitView addArrangedSubview x2 no throw");
-                try { split.setPositionOfDividerAtIndex(50.0, 0); check(true, "NSSplitView setPositionOfDividerAtIndex no throw"); } catch (Throwable t) { check(false, "NSSplitView setPosition threw: " + t); }
+                TestKit.noThrow("NSSplitView addArrangedSubview x2 no throw", () -> split.addArrangedSubview(pane2));
+                try { TestKit.noThrow("NSSplitView setPositionOfDividerAtIndex no throw", () -> split.setPositionOfDividerAtIndex(50.0, 0)); } catch (Throwable t) { check(false, "NSSplitView setPosition threw: " + t); }
             }
         } catch (Throwable t) {
             // If NSSplitView not available, don't fail
             String msg = t.getMessage() == null ? "" : t.getMessage();
             if (msg.contains("NSSplitView") || msg.contains("not found")) {
-                check(true, "NSSplitView not available on this OS — skip: " + t);
+                TestKit.skipCase("NSSplitView not available on this OS — skip: " + t);
             } else {
                 check(false, "NSSplitView section threw: " + t);
                 t.printStackTrace(System.out);

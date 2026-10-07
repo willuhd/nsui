@@ -614,7 +614,7 @@ public class NSWindow extends NSResponder {
 
     private static synchronized void ensureInitLocked() {
         if (H != null) return;
-        H = new Handles(
+        Handles h = new Handles(
                 ObjC.handle(Sig.of(Ret.VOID, Arg.RECT, Arg.BOOL)),
                 ObjC.handle(Sig.of(Ret.VOID, Arg.POINT)),
                 ObjC.handle(Sig.of(Ret.VOID, Arg.SIZE)),
@@ -643,6 +643,7 @@ public class NSWindow extends NSResponder {
                 ObjC.handle(Sig.of(Ret.ID, Arg.RECT)),
                 ObjC.handle(Sig.of(Ret.ID, Arg.ID, Arg.ID, Arg.ID))); 
             Sels.populate();
+        H = h;
 }
 
     /// alloc + initWithContentRect:styleMask:backing:defer:.

@@ -184,7 +184,7 @@ public class NSControl extends NSView {
 
     private static synchronized void ensureInitLocked() {
         if (H != null) return;
-        H = new Handles(
+        Handles h = new Handles(
                 ObjC.handle(Sig.of(Ret.INT, Arg.INT)),
                 ObjC.handle(Sig.of(Ret.SIZE, Arg.SIZE)),
                 ObjC.handle(Sig.of(Ret.DOUBLE)),
@@ -196,6 +196,7 @@ public class NSControl extends NSView {
                 ObjC.handle(Sig.of(Ret.FLOAT)),
                 ObjC.handle(Sig.of(Ret.VOID, Arg.FLOAT)));
             Sels.populate();
+        H = h;
 }
 
     // ---- existing API (kept) ----

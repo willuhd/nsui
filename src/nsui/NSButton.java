@@ -189,12 +189,13 @@ public final class NSButton extends NSControl {
 
     private static synchronized void ensureInitLocked() {
         if (H != null) return;
-        H = new Handles(
+        Handles h = new Handles(
                 ObjC.handle(Sig.of(Ret.ID, Arg.RECT)),
                 ObjC.handle(Sig.of(Ret.VOID, Arg.FLOAT, Arg.FLOAT)),
                 ObjC.handle(Sig.of(Ret.BOOL, Arg.ID)),
                 ObjC.handle(Sig.of(Ret.BOOL, Arg.ID)));
             Sels.populate();
+        H = h;
 }
 
     /// `[[NSButton alloc] initWithFrame:frame]` then configure bezel/type and

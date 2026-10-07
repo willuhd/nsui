@@ -138,7 +138,7 @@ public final class PopoverTest {
             // appearance nil round-trip (just no crash)
             try {
                 pop.setAppearance((nsui.NSObject) null);
-                check(pop.appearancePeer() == null || pop.appearancePeer().address() == 0 || true, "NSPopover setAppearance(null) no crash (appearance=" + pop.appearancePeer() + ")");
+                check(pop.appearancePeer() == null || pop.appearancePeer().address() == 0, "NSPopover setAppearance(null) no crash (appearance=" + pop.appearancePeer() + ")");
                 // try set appearance to Aqua if available
                 MemorySegment aqua = ObjC.msgSendIdId(ObjC.cls("NSAppearance"), ObjC.sel("appearanceNamed:"), ObjC.nsstring("NSAppearanceNameAqua"));
                 if (aqua != null && aqua.address() != 0) {

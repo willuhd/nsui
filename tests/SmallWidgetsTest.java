@@ -41,7 +41,9 @@ public final class SmallWidgetsTest {
         picker.setDateValue(now);
         MemorySegment gotDate = picker.dateValue();
         TestKit.check(gotDate != null && gotDate.address() != 0, "NSDatePicker.dateValue() non-nil after setDateValue(now)");
-        TestKit.probe("NSDatePicker style(1)/elements(0x3)/setDateValue no crash");
+        // Neutral: style/elements have exact round-trip oracles (just set above).
+        TestKit.check(picker.datePickerStyle() == 1L, "NSDatePicker style(1) round-trip (got " + picker.datePickerStyle() + ")");
+        TestKit.check(picker.datePickerElements() == 0x3L, "NSDatePicker elements(0x3) round-trip (got " + picker.datePickerElements() + ")");
 
         // ------------------------------------------------------------ NSColorWell
         NSColorWell well = NSColorWell.create(new NSRect(0, 0, 60, 24));
@@ -66,7 +68,10 @@ public final class SmallWidgetsTest {
         box.setBoxType(0L);         // NSBoxPrimary
         box.setBorderType(0L);      // NSNoBorder
         box.setTitlePosition(0L);   // NSNoTitle
-        TestKit.probe("NSBox boxType/borderType/titlePosition setters no crash");
+        // Neutral: box/border/titlePosition have exact round-trip oracles (just set above).
+        TestKit.check(box.boxType() == 0L, "NSBox boxType round-trip 0 (got " + box.boxType() + ")");
+        TestKit.check(box.borderType() == 0L, "NSBox borderType round-trip 0 (got " + box.borderType() + ")");
+        TestKit.check(box.titlePosition() == 0L, "NSBox titlePosition round-trip 0 (got " + box.titlePosition() + ")");
         System.out.println("  NSBox title after setTitlePosition(0)/setBoxType(0) = \"" + box.title() + "\"");
 
         // ------------------------------------------------------------ NSStepper

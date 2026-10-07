@@ -471,7 +471,8 @@ public final class DockSheetTest {
             TestKit.pump(app, 200);
             boolean isSheetAfter = false;
             try { isSheetAfter = sheet.isSheet(); } catch (Throwable ignore) { isSheetAfter = false; }
-            check(!isSheetAfter || true, "sheet.isSheet after endSheet (guarded, got " + isSheetAfter + ") — may remain true until fully detached, no crash");
+            // AppKit keeps isSheet true for the sheet window after endSheet until it is closed.
+            check(isSheetAfter, "sheet.isSheet after endSheet (guarded, got " + isSheetAfter + ") — may remain true until fully detached, no crash");
             // sheetParent should be null after detach, or still parent during animation
             NSWindow sp2 = sheet.sheetParent();
             if (sp2 == null) TestKit.probe("sheetParent null after endSheet");

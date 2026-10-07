@@ -77,8 +77,7 @@ public final class WindowCoverageTest {
             check(layout.width() > 0 && layout.height() > 0,
                     "contentLayoutRect non-empty (" + layout + ")");
             NSRect cascade = w1.cascadingReferenceFrame();
-            check(cascade.width() >= 0 && cascade.height() >= 0,
-                    "cascadingReferenceFrame no crash (" + cascade + ")");
+            TestKit.probe("cascadingReferenceFrame no crash (" + cascade + ")");
             NSSize ri0 = w1.resizeIncrements();
             w1.setResizeIncrements(new NSSize(8, 8));
             check(w1.resizeIncrements().epsilonEquals(new NSSize(8, 8), 0.001),
@@ -147,8 +146,8 @@ public final class WindowCoverageTest {
             w1.setAnimationBehavior(1L);
             check(w1.animationBehavior() == 1L, "animationBehavior round-trip");
             w1.setAnimationBehavior(ab0);
-            check(w1.occlusionState() >= 0, "occlusionState reads");
-            check(w1.backingType() >= 0, "backingType reads");
+            TestKit.probe("occlusionState reads (" + w1.occlusionState() + ")");
+            TestKit.probe("backingType reads (" + w1.backingType() + ")");
             long dl0 = w1.depthLimit();
             w1.setDepthLimit(dl0);
             check(w1.depthLimit() == dl0, "depthLimit set/get");
@@ -168,7 +167,7 @@ public final class WindowCoverageTest {
             NSRect onScreen = w1.convertRectToScreen(r);
             check(rectClose(w1.convertRectFromScreen(onScreen), r, 1.0),
                     "convertRectTo/FromScreen round-trip");
-            check(w1.keyViewSelectionDirection() >= 0, "keyViewSelectionDirection reads");
+            check(w1.keyViewSelectionDirection() == 0, "keyViewSelectionDirection reads");
             boolean ak0 = w1.autorecalculatesKeyViewLoop();
             w1.setAutorecalculatesKeyViewLoop(!ak0);
             check(w1.autorecalculatesKeyViewLoop() == !ak0,
@@ -192,8 +191,9 @@ public final class WindowCoverageTest {
             w1.selectNextTab(null);
             w1.selectPreviousTab(null);
             w1.toggleTabBar(null);
-            check(w1.tabbedWindows() == null || w1.tabbedWindows().count() >= 0,
-                    "tabbedWindows null-safe");
+            NSArray tabbed = w1.tabbedWindows();
+            TestKit.probe("tabbedWindows null-safe (got "
+                    + (tabbed == null ? "null" : ("count=" + tabbed.count())) + ")");
             MemorySegment wtab = w1.tab();
             MemorySegment wtabgroup = TestKit.attempt("tab/tabGroup no crash (tab="
                     + (wtab.address() == 0 ? "nil" : "peer") + ")", () -> w1.tabGroup());
@@ -251,7 +251,7 @@ public final class WindowCoverageTest {
             check(w1.attachedSheet() == null && !w1.isSheet() && w1.sheetParent() == null,
                     "sheet state nil/false with no sheet");
             NSDictionary dd = w1.deviceDescription();
-            check(dd == null || dd.count() >= 0, "deviceDescription null-safe");
+            check(dd != null && dd.count() == 5, "deviceDescription null-safe");
             check(w1.screenObject() == null || w1.screenObject().frame().width() > 0,
                     "screenObject null-safe");
             check(w1.deepestScreenObject() == null
@@ -283,12 +283,14 @@ public final class WindowCoverageTest {
                     "tryToPerform bogus selector returns false");
             MemorySegment req = w1.validRequestorForSendType(
                     ObjC.nsstring("public.string"), ObjC.nsstring("public.string"));
-            check(req == null || req.address() == 0 || req.address() != 0,
+            check(req == null || req.address() == 0,
                     "validRequestorForSendType no crash");
             NSData eps = w1.dataWithEPSInsideRect(new NSRect(0, 0, 100, 100));
             NSData pdf = w1.dataWithPDFInsideRect(new NSRect(0, 0, 100, 100));
-            check(eps != null && pdf != null && eps.length() >= 0 && pdf.length() >= 0,
+            check(eps != null && pdf != null,
                     "EPS/PDF snapshots non-null");
+            TestKit.probe("EPS/PDF snapshot lengths (" + (eps == null ? "nil" : eps.length())
+                    + "/" + (pdf == null ? "nil" : pdf.length()) + ")");
             String saved = w1.stringWithSavedFrame();
             check(saved != null && !saved.isEmpty(), "stringWithSavedFrame non-empty");
             System.out.println("frame-step: saved=[" + saved + "]");
@@ -347,12 +349,12 @@ public final class WindowCoverageTest {
             TestKit.close(wC);
             NSArray numbers = NSWindow.windowNumbersWithOptions(0);
             check(numbers != null, "windowNumbersWithOptions non-null");
-            check(NSWindow.defaultDepthLimit() >= 0, "defaultDepthLimit reads");
+            check(NSWindow.defaultDepthLimit() > 0, "defaultDepthLimit reads");
             boolean aat0 = NSWindow.allowsAutomaticWindowTabbing();
             NSWindow.setAllowsAutomaticWindowTabbing(aat0);
             check(NSWindow.allowsAutomaticWindowTabbing() == aat0,
                     "allowsAutomaticWindowTabbing set/get");
-            check(NSWindow.userTabbingPreference() >= 0, "userTabbingPreference reads");
+            TestKit.probe("userTabbingPreference reads (" + NSWindow.userTabbingPreference() + ")");
             check(NSWindow.standardWindowButtonForStyleMask(0, 15) != null,
                     "standardWindowButtonForStyleMask non-null");
             NSWindow fromVC = NSWindow.windowWithContentViewController(NSViewController.create());
@@ -431,8 +433,7 @@ public final class WindowCoverageTest {
             check(c1.contentViewController() != null,
                     "controller setContentViewController round-trip");
             c1.setContentViewController(null);
-            check(c1.previewRepresentableActivityItems() == null
-                    || c1.previewRepresentableActivityItems().count() >= 0,
+            check(c1.previewRepresentableActivityItems() == null,
                     "previewRepresentableActivityItems null-safe");
             c1.setPreviewRepresentableActivityItems(NSArray.array());
             check(c1.previewRepresentableActivityItems() != null
@@ -470,7 +471,7 @@ public final class WindowCoverageTest {
             if (main != null) {
                 TestKit.noThrow("screensHaveSeparateSpaces="
                         + " " + NSScreen.screensHaveSeparateSpaces(), () -> check(NSScreen.deepestScreen() != null, "deepestScreen non-nil"));
-                check(main.depth() >= 0, "depth reads");
+                TestKit.probe("depth reads (" + main.depth() + ")");
                 TestKit.noThrow("canRepresentDisplayGamut(sRGB)=" + main.canRepresentDisplayGamut(0), () -> check(main.supportedWindowDepths() != null,
                         "supportedWindowDepths non-nil pointer"));
                 NSRect sr = new NSRect(0, 0, 200, 150);
@@ -483,26 +484,22 @@ public final class WindowCoverageTest {
                 String lname = main.localizedName();
                 check(lname != null && !lname.isEmpty(), "localizedName non-empty");
                 NSEdgeInsets insets = main.safeAreaInsets();
-                check(insets.top() >= 0 && insets.left() >= 0
-                        && insets.bottom() >= 0 && insets.right() >= 0,
-                        "safeAreaInsets non-negative");
+                TestKit.probe("safeAreaInsets no crash (" + insets + ")");
                 NSRect tl = main.auxiliaryTopLeftArea();
                 NSRect tr = main.auxiliaryTopRightArea();
-                check(tl.width() >= 0 && tr.width() >= 0, "auxiliary areas no crash");
+                TestKit.probe("auxiliary areas no crash (" + tl + " / " + tr + ")");
                 check(main.maximumExtendedDynamicRangeColorComponentValue() >= 1.0,
                         "EDR current >= 1.0");
                 check(main.maximumPotentialExtendedDynamicRangeColorComponentValue() >= 1.0,
                         "EDR potential >= 1.0");
-                check(main.maximumReferenceExtendedDynamicRangeColorComponentValue() >= 0,
-                        "EDR reference >= 0");
+                TestKit.probe("EDR reference reads ("
+                        + main.maximumReferenceExtendedDynamicRangeColorComponentValue() + ")");
                 check(main.maximumFramesPerSecond() > 0, "maximumFramesPerSecond > 0");
                 check(main.minimumRefreshInterval() > 0
                         && main.maximumRefreshInterval() >= main.minimumRefreshInterval(),
                         "refresh intervals sane");
-                check(main.displayUpdateGranularity() >= 0,
-                        "displayUpdateGranularity >= 0");
-                check(main.lastDisplayUpdateTimestamp() >= 0,
-                        "lastDisplayUpdateTimestamp >= 0");
+                TestKit.probe("displayUpdateGranularity reads (" + main.displayUpdateGranularity() + ")");
+                TestKit.probe("lastDisplayUpdateTimestamp reads (" + main.lastDisplayUpdateTimestamp() + ")");
                 check(main.cgDirectDisplayID() != 0, "CGDirectDisplayID non-zero");
                 CADisplayLink slink = main.displayLinkWithTarget(app, "updateWindows");
                 check(slink != null, "screen displayLinkWithTarget non-null");

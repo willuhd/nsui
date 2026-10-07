@@ -290,7 +290,8 @@ public final class AttributedLayerTest {
                 if (Double.isNaN(cr) || Double.isNaN(bw) || Double.isNaN(op)) throw new AssertionError("NaN layer value");
             }
             long elapsed = System.currentTimeMillis() - start;
-            TestKit.check(elapsed >= 0 && elapsed < 60000, "stress 1000 iterations of attributed string + layer ops completed in " + elapsed + " ms");
+            // Neutral: elapsed cannot be negative; upper bound is the assertion.
+            TestKit.check(elapsed < 60000, "stress 1000 iterations of attributed string + layer ops completed in " + elapsed + " ms");
 
             // NSTextView stress: create once and repeatedly setAttributedString
             NSTextView tv = NSTextView.create(new NSRect(0, 0, 200, 100));

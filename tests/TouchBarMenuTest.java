@@ -269,8 +269,8 @@ public final class TouchBarMenuTest {
                 // centersPlaceholder may be true or false depending on OS, but setter should not crash
                 boolean cp = field.centersPlaceholder();
                 TestKit.probe("gallery field centersPlaceholder accessor no crash (got " + cp + ")");
-                // if setter succeeded, it should be true; if not, still pass as OS version may not support
-                if (cp) TestKit.check(cp, "gallery field centersPlaceholder true (set succeeded)");
+                // Neutral: centersPlaceholder has no stable oracle across OS versions; probe only.
+                if (cp) TestKit.probe("gallery field centersPlaceholder true (set succeeded)");
             } catch (Throwable t) { check(false, "centersPlaceholder threw: " + t); }
 
             // convenience addGallerySearchFieldItem at end

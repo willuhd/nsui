@@ -1249,33 +1249,36 @@ public class NSWindow extends NSResponder {
 
     // ---------------------------------------------------------------- sheets (modal sheet inside window, blocks window)
 
+    /// Sheet completion handlers keyed by block address — per-block identity so
+    /// out-of-order dismissal routes each response to its own handler.
+    private static final java.util.concurrent.ConcurrentHashMap<Long, java.util.function.IntConsumer> SHEET_HANDLERS =
+            new java.util.concurrent.ConcurrentHashMap<>();
+
     /// beginSheet:completionHandler: — attach sheet to receiver; handler receives NSModalResponse.
     public void beginSheet(NSWindow sheet, java.util.function.IntConsumer completionHandler) {
         ensureInit();
         if (sheet == null) return;
+        MemorySegment block = MemorySegment.NULL;
+        long blockKey = 0L;
+        boolean registered = false;
         try {
-            MemorySegment block;
-            if (completionHandler == null) {
-                block = MemorySegment.NULL;
-            } else {
+            if (completionHandler != null) {
                 java.lang.invoke.MethodHandle target = java.lang.invoke.MethodHandles.lookup().findStatic(
-                        NSWindow.class, "sheetCompletionBridge",
-                        java.lang.invoke.MethodType.methodType(void.class, MemorySegment.class, long.class, java.util.function.IntConsumer.class));
-                java.lang.invoke.MethodHandle bound = java.lang.invoke.MethodHandles.insertArguments(target, 2, completionHandler);
+                        NSWindow.class, "sheetCompletionThunk",
+                        java.lang.invoke.MethodType.methodType(void.class, MemorySegment.class, long.class));
                 // block signature: void(^)(NSModalResponse) -> void with blockSelf leading
-                java.lang.foreign.FunctionDescriptor fd = java.lang.foreign.FunctionDescriptor.ofVoid(
-                        (java.lang.foreign.ValueLayout) java.lang.foreign.Linker.nativeLinker().canonicalLayouts().get("void*"),
-                        (java.lang.foreign.ValueLayout) java.lang.foreign.Linker.nativeLinker().canonicalLayouts().get("long"));
-                // Blocks.block expects leading PTR param + user args; wrap to (PTR, long) -> void
-                java.lang.invoke.MethodHandle adapted = bound.asType(java.lang.invoke.MethodType.methodType(void.class, MemorySegment.class, long.class));
-                block = nsui.objc.Blocks.block(adapted, java.lang.foreign.FunctionDescriptor.ofVoid(
-                        (java.lang.foreign.ValueLayout) java.lang.foreign.Linker.nativeLinker().canonicalLayouts().get("void*"),
-                        (java.lang.foreign.ValueLayout) java.lang.foreign.Linker.nativeLinker().canonicalLayouts().get("long")));
+                block = nsui.objc.Blocks.block(target, nsui.objc.NsuiForeign.sheetBlockUpcall());
+                blockKey = block.address();
+                SHEET_HANDLERS.put(blockKey, completionHandler);
+                registered = true;
             }
             java.lang.invoke.MethodHandle h = ObjC.handle(nsui.objc.Sig.of(nsui.objc.Sig.Ret.VOID, nsui.objc.Sig.Arg.ID, nsui.objc.Sig.Arg.ID));
             MemorySegment blk = (block == null || block.address() == 0) ? MemorySegment.NULL : block;
             h.invokeExact(peer, Sels.beginSheet_completionHandler, sheet.peer(), (MemorySegment) blk);
         } catch (Throwable t) {
+            if (registered) {
+                SHEET_HANDLERS.remove(blockKey);
+            }
             throw new RuntimeException("beginSheet:completionHandler: failed", t);
         }
     }
@@ -1293,8 +1296,14 @@ public class NSWindow extends NSResponder {
         }
     }
 
-    private static void sheetCompletionBridge(MemorySegment blockSelf, long response, java.util.function.IntConsumer handler) {
-        handler.accept((int) response);
+    /// Sheet completion block body — static and capture-free; routes via block address.
+    /// Remove-then-run ordering: a handler beginning another sheet must not see its own entry.
+    /// Absent entry (abandoned sheet) is dropped silently.
+    public static void sheetCompletionThunk(MemorySegment blockSelf, long response) {
+        java.util.function.IntConsumer handler = SHEET_HANDLERS.remove(blockSelf.address());
+        if (handler != null) {
+            handler.accept((int) response);
+        }
     }
 
     /// endSheet: — dismiss sheet.

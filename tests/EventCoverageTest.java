@@ -154,8 +154,8 @@ public final class EventCoverageTest {
         NSPoint mouseAt = NSEvent.mouseLocation();
         TestKit.check(mouseAt != null && !Double.isNaN(mouseAt.x()) && !Double.isNaN(mouseAt.y()),
                 "NSEvent.mouseLocation() finite (" + mouseAt + ")");
-        TestKit.check(NSEvent.modifierFlagsStatic() >= 0, "NSEvent.modifierFlagsStatic() >= 0");
-        TestKit.check(NSEvent.pressedMouseButtons() >= 0, "NSEvent.pressedMouseButtons() >= 0");
+        TestKit.probe("NSEvent.modifierFlagsStatic() readable (got " + NSEvent.modifierFlagsStatic() + ")");
+        TestKit.probe("NSEvent.pressedMouseButtons() readable (got " + NSEvent.pressedMouseButtons() + ")");
         TestKit.check(NSEvent.doubleClickInterval() > 0,
                 "NSEvent.doubleClickInterval() > 0 (" + NSEvent.doubleClickInterval() + ")");
         TestKit.check(NSEvent.keyRepeatDelay() > 0, "NSEvent.keyRepeatDelay() > 0");
@@ -217,15 +217,17 @@ public final class EventCoverageTest {
         TestKit.check(ev.clickCount() >= 1, "synthetic clickCount() >= 1 (got " + ev.clickCount() + ")");
         TestKit.check(ev.buttonNumber() == 0, "synthetic buttonNumber() == 0");
         // Direct CG conversion carries CG time 0 (the queued path in NSEventTest
-        // normalizes it); assert only non-negative here.
-        TestKit.check(ev.timestamp() >= 0, "synthetic timestamp() >= 0 (got " + ev.timestamp() + ")");
-        TestKit.check(ev.modifierFlags() >= 0, "synthetic modifierFlags() >= 0");
+        // normalizes it); assert the exact synthetic values here.
+        TestKit.check(ev.timestamp() == 0.0, "synthetic timestamp() == 0 (got " + ev.timestamp() + ")");
+        // Flagless CG conversion still reports mask 256 on this runtime; no
+        // stable oracle across versions, so record the value instead of pinning it.
+        TestKit.probe("synthetic modifierFlags() readable (got " + ev.modifierFlags() + ")");
         NSPoint loc = ev.locationInWindow();
         TestKit.check(loc != null && !Double.isNaN(loc.x()) && !Double.isNaN(loc.y()),
                 "synthetic locationInWindow() finite (" + loc + ")");
-        TestKit.check(ev.windowNumber() >= 0, "synthetic windowNumber() >= 0");
-        TestKit.check(ev.subtype() >= 0, "synthetic subtype() readable");
-        TestKit.check(ev.eventNumber() >= 0, "synthetic eventNumber() readable");
+        TestKit.check(ev.windowNumber() == 0, "synthetic windowNumber() == 0");
+        TestKit.check(ev.subtype() == 0, "synthetic subtype() readable");
+        TestKit.check(ev.eventNumber() == 0, "synthetic eventNumber() readable");
         // pressure() is a float in AppKit and is now read through the FLOAT handle; its
         // exact value is event-dependent, so this stays a no-throw probe. The declared-vs-real
         // shape is pinned by SignatureConformanceTest.
@@ -322,7 +324,7 @@ public final class EventCoverageTest {
         TestKit.check("c".equals(kev.charactersByApplyingModifiers(0)),
                 "synthetic key charactersByApplyingModifiers() == c");
         TestKit.check(kev.buttonNumber() == 0, "synthetic key buttonNumber() == 0");
-        TestKit.check(kev.windowNumber() >= 0, "synthetic key windowNumber() >= 0");
+        TestKit.check(kev.windowNumber() == 0, "synthetic key windowNumber() == 0");
 
         // ---- synthetic CG scroll event: scroll-only accessors ----
         FunctionDescriptor scrollDesc = FunctionDescriptor.of(ValueLayout.ADDRESS, ValueLayout.ADDRESS,
@@ -342,7 +344,7 @@ public final class EventCoverageTest {
         TestKit.check(!sev.hasPreciseScrollingDeltas(), "scroll hasPreciseScrollingDeltas false (line units)");
         TestKit.check(sev.momentumPhase() == 0 && sev.phase() == 0, "scroll momentum/phase 0");
         TestKit.check(!sev.isDirectionInvertedFromDevice(), "scroll not inverted");
-        TestKit.check(sev.deviceID() >= 0 && sev.subtype() >= 0, "scroll deviceID/subtype readable");
+        TestKit.check(sev.deviceID() == 0 && sev.subtype() == 0, "scroll deviceID/subtype readable");
 
         // ---- standalone view + hidden window for responder/gesture work ----
         NSWindow win = TestKit.hiddenWindow(400, 300);
@@ -435,8 +437,7 @@ public final class EventCoverageTest {
         } catch (Throwable t) {
             TestKit.check(false, "undoManager threw: " + t);
         }
-        TestKit.check(!view.tryToPerformWith(ObjC.sel("becomeFirstResponder"), MemorySegment.NULL)
-                        || true,
+        TestKit.check(view.tryToPerformWith(ObjC.sel("becomeFirstResponder"), MemorySegment.NULL),
                 "NSResponder tryToPerformWith no-throw");
         try {
             MemorySegment req = TestKit.attempt("validRequestorForSendTypeReturnType no-throw", () -> view.validRequestorForSendTypeReturnType(MemorySegment.NULL, MemorySegment.NULL));
@@ -522,7 +523,7 @@ public final class EventCoverageTest {
         TestKit.check("event-test".equals(g.name()), "recognizer name round-trip");
         g.setName(null);
         TestKit.check(g.name() == null, "recognizer name cleared");
-        TestKit.check(g.modifierFlags() >= 0, "recognizer modifierFlags readable");
+        TestKit.check(g.modifierFlags() == 0, "recognizer modifierFlags readable");
 
         // ---- the four newer recognizers: property round-trips ----
         NSMagnificationGestureRecognizer mag = NSMagnificationGestureRecognizer.create(target, "mag:");
@@ -577,7 +578,7 @@ public final class EventCoverageTest {
         TestKit.check(board != null && board.peer().address() != 0, "pasteboardWithUniqueName non-nil");
         TestKit.check(board.name() != null, "unique board name() non-nil");
         long cc0 = board.clearContents();
-        TestKit.check(cc0 >= 0, "unique board clearContents -> changeCount " + cc0);
+        TestKit.check(cc0 == 1, "unique board clearContents -> changeCount " + cc0);
         String ptype = "public.utf8-plain-text";
         TestKit.check(board.setStringForType("hello-events", ptype), "unique board setStringForType true");
         TestKit.check("hello-events".equals(board.stringForType(ptype)), "unique board stringForType round-trip");
@@ -592,7 +593,7 @@ public final class EventCoverageTest {
         TestKit.check(types != null && types.count() >= 1, "unique board types() non-empty");
         TestKit.check(board.availableTypeFromArray(types) != null, "availableTypeFromArray non-nil");
         NSArray items = board.pasteboardItems();
-        TestKit.check(items == null || items.count() >= 0, "pasteboardItems() no-throw");
+        TestKit.check(items != null && items.count() == 1, "pasteboardItems() no-throw");
         if (items != null && items.count() > 0) {
             NSPasteboardItem first = NSPasteboardItem.wrap(items.objectAtIndex(0));
             TestKit.check(first != null, "first pasteboardItems element wraps");
@@ -604,7 +605,8 @@ public final class EventCoverageTest {
                 "canReadItemWithDataConformingToTypes true");
         NSArray pngTypes = NSArray.mutableArray();
         pngTypes.addObject(ObjC.nsstring("public.png"));
-        TestKit.check(board.addTypesOwner(pngTypes, null) >= 0, "addTypesOwner no-throw");
+        long addedTypes = board.addTypesOwner(pngTypes, null);
+        TestKit.probe("addTypesOwner no-throw (got " + addedTypes + ")");
         NSPasteboardItem witem = NSPasteboardItem.withString("drag-me", ptype);
         NSArray writers = NSArray.mutableArray();
         writers.addObject(witem.peer());
@@ -622,7 +624,7 @@ public final class EventCoverageTest {
                             || readBack.stringAt(0) != null,
                     "readObjectsForClasses first element readable (" + readBack.stringAt(0) + ")");
         }
-        TestKit.check(board.prepareForNewContentsWithOptions(0) >= 0, "prepareForNewContentsWithOptions no-throw");
+        TestKit.check(board.prepareForNewContentsWithOptions(0) > 0, "prepareForNewContentsWithOptions no-throw");
         NSData payload = NSData.dataWithBytes(new byte[]{1, 2, 3, 4});
         TestKit.check(board.setDataForType(payload, "public.data"), "setDataForType true");
         NSData gotData = board.dataForType("public.data");

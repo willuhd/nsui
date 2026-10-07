@@ -201,7 +201,7 @@ public final class ViewCoverageTest {
         long frt = v.focusRingType();
         v.setFocusRingType(frt);
         TestKit.check(v.focusRingType() == frt, "NSView focusRingType round-trip " + frt);
-        TestKit.check(NSView.defaultFocusRingType() >= 0, "NSView defaultFocusRingType non-negative");
+        TestKit.check(NSView.defaultFocusRingType() == 2, "NSView defaultFocusRingType non-negative");
         v.setKeyboardFocusRingNeedsDisplayInRect(new NSRect(0, 0, 10, 10));
         v.drawFocusRingMask();
         v.noteFocusRingMaskChanged();
@@ -258,7 +258,7 @@ public final class ViewCoverageTest {
         // print-job metadata (no panel shown)
         TestKit.check(v.pageHeader() == null || v.pageHeader().peer().address() != 0, "NSView pageHeader no-throw");
         TestKit.check(v.pageFooter() == null || v.pageFooter().peer().address() != 0, "NSView pageFooter no-throw");
-        TestKit.check(v.printJobTitle() == null || !v.printJobTitle().isEmpty() || true, "NSView printJobTitle no-throw");
+        TestKit.probe("NSView printJobTitle no-throw (got \"" + v.printJobTitle() + "\")");
         TestKit.check(Double.isFinite(v.heightAdjustLimit()), "NSView heightAdjustLimit finite");
         TestKit.check(Double.isFinite(v.widthAdjustLimit()), "NSView widthAdjustLimit finite");
         TestKit.check(v.dataWithPDFInsideRect(new NSRect(0, 0, 50, 50)) != null, "NSView dataWithPDFInsideRect non-nil");
@@ -512,7 +512,7 @@ public final class ViewCoverageTest {
         TestKit.check(i1.color() == null, "NSTabViewItem color nil after clear");
         i1.setToolTip("hello tip");
         TestKit.check("hello tip".equals(i1.toolTip()), "NSTabViewItem toolTip round-trip");
-        TestKit.check(i1.tabState() >= 0, "NSTabViewItem tabState non-negative");
+        TestKit.check(i1.tabState() == 1, "NSTabViewItem tabState non-negative");
         NSImage icon = NSImage.imageNamed("NSApplicationIcon");
         if (icon != null) {
             i1.setImage(icon);
@@ -545,7 +545,7 @@ public final class ViewCoverageTest {
         tabs.selectNextTabViewItem(null);
         tabs.selectPreviousTabViewItem(null);
         TestKit.noThrow("NSTabView select*/take* null-sender no-throws", () -> tabs.takeSelectedTabViewItemFromSender(null));
-        TestKit.check(tabs.tabViewItemAtPoint(new NSPoint(5, 5)) == null || true, "NSTabView tabViewItemAtPoint no-throw");
+        TestKit.check(tabs.tabViewItemAtPoint(new NSPoint(5, 5)) == null, "NSTabView tabViewItemAtPoint no-throw");
         // font / type / position / border / items / control size
         NSFont f = NSFont.systemFontOfSize(12);
         tabs.setFont(f);
@@ -654,7 +654,7 @@ public final class ViewCoverageTest {
 
     private static void visualEffectTests() {
         NSVisualEffectView v = NSVisualEffectView.create(new NSRect(0, 0, 200, 120));
-        TestKit.check(v.interiorBackgroundStyle() >= 0, "NSVisualEffectView interiorBackgroundStyle non-negative");
+        TestKit.check(v.interiorBackgroundStyle() == 0, "NSVisualEffectView interiorBackgroundStyle non-negative");
         v.viewDidMoveToWindow();
         TestKit.noThrow("NSVisualEffectView window-move no-throws", () -> v.viewWillMoveToWindow(null));
         long m = v.material();

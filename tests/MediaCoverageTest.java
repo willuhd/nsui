@@ -70,7 +70,7 @@ public final class MediaCoverageTest {
             double[] rgba = c.rgba();
             check(near(rgba[0], 0.25, 0.02) && near(rgba[1], 0.5, 0.02)
                     && near(rgba[2], 0.75, 0.02) && near(rgba[3], 1.0, 0.02), "sRGB rgba round-trip");
-            check(c.redComponent() >= 0 && c.greenComponent() >= 0 && c.blueComponent() >= 0,
+            check(near(c.redComponent(), 0.25, 0.02) && near(c.greenComponent(), 0.5, 0.02) && near(c.blueComponent(), 0.75, 0.02),
                     "rgb components readable (" + c.redComponent() + "," + c.greenComponent() + "," + c.blueComponent() + ")");
             double[] hsba = c.hsba();
             check(hsba.length == 4 && hsba[3] >= 0.99, "hsba() alpha sane (" + hsba[3] + ")");
@@ -94,7 +94,7 @@ public final class MediaCoverageTest {
             check(near(wa[0], 0.5, 0.03) && near(wa[1], 1.0, 0.01), "whiteAlpha round-trip");
             check(near(gray.whiteComponent(), 0.5, 0.03), "whiteComponent sane");
             NSColor hue = NSColor.colorWithHue(0.33, 0.5, 0.5, 1.0);
-            check(hue != null && hue.hueComponent() >= 0, "colorWithHue non-nil, hue readable");
+            check(hue != null && near(hue.hueComponent(), 0.33, 0.02), "colorWithHue non-nil, hue readable");
             check(NSColor.colorWithGenericGamma22White(0.4, 1.0) != null, "genericGamma22White non-nil");
             check(NSColor.colorWithDisplayP3Red(0.2, 0.4, 0.6, 1.0) != null, "displayP3 non-nil");
             check(NSColor.colorWithRed(0.1, 0.2, 0.3, 1.0) != null, "iOS-compat colorWithRed non-nil");
@@ -181,7 +181,7 @@ public final class MediaCoverageTest {
             img.setAlignmentRect(new NSRect(1, 2, 3, 4));
             NSRect align2 = img.alignmentRect();
             check(near(align2.x(), 1, 0.01) && near(align2.width(), 3, 0.01), "alignmentRect set/get round-trip");
-            check(img.cacheMode() >= 0, "cacheMode readable (" + img.cacheMode() + ")");
+            check(img.cacheMode() == 0, "cacheMode readable (" + img.cacheMode() + ")");
             img.setCacheMode(3);
             check(img.cacheMode() == 3, "cacheMode set/get round-trip");
             img.setCacheMode(0);
@@ -287,9 +287,9 @@ public final class MediaCoverageTest {
             check(rep != null, "rep from icon TIFF non-nil");
             check(rep.bitsPerPixel() > 0, "bitsPerPixel sane (" + rep.bitsPerPixel() + ")");
             check(rep.bytesPerRow() > 0, "bytesPerRow sane (" + rep.bytesPerRow() + ")");
-            check(rep.bytesPerPlane() >= 0, "bytesPerPlane sane (" + rep.bytesPerPlane() + ")");
+            check(rep.bytesPerPlane() > 0, "bytesPerPlane sane (" + rep.bytesPerPlane() + ")");
             check(rep.numberOfPlanes() >= 1, "numberOfPlanes sane (" + rep.numberOfPlanes() + ")");
-            check(rep.bitmapFormat() >= 0, "bitmapFormat readable (" + rep.bitmapFormat() + ")");
+            check(rep.bitmapFormat() == 0, "bitmapFormat readable (" + rep.bitmapFormat() + ")");
             check(rep.bitmapData() != null, "bitmapData non-nil");
             check(rep.tiffRepresentation() != null, "tiffRepresentation non-nil");
             TestKit.probe("canBeCompressedUsing no-crash (" + rep.canBeCompressedUsing(1) + ")");

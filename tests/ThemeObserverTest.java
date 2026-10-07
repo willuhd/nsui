@@ -89,7 +89,8 @@ public final class ThemeObserverTest {
             };
             ThemeObserver.registerListener(listener);
             // Ensure observer is started
-            check(ThemeObserver.getInstance().isDarkInstance() == current || true, "observer started, lastKnownDark set");
+            // registerListener starts the observer, which records the current value.
+            check(ThemeObserver.getInstance().isDarkInstance() == current, "observer started, lastKnownDark set");
 
             // Flip lastKnownDark to opposite to guarantee change detection on trigger
             try {
@@ -180,7 +181,7 @@ public final class ThemeObserverTest {
                 if (d) {}
             }
             long ms = System.currentTimeMillis() - t0;
-            TestKit.check(ms >= 0 && ms < 60000, "stress 200 queryIsDark loop in " + ms + " ms (no crash)");
+            TestKit.check(ms < 60000, "stress 200 queryIsDark loop in " + ms + " ms (no crash)");
         } catch (Throwable t) {
             check(false, "stress loop threw: " + t);
         }

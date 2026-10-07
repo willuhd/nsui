@@ -230,10 +230,10 @@ public final class CoreAnimStressTest {
 
     // ---------------------------------------------------------------- section 4
 
-    /// Completion block: registration must not crash; firing depends on the runloop,
-    /// so treat either outcome as pass but report whether it fired.
+    /// Completion block: registration must not crash AND the block must fire
+    /// within the deadline — either way is a verdict, never a skip.
     private static void completionBlockBestEffort() {
-        System.out.println("--- CATransaction completion block (best effort) ---");
+        System.out.println("--- CATransaction completion block (must fire) ---");
         try {
             AtomicInteger fired = new AtomicInteger(0);
             CALayer l = CALayer.create();
@@ -241,19 +241,23 @@ public final class CoreAnimStressTest {
             CATransaction.setAnimationDuration(0.01);
             CATransaction.setCompletionBlock(fired::incrementAndGet);
             l.setPosition(new NSPoint(9, 9));
-            TestKit.noThrow("setCompletionBlock(Runnable) registered without crash", () -> CATransaction.commit());
-            // pump: flush + short sleeps give the runloop chances to deliver the callback
-            long deadline = System.currentTimeMillis() + 1500;
+            CATransaction.commit();
+            // Spin the current runloop (no NSApplication here) so the
+            // committed transaction can drain and deliver the callback.
+            MemorySegment loop = ObjC.msgSendId(ObjC.cls("NSRunLoop"), ObjC.sel("currentRunLoop"));
+            long deadline = System.currentTimeMillis() + 2000;
             while (fired.get() == 0 && System.currentTimeMillis() < deadline) {
                 CATransaction.flush();
-                Thread.sleep(20);
+                MemorySegment until = ObjC.msgSendIdDouble(
+                        ObjC.cls("NSDate"), ObjC.sel("dateWithTimeIntervalSinceNow:"), 0.05);
+                try {
+                    ObjC.msgSendVoidId(loop, ObjC.sel("runUntilDate:"), until);
+                } catch (Throwable t) {
+                    Thread.sleep(20);
+                }
             }
-            if (fired.get() > 0) {
-                TestKit.probe("completion block fired (" + fired.get() + "x) after commit+flush pump");
-            } else {
-                System.out.println("NOTE: completion block did not fire within 1.5s (runloop-dependent) — no crash is pass");
-                TestKit.skipCase("completion block no-crash path (did not fire; informational)");
-            }
+            check(fired.get() > 0,
+                    "completion block FIRED within 2s of commit (count=" + fired.get() + ")");
         } catch (Throwable t) {
             check(false, "completion block section threw: " + t);
             t.printStackTrace(System.out);

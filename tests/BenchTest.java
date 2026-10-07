@@ -104,10 +104,16 @@ public final class BenchTest {
 
     /// Selector/class result caches: steady state must be a map hit, no native call.
     private static void dispatchLookups() throws Throwable {
-        ObjC.sel("frame");
-        ObjC.cls("NSView");
-        bench("ObjC.sel cache hit", 10000, 2000000, 20000, () -> ObjC.sel("frame"));
-        bench("ObjC.cls cache hit", 10000, 2000000, 20000, () -> ObjC.cls("NSView"));
+        MemorySegment frameSel = ObjC.sel("frame");
+        MemorySegment viewCls = ObjC.cls("NSView");
+        bench("ObjC.sel cache hit", 10000, 2000000, 20000, () -> {
+            if (ObjC.sel("frame").address() != frameSel.address())
+                throw new IllegalStateException("sel cache mismatch");
+        });
+        bench("ObjC.cls cache hit", 10000, 2000000, 20000, () -> {
+            if (ObjC.cls("NSView").address() != viewCls.address())
+                throw new IllegalStateException("cls cache mismatch");
+        });
     }
 
     /// Raw typed msgSend helpers: LONG / BOOL / ID / RECT.
@@ -152,8 +158,14 @@ public final class BenchTest {
     /// Java String -> NSString -> Java String, the per-setter/per-getter path.
     private static void nsstringConversion() throws Throwable {
         MemorySegment ns = ObjC.nsstring("benchmark");
-        bench("ObjC.nsstring", 1000, 200000, 20000, () -> ObjC.nsstring("benchmark"));
-        bench("ObjC.toString", 1000, 200000, 20000, () -> ObjC.toString(ns));
+        bench("ObjC.nsstring", 1000, 200000, 20000, () -> {
+            MemorySegment m = ObjC.nsstring("benchmark");
+            if (m == null || m.address() == 0) throw new IllegalStateException("nsstring nil");
+            if (ObjC.msgSendLong(m, ObjC.sel("length")) != 9) throw new IllegalStateException("nsstring length");
+        });
+        bench("ObjC.toString", 1000, 200000, 20000, () -> {
+            if (!"benchmark".equals(ObjC.toString(ns))) throw new IllegalStateException("toString mismatch");
+        });
     }
 
     /// ObjC.toString cost vs string length. 200 steady-state iterations each
@@ -306,6 +318,7 @@ public final class BenchTest {
     private static void autoreleasePool() throws Throwable {
         bench("Autorelease push/pop", 10000, 1000000, 20000, () -> {
             MemorySegment pool = Autorelease.push();
+            if (pool == null || pool.address() == 0) throw new IllegalStateException("pool nil");
             Autorelease.pop(pool);
         });
     }

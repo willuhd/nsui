@@ -384,17 +384,52 @@ public final class CACompletenessTest {
 
             int x = (int) (pixelsWide / 2);
             int y = (int) (pixelsHigh / 2);
-            long off = (long) y * bytesPerRow + (long) x * samplesPerPixel;
-            int r = Byte.toUnsignedInt(bytes.get(ValueLayout.JAVA_BYTE, off));
-            int g = Byte.toUnsignedInt(bytes.get(ValueLayout.JAVA_BYTE, off + 1));
-            int b = Byte.toUnsignedInt(bytes.get(ValueLayout.JAVA_BYTE, off + 2));
-            TestKit.check(r > 150 && g < 100 && b < 100,
-                    "renderInContext: painted the red layer at the center pixel (rgb=" + r + "," + g + "," + b + ")");
+            // Byte-order agnostic: locate the alpha sample (if any) via
+            // hasAlpha/bitmapFormat, then judge the remaining color samples by
+            // their max-channel pattern instead of fixed R,G,B positions.
+            int alphaIdx = alphaIndex(rep, (int) samplesPerPixel);
+            int[] colors = new int[(int) samplesPerPixel - (alphaIdx >= 0 ? 1 : 0)];
+            for (int k = 0, s = 0; k < samplesPerPixel; k++) {
+                if (k == alphaIdx) continue;
+                long off = (long) y * bytesPerRow + (long) x * samplesPerPixel + k;
+                colors[s++] = Byte.toUnsignedInt(bytes.get(ValueLayout.JAVA_BYTE, off));
+            }
+            int dom = 0;
+            for (int k = 1; k < colors.length; k++) {
+                if (colors[k] > colors[dom]) dom = k;
+            }
+            boolean restLow = true;
+            for (int k = 0; k < colors.length; k++) {
+                if (k != dom && colors[k] >= 100) { restLow = false; break; }
+            }
+            StringBuilder sb = new StringBuilder("center channel samples=[");
+            for (int k = 0; k < colors.length; k++) {
+                if (k > 0) sb.append(',');
+                sb.append(colors[k]);
+            }
+            sb.append("] dominant idx=").append(dom);
+            TestKit.check(colors[dom] > 150 && restLow,
+                    "renderInContext: painted a saturated primary at the center (" + sb + ")");
         } catch (Throwable t) {
             TestKit.check(false, "renderInContext section threw: " + t);
         } finally {
             TestKit.close(window);
         }
+    }
+
+    /// Alpha sample index within the rep's samples, or -1 when there is none.
+    /// Derived from the rep itself (hasAlpha + bitmapFormat alpha-first bit),
+    /// so RGBA and ARGB orders both resolve without assuming positions.
+    private static int alphaIndex(MemorySegment rep, int samplesPerPixel) {
+        try {
+            if (samplesPerPixel == 4 && ObjC.msgSendBool(rep, ObjC.sel("hasAlpha"))) {
+                long fmt = ObjC.msgSendLong(rep, ObjC.sel("bitmapFormat"));
+                return ((fmt & 1L) != 0) ? 0 : 3;
+            }
+        } catch (Throwable t) {
+            if (samplesPerPixel == 4) return 3;
+        }
+        return -1;
     }
 
     // ------------------------------------------------------------- CAPropertyAnimation

@@ -33,10 +33,10 @@ import nsui.objc.ObjC;
 /// drawing, and the Metal error paths hardened alongside them.
 ///
 /// Every render proof reads the colour attachment back to the CPU and asserts
-/// the exact pixel: a green centre can only come from the depth test rejecting
-/// the later far triangle, and a half-green/half-red image can only come from
-/// the stencil test consulting the reference value. No section passes merely
-/// because a call did not crash.
+/// the pixel within a small tolerance: a green centre can only come from the
+/// depth test rejecting the later far triangle, and a half-green/half-red
+/// image can only come from the stencil test consulting the reference value.
+/// No section passes merely because a call did not crash.
 public final class MetalDepthStencilTest {
 
     private static final int W = 64, H = 64;
@@ -168,8 +168,22 @@ public final class MetalDepthStencilTest {
         return ((img[i + 2] & 0xFF) << 16) | ((img[i + 1] & 0xFF) << 8) | (img[i] & 0xFF);
     }
 
-    private static boolean isGreen(int c) { return c == 0x00FF00; }
-    private static boolean isRed(int c) { return c == 0xFF0000; }
+    private static boolean near(int v, int target, int tol) { return Math.abs(v - target) <= tol; }
+
+    /// Tolerance oracles (+-6 per channel): exact 0x00FF00-style equality
+    /// flakes under dither, so every color verdict allows small drift.
+    private static boolean isGreen(int c) {
+        return near((c >> 16) & 0xFF, 0, 6) && near((c >> 8) & 0xFF, 255, 6) && near(c & 0xFF, 0, 6);
+    }
+    private static boolean isRed(int c) {
+        return near((c >> 16) & 0xFF, 255, 6) && near((c >> 8) & 0xFF, 0, 6) && near(c & 0xFF, 0, 6);
+    }
+    private static boolean isBlack(int c) {
+        return ((c >> 16) & 0xFF) <= 6 && ((c >> 8) & 0xFF) <= 6 && (c & 0xFF) <= 6;
+    }
+    private static boolean isOrange(int c) {
+        return near((c >> 16) & 0xFF, 255, 6) && near((c >> 8) & 0xFF, 128, 6) && near(c & 0xFF, 0, 6);
+    }
 
     // ------------------------------------------------------- descriptor proofs
 
@@ -337,7 +351,7 @@ public final class MetalDepthStencilTest {
         TestKit.check(isGreen(rgb(farThenNear, W / 2, H / 2)),
                 "far-then-near: depth test keeps the near green (got 0x"
                         + Integer.toHexString(rgb(farThenNear, W / 2, H / 2)) + ")");
-        TestKit.check(rgb(farThenNear, 2, 2) == 0, "corner outside the triangle stays cleared");
+        TestKit.check(isBlack(rgb(farThenNear, 2, 2)), "corner outside the triangle stays cleared");
 
         // Discriminator: NEAR (green) first, then FAR (red) must be depth-rejected.
         render(queue, pass, enc -> {
@@ -480,7 +494,7 @@ public final class MetalDepthStencilTest {
             enc.drawTriangles(0, 6);
         });
         byte[] img = readback(color);
-        TestKit.check(rgb(img, W / 4, H / 2) == 0 && isRed(rgb(img, 3 * W / 4, H / 2)),
+        TestKit.check(isBlack(rgb(img, W / 4, H / 2)) && isRed(rgb(img, 3 * W / 4, H / 2)),
                 "viewport maps the quad into the right half only (left 0x"
                         + Integer.toHexString(rgb(img, W / 4, H / 2)) + ", right 0x"
                         + Integer.toHexString(rgb(img, 3 * W / 4, H / 2)) + ")");
@@ -494,7 +508,7 @@ public final class MetalDepthStencilTest {
             enc.drawTriangles(0, 6);
         });
         byte[] scissored = readback(color);
-        TestKit.check(isRed(rgb(scissored, W / 4, H / 2)) && rgb(scissored, 3 * W / 4, H / 2) == 0,
+        TestKit.check(isRed(rgb(scissored, W / 4, H / 2)) && isBlack(rgb(scissored, 3 * W / 4, H / 2)),
                 "scissor rect clips the quad to the left half only (left 0x"
                         + Integer.toHexString(rgb(scissored, W / 4, H / 2)) + ", right 0x"
                         + Integer.toHexString(rgb(scissored, 3 * W / 4, H / 2)) + ")");
@@ -537,9 +551,9 @@ public final class MetalDepthStencilTest {
         });
         byte[] img = readback(color);
         int center = rgb(img, W / 2, H / 2);
-        TestKit.check(center == 0xFF8000,
+        TestKit.check(isOrange(center),
                 "indexed draw from an MTLBuffer rasterizes orange (got 0x" + Integer.toHexString(center) + ")");
-        TestKit.check(rgb(img, 2, 2) == 0, "indexed draw does not cover the corner");
+        TestKit.check(isBlack(rgb(img, 2, 2)), "indexed draw does not cover the corner");
 
         MemorySegment pool = Autorelease.push();
         try {

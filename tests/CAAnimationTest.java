@@ -2,10 +2,17 @@ package nsui.tests;
 
 import nsui.CABasicAnimation;
 import nsui.CAKeyframeAnimation;
+import nsui.CALayer;
 import nsui.CAMediaTimingFunction;
 import nsui.CASpringAnimation;
+import nsui.CATransaction;
 import nsui.CATransition;
 import nsui.CAValueFunction;
+import nsui.NSApplication;
+import nsui.NSArray;
+import nsui.NSRect;
+import nsui.NSView;
+import nsui.NSWindow;
 import nsui.objc.ObjC;
 
 /// Committed coverage for the animation tier: keyframe/spring/transition
@@ -91,6 +98,63 @@ public final class CAAnimationTest {
             TestKit.check(false, "basic regression threw: " + t);
         }
 
+        try {
+            liveTransactionProof();
+        } catch (Throwable t) {
+            TestKit.check(false, "live animation section threw: " + t);
+        }
+
         TestKit.end();
+    }
+
+    /// A real animation through an explicit CATransaction: begin, short
+    /// duration, add an opacity 0->1 CABasicAnimation, commit — then prove the
+    /// engine ran via animationKeys and a mid-flight presentationLayer read.
+    private static void liveTransactionProof() throws InterruptedException {
+        NSApplication app = TestKit.app();
+        NSWindow win = TestKit.hiddenWindow(200, 200);
+        NSView view = NSView.create(new NSRect(0, 0, 200, 200), (ctx, d) -> {});
+        view.setWantsLayer(true);
+        win.setContentView(view);
+        TestKit.show(win);
+        try {
+            CALayer host = view.layer();
+            TestKit.check(host != null, "host view has a layer to animate under");
+            if (host == null) return;
+            CALayer l = CALayer.create();
+            l.setBounds(new NSRect(0, 0, 100, 100));
+            host.addSublayer(l);
+            l.setOpacity(0.0f);
+
+            CABasicAnimation anim = CABasicAnimation.create("opacity");
+            anim.setFromDouble(0);
+            anim.setToDouble(1);
+            anim.setDuration(0.5);
+            CATransaction.begin();
+            CATransaction.setAnimationDuration(0.5);
+            l.addAnimation(anim, "teeth-opacity");
+            CATransaction.commit();
+
+            NSArray keys = l.animationKeys();
+            boolean found = false;
+            if (keys != null) {
+                for (long i = 0; i < keys.count(); i++) {
+                    if ("teeth-opacity".equals(ObjC.toString(keys.objectAtIndex(i)))) { found = true; break; }
+                }
+            }
+            TestKit.check(found, "animationKeys contains the committed key (engine accepted the add)");
+
+            app.pumpFor(150);
+            java.lang.foreign.MemorySegment presPeer =
+                    ObjC.msgSendId(l.peer(), ObjC.sel("presentationLayer"));
+            CALayer pres = CALayer.wrap(presPeer);
+            double model = l.opacity();
+            double shown = pres == null ? Double.NaN : pres.opacity();
+            TestKit.check(pres != null && Math.abs(shown - model) > 0.02,
+                    "presentationLayer mid-flight differs from the model (model=" + model + ", shown=" + shown + ")");
+            l.removeAnimationForKey("teeth-opacity");
+        } finally {
+            TestKit.close(win);
+        }
     }
 }

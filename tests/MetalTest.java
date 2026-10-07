@@ -186,7 +186,10 @@ public final class MetalTest {
                 "corner stays black (triangle rasterized, not fullscreen)");
     }
 
-    /// MPS blur over the triangle render: edges must change, interior holds.
+    /// MPS blur over the triangle render: edge-adjacent pixels must spread
+    /// toward the neighbor average while a solid interior block holds.
+    /// Statistics, not exact bytes: blurred edges move, solid fills stay
+    /// within +-8 levels per channel (dither-safe).
     private static void blurProof(MTLDevice device, MTLCommandQueue queue) {
         MTLTexture src = target(device);
         MTLTexture dst = target(device);
@@ -204,11 +207,77 @@ public final class MetalTest {
             Autorelease.pop(pool);
         }
         byte[] after = readback(dst);
-        boolean differ = false;
-        for (int i = 0; i < before.length; i++) {
-            if (before[i] != after[i]) { differ = true; break; }
+        // Orange mask on the source (same hue window as triangleProof).
+        boolean[] orange = new boolean[W * H];
+        int orangeCount = 0;
+        for (int y = 0; y < H; y++) {
+            for (int x = 0; x < W; x++) {
+                int i = (y * W + x) * 4;
+                int r = before[i + 2] & 0xFF, g = before[i + 1] & 0xFF, b = before[i] & 0xFF;
+                boolean o = r > 200 && g > 60 && g < 120 && b < 70;
+                orange[y * W + x] = o;
+                if (o) orangeCount++;
+            }
         }
-        TestKit.check(differ, "blurred texture differs from source (edges spread)");
+        TestKit.check(orangeCount > 100, "blur source has a real triangle to work on (" + orangeCount + " orange px)");
+        // Edge band: orange pixels touching non-orange, plus non-orange pixels
+        // touching orange (blur spreads both ways). Only meaningful if nonzero.
+        boolean[] edgeBand = new boolean[W * H];
+        int bandCount = 0;
+        int[] dx = {1, -1, 0, 0};
+        int[] dy = {0, 0, 1, -1};
+        for (int y = 0; y < H; y++) {
+            for (int x = 0; x < W; x++) {
+                boolean o = orange[y * W + x];
+                for (int k = 0; k < 4; k++) {
+                    int nx = x + dx[k], ny = y + dy[k];
+                    if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
+                    if (orange[ny * W + nx] != o) {
+                        edgeBand[y * W + x] = true;
+                        bandCount++;
+                        break;
+                    }
+                }
+            }
+        }
+        // Edge-spread: band pixels whose max channel moved more than 8 levels.
+        int moved = 0;
+        for (int p = 0; p < W * H; p++) {
+            if (!edgeBand[p]) continue;
+            int i = p * 4;
+            int d = 0;
+            for (int c = 0; c < 4; c++) {
+                d = Math.max(d, Math.abs((after[i + c] & 0xFF) - (before[i + c] & 0xFF)));
+            }
+            if (d > 8) moved++;
+        }
+        TestKit.check(bandCount > 0 && moved >= Math.max(10, bandCount / 4),
+                "blurred edges spread toward neighbor average (moved " + moved + "/" + bandCount + " band px)");
+        // Interior-hold: a solid block around the orange centroid stays put.
+        long sx = 0, sy = 0;
+        for (int y = 0; y < H; y++) {
+            for (int x = 0; x < W; x++) {
+                if (orange[y * W + x]) { sx += x; sy += y; }
+            }
+        }
+        int cx0 = (int) (sx / Math.max(1, orangeCount));
+        int cy0 = (int) (sy / Math.max(1, orangeCount));
+        int held = 0, total = 0;
+        for (int y = cy0 - 3; y <= cy0 + 3; y++) {
+            for (int x = cx0 - 3; x <= cx0 + 3; x++) {
+                if (x < 0 || y < 0 || x >= W || y >= H) continue;
+                if (!orange[y * W + x]) continue;
+                total++;
+                int i = (y * W + x) * 4;
+                int d = 0;
+                for (int c = 0; c < 4; c++) {
+                    d = Math.max(d, Math.abs((after[i + c] & 0xFF) - (before[i + c] & 0xFF)));
+                }
+                if (d <= 8) held++;
+            }
+        }
+        TestKit.check(total >= 20 && held * 10 >= total * 9,
+                "solid interior block holds within +-8 levels (" + held + "/" + total + " px)");
     }
 
     private static void renderTriangle(MTLDevice device, MTLCommandQueue queue, MTLTexture tex) {
@@ -271,8 +340,46 @@ public final class MetalTest {
             }
         }
         TestKit.check(drawable != null, "layer drawable available");
-        if (drawable != null) {
-            TestKit.check(drawable.texture() != null, "drawable texture non-nil");
+        if (drawable == null) {
+            TestKit.close(win);
+            return;
+        }
+        MTLTexture dtex = drawable.texture();
+        TestKit.check(dtex != null, "drawable texture non-nil");
+        if (dtex == null) {
+            TestKit.close(win);
+            return;
+        }
+        // Clear through the drawable's own texture and read the pixels back,
+        // mirroring the offscreen clearProof pattern (generous +-6 tolerance).
+        try {
+            MTLCommandQueue queue = device.newCommandQueue();
+            int dw = (int) dtex.width(), dh = (int) dtex.height();
+            TestKit.check(dw > 0 && dh > 0, "drawable texture has real dimensions (" + dw + "x" + dh + ")");
+            MTLRenderPassDescriptor pass = MTLRenderPassDescriptor.create();
+            MTLRenderPassColorAttachmentDescriptor att = pass.colorAttachment(0);
+            att.setTexture(dtex);
+            att.setLoadAction(MTLRenderPassColorAttachmentDescriptor.LOAD_CLEAR);
+            att.setStoreAction(MTLRenderPassColorAttachmentDescriptor.STORE_STORE);
+            att.setClearColor(new MTLClearColor(0, 1, 0, 1));
+            MemorySegment pool = Autorelease.push();
+            try {
+                MTLCommandBuffer buf = queue.commandBuffer();
+                MTLRenderCommandEncoder enc = buf.renderEncoder(pass);
+                enc.endEncoding();
+                buf.presentDrawable(drawable);
+                buf.commit();
+                buf.waitUntilCompleted();
+            } finally {
+                Autorelease.pop(pool);
+            }
+            byte[] px = dtex.getBytes(dw * 4, MTLRegion.of2D(0, 0, dw, dh), 0);
+            int cx = (dh / 2) * dw * 4 + (dw / 2) * 4;
+            int b = px[cx] & 0xFF, g = px[cx + 1] & 0xFF, r = px[cx + 2] & 0xFF, a = px[cx + 3] & 0xFF;
+            TestKit.check(r <= 6 && g >= 249 && b <= 6 && a >= 249,
+                    "drawable clear green reads back through its texture (BGRA " + b + "," + g + "," + r + "," + a + ")");
+        } catch (Throwable t) {
+            TestKit.check(false, "drawable clear+readback threw: " + t);
         }
         TestKit.close(win);
     }

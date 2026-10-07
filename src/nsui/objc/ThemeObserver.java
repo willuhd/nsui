@@ -120,7 +120,10 @@ public final class ThemeObserver {
                         .map(seg -> seg.reinterpret(PTR.byteSize()).get(ValueLayout.ADDRESS, 0))
                         .orElseThrow();
 
-                // Allocate and cache CFString refs on global heap
+                // Allocate and cache CFString refs on global heap. These four are
+                // process-lifetime constants (created once under the initDone
+                // latch, reused across start/stop cycles): intentionally never
+                // released, bounded to 4 objects.
                 try (Arena tempArena = Arena.ofConfined()) {
                     preferenceKeyCf = (MemorySegment) CFStringCreateWithCString.invoke(
                             MemorySegment.NULL, tempArena.allocateFrom(PREFERENCE_KEY), 0x08000100);
@@ -245,6 +248,7 @@ public final class ThemeObserver {
     }
 
     public void triggerAsyncCheckInstance() {
+        if (!initialized) return;
         synchronized (lifecycleLock) {
             ExecutorService exec = themeExecutor;
             if (exec != null && !exec.isShutdown()) {
@@ -252,6 +256,7 @@ public final class ThemeObserver {
             } else {
                 // Observer disposed/inactive; run on generic worker to avoid blocking caller
                 CompletableFuture.runAsync(() -> {
+                    if (!initialized) return;
                     boolean currentValue = queryIsDark();
                     synchronized (lifecycleLock) {
                         if (currentValue != lastKnownDark) {

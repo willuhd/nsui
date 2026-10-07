@@ -4,6 +4,7 @@ import java.lang.foreign.MemorySegment;
 
 import nsui.objc.Autorelease;
 import nsui.objc.ObjC;
+import nsui.objc.Scratch;
 import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
@@ -199,12 +200,18 @@ public final class NSApplication extends NSObject {
         while (System.currentTimeMillis() < deadline) {
             // Per-turn pool: this loop creates autoreleased NSDate/NSEvent objects
             // and Java owns no AppKit pool here (production run() has its own).
+            // The Scratch turn rewinds in the same scope so bump inputs recycle.
             MemorySegment pool = Autorelease.push();
             try {
-                MemorySegment until = ObjC.msgSendIdDouble(dateCls, ObjC.sel("dateWithTimeIntervalSinceNow:"), 0.05);
-                NSEvent ev = nextEvent(-1L /* NSEventMaskAny */, until, "kCFRunLoopDefaultMode", true);
-                if (ev != null) sendEvent(ev);
-                updateWindows();
+                Scratch.beginTurn();
+                try {
+                    MemorySegment until = ObjC.msgSendIdDouble(dateCls, ObjC.sel("dateWithTimeIntervalSinceNow:"), 0.05);
+                    NSEvent ev = nextEvent(-1L /* NSEventMaskAny */, until, "kCFRunLoopDefaultMode", true);
+                    if (ev != null) sendEvent(ev);
+                    updateWindows();
+                } finally {
+                    Scratch.endTurn();
+                }
             } finally {
                 Autorelease.pop(pool);
             }

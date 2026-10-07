@@ -87,6 +87,12 @@ public final class NsuiFeature implements Feature {
                             MethodType.methodType(void.class, MemorySegment.class)),
                     NsuiForeign.blockVoidUpcall());
             upcalls++;
+            // CATransaction: the block body behind every setCompletionBlock
+            RuntimeForeignAccess.registerForDirectUpcall(
+                    MethodHandles.lookup().findStatic(nsui.CATransaction.class, "completionThunk",
+                            MethodType.methodType(void.class, MemorySegment.class)),
+                    NsuiForeign.blockVoidUpcall());
+            upcalls++;
             // Exceptions: the ObjC exception preprocessor
             RuntimeForeignAccess.registerForDirectUpcall(
                     MethodHandles.lookup().findStatic(Exceptions.class, "preprocessor",

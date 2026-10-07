@@ -63,9 +63,10 @@ public class CATransition extends CAAnimation {
         return ObjC.toString(ObjC.msgSendId(peer, ObjC.sel("type")));
     }
 
-    /// setType:.
+    /// setType: (nil clears to the default transition).
     public void setType(String type) {
-        ObjC.msgSendVoidId(peer, ObjC.sel("setType:"), ObjC.nsstring(type));
+        ObjC.msgSendVoidId(peer, ObjC.sel("setType:"),
+                type == null ? MemorySegment.NULL : ObjC.nsstring(type));
     }
 
     /// subtype (nil-safe).

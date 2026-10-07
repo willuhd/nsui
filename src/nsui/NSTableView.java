@@ -327,11 +327,11 @@ public class NSTableView extends NSView {
         }
     }
 
-    /// [table setDataSource:] — the object answering row-count / cell-value queries.
+    /// [table setDataSource:] — the object answering row-count / cell-value queries (nil detaches).
     public void setDataSource(MemorySegment dataSource) {
         ensureInit();
         try {
-            H.hVoidId().invokeExact(peer, Sels.setDataSource, dataSource);
+            H.hVoidId().invokeExact(peer, Sels.setDataSource, (MemorySegment) (dataSource == null ? MemorySegment.NULL : dataSource));
         } catch (Throwable t) {
             throw new RuntimeException("setDataSource: failed", t);
         }
@@ -347,11 +347,11 @@ public class NSTableView extends NSView {
         }
     }
 
-    /// [table setDelegate:] — the object notified of table events.
+    /// [table setDelegate:] — the object notified of table events (nil detaches).
     public void setDelegate(MemorySegment delegate) {
         ensureInit();
         try {
-            H.hVoidId().invokeExact(peer, Sels.setDelegate, delegate);
+            H.hVoidId().invokeExact(peer, Sels.setDelegate, (MemorySegment) (delegate == null ? MemorySegment.NULL : delegate));
         } catch (Throwable t) {
             throw new RuntimeException("setDelegate: failed", t);
         }

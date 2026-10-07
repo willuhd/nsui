@@ -99,9 +99,10 @@ public class CAKeyframeAnimation extends CAPropertyAnimation {
         return ObjC.toString(ObjC.msgSendId(peer, ObjC.sel("calculationMode")));
     }
 
-    /// setCalculationMode:.
+    /// setCalculationMode: (nil restores the default mode).
     public void setCalculationMode(String mode) {
-        ObjC.msgSendVoidId(peer, ObjC.sel("setCalculationMode:"), ObjC.nsstring(mode));
+        ObjC.msgSendVoidId(peer, ObjC.sel("setCalculationMode:"),
+                mode == null ? MemorySegment.NULL : ObjC.nsstring(mode));
     }
 
     /// rotationMode (nil-safe).
@@ -109,8 +110,9 @@ public class CAKeyframeAnimation extends CAPropertyAnimation {
         return ObjC.toString(ObjC.msgSendId(peer, ObjC.sel("rotationMode")));
     }
 
-    /// setRotationMode:.
+    /// setRotationMode: (nil restores the default mode).
     public void setRotationMode(String mode) {
-        ObjC.msgSendVoidId(peer, ObjC.sel("setRotationMode:"), ObjC.nsstring(mode));
+        ObjC.msgSendVoidId(peer, ObjC.sel("setRotationMode:"),
+                mode == null ? MemorySegment.NULL : ObjC.nsstring(mode));
     }
 }

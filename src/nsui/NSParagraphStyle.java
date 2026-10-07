@@ -243,12 +243,12 @@ public class NSParagraphStyle extends NSObject {
     }
 
     // Additional useful getters (completeness, no extra vocabulary needed)
-    public long lineSpacing() {
+    public double lineSpacing() {
         ensureInit();
         try {
-            // Actually lineSpacing is CGFloat (double) — use double handle
+            // lineSpacing is CGFloat (double).
             MethodHandle h = ObjC.handle(Sig.of(Ret.DOUBLE));
-            return (long) (double) h.invokeExact(peer, ObjC.sel("lineSpacing"));
+            return (double) h.invokeExact(peer, ObjC.sel("lineSpacing"));
         } catch (Throwable t) {
             throw new RuntimeException("lineSpacing failed", t);
         }

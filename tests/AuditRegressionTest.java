@@ -104,14 +104,17 @@ public final class AuditRegressionTest {
         } catch (Throwable t) {
             TestKit.check(false, "NSMutableParagraphStyle lineSpacing round-trip threw: " + t);
         }
-        // matrix returns const CGFloat* (6 doubles = 48 bytes) copied to a call-scoped segment.
+        // matrix returns a copy as double[6].
         try {
             NSFont font = NSFont.systemFontOfSize(12);
-            MemorySegment m = font.matrix();
-            TestKit.check(m != null && m.address() != 0, "NSFont.systemFontOfSize(12).matrix() reads without throwing");
-            if (m != null) {
-                TestKit.check(m.byteSize() == 48, "NSFont matrix byteSize is 48 (got " + m.byteSize() + ")");
+            double[] m = font.matrix();
+            boolean finite = m != null && m.length == 6;
+            if (finite) {
+                for (double v : m) finite &= Double.isFinite(v);
+                finite &= m[0] > 0;
             }
+            TestKit.check(finite, "NSFont.systemFontOfSize(12).matrix() returns 6 finite doubles with positive scale (got "
+                    + java.util.Arrays.toString(m) + ")");
         } catch (Throwable t) {
             TestKit.check(false, "NSFont matrix() threw: " + t);
         }
@@ -151,6 +154,9 @@ public final class AuditRegressionTest {
         // --- 8. fail-fast argument guards ---
         TestKit.expectThrows("NSControl.takeStringValueFrom(null) rejects nil sender",
                 IllegalArgumentException.class, () -> slider.takeStringValueFrom(null));
+        TestKit.expectThrows("NSControl.setStringValue(null) rejects nil value",
+                IllegalArgumentException.class, () -> slider.setStringValue(null));
+        TestKit.noThrow("NSControl.performClick(null) passes nil sender", () -> slider.performClick(null));
         // No run-loop pumping here: the mode check fires before any native call.
         TestKit.expectThrows("NSApplication.nextEvent(null mode) rejects nil mode",
                 IllegalArgumentException.class, () -> app.nextEvent(-1L, MemorySegment.NULL, null, true));

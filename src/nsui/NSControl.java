@@ -318,6 +318,8 @@ public class NSControl extends NSView {
         return ObjC.toString(ObjC.msgSendId(peer, Sels.stringValue));
     }
     public void setStringValue(String value) {
+        // nil traps natively: fail fast in Java (same as takeStringValueFrom below).
+        if (value == null) throw new IllegalArgumentException("setStringValue requires a non-null value");
         ensureInit();
         ObjC.msgSendVoidId(peer, Sels.setStringValue, ObjC.nsstring(value));
     }
@@ -420,8 +422,9 @@ public class NSControl extends NSView {
     public void takeIntegerValueFrom(MemorySegment sender) {
 ensureInit(); ObjC.msgSendVoidId(peer, Sels.takeIntegerValueFrom, (MemorySegment) (sender == null ? MemorySegment.NULL : sender)); }
 
+    // nil sender is valid: the action fires with a nil sender.
     public void performClick(MemorySegment sender) {
-ensureInit(); ObjC.msgSendVoidId(peer, Sels.performClick, sender); }
+ensureInit(); ObjC.msgSendVoidId(peer, Sels.performClick, (MemorySegment) (sender == null ? MemorySegment.NULL : sender)); }
 
     // ---- font / alignment / lineBreak / writingDirection ----
     public NSFont font() {

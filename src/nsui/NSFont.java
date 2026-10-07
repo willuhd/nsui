@@ -4,6 +4,7 @@ import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodHandle;
 
 import nsui.objc.ObjC;
+import nsui.objc.Scratch;
 import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
@@ -385,9 +386,17 @@ public final class NSFont extends NSObject {
         }
     }
 
-    /// [font matrix] — const CGFloat* (raw segment; NSFontIdentityMatrix layout, 6 doubles).
+    /// [font matrix] — const CGFloat* (6 doubles, NSFontIdentityMatrix layout).
+    /// Copied into a call-scoped segment on read: the pointer borrows font
+    /// storage, so callers must never hold the raw address.
     public MemorySegment matrix() {
-        try { return (MemorySegment) H.hId().invokeExact(peer, ObjC.sel("matrix")); } catch (Throwable t) { throw new RuntimeException("matrix failed", t); }
+        try {
+            MemorySegment p = (MemorySegment) H.hId().invokeExact(peer, ObjC.sel("matrix"));
+            if (p == null || p.address() == 0) return null;
+            MemorySegment out = Scratch.allocInput(48);
+            MemorySegment.copy(p.reinterpret(48), 0, out, 0, 48);
+            return out;
+        } catch (Throwable t) { throw new RuntimeException("matrix failed", t); }
     }
 
     /// [font numberOfGlyphs].

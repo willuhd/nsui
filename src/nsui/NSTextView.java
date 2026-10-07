@@ -420,8 +420,8 @@ public class NSTextView extends NSText {
     private static synchronized void ensureInitLocked() {
         if (initialized) return;
         hInitFrame = ObjC.handle(Sig.of(Ret.ID, Arg.RECT));
-        initialized = true;
             Sels.populate();
+        initialized = true;
 }
 
     /// `[[NSTextView alloc] initWithFrame:frame]` — a new text view at the given rect.

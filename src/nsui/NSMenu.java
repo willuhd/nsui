@@ -192,7 +192,7 @@ public final class NSMenu extends NSObject {
 
     private static synchronized void ensureInitLocked() {
         if (H != null) return;
-        H = new Handles(
+        Handles h = new Handles(
                 ObjC.handle(Sig.of(Ret.ID, Arg.INT)),
                 ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.INT)),
                 ObjC.handle(Sig.of(Ret.INT, Arg.ID)),
@@ -201,6 +201,7 @@ public final class NSMenu extends NSObject {
                 ObjC.handle(Sig.of(Ret.ID, Arg.ID, Arg.ID, Arg.ID, Arg.INT)),
                 ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.ID)));
             Sels.populate();
+        H = h;
 }
 
     public static NSMenu wrap(MemorySegment peer) {

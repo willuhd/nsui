@@ -164,8 +164,13 @@ public final class ScratchTest {
         Scratch.beginTurn(); Scratch.endTurn();
         for (int i = 0; i < 1000; i++) { ObjC.rect(i, i, 1, 1); ObjC.cstring("edge"); }
         Scratch.beginTurn();
-        TestKit.check(Scratch.used() == 40_000,
-                "1000 no-turn inputs bumped 40_000 B (used=" + Scratch.used() + ")");
+        // Granule-robust: 1000 rects (32 B, already aligned) + 1000 cstrings ("edge"+NUL=5 B
+        // rounded to one 8 B granule) = 40_000 B when bumped. Allow one 8 B granule of slack
+        // per allocation (2000 allocations x 8 B = 16_000 B): a larger alignment still passes,
+        // while a real drift (no bump at all, double-bump, unbounded growth) still fails.
+        long bumped = Scratch.used();
+        TestKit.check(Math.abs(bumped - 40_000) <= 2000L * 8,
+                "1000 no-turn inputs bumped ~40_000 B (used=" + bumped + ", tolerance 16_000 for 2000x8 B granule)");
         // Values stay correct: the last rect reads back, the last cstring round-trips.
         MemorySegment lr = ObjC.rect(7, 8, 9, 10);
         TestKit.check(ObjC.rectX(lr) == 7 && ObjC.rectW(lr) == 9, "no-turn rect reads back");

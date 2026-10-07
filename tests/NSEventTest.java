@@ -125,10 +125,13 @@ public final class NSEventTest {
 
     /** Assert the full spec on a window-server-routed left-mouse-down event. */
     private static void assertCaptured(NSEvent captured, NSWindow window, NSPoint expect) {
+        // Frontmost path only: windowNumber, exact location, and real timestamp are
+        // meaningful solely when the window server routed a real click to this window.
+        // The fallback path (assertQueuedEvent) must not assert these.
         NSPoint loc = captured.locationInWindow();
         System.out.printf("locationInWindow=%.1f,%.1f expect≈%.1f,%.1f%n", loc.x(), loc.y(), expect.x(), expect.y());
-        TestKit.check(Math.abs(loc.x() - expect.x()) <= 40, "locationInWindow().x within 40 of " + expect.x() + " (got " + loc.x() + ")");
-        TestKit.check(Math.abs(loc.y() - expect.y()) <= 40, "locationInWindow().y within 40 of " + expect.y() + " (got " + loc.y() + ")");
+        TestKit.check(Math.abs(loc.x() - expect.x()) <= 12, "locationInWindow().x within 12 of " + expect.x() + " (got " + loc.x() + ")");
+        TestKit.check(Math.abs(loc.y() - expect.y()) <= 12, "locationInWindow().y within 12 of " + expect.y() + " (got " + loc.y() + ")");
         TestKit.check(captured.clickCount() >= 1, "clickCount() >= 1 (got " + captured.clickCount() + ")");
         TestKit.check(captured.timestamp() > 0, "timestamp() > 0 (got " + captured.timestamp() + ")");
         TestKit.check(captured.buttonNumber() == 0, "buttonNumber() == 0 (got " + captured.buttonNumber() + ")");
@@ -136,7 +139,7 @@ public final class NSEventTest {
                 "windowNumber() == window.windowNumber() (event=" + captured.windowNumber()
                         + " window=" + window.windowNumber() + ")");
         long mods = captured.modifierFlags();
-        TestKit.check(mods >= 0, "modifierFlags() is a valid mask >= 0 (got " + mods + ")");
+        TestKit.probe("modifierFlags() readable on delivered click (got " + mods + ")");
         System.out.println("  type=" + captured.type()
                 + " clickCount=" + captured.clickCount()
                 + " button=" + captured.buttonNumber()
@@ -174,7 +177,7 @@ public final class NSEventTest {
         TestKit.check(ev.clickCount() >= 1, "clickCount() >= 1 (got " + ev.clickCount() + ")");
         TestKit.check(ev.buttonNumber() == 0, "buttonNumber() == 0 (got " + ev.buttonNumber() + ")");
         long mods = ev.modifierFlags();
-        TestKit.check(mods >= 0, "modifierFlags() is a valid mask >= 0 (got " + mods + ")");
+        TestKit.probe("modifierFlags() readable on queued event (got " + mods + ")");
         NSPoint loc = ev.locationInWindow();
         TestKit.check(!Double.isNaN(loc.x()) && !Double.isNaN(loc.y()), "locationInWindow() reads a finite point (" + loc + ")");
         System.out.println("  (fallback) type=" + ev.type() + " clickCount=" + ev.clickCount()

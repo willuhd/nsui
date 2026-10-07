@@ -43,10 +43,12 @@ TESTS="AppearanceTest AppLifecycleTest AttributedLayerTest AutoreleaseTest Bench
 PASSED=0
 FAILED=0
 SKIPPED=0
+RAN=0
 SKIPPED_LIST=""
 FAILED_LIST=""
 for t in $TESTS; do
     if [ -n "$FILTER" ]; then case "$t" in *"$FILTER"*) ;; *) continue ;; esac; fi
+    RAN=$((RAN + 1))
     echo "== $t"
     set +e
     if [ -d "$CLASSES_CP" ] && [ -d "$TESTS_CP" ]; then CP="$CLASSES_CP:$TESTS_CP"; else CP="$ROOT/out/classes:$ROOT/out/tests"; fi
@@ -58,6 +60,7 @@ done
 rm -rf "$SAFE_CLASSES" "$SAFE_TESTS" 2>/dev/null || true
 echo "----------------------------------------"
 echo "PASSED: $PASSED  FAILED: $FAILED $FAILED_LIST  SKIPPED: $SKIPPED $SKIPPED_LIST"
+if [ "$RAN" -eq 0 ]; then echo "no test matched filter: $FILTER"; exit 1; fi
 if [ "$FAILED" -ne 0 ]; then echo "TESTS FAILED"; exit 1; fi
 if [ "$SKIPPED" -ne 0 ]; then echo "ALL RAN TESTS PASSED ($SKIPPED SKIPPED, UNPROVEN)"; exit 0; fi
 echo "ALL TESTS PASSED"

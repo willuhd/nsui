@@ -38,9 +38,13 @@ public final class AssertionQualityTest {
                 + "|==\\s*null\\s*\\|\\|\\s*\\1\\s*!=\\s*null"
                 + "|!=\\s*null\\s*\\|\\|\\s*\\1\\s*==\\s*null)");
         int checks = 0, noThrow = 0, attempt = 0, expectThrows = 0, skipCase = 0, probe = 0;
+        int tautologyCount = 0;
         List<String> offenders = new ArrayList<>();
+        Pattern orTrueLoc = Pattern.compile("\\|\\|\\s*true");
+        Pattern geZeroLoc = Pattern.compile(">=[\\s]*0(?![\\d.])");
         for (Path p : files) {
             String code = mask(Files.readString(p));
+            String flat = code.replaceAll("\\s+", "");
             int t = count(code, tautology);
             Matcher te = tautExpr.matcher(code);
             StringBuilder locs = new StringBuilder();
@@ -48,7 +52,25 @@ public final class AssertionQualityTest {
                 t++;
                 if (locs.length() < 160) locs.append(" :").append(lineOf(code, te.start()));
             }
-            if (t > 0) offenders.add(p.getFileName() + " x" + t + locs);
+            // "|| true" with any spacing: normalize whitespace then count "||true".
+            int orTrue = count(flat, "||" + "true");
+            int geZero = countCheckGeZero(code);
+            int extra = orTrue + geZero;
+            if (extra > 0) {
+                Matcher[] locMatchers = new Matcher[] {
+                    orTrueLoc.matcher(code), geZeroLoc.matcher(code)
+                };
+                for (Matcher m : locMatchers) {
+                    while (m.find()) {
+                        if (locs.length() < 160) locs.append(" :").append(lineOf(code, m.start()));
+                        else break;
+                    }
+                }
+            }
+            t += extra;
+            tautologyCount += t;
+            if (t > 0) offenders.add(p.getFileName() + " x" + t + locs
+                    + " (orTrue=" + orTrue + " geZero=" + geZero + ")");
             checks += count(code, "check(");
             noThrow += count(code, "noThrow(");
             attempt += count(code, "attempt(");
@@ -58,13 +80,50 @@ public final class AssertionQualityTest {
         }
         int real = noThrow + attempt + expectThrows;
         System.out.println("suite shape: check=" + checks + " noThrow=" + noThrow + " attempt=" + attempt
-                + " expectThrows=" + expectThrows + " probe=" + probe + " skipCase=" + skipCase);
+                + " expectThrows=" + expectThrows + " probe=" + probe + " skipCase=" + skipCase
+                + " tautologyCount=" + tautologyCount);
 
         TestKit.check(offenders.isEmpty(),
                 "no tautological always-true check remains" + (offenders.isEmpty() ? "" : " " + offenders));
+        TestKit.check(tautologyCount == 0,
+                "no always-true pattern remains (got "
+                        + tautologyCount + ")" + (offenders.isEmpty() ? "" : " " + offenders));
         TestKit.check(real >= 250, "suite has real no-throw/negative assertions (got " + real + ")");
         TestKit.check(skipCase > 0, "environment-dependent cases are explicit skips (got " + skipCase + ")");
         TestKit.end();
+    }
+
+    private static int countCheckGeZero(String code) {
+        // Counts ">= 0" (not followed by a digit or dot, so thresholds like
+        // ">= 0.99" are exempt) occurring inside check(...) calls only.
+        // String literals are blanked first so message prose never counts;
+        // loop conditions and index scans outside check(...) are legitimate.
+        int n = 0;
+        int i = 0;
+        while ((i = code.indexOf("check(", i)) > -1) {
+            int depth = 1;
+            int j = i + 6;
+            while (j < code.length() && depth > 0) {
+                char c = code.charAt(j);
+                if (c == '"') {
+                    j++;
+                    while (j < code.length() && code.charAt(j) != '"') {
+                        if (code.charAt(j) == '\\') j++;
+                        j++;
+                    }
+                    j++;
+                    continue;
+                }
+                if (c == '(') depth++;
+                else if (c == ')') depth--;
+                j++;
+            }
+            String arg = code.substring(i, Math.min(j, code.length()));
+            Matcher m = Pattern.compile(">=[\\s]*0(?![\\d.])").matcher(arg);
+            while (m.find()) n++;
+            i = j;
+        }
+        return n;
     }
 
     private static int lineOf(String s, int idx) {
@@ -75,7 +134,7 @@ public final class AssertionQualityTest {
 
     private static int count(String s, String needle) {
         int n = 0, i = 0;
-        while ((i = s.indexOf(needle, i)) >= 0) { n++; i += needle.length(); }
+        while ((i = s.indexOf(needle, i)) > -1) { n++; i += needle.length(); }
         return n;
     }
 

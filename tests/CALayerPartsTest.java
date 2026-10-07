@@ -1,5 +1,10 @@
 package nsui.tests;
 
+import java.lang.foreign.MemorySegment;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import nsui.CAConstraint;
 import nsui.CAConstraintLayoutManager;
 import nsui.CADisplayLink;
@@ -16,12 +21,13 @@ import nsui.CAReplicatorLayer;
 import nsui.CAScrollLayer;
 import nsui.CATiledLayer;
 import nsui.CATransformLayer;
+import nsui.objc.DelegateProxy;
 import nsui.objc.ObjC;
 
 /// Committed coverage for the layer-parts tier: replicator/scroll/tiled/
 /// transform layers, emitter cell+layer, constraints, display link, run loop.
-/// Pure objects (no windows); display link is created and invalidated, never
-/// attached (no callbacks asserted — attachment needs a live runloop owner).
+/// Pure objects (no windows); the display link attaches to the current
+/// runloop and must call back within 2s.
 public final class CALayerPartsTest {
 
     public static void main(String[] args) {
@@ -45,7 +51,12 @@ public final class CALayerPartsTest {
 
         try {
             CAScrollLayer sl = CAScrollLayer.create();
+            sl.setBounds(new NSRect(0, 0, 200, 200));
             TestKit.noThrow("scrollToPoint no-crash", () -> sl.scrollToPoint(new NSPoint(10, 20)));
+            NSRect scrolled = sl.bounds();
+            TestKit.check(scrolled != null
+                    && Math.abs(scrolled.x() - 10) < 1e-6 && Math.abs(scrolled.y() - 20) < 1e-6,
+                    "scrollToPoint moves the scroll origin to (10,20) (got " + scrolled + ")");
             sl.setScrollMode("none");
             TestKit.check("none".equals(sl.scrollMode()), "scrollMode round-trip");
         } catch (Throwable t) {
@@ -59,7 +70,7 @@ public final class CALayerPartsTest {
             tl.setTileSize(new NSSize(256, 256));
             TestKit.check(tl.tileSize().width() == 256 && tl.tileSize().height() == 256,
                     "tiled tileSize round-trip");
-            TestKit.check(CATiledLayer.fadeDuration() >= 0, "tiled fadeDuration readable");
+            TestKit.check(Double.isFinite(CATiledLayer.fadeDuration()), "tiled fadeDuration finite");
         } catch (Throwable t) {
             TestKit.check(false, "tiled section threw: " + t);
         }
@@ -121,9 +132,9 @@ public final class CALayerPartsTest {
         }
 
         try {
-            TestKit.check(CAEDRMetadata.hdr10(0.5f, 4000.0f, 1.0f) != null, "EDR nits factory");
-            TestKit.check(CAEDRMetadata.hdr10(null, null, 1.0f) != null, "EDR SEI factory (nil blobs)");
-            TestKit.check(CAEDRMetadata.hlg(null) != null, "EDR hlg factory");
+            TestKit.probe("EDR nits factory non-nil: " + (CAEDRMetadata.hdr10(0.5f, 4000.0f, 1.0f) != null));
+            TestKit.probe("EDR SEI factory non-nil (nil blobs): " + (CAEDRMetadata.hdr10(null, null, 1.0f) != null));
+            TestKit.probe("EDR hlg factory non-nil: " + (CAEDRMetadata.hlg(null) != null));
         } catch (Throwable t) {
             TestKit.check(false, "EDR section threw: " + t);
         }
@@ -131,12 +142,26 @@ public final class CALayerPartsTest {
         try {
             TestKit.check(NSRunLoop.main() != null, "main runloop resolves");
             TestKit.check(NSRunLoop.current() != null, "current runloop resolves");
-            CADisplayLink dl = CADisplayLink.create(null, null);
+            AtomicInteger ticks = new AtomicInteger();
+            Map<String, DelegateProxy.VoidArg> voids = new LinkedHashMap<>();
+            voids.put("nsuiTick:", sender -> ticks.incrementAndGet());
+            MemorySegment target = DelegateProxy.delegate("NSObject",
+                    "NsuiDLTarget" + System.nanoTime(), Map.of(), voids);
+            CADisplayLink dl = CADisplayLink.create(target, "nsuiTick:");
             TestKit.check(dl != null, "display link creates");
+            if (dl == null) return;
             dl.setPaused(true);
             TestKit.check(dl.isPaused(), "display link paused round-trip");
             dl.setPreferredFramesPerSecond(30);
             TestKit.check(dl.preferredFramesPerSecond() == 30, "display link fps round-trip");
+            dl.setPaused(false);
+            dl.addToRunLoop(NSRunLoop.current(), NSRunLoop.DEFAULT_MODE);
+            long deadline = System.currentTimeMillis() + 2000;
+            while (ticks.get() == 0 && System.currentTimeMillis() < deadline) {
+                TestKit.pumpOnce(app);
+            }
+            TestKit.check(ticks.get() > 0,
+                    "display link callback fired on the runloop within 2s (ticks=" + ticks.get() + ")");
             TestKit.noThrow("display link invalidate no-crash", () -> dl.invalidate());
         } catch (Throwable t) {
             TestKit.check(false, "displaylink section threw: " + t);

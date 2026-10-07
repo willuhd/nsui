@@ -120,7 +120,7 @@ public final class DataSourceProxyTest {
         // OPTIONAL extra proof: real NSTableView display pass routes cell lookups through the
         // live data-source (row count and upcall firing), even if the row VALUE is lost by the
         // 2-arg shape. Best-effort; skipped cleanly if the window server is unavailable.
-        attemptRealDisplayCellPull(table, cellCalls, directCells);
+        attemptRealDisplayCellPull(table, dataSource, cols, cellCalls, cellRows, cellRowCount);
         System.out.println("PASS: IntArg + IdIdIntArg shapes route against a real NSTableView "
                 + "(row values delivered exactly through the 3-arg shape)");
 
@@ -169,7 +169,10 @@ public final class DataSourceProxyTest {
 /// display pass actually pull cell values through the live data-source. Skipped cleanly (no
 /// failure) if the fixated window server is unavailable in this environment. The authoritative
 /// IdIdIntArg proof is the deterministic direct-send loop in main.
-    private static void attemptRealDisplayCellPull(MemorySegment table, int[] cellCalls, int before) {
+    private static void attemptRealDisplayCellPull(MemorySegment table, MemorySegment dataSource,
+            MemorySegment[] cols, int[] cellCalls, long[] cellRows, int[] cellRowCount) {
+        int beforeCalls = cellCalls[0];
+        int beforeRows = cellRowCount[0];
         try {
             MemorySegment app = ObjC.msgSendId(ObjC.cls("NSApplication"), ObjC.sel("sharedApplication"));
             MemorySegment windowCls = ObjC.cls("NSWindow");
@@ -184,13 +187,28 @@ public final class DataSourceProxyTest {
             ObjC.msgSendVoidId(window, ObjC.sel("orderFront:"), MemorySegment.NULL);
             ObjC.msgSendVoid(table, ObjC.sel("reloadData"));
             pump(app, 600L);
-            int pulled = cellCalls[0] - before;
+            int pulled = cellCalls[0] - beforeCalls;
             System.out.println("REAL-WINDOW DISPLAY: data-source cell callbacks during display pass = " + pulled);
-            if (pulled > 0) {
-                TestKit.probe("NSTableView display pass pulled " + pulled + " cell value(s) through the live dataSource");
-            } else {
-                System.out.println("NOTE: no cell callbacks during display pass (headless window server) — direct-send proof still holds");
+            if (pulled <= 0) {
+                TestKit.skipCase("NSTableView display pass showed no rows (headless window server) — direct-send proof still holds");
+                return;
             }
+            // The display pass fired: every pulled row must be a real model row (0..2).
+            boolean rowsInRange = true;
+            for (int i = beforeRows; i < cellRowCount[0]; i++) {
+                if (cellRows[i] < 0 || cellRows[i] >= 3) rowsInRange = false;
+            }
+            TestKit.check(rowsInRange, "display-pass pulled rows are model rows 0..2");
+            // And each pulled value must equal the model value ("R"+row) via the same 3-arg shape.
+            boolean valuesOk = true;
+            String detail = "";
+            for (int i = beforeRows; i < cellRowCount[0]; i++) {
+                long r = cellRows[i];
+                MemorySegment cell = objectValueForRow(dataSource, table, cols[0], r);
+                String s = ObjC.toString(cell);
+                if (!("R" + r).equals(s)) { valuesOk = false; detail = "row " + r + " got '" + s + "'"; break; }
+            }
+            TestKit.check(valuesOk, "display-pass pulled values equal model values (R<row>)" + (valuesOk ? "" : " — " + detail));
         } catch (Throwable t) {
             System.out.println("NOTE: real-window cell pull skipped in this environment: " + t);
         }

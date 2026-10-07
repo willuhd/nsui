@@ -107,7 +107,7 @@ public final class NSPrintInfo extends NSObject {
             MethodHandle h = ObjC.handle(Sig.of(Ret.ID));
             MemorySegment s = (MemorySegment) h.invokeExact(peer, ObjC.sel("jobDisposition"));
             return ObjC.toString(s);
-        } catch (Throwable t) { return null; }
+        } catch (Throwable t) { throw new RuntimeException("jobDisposition failed", t); }
     }
 
     /// setJobDisposition:

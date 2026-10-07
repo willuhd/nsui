@@ -145,8 +145,8 @@ public final class TextCoverageTest {
     private static void paragraphStyles() {
         nsui.NSParagraphStyle def = nsui.NSParagraphStyle.defaultParagraphStyle();
         TestKit.check(def != null, "defaultParagraphStyle non-nil");
-        TestKit.check(def.alignment() >= 0, "default alignment readable (" + def.alignment() + ")");
-        TestKit.check(def.lineBreakMode() >= 0, "default lineBreakMode readable");
+        TestKit.check(def.alignment() == 4, "default alignment readable (" + def.alignment() + ")");
+        TestKit.check(def.lineBreakMode() == 0, "default lineBreakMode readable");
         TestKit.check(def.mutableCopy() != null, "paragraph mutableCopy non-nil");
         TestKit.check(nsui.NSParagraphStyle.defaultWritingDirectionForLanguage("en") == 0,
                 "defaultWritingDirectionForLanguage(en) == LTR");
@@ -159,8 +159,8 @@ public final class TextCoverageTest {
         m.setLineBreakMode(1);
         TestKit.check(m.lineBreakMode() == 1, "lineBreakMode set/get char-wrap");
         m.setLineSpacing(7.5);
-        TestKit.check(Math.abs(((Number) Double.valueOf(lineSpacingOf(m))).doubleValue() - 7.5) < 1e-9
-                || true, "lineSpacing setter did not throw");
+        TestKit.check(Math.abs(((Number) Double.valueOf(lineSpacingOf(m))).doubleValue() - 7.5) < 1e-9,
+                "lineSpacing round-trip 7.5");
         m.setParagraphSpacing(9.0);
         TestKit.check(Math.abs(m.paragraphSpacing() - 9.0) < 1e-9, "paragraphSpacing round-trip");
         m.setHeadIndent(11.0);
@@ -308,7 +308,7 @@ public final class TextCoverageTest {
                 "localizedNameForFamily Helvetica");
         System.out.println("NOTE: currentFontAction=" + mgr.currentFontAction()
                 + " convertFontTraits(0)=" + mgr.convertFontTraits(0));
-        TestKit.check(mgr.convertAttributes(null) == null || true, "convertAttributes(NULL) did not crash");
+        TestKit.check(mgr.convertAttributes(null) == null || mgr.convertAttributes(null).address() == 0, "convertAttributes(NULL) did not crash");
         TestKit.noThrow("setSelectedAttributes:isMultiple:(NULL) did not crash", () -> mgr.setSelectedAttributesIsMultiple(null, false));
 
         // target/action raw round-trip (restores the same value — no behavior change).
@@ -365,7 +365,7 @@ public final class TextCoverageTest {
                 "collection matchingDescriptors > 0");
         System.out.println("NOTE: exclusionDescriptors="
                 + (collection.exclusionDescriptors() == null ? "nil" : collection.exclusionDescriptors().count()));
-        TestKit.check(NSFontCollection.withLocale(null) == null || true, "fontCollectionWithLocale(NULL) did not crash");
+        TestKit.check(NSFontCollection.withLocale(null) == null, "fontCollectionWithLocale(NULL) did not crash");
         // NOTE: withName:visibility: needs ID(ID,INT) — no Sig shape (reported); not called.
         // NOTE: show/hide/rename mutate the Font Book library (NSError**) — omitted deliberately.
         TestKit.check(NSFontCollection.VISIBILITY_PROCESS == 1L && NSFontCollection.VISIBILITY_USER == 2L
@@ -558,12 +558,12 @@ public final class TextCoverageTest {
                 "replaceTextStorage swaps");
         lm.ensureLayoutForTextContainer(c);
         NSRect used = lm.usedRectForTextContainer(c);
-        TestKit.check(used.height() > 0 && used.width() >= 0,
+        TestKit.check(used.height() > 0 && used.width() > 0,
                 "usedRectForTextContainer: non-empty for \"Other\" (got " + used + ")");
         TestKit.check(lm.delegate() == null || lm.delegate().address() == 0, "layoutManager delegate nil by default");
         lm.setDelegate(null);
-        TestKit.check(lm.firstTextView() == null || true, "firstTextView did not crash (no view attached)");
-        TestKit.check(lm.textViewForBeginningOfSelection() == null || true,
+        TestKit.check(lm.firstTextView() == null, "firstTextView did not crash (no view attached)");
+        TestKit.check(lm.textViewForBeginningOfSelection() == null,
                 "textViewForBeginningOfSelection did not crash");
         // NOTE: ruler accessory (4-arg), line-fragment rects, point mapping, delegate protocol
         // need shapes/upcalls not in Sig — omitted (reported).
@@ -736,11 +736,11 @@ public final class TextCoverageTest {
         tv.setGrammarCheckingEnabled(gr0);
         TestKit.check(tv.typingAttributes() != null, "typingAttributes non-nil");
         tv.setTypingAttributes(null);
-        TestKit.check(tv.shouldDrawInsertionPoint() || true, "shouldDrawInsertionPoint readable");
-        TestKit.check(tv.allowsDocumentBackgroundColorChange() || !tv.allowsDocumentBackgroundColorChange(),
+        TestKit.check(tv.shouldDrawInsertionPoint(), "shouldDrawInsertionPoint readable");
+        TestKit.check(!tv.allowsDocumentBackgroundColorChange(),
                 "allowsDocumentBackgroundColorChange readable");
         tv.setAllowsDocumentBackgroundColorChange(!tv.allowsDocumentBackgroundColorChange());
-        TestKit.check(tv.defaultParagraphStyle() == null || true, "defaultParagraphStyle readable (nullable)");
+        TestKit.check(tv.defaultParagraphStyle() == null, "defaultParagraphStyle readable (nullable)");
         NSMutableParagraphStyle ps = NSMutableParagraphStyle.create();
         ps.setAlignment(1);
         tv.setDefaultParagraphStyle(ps);
@@ -827,13 +827,13 @@ public final class TextCoverageTest {
 
         // completion / pasteboard types / dragging types (no UI, noPasteboard IO)
         TestKit.check(tv.rangeForUserCompletion() != null, "rangeForUserCompletion readable");
-        TestKit.check(tv.completionsForPartialWordRange(new NSRange(0, 5), null) == null || true,
-                "completionsForPartialWordRange did not crash");
+        tv.completionsForPartialWordRange(new NSRange(0, 5), null);
+        TestKit.probe("completionsForPartialWordRange did not crash");
         TestKit.check(tv.writablePasteboardTypes() != null, "writablePasteboardTypes non-nil");
         TestKit.check(tv.readablePasteboardTypes() != null, "readablePasteboardTypes non-nil");
         TestKit.check(tv.acceptableDragTypes() != null, "acceptableDragTypes non-nil");
-        TestKit.check(tv.validRequestorForSendTypeReturnType(null, null) == null || true,
-                "validRequestorForSendType did not crash");
+        tv.validRequestorForSendTypeReturnType(null, null);
+        TestKit.probe("validRequestorForSendType did not crash");
         TestKit.noThrow("registerForServices did not crash", () -> NSTextView.registerForServices());
         NSArray ql = tv.quickLookPreviewableItemsInRanges(NSArray.array());
         TestKit.check(ql == null || ql.count() == 0, "quickLookPreviewableItems(empty) empty");
@@ -892,7 +892,7 @@ public final class TextCoverageTest {
         System.out.println("NOTE: rangeForUserTextChange=" + tv.rangeForUserTextChange());
         System.out.println("NOTE: rangeForUserCharacterAttributeChange=" + tv.rangeForUserCharacterAttributeChange());
         System.out.println("NOTE: rangeForUserParagraphAttributeChange=" + tv.rangeForUserParagraphAttributeChange());
-        TestKit.check(tv.shouldChangeTextInRangesReplacementStrings(null, null) || true,
+        TestKit.check(tv.shouldChangeTextInRangesReplacementStrings(null, null),
                 "shouldChangeTextInRanges(NULL,NULL) did not crash");
         TestKit.noThrow("clickedOnLink(NULL,0) did not crash", () -> tv.clickedOnLinkAtIndex(null, 0));
         tv.setLayoutOrientation(0);

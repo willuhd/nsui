@@ -221,7 +221,7 @@ public final class NSRangeEdgeInsetsTest {
             }
         }
         long ms = (System.nanoTime() - t0) / 1_000_000;
-        TestKit.check(ms >= 0 && ms < 60000, "100k NSRange+NSEdgeInsets round-trips completed in " + ms + " ms");
+        TestKit.check(ms < 60000, "100k NSRange+NSEdgeInsets round-trips completed in " + ms + " ms");
 
         // also stress inside a single Scratch turn (bump reuse)
         Scratch.beginTurn();
@@ -244,9 +244,11 @@ public final class NSRangeEdgeInsetsTest {
         // ---- additional edge cases (FullCoverage expansion) ----
         System.out.println("\n-- additional edge cases (FullCoverage) --");
         TestKit.check(new NSRange(Long.MAX_VALUE, 0).isNotFound(), "Long.MAX_VALUE isNotFound");
-        TestKit.check(!new NSRange(Long.MAX_VALUE, 1).contains(Long.MAX_VALUE) || true, "NOT_FOUND contains check (overflow handled)");
+        // location+length overflows to Long.MIN_VALUE, so the index is not contained.
+        TestKit.check(!new NSRange(Long.MAX_VALUE, 1).contains(Long.MAX_VALUE), "NOT_FOUND contains check (overflow handled)");
         TestKit.check(new NSRange(0, Long.MAX_VALUE).max() == Long.MAX_VALUE, "max with huge length");
-        TestKit.check(new NSEdgeInsets(Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE).horizontal() == Double.POSITIVE_INFINITY || true, "huge insets horizontal not crash");
+        // Double.MAX_VALUE + Double.MAX_VALUE overflows to +Infinity.
+        TestKit.check(new NSEdgeInsets(Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE).horizontal() == Double.POSITIVE_INFINITY, "huge insets horizontal not crash");
         NSRect hugeRect = new NSRect(0,0,1e9,1e9);
         TestKit.check(hugeRect.area()==1e18, "huge rect area");
         TestKit.check(new NSEdgeInsets(0,0,0,0).negated().isZero(), "negated zero is zero");

@@ -594,7 +594,7 @@ public final class ControlsCoverageTest {
             TestKit.check(Math.abs(tf.completionDelay() - 0.5) < 0.01, "NSTokenField completionDelay round-trip 0.5");
             double dd = NSTokenField.defaultCompletionDelay();
             System.out.println("  defaultCompletionDelay = " + dd);
-            TestKit.check(dd >= 0.0, "NSTokenField.defaultCompletionDelay >= 0 (got " + dd + ")");
+            TestKit.check(dd == 0.0, "NSTokenField.defaultCompletionDelay == 0 (got " + dd + ")");
             MemorySegment cs = tf.tokenizingCharacterSet();
             System.out.println("  tokenizingCharacterSet = " + cs);
             TestKit.probe("NSTokenField tokenizingCharacterSet getter no crash");
@@ -691,7 +691,7 @@ public final class ControlsCoverageTest {
             TestKit.check(pop.indexOfItemWithTag(777L) == 0, "indexOfItemWithTag(777) == 0");
             MemorySegment rep = ObjC.nsstring("rep-obj");
             TestKit.check(pop.indexOfItemWithRepresentedObject(rep) < 0, "indexOfItemWithRepresentedObject(unknown) == -1/NSNotFound");
-            TestKit.check(pop.indexOfItemWithTargetAndAction(null, null) < 0 || true,
+            TestKit.check(pop.indexOfItemWithTargetAndAction(null, null) < 0,
                     "indexOfItemWithTargetAndAction(nil,nil) no crash");
             // selectItem / selectItemWithTag / setTitle / selectedTag / synchronize
             pop.selectItem(first);

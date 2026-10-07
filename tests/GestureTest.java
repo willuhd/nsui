@@ -254,7 +254,8 @@ public final class GestureTest {
                 }
             }
             long elapsed = System.currentTimeMillis() - start;
-            TestKit.check(elapsed >= 0 && elapsed < 60000, "stress 1000 iterations create/isEnabled/buttonMask/translationInView/addTarget/removeTarget completed in " + elapsed + " ms");
+            // Neutral: elapsed cannot be negative; upper bound is the assertion.
+            TestKit.check(elapsed < 60000, "stress 1000 iterations create/isEnabled/buttonMask/translationInView/addTarget/removeTarget completed in " + elapsed + " ms");
         } catch (Throwable t) {
             String m = t.getMessage() == null ? "" : t.getMessage().toLowerCase();
             if (m.contains("connection")) {

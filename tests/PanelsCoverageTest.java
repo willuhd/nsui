@@ -113,8 +113,8 @@ public final class PanelsCoverageTest {
             check(responds(alert.peer(), "runModal"), "NSAlert respondsTo runModal (never invoking modal)");
             check(responds(alert.peer(), "beginSheetModalForWindow:completionHandler:"), "NSAlert respondsTo beginSheet (never invoking)");
             check(alert.window() != null && alert.window().peer().address() != 0, "NSAlert window (panel) non-nil");
-            check(alert.icon() != null || true, "NSAlert icon accessor no crash");
-            check(alert.suppressionButton() != null || true, "NSAlert suppressionButton accessor no crash");
+            check(alert.icon() != null, "NSAlert icon accessor no crash");
+            check(alert.suppressionButton() != null, "NSAlert suppressionButton accessor no crash");
             check(NSAlert.wrap(null) == null, "NSAlert.wrap(null)==null");
         } catch (Throwable t) {
             check(false, "NSAlert section threw: " + t);
@@ -128,19 +128,19 @@ public final class PanelsCoverageTest {
             save.setIdentifier("nsui-panels-coverage");
             check("nsui-panels-coverage".equals(save.identifier()), "NSSavePanel identifier round-trip");
             save.setIdentifier(null);
-            check(save.identifier() == null || true, "NSSavePanel identifier null no crash");
+            check(save.identifier() == null, "NSSavePanel identifier null no crash");
             save.setDirectoryURL(tmpPath);
             String dir = save.directoryURLString();
             check(dir != null && dir.contains("sa-panels-"), "NSSavePanel directoryURL unique /tmp/sa dir round-trip (got " + dir + ")");
             save.setPrompt("SaveIt");
             check("SaveIt".equals(save.prompt()), "NSSavePanel prompt round-trip");
             save.setPrompt(null);
-            check(save.prompt() == null || true, "NSSavePanel prompt null no crash");
+            check(save.prompt() == null, "NSSavePanel prompt null no crash");
             save.setNameFieldLabel("Name:");
             check("Name:".equals(save.nameFieldLabel()), "NSSavePanel nameFieldLabel round-trip");
             save.setNameFieldStringValue("coverage.txt");
             check("coverage.txt".equals(save.nameFieldStringValue()), "NSSavePanel nameFieldStringValue round-trip");
-            check(save.isExpanded() == false || true, "NSSavePanel isExpanded accessor no crash (" + save.isExpanded() + ")");
+            check(!save.isExpanded(), "NSSavePanel isExpanded accessor no crash (" + save.isExpanded() + ")");
             boolean origExt = save.canSelectHiddenExtension();
             save.setCanSelectHiddenExtension(!origExt);
             check(save.canSelectHiddenExtension() == !origExt, "NSSavePanel canSelectHiddenExtension toggle");
@@ -164,7 +164,7 @@ public final class PanelsCoverageTest {
             save.setAllowedContentTypes(List.of("public.plain-text"));
             check(save.allowedContentTypesPeer() != null, "NSSavePanel allowedContentTypesPeer non-nil after set");
             TestKit.noThrow("NSSavePanel setCurrentContentType(null) no crash (resets)", () -> save.setCurrentContentType(null));
-            check(save.currentContentTypePeer() != null || true, "NSSavePanel currentContentTypePeer accessor no crash");
+            check(save.currentContentTypePeer() != null && save.currentContentTypePeer().address() != 0, "NSSavePanel currentContentTypePeer accessor no crash");
             save.setDelegate((MemorySegment) null);
             check(save.delegatePeer() == null || save.delegatePeer().address() == 0, "NSSavePanel delegatePeer null after setDelegate(null)");
             check(responds(save.peer(), "validateVisibleColumns"), "NSSavePanel respondsTo validateVisibleColumns");
@@ -285,12 +285,14 @@ public final class PanelsCoverageTest {
             // setPrinter(null) need not read back null (AppKit may substitute the default printer) —
             // verify no-crash only.
             info.setPrinter(null);
-            check(info.printerPeer() != null || true, "NSPrintInfo printerPeer no crash after setPrinter(null)");
+            info.printerPeer();
+            TestKit.probe("NSPrintInfo printerPeer no crash after setPrinter(null)");
             check(info.imageablePageBounds() != null, "NSPrintInfo imageablePageBounds accessor no crash (" + info.imageablePageBounds() + ")");
-            check(info.localizedPaperName() != null || true, "NSPrintInfo localizedPaperName no crash");
+            check(info.localizedPaperName() != null, "NSPrintInfo localizedPaperName no crash");
             check(info.dictionary() != null, "NSPrintInfo dictionary non-nil");
-            check(info.printSettings() != null || true, "NSPrintInfo printSettings no crash");
-            check(NSPrintInfo.defaultPrinterPeer() != null || true, "NSPrintInfo defaultPrinterPeer no crash");
+            check(info.printSettings() != null, "NSPrintInfo printSettings no crash");
+            NSPrintInfo.defaultPrinterPeer();
+            TestKit.probe("NSPrintInfo defaultPrinterPeer no crash");
             boolean origSel = info.isSelectionOnly();
             info.setSelectionOnly(!origSel);
             check(info.isSelectionOnly() == !origSel, "NSPrintInfo isSelectionOnly toggle");
@@ -316,17 +318,18 @@ public final class PanelsCoverageTest {
             check(op.view() != null && op.view().peer().address() == view.peer().address(), "NSPrintOperation view peer equality");
             check(op.printInfo() != null && op.printInfo().isKindOfClass("NSPrintInfo"), "NSPrintOperation printInfo copy non-nil NSPrintInfo");
             check(op.isCopyingOperation() == false, "NSPrintOperation isCopyingOperation false (not a copy op)");
-            check(op.preferredRenderingQualityEnum() != null || true, "NSPrintOperation preferredRenderingQuality no crash (" + op.preferredRenderingQuality() + ")");
+            check(op.preferredRenderingQualityEnum() != null, "NSPrintOperation preferredRenderingQuality no crash (" + op.preferredRenderingQuality() + ")");
             op.setJobTitle("CoverageJob");
             check("CoverageJob".equals(op.jobTitle()), "NSPrintOperation jobTitle round-trip");
             op.setJobTitle(null);
-            check(op.jobTitle() == null || true, "NSPrintOperation jobTitle null no crash");
-            check(op.printPanel() != null || true, "NSPrintOperation printPanel accessor no crash");
+            check(op.jobTitle() == null, "NSPrintOperation jobTitle null no crash");
+            check(op.printPanel() != null, "NSPrintOperation printPanel accessor no crash");
             TestKit.noThrow("NSPrintOperation setPrintPanel(null) no crash", () -> op.setPrintPanel(null));
             // AppKit lazily creates a default PDF panel, so setPDFPanel(null) need not read back null —
             // verify no-crash only.
             op.setPDFPanel(null);
-            check(op.pdfPanelPeer() != null || true, "NSPrintOperation pdfPanelPeer no crash after setPDFPanel(null)");
+            op.pdfPanelPeer();
+            TestKit.probe("NSPrintOperation pdfPanelPeer no crash after setPDFPanel(null)");
             boolean origSpawn = op.canSpawnSeparateThread();
             op.setCanSpawnSeparateThread(!origSpawn);
             check(op.canSpawnSeparateThread() == !origSpawn, "NSPrintOperation canSpawnSeparateThread toggle");
@@ -338,9 +341,9 @@ public final class PanelsCoverageTest {
             NSPrintInfo info2 = NSPrintInfo.create();
             op.setPrintInfo(info2);
             check(op.printInfo() != null, "NSPrintOperation setPrintInfo + printInfo non-nil");
-            check(op.contextPeer() != null || true, "NSPrintOperation contextPeer no crash (valid only while paginating)");
+            check(op.contextPeer() == null || op.contextPeer().address() == 0, "NSPrintOperation contextPeer no crash (valid only while paginating)");
             check(op.pageRange() != null, "NSPrintOperation pageRange accessor no crash (" + op.pageRange() + ")");
-            check(op.currentPage() >= 0 || true, "NSPrintOperation currentPage no crash (" + op.currentPage() + ")");
+            check(op.currentPage() == 0, "NSPrintOperation currentPage no crash (" + op.currentPage() + ")");
             boolean origPanel = op.showsPrintPanel();
             op.setShowsPrintPanel(!origPanel);
             check(op.showsPrintPanel() == !origPanel, "NSPrintOperation showsPrintPanel toggle");
@@ -388,8 +391,8 @@ public final class PanelsCoverageTest {
             panel.setJobStyleHint(NSPrintPanel.PHOTO_JOB_STYLE_HINT);
             check(NSPrintPanel.PHOTO_JOB_STYLE_HINT.equals(panel.jobStyleHint()), "NSPrintPanel jobStyleHint round-trip");
             TestKit.noThrow("NSPrintPanel setJobStyleHint(null) no crash", () -> panel.setJobStyleHint(null));
-            check(panel.printInfo() != null || true, "NSPrintPanel printInfo accessor no crash");
-            check(panel.accessoryControllersPeer() != null || true, "NSPrintPanel accessoryControllersPeer no crash");
+            check(panel.printInfo() == null, "NSPrintPanel printInfo accessor no crash");
+            check(panel.accessoryControllersPeer() != null && panel.accessoryControllersPeer().address() != 0, "NSPrintPanel accessoryControllersPeer no crash");
             check(responds(panel.peer(), "runModal"), "NSPrintPanel respondsTo runModal (never invoking modal)");
             check(responds(panel.peer(), "runModalWithPrintInfo:"), "NSPrintPanel respondsTo runModalWithPrintInfo: (never invoking)");
             check(responds(panel.peer(), "beginSheetUsingPrintInfo:onWindow:completionHandler:"), "NSPrintPanel respondsTo beginSheetUsing (never invoking)");
@@ -416,7 +419,7 @@ public final class PanelsCoverageTest {
             fp.setWorksWhenModal(origModal);
             check(responds(fp.peer(), "setEnabled:"), "NSFontPanel respondsTo setEnabled:");
             check(responds(fp.peer(), "setWorksWhenModal:"), "NSFontPanel respondsTo setWorksWhenModal:");
-            check(fp.accessoryView() != null || true, "NSFontPanel accessoryView no crash");
+            check(fp.accessoryView() != null, "NSFontPanel accessoryView no crash");
             check(fp.isVisible() == false, "NSFontPanel isVisible false (never shown)");
             check(responds(fp.peer(), "reloadDefaultFontFamilies"), "NSFontPanel respondsTo reloadDefaultFontFamilies");
             check(responds(fp.peer(), "panelConvertFont:"), "NSFontPanel respondsTo panelConvertFont:");
@@ -519,7 +522,7 @@ public final class PanelsCoverageTest {
             tb.setAllowsUserCustomization(origCustom);
             boolean origVis = tb.isVisible();
             tb.setVisible(!origVis);
-            check(tb.isVisible() == !origVis || true, "NSToolbar setVisible no crash (got " + tb.isVisible() + ")");
+            TestKit.probe("NSToolbar setVisible no crash (got " + tb.isVisible() + ")");
             tb.setVisible(origVis);
             boolean origBase = tb.showsBaselineSeparator();
             TestKit.noThrow("NSToolbar setShowsBaselineSeparator no crash", () -> tb.setShowsBaselineSeparator(!origBase));
@@ -532,7 +535,8 @@ public final class PanelsCoverageTest {
             check(tb.itemIdentifiers().contains("cov-a"), "NSToolbar itemIdentifiers round-trip contains cov-a (got " + tb.itemIdentifiers() + ")");
             tb.setItemIdentifiers(List.of());
             tb.setCenteredItemIdentifiers(null);
-            check(tb.centeredItemIdentifiersPeer() == null || true, "NSToolbar centeredItemIdentifiersPeer no crash");
+            tb.centeredItemIdentifiersPeer();
+            TestKit.probe("NSToolbar centeredItemIdentifiersPeer no crash");
             boolean origExt2 = tb.allowsExtensionItems();
             tb.setAllowsExtensionItems(!origExt2);
             check(tb.allowsExtensionItems() == !origExt2, "NSToolbar allowsExtensionItems toggle");
@@ -543,8 +547,8 @@ public final class PanelsCoverageTest {
             tb.setAutosavesConfiguration(origAuto);
             TestKit.noThrow("NSToolbar setSelectedItemIdentifier no crash", () -> tb.setSelectedItemIdentifier("cov-a"));
             tb.setSelectedItemIdentifier(null);
-            check(tb.items() != null || true, "NSToolbar items accessor no crash");
-            check(tb.visibleItems() != null || true, "NSToolbar visibleItems accessor no crash");
+            check(tb.items() != null, "NSToolbar items accessor no crash");
+            check(tb.visibleItems() != null, "NSToolbar visibleItems accessor no crash");
             check(tb.customizationPaletteIsRunning() == false, "NSToolbar customizationPaletteIsRunning false (never running palette)");
             check(responds(tb.peer(), "runCustomizationPalette:"), "NSToolbar respondsTo runCustomizationPalette: (never invoking)");
             check(responds(tb.peer(), "validateVisibleItems"), "NSToolbar respondsTo validateVisibleItems");
@@ -578,7 +582,7 @@ public final class PanelsCoverageTest {
             ti.setNavigational(!origNav);
             check(ti.isNavigational() == !origNav, "NSToolbarItem isNavigational toggle");
             ti.setNavigational(origNav);
-            check(ti.isVisible() == false || true, "NSToolbarItem isVisible no crash (" + ti.isVisible() + ")");
+            check(!ti.isVisible(), "NSToolbarItem isVisible no crash (" + ti.isVisible() + ")");
             boolean origHid = ti.isHidden();
             ti.setHidden(!origHid);
             check(ti.isHidden() == !origHid, "NSToolbarItem isHidden toggle");
@@ -605,7 +609,8 @@ public final class PanelsCoverageTest {
             check(ti.menuFormRepresentation() != null, "NSToolbarItem menuFormRepresentation non-nil after set");
             ti.setMenuFormRepresentation((MemorySegment) null);
             ti.setPossibleLabels(null);
-            check(ti.possibleLabelsPeer() == null || true, "NSToolbarItem possibleLabelsPeer no crash");
+            ti.possibleLabelsPeer();
+            TestKit.probe("NSToolbarItem possibleLabelsPeer no crash");
             ti.setBackgroundTintColor(null);
             check(ti.backgroundTintColor() == null, "NSToolbarItem backgroundTintColor null after set null");
             ti.setBadge(null);
@@ -631,7 +636,7 @@ public final class PanelsCoverageTest {
             };
             MemorySegment proxy = NSToolbarDelegate.create(d);
             check(proxy != null && proxy.address() != 0, "NSToolbarDelegate.create non-nil proxy");
-            check(((NSObject) NSToolbar.wrap(proxy) != null) || true, "NSToolbarDelegate proxy peer usable");
+            check(((NSObject) NSToolbar.wrap(proxy) != null), "NSToolbarDelegate proxy peer usable");
             tb.setDelegate(proxy);
             check(tb.delegate() != null && tb.delegate().address() == proxy.address(), "NSToolbar setDelegate/delegate peer equality");
             NSToolbarDelegate.Delegate d2 = new NSToolbarDelegate.Delegate() {
@@ -680,7 +685,7 @@ public final class PanelsCoverageTest {
             pop.setBehavior(origBeh);
             pop.setDelegate((MemorySegment) null);
             check(pop.delegatePeer() == null || pop.delegatePeer().address() == 0, "NSPopover delegatePeer null after setDelegate(null)");
-            check(pop.effectiveAppearancePeer() != null || true, "NSPopover effectiveAppearancePeer no crash");
+            check(pop.effectiveAppearancePeer() != null && pop.effectiveAppearancePeer().address() != 0, "NSPopover effectiveAppearancePeer no crash");
             check(pop.isDetached() == false, "NSPopover isDetached false (never detached)");
             // positioningRect get/set on a never-shown popover without an anchor view raises
             // NSInternalInconsistencyException ("window must exist", fatal) — verify selector presence only.

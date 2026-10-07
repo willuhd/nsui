@@ -83,12 +83,12 @@ public final class MenuBarStatusTest {
             check(itemVar.isKindOfClass("NSStatusItem"), "NSStatusItem VARIABLE isKindOfClass NSStatusItem");
             // length accessor
             double lenVar = itemVar.length();
-            check(Math.abs(lenVar - NSStatusBar.VARIABLE_LENGTH) < 0.01 || true, "VARIABLE_LENGTH round-trip (got " + lenVar + ")");
+            check(Math.abs(lenVar - NSStatusBar.VARIABLE_LENGTH) < 1e-9, "VARIABLE_LENGTH round-trip (got " + lenVar + ")");
 
             itemSquare = bar.statusItemWithLength(NSStatusBar.SQUARE_LENGTH);
             check(itemSquare != null && itemSquare.peer().address() != 0, "statusItemWithLength SQUARE_LENGTH non-nil");
             double lenSq = itemSquare.length();
-            check(Math.abs(lenSq - NSStatusBar.SQUARE_LENGTH) < 0.01 || true, "SQUARE_LENGTH round-trip (got " + lenSq + ")");
+            check(Math.abs(lenSq - NSStatusBar.SQUARE_LENGTH) < 1e-9, "SQUARE_LENGTH round-trip (got " + lenSq + ")");
             // also convenience statusItem()
             NSStatusItem itemConv = bar.statusItem();
             check(itemConv != null && itemConv.peer().address() != 0, "NSStatusBar.statusItem() convenience non-nil");

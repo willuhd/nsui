@@ -100,7 +100,8 @@ public final class ResponderEventTest {
         // ---------------- listener registration round-trip ----------------
         int baseline = NSView.listenerCount();
         try {
-            check(baseline >= 0, "listenerCount baseline readable (" + baseline + ")");
+            // Neutral: absolute count has no oracle; deltas below are the assertions.
+            TestKit.probe("listenerCount baseline readable (" + baseline + ")");
             NSView.MouseListener ml = new NSView.MouseListener() {
                 @Override public void onMouseDown(NSView v, NSEvent e) { }
             };

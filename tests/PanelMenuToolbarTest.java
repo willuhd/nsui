@@ -174,7 +174,7 @@ public final class PanelMenuToolbarTest {
             open.setResolvesAliases(true);
             check(open.resolvesAliases() == true, "NSOpenPanel resolvesAliases true");
 
-            check(open.URLs().size() == 0 || true, "NSOpenPanel URLs accessor no crash (empty expected)");
+            check(open.URLs().size() == 0, "NSOpenPanel URLs accessor no crash (empty expected)");
         } catch (Throwable t) {
             check(false, "NSOpenPanel section threw: " + t);
             t.printStackTrace(System.out);
@@ -257,7 +257,7 @@ public final class PanelMenuToolbarTest {
                 item = bar.statusItemWithLength(-1.0);
                 check(item != null && item.peer().address() != 0, "NSStatusBar statusItemWithLength VARIABLE_LENGTH non-nil");
                 check(item.isKindOfClass("NSStatusItem"), "NSStatusItem isKindOfClass NSStatusItem");
-                check(item.length() != 0 || true, "NSStatusItem length accessor no crash (got " + item.length() + ")");
+                check(item.length() != 0, "NSStatusItem length accessor no crash (got " + item.length() + ")");
             } catch (Throwable t) {
                 check(false, "NSStatusBar statusItemWithLength threw: " + t);
             }

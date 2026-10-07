@@ -89,7 +89,10 @@ public final class ImageSliderTest {
         imageView.setImageFrameStyle(0L);
         view.addSubview(imageView);             // view IS the content view (setContentView above)
         TestKit.pump(app);
-        TestKit.probe("NSImageView created + setImage + setImageScaling(3) without crash");
+        // Neutral: image/scaling/frameStyle have exact round-trip oracles (just set above).
+        TestKit.check(imageView.image() != null && imageView.image().peer().address() == img.peer().address(), "NSImageView image round-trip same peer");
+        TestKit.check(imageView.imageScaling() == 3L, "NSImageView imageScaling round-trip 3 (got " + imageView.imageScaling() + ")");
+        TestKit.check(imageView.imageFrameStyle() == 0L, "NSImageView imageFrameStyle round-trip 0 (got " + imageView.imageFrameStyle() + ")");
 
         // ------------------------------------------------------------ NSSlider
         NSSlider slider = NSSlider.create(new NSRect(10, 165, 200, 20));

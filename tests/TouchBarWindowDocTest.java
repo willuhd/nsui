@@ -39,7 +39,7 @@ public final class TouchBarWindowDocTest {
             try {
                 NSArray ids = TestKit.attempt("NSTouchBar itemIdentifiers no crash", () -> bar.itemIdentifiers());
                 if (ids != null) {
-                    check(ids.count() == 0 || true, "NSTouchBar itemIdentifiers count accessible (count=" + (ids==null? "null": ids.count()) + ")");
+                    check(ids.count() == 0, "NSTouchBar itemIdentifiers count accessible (count=" + (ids==null? "null": ids.count()) + ")");
                 }
             } catch (Throwable t) { check(false, "NSTouchBar itemIdentifiers threw: " + t); }
 
@@ -100,8 +100,8 @@ public final class TouchBarWindowDocTest {
             NSWindowController wc = NSWindowController.create();
             check(wc != null && wc.peer().address() != 0, "NSWindowController.create non-nil");
             check(wc.isKindOfClass("NSWindowController"), "NSWindowController isKindOfClass NSWindowController");
-            check(wc.window() == null || true, "NSWindowController window() no crash (empty wc window=" + wc.window() + ")");
-            check(!wc.isWindowLoaded() || true, "NSWindowController isWindowLoaded accessor no crash (got " + wc.isWindowLoaded() + ")");
+            check(wc.window() == null, "NSWindowController window() no crash (empty wc window=" + wc.window() + ")");
+            check(wc.isWindowLoaded(), "NSWindowController isWindowLoaded accessor no crash (got " + wc.isWindowLoaded() + ")");
 
             // initWithWindow:
             NSRect rect = new NSRect(0,0,400,300);
@@ -115,7 +115,7 @@ public final class TouchBarWindowDocTest {
             NSWindow gotWin = wc2.window();
             check(gotWin != null && gotWin.peer().address() != 0, "NSWindowController window() after initWithWindow non-nil");
             if (gotWin != null) {
-                check(gotWin.peer().address() == win.peer().address() || true, "NSWindowController window address check (got vs original)");
+                check(gotWin.peer().address() == win.peer().address(), "NSWindowController window address check (got vs original)");
             }
 
             // setWindow:

@@ -171,7 +171,7 @@ public final class EdgeTest {
         TestKit.check(c1.address() != 0 && c1.address() == c2.address(), "cls stable across calls");
     }
 
-    /// NSValue factories build REAL native values (retained): getters must read
+    /// NSValue factories build REAL native values (autoreleased): getters must read
     /// live structs back, proving AppKit interop (dummy peers never could).
     private static void nativeValues() {
         try {

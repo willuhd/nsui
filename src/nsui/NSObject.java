@@ -15,7 +15,7 @@ import nsui.objc.Sig;
 ///
 /// Header-completeness (`NSObjCRuntime.h` / `NSObject.h`): every safe method whose
 /// shape is in the Sig vocabulary is wrapped below. OMITTED — retain/release/autorelease
-/// (arena memory model: factories retain, immortal by design; see NSData/NSValue);
+/// (arena memory model: factories autorelease, drained via pool per frame);
 /// performSelector: family (arbitrary-selector dispatch; use typed wrappers);
 /// KVO observe/removeObserver: (context-pointer machinery; addObserver:forKeyPath:options:
 /// context: also needs of(VOID,ID,ID,INT,ID), not in Sig); NSCoder/NSZone/Protocol plumbing

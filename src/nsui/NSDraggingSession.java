@@ -19,7 +19,7 @@ import static nsui.objc.Sig.Ret;
 ///   wrapper would abort the process).
 public final class NSDraggingSession extends NSObject {
 
-            private record Handles(MethodHandle hDraggingPasteboard, MethodHandle hSourceOperationMask, MethodHandle hDraggingLocation) {}
+            private record Handles(MethodHandle hDraggingPasteboard, MethodHandle hSequenceNumber, MethodHandle hDraggingLocation) {}
     private static volatile Handles handles;
 
     private NSDraggingSession(MemorySegment peer) {
@@ -56,7 +56,7 @@ public final class NSDraggingSession extends NSObject {
     /// draggingSequenceNumber
     public long draggingSequenceNumber() {
         ensureInit();
-        try { return (long) handles.hSourceOperationMask().invokeExact(peer, ObjC.sel("draggingSequenceNumber")); }
+        try { return (long) handles.hSequenceNumber().invokeExact(peer, ObjC.sel("draggingSequenceNumber")); }
         catch (Throwable t) { throw new RuntimeException("draggingSequenceNumber failed", t); }
     }
 
@@ -67,7 +67,7 @@ public final class NSDraggingSession extends NSObject {
         try {
             MemorySegment seg = (MemorySegment) handles.hDraggingLocation().invokeExact(ObjC.structSlot(), peer, ObjC.sel("draggingLocation"));
             return NSPoint.fromSegment(seg);
-        } catch (Throwable t) { return NSPoint.ZERO; }
+        } catch (Throwable t) { throw new RuntimeException("draggingLocation failed", t); }
     }
 
     /// draggingFormation — minimal.
@@ -76,7 +76,7 @@ public final class NSDraggingSession extends NSObject {
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.INT));
             return (long) h.invokeExact(peer, ObjC.sel("draggingFormation"));
-        } catch (Throwable t) { return 0; }
+        } catch (Throwable t) { throw new RuntimeException("draggingFormation failed", t); }
     }
 
     /// setDraggingFormation:
@@ -94,7 +94,7 @@ public final class NSDraggingSession extends NSObject {
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.BOOL));
             return (boolean) h.invokeExact(peer, ObjC.sel("animatesToStartingPositionsOnCancelOrFail"));
-        } catch (Throwable t) { return true; }
+        } catch (Throwable t) { throw new RuntimeException("animatesToStartingPositionsOnCancelOrFail failed", t); }
     }
 
     /// setAnimatesToStartingPositionsOnCancelOrFail:

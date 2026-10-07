@@ -68,6 +68,11 @@ public final class MTLTexture extends NSObject {
         if (bytesPerRow <= 0) throw new IllegalArgumentException("bytesPerRow must be > 0, got " + bytesPerRow);
         long w = region.width(), h = region.height();
         if (w <= 0 || h <= 0) throw new IllegalArgumentException("region is empty: " + w + "x" + h);
+        if (region.z() != 0 || region.depth() != 1) {
+            throw new IllegalArgumentException("region z/depth must be 0/1 for 2D textures, got z="
+                    + region.z() + " depth=" + region.depth());
+        }
+        if (level < 0) throw new IllegalArgumentException("mipmap level must be >= 0, got " + level);
         long tw = width(), th = height();
         if (region.x() < 0 || region.y() < 0 || region.x() + w > tw || region.y() + h > th) {
             throw new IllegalArgumentException("region " + region.x() + "," + region.y() + " " + w + "x" + h
@@ -81,14 +86,16 @@ public final class MTLTexture extends NSObject {
         long len = (long) bytesPerRow * h;
         if (len > Integer.MAX_VALUE) throw new IllegalArgumentException("readback too large: " + len + " bytes");
         byte[] out = new byte[(int) len];
-        MemorySegment buf = nsui.objc.Scratch.allocInput(out.length);
-        try {
-            handles.hGetBytes().invokeExact(peer, ObjC.sel("getBytes:bytesPerRow:fromRegion:mipmapLevel:"),
-                    buf, (long) bytesPerRow, region.toSegment(), level);
-        } catch (Throwable t) {
-            throw new RuntimeException("getBytes:... failed", t);
+        try (java.lang.foreign.Arena arena = java.lang.foreign.Arena.ofConfined()) {
+            MemorySegment buf = arena.allocate(out.length);
+            try {
+                handles.hGetBytes().invokeExact(peer, ObjC.sel("getBytes:bytesPerRow:fromRegion:mipmapLevel:"),
+                        buf, (long) bytesPerRow, region.toSegment(), level);
+            } catch (Throwable t) {
+                throw new RuntimeException("getBytes:... failed", t);
+            }
+            MemorySegment.copy(buf, java.lang.foreign.ValueLayout.JAVA_BYTE, 0, out, 0, out.length);
         }
-        MemorySegment.copy(buf, java.lang.foreign.ValueLayout.JAVA_BYTE, 0, out, 0, out.length);
         return out;
     }
 }

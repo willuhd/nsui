@@ -299,7 +299,8 @@ public class NSControl extends NSView {
     }
     public void setFormatter(MemorySegment formatter) {
         ensureInit();
-        ObjC.msgSendVoidId(peer, Sels.setFormatter, formatter);
+        // nil clears the formatter.
+        ObjC.msgSendVoidId(peer, Sels.setFormatter, (MemorySegment) (formatter == null ? MemorySegment.NULL : formatter));
     }
 
     // ---- objectValue / stringValue / attributedStringValue ----
@@ -309,7 +310,8 @@ public class NSControl extends NSView {
     }
     public void setObjectValue(MemorySegment value) {
         ensureInit();
-        ObjC.msgSendVoidId(peer, Sels.setObjectValue, value);
+        // nil clears the object value.
+        ObjC.msgSendVoidId(peer, Sels.setObjectValue, (MemorySegment) (value == null ? MemorySegment.NULL : value));
     }
     public String stringValue() {
         ensureInit();
@@ -325,7 +327,8 @@ public class NSControl extends NSView {
     }
     public void setAttributedStringValue(MemorySegment value) {
         ensureInit();
-        ObjC.msgSendVoidId(peer, Sels.setAttributedStringValue, value);
+        // nil clears the attributed string value.
+        ObjC.msgSendVoidId(peer, Sels.setAttributedStringValue, (MemorySegment) (value == null ? MemorySegment.NULL : value));
     }
     // ---- typed NSAttributedString variants (preferred) ----
     public NSAttributedString attributedStringValueTyped() {
@@ -401,18 +404,21 @@ public class NSControl extends NSView {
     }
 
     // ---- take*ValueFrom: ----
+    // nil sender reads zero/nil on the native side (except takeStringValueFrom: below).
     public void takeIntValueFrom(MemorySegment sender) {
-    ensureInit(); ObjC.msgSendVoidId(peer, Sels.takeIntValueFrom, sender); }
+    ensureInit(); ObjC.msgSendVoidId(peer, Sels.takeIntValueFrom, (MemorySegment) (sender == null ? MemorySegment.NULL : sender)); }
     public void takeFloatValueFrom(MemorySegment sender) {
-    ensureInit(); ObjC.msgSendVoidId(peer, Sels.takeFloatValueFrom, sender); }
+    ensureInit(); ObjC.msgSendVoidId(peer, Sels.takeFloatValueFrom, (MemorySegment) (sender == null ? MemorySegment.NULL : sender)); }
     public void takeDoubleValueFrom(MemorySegment sender) {
-    ensureInit(); ObjC.msgSendVoidId(peer, Sels.takeDoubleValueFrom, sender); }
+    ensureInit(); ObjC.msgSendVoidId(peer, Sels.takeDoubleValueFrom, (MemorySegment) (sender == null ? MemorySegment.NULL : sender)); }
     public void takeStringValueFrom(MemorySegment sender) {
+    // nil sender is invalid natively (setStringValue: rejects nil): fail fast in Java.
+    if (sender == null) throw new IllegalArgumentException("takeStringValueFrom requires a non-null sender");
     ensureInit(); ObjC.msgSendVoidId(peer, Sels.takeStringValueFrom, sender); }
     public void takeObjectValueFrom(MemorySegment sender) {
-    ensureInit(); ObjC.msgSendVoidId(peer, Sels.takeObjectValueFrom, sender); }
+    ensureInit(); ObjC.msgSendVoidId(peer, Sels.takeObjectValueFrom, (MemorySegment) (sender == null ? MemorySegment.NULL : sender)); }
     public void takeIntegerValueFrom(MemorySegment sender) {
-ensureInit(); ObjC.msgSendVoidId(peer, Sels.takeIntegerValueFrom, sender); }
+ensureInit(); ObjC.msgSendVoidId(peer, Sels.takeIntegerValueFrom, (MemorySegment) (sender == null ? MemorySegment.NULL : sender)); }
 
     public void performClick(MemorySegment sender) {
 ensureInit(); ObjC.msgSendVoidId(peer, Sels.performClick, sender); }
@@ -475,7 +481,8 @@ ensureInit(); ObjC.msgSendVoidId(peer, Sels.performClick, sender); }
     }
     public void setCell(MemorySegment cell) {
         ensureInit();
-        ObjC.msgSendVoidId(peer, Sels.setCell, cell);
+        // nil detaches the cell.
+        ObjC.msgSendVoidId(peer, Sels.setCell, (MemorySegment) (cell == null ? MemorySegment.NULL : cell));
     }
 
     // ---- field editor ----

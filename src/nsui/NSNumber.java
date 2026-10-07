@@ -22,7 +22,7 @@ import static nsui.objc.Sig.Ret;
 /// initWithCoder: (needs NSCoder).
 public final class NSNumber extends NSValue {
 
-            private record Handles(MethodHandle hIntValue, MethodHandle hDoubleValue, MethodHandle hBoolValue, MethodHandle hFloatValue) {}
+            private record Handles(MethodHandle hIntValue, MethodHandle hDoubleValue, MethodHandle hBoolValue, MethodHandle hFloatValue, MethodHandle hByteValue) {}
     private static volatile Handles handles;
 
     private NSNumber(MemorySegment peer) { super(peer); }
@@ -38,12 +38,14 @@ public final class NSNumber extends NSValue {
 
         private static synchronized void ensureNumInitLocked() {
         if (handles != null) return;
-        handles = new Handles(
+        Handles h = new Handles(
                 ObjC.handle(Sig.of(Ret.INT)),
                 ObjC.handle(Sig.of(Ret.DOUBLE)),
                 ObjC.handle(Sig.of(Ret.BOOL)),
-                ObjC.handle(Sig.of(Ret.FLOAT))
+                ObjC.handle(Sig.of(Ret.FLOAT)),
+                ObjC.handle(Sig.of(Ret.BYTE))
         );
+        handles = h;
     }
 
     /// numberWithInt:
@@ -76,17 +78,14 @@ public final class NSNumber extends NSValue {
         } catch (Throwable t) { throw new RuntimeException("numberWithDouble: failed", t); }
     }
 
-    /// numberWithBool: — uses int-based creation to avoid needing BOOL sig for ID.
+    /// numberWithBool: — BOOL is a 1-byte scalar, passed as a Java boolean.
     public static NSNumber numberWithBool(boolean value) {
         ensureNumInit();
         try {
-            MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.INT));
-            MemorySegment s = (MemorySegment) h.invokeExact(ObjC.cls("NSNumber"), ObjC.sel("numberWithBool:"), value ? 1L : 0L);
+            MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.BOOL));
+            MemorySegment s = (MemorySegment) h.invokeExact(ObjC.cls("NSNumber"), ObjC.sel("numberWithBool:"), value);
             return wrap(s);
-        } catch (Throwable t) {
-            // fallback to numberWithInt 0/1
-            return numberWithInt(value ? 1 : 0);
-        }
+        } catch (Throwable t) { throw new RuntimeException("numberWithBool: failed", t); }
     }
 
     /// numberWithFloat: — via numberWithDouble (of(ID,FLOAT) is not in Sig; see class docs).
@@ -198,17 +197,17 @@ public final class NSNumber extends NSValue {
         } catch (Throwable t) { throw new RuntimeException("stringValue failed", t); }
     }
 
-    /// charValue.
+    /// charValue — C char (1 byte, signed).
     public long charValue() {
         ensureNumInit();
-        try { return (long) handles.hIntValue().invokeExact(peer, ObjC.sel("charValue")); }
+        try { return (long) (byte) handles.hByteValue().invokeExact(peer, ObjC.sel("charValue")); }
         catch (Throwable t) { throw new RuntimeException("charValue failed", t); }
     }
 
-    /// unsignedCharValue.
+    /// unsignedCharValue — C unsigned char (1 byte, zero-extended).
     public long unsignedCharValue() {
         ensureNumInit();
-        try { return (long) handles.hIntValue().invokeExact(peer, ObjC.sel("unsignedCharValue")); }
+        try { return ((byte) handles.hByteValue().invokeExact(peer, ObjC.sel("unsignedCharValue"))) & 0xFFL; }
         catch (Throwable t) { throw new RuntimeException("unsignedCharValue failed", t); }
     }
 

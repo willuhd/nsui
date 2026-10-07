@@ -2524,23 +2524,23 @@ public class NSView extends NSResponder {
         return ObjC.msgSendBool(peer, Sels.allowsVibrancy);
     }
 
-    /// [view safeAreaInsets] — NSEdgeInsets (32-byte struct, same ABI class as NSRect).
+    /// [view safeAreaInsets] — NSEdgeInsets (32-byte struct return).
     public NSEdgeInsets safeAreaInsets() {
         ensureInit();
-        return NSEdgeInsets.fromSegment(ObjC.msgSendRect(peer, Sels.safeAreaInsets));
+        return NSEdgeInsets.fromSegment(ObjC.msgSendEdgeInsets(peer, Sels.safeAreaInsets));
     }
 
     /// [view additionalSafeAreaInsets].
     public NSEdgeInsets additionalSafeAreaInsets() {
         ensureInit();
-        return NSEdgeInsets.fromSegment(ObjC.msgSendRect(peer, Sels.additionalSafeAreaInsets));
+        return NSEdgeInsets.fromSegment(ObjC.msgSendEdgeInsets(peer, Sels.additionalSafeAreaInsets));
     }
 
-    /// [view setAdditionalSafeAreaInsets:] — NSEdgeInsets by value (RECT shape).
+    /// [view setAdditionalSafeAreaInsets:] — NSEdgeInsets by value.
     public void setAdditionalSafeAreaInsets(NSEdgeInsets insets) {
         ensureInit();
         try {
-            H.hSetBounds().invokeExact(peer, Sels.setAdditionalSafeAreaInsets, insets.toSegment());
+            ObjC.handle(Sig.of(Ret.VOID, Arg.EDGEINSETS)).invokeExact(peer, Sels.setAdditionalSafeAreaInsets, insets.toSegment());
         } catch (Throwable t) {
             throw new RuntimeException("setAdditionalSafeAreaInsets: failed", t);
         }

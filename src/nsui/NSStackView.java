@@ -63,9 +63,9 @@ public class NSStackView extends NSView {
         if (initialized) return;
         hInitFrame = ObjC.handle(Sig.of(Ret.ID, Arg.RECT));
         hSpacing = ObjC.handle(Sig.of(Ret.VOID, Arg.DOUBLE));
-        hEdgeInsets = ObjC.handle(Sig.of(Ret.VOID, Arg.RECT));
+        hEdgeInsets = ObjC.handle(Sig.of(Ret.VOID, Arg.EDGEINSETS));
         hGetDouble = ObjC.handle(Sig.of(Ret.DOUBLE));
-        hGetInsets = ObjC.handle(Sig.of(Ret.RECT));
+        hGetInsets = ObjC.handle(Sig.of(Ret.EDGEINSETS));
         initialized = true;
     }
 

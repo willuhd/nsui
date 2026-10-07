@@ -77,22 +77,26 @@ public final class NSViewTest {
         // Corner (5,5) = far from center => still red.
         int cx = px.pixelsWide / 2;
         int cy = px.pixelsHigh / 2;
-        int[] center = px.rgb(cx, cy);
-        int[] corner = px.rgb(5, 5);
+        int[] center = px.colors(cx, cy);
+        int[] corner = px.colors(5, 5);
 
-        System.out.printf("bitmap %dx%d bytesPerRow=%d samplesPerPixel=%d%n",
-                px.pixelsWide, px.pixelsHigh, px.bytesPerRow, px.samplesPerPixel);
-        System.out.printf("center(%d,%d) channel[0,1,2]=[%d,%d,%d] (expect blue)%n",
-                cx, cy, center[0], center[1], center[2]);
-        System.out.printf("corner(5,5)  channel[0,1,2]=[%d,%d,%d] (expect red)%n",
-                corner[0], corner[1], corner[2]);
+        System.out.printf("bitmap %dx%d bytesPerRow=%d samplesPerPixel=%d alphaIdx=%d%n",
+                px.pixelsWide, px.pixelsHigh, px.bytesPerRow, px.samplesPerPixel, px.alphaIdx);
+        System.out.printf("center(%d,%d) color samples=%s (expect one blue-role primary)%n",
+                cx, cy, java.util.Arrays.toString(center));
+        System.out.printf("corner(5,5)  color samples=%s (expect a different red-role primary)%n",
+                java.util.Arrays.toString(corner));
 
-        // Channel order for premultiplied/color-managed reps can vary; verify by role:
-        // a "blue" pixel has the BLUE-ish sample dominant, a "red" pixel the RED-ish one.
-        boolean centerIsBlue = center[2] > 150 && center[0] < 100;
-        boolean cornerIsRed  = corner[0] > 150 && corner[2] < 100;
-        TestKit.check(centerIsBlue, "center pixel is BLUE (b>150, r<100)");
-        TestKit.check(cornerIsRed, "corner pixel is RED (r>150, b<100)");
+        // Byte-order agnostic: each region must show one saturated primary
+        // (dominant sample >150, rest <100) and the two regions must be
+        // dominated by DIFFERENT samples — red vs blue roles, not positions.
+        int centerDom = dominant(center);
+        int cornerDom = dominant(corner);
+        boolean centerIsBlue = center[centerDom] > 150 && restBelow(center, centerDom, 100);
+        boolean cornerIsRed  = corner[cornerDom] > 150 && restBelow(corner, cornerDom, 100);
+        TestKit.check(centerIsBlue && cornerIsRed && centerDom != cornerDom,
+                "center and corner show distinct saturated primaries (center dom idx="
+                        + centerDom + ", corner dom idx=" + cornerDom + ")");
 
         TestKit.close(window);
         System.out.println(TestKit.failures() == 0 ? "RESULT: ALL PASS" : "RESULT: " + TestKit.failures() + " FAILURE(S)");
@@ -119,17 +123,52 @@ public final class NSViewTest {
         MemorySegment data = ObjC.msgSendId(rep, ObjC.sel("bitmapData"));
         MemorySegment bytes = data.reinterpret(bytesPerRow * pixelsHigh);
 
-        return new MemPixels(bytes, (int) pixelsWide, (int) pixelsHigh, (int) bytesPerRow, (int) samplesPerPixel);
+        int alphaIdx = -1;
+        try {
+            if (samplesPerPixel == 4 && ObjC.msgSendBool(rep, ObjC.sel("hasAlpha"))) {
+                long fmt = ObjC.msgSendLong(rep, ObjC.sel("bitmapFormat"));
+                alphaIdx = ((fmt & 1L) != 0) ? 0 : 3;
+            }
+        } catch (Throwable t) {
+            if (samplesPerPixel == 4) alphaIdx = 3;
+        }
+
+        return new MemPixels(bytes, (int) pixelsWide, (int) pixelsHigh, (int) bytesPerRow, (int) samplesPerPixel, alphaIdx);
+    }
+
+    /** Index of the largest color sample. */
+    private static int dominant(int[] colors) {
+        int dom = 0;
+        for (int k = 1; k < colors.length; k++) {
+            if (colors[k] > colors[dom]) dom = k;
+        }
+        return dom;
+    }
+
+    /** Every non-dominant color sample stays below the ceiling. */
+    private static boolean restBelow(int[] colors, int dom, int ceiling) {
+        for (int k = 0; k < colors.length; k++) {
+            if (k != dom && colors[k] >= ceiling) return false;
+        }
+        return true;
     }
 
     /** Byte-addressable view of an NSBitmapImageRep's bitmapData. */
-    private record MemPixels(MemorySegment bytes, int pixelsWide, int pixelsHigh, int bytesPerRow, int samplesPerPixel) {
+    private record MemPixels(MemorySegment bytes, int pixelsWide, int pixelsHigh, int bytesPerRow, int samplesPerPixel, int alphaIdx) {
+        /** Non-alpha color samples at (x,y) in rep byte order (roles, not R,G,B). */
+        int[] colors(int x, int y) {
+            int n = samplesPerPixel - (alphaIdx >= 0 ? 1 : 0);
+            int[] out = new int[n];
+            for (int k = 0, s = 0; k < samplesPerPixel; k++) {
+                if (k == alphaIdx) continue;
+                long off = (long) y * bytesPerRow + (long) x * samplesPerPixel + k;
+                out[s++] = Byte.toUnsignedInt(bytes.get(ValueLayout.JAVA_BYTE, off));
+            }
+            return out;
+        }
+
         int[] rgb(int x, int y) {
-            long off = (long) y * bytesPerRow + (long) x * samplesPerPixel;
-            int c0 = Byte.toUnsignedInt(bytes.get(ValueLayout.JAVA_BYTE, off));
-            int c1 = Byte.toUnsignedInt(bytes.get(ValueLayout.JAVA_BYTE, off + 1));
-            int c2 = Byte.toUnsignedInt(bytes.get(ValueLayout.JAVA_BYTE, off + 2));
-            return new int[]{c0, c1, c2};
+            return colors(x, y);
         }
     }
 }

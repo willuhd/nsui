@@ -189,7 +189,7 @@ public final class NSScreen extends NSObject {
 
     /// [screen safeAreaInsets] (macOS 12.0+) — obscured distance from each edge.
     public NSEdgeInsets safeAreaInsets() {
-        return NSEdgeInsets.fromSegment(ObjC.msgSendRect(peer, ObjC.sel("safeAreaInsets")));
+        return NSEdgeInsets.fromSegment(ObjC.msgSendEdgeInsets(peer, ObjC.sel("safeAreaInsets")));
     }
 
     /// [screen auxiliaryTopLeftArea] (macOS 12.0+) — unobscured area above the

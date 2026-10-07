@@ -33,7 +33,11 @@ import nsui.objc.ObjC;
 ///      declares (Handles record / local handle / typed msgSend helper);
 ///   2. read method_getTypeEncoding for that selector on the wrapper's ObjC class;
 ///   3. compare the ABI class sequences, tolerating only genuinely equivalent
-///      encodings (SEL/Class == id, legacy BOOL == char, NSEdgeInsets == NSRect).
+///      encodings (SEL/Class == id, C array == pointer, 'B' == BOOL).
+///      'c'/'C' are BYTE (numeric 1-byte reads, not boolean).
+///      A VOID-declared return keeps ignoring the real return class (counted
+///      and capped); every other class difference — including an unmodelled
+///      real struct or NSEdgeInsets vs NSRect — is reported.
 ///
 /// It is source-driven on purpose: the declared shape exists only in the source, and a
 /// bare MethodHandle.invokeExact gives the runtime nothing to hook. Call sites it cannot
@@ -63,8 +67,18 @@ public final class SignatureConformanceTest {
     }
 
     private static final class Stats {
-        int checked, unresolved, noMatch, other;
+        int checked, unresolved, noMatch, other, voidIgnored;
     }
+
+    // Caps measured on macOS 26.5.1 / GraalVM 25 (2026-10-07 runs): the test fails
+    // if any of these counts grows, so new unmodelled helpers or ignored returns
+    // cannot slip in silently. NO_MATCH/OTHER baselines come from the unhardened
+    // run (192/1); the single OTHER then was the `[2f]` array now modelled below,
+    // so the steady state is 0. VOID_IGNORED measured 0 on the hardened run
+    // (no VOID-declared site ignores a real return), so the cap is 0.
+    private static final int NO_MATCH_BASELINE = 192;
+    private static final int OTHER_BASELINE = 1;
+    private static final int VOID_IGNORED_CAP = 0;
 
     private static final class Resolved {
         String name;
@@ -96,12 +110,27 @@ public final class SignatureConformanceTest {
 
         System.out.println("call sites checked: " + st.checked
                 + "  unresolved: " + st.unresolved
-                + "  no runtime method: " + st.noMatch
-                + "  non-modelled struct in real sig: " + st.other);
+                + "  no runtime method: " + st.noMatch + " (baseline " + NO_MATCH_BASELINE + ")"
+                + "  non-modelled struct in real sig: " + st.other + " (baseline " + OTHER_BASELINE + ")"
+                + "  void-return-ignored: " + st.voidIgnored + " (cap " + VOID_IGNORED_CAP + ")");
         System.out.println("ABI mismatches: " + bad.size());
         for (String s : bad) System.out.println("  MISMATCH " + s);
 
         TestKit.check(st.checked > 3000, "resolved a meaningful number of call sites (got " + st.checked + ")");
+        double unresolvedShare = st.checked + st.unresolved == 0 ? 0
+                : (double) st.unresolved / (st.checked + st.unresolved);
+        TestKit.check(unresolvedShare < 0.15,
+                "unresolved share below 15% (got " + String.format("%.2f", unresolvedShare * 100)
+                + "%: " + st.unresolved + " of " + (st.checked + st.unresolved) + ")");
+        TestKit.check(st.noMatch <= NO_MATCH_BASELINE,
+                "no-runtime-method count within baseline (got " + st.noMatch
+                + ", baseline " + NO_MATCH_BASELINE + ")");
+        TestKit.check(st.other <= OTHER_BASELINE,
+                "non-modelled struct count within baseline (got " + st.other
+                + ", baseline " + OTHER_BASELINE + ")");
+        TestKit.check(st.voidIgnored <= VOID_IGNORED_CAP,
+                "void-ignored return count within cap (got " + st.voidIgnored
+                + ", cap " + VOID_IGNORED_CAP + ")");
         TestKit.check(bad.isEmpty(), "every declared Sig shape matches the runtime type encoding");
         TestKit.end();
     }
@@ -247,6 +276,7 @@ public final class SignatureConformanceTest {
 
             List<String> real = abiOf(enc);
             if (real.contains("OTHER")) st.other++;
+            if ("VOID".equals(assumed.get(0)) && !"VOID".equals(real.get(0))) st.voidIgnored++;
             if (matches(assumed, real)) continue;
 
             boolean tolerated = false;
@@ -350,9 +380,21 @@ public final class SignatureConformanceTest {
             case "v": return "VOID";
             case "d": return "DOUBLE";
             case "f": return "FLOAT";
-            case "B": case "c": case "C": return "BOOL";
+            // 1-byte encodings split by signedness source: 'B' (C++ bool /
+            // _Bool) is BOOL; 'c' (signed char) and 'C' (unsigned char) are
+            // BYTE, read numerically (see NSNumber charValue/unsignedCharValue).
+            // Wider integers (i/I/q/Q/l/L/s/S) normalise to INT and never
+            // match BOOL or BYTE in either direction.
+            case "B": return "BOOL";
+            case "c": case "C": return "BYTE";
             case "q": case "Q": case "i": case "I": case "l": case "L": case "s": case "S": return "INT";
-            default: return t.startsWith("{") ? structKind(t) : "OTHER";
+            default:
+                // C array in argument position (observed: `[2f]` in
+                // `v32@0:8Q16[2f]24` = CAMediaTimingFunction
+                // getControlPointAtIndex:values:): array parameters adjust to
+                // pointers, so the declared ID (pointer) is exact.
+                if (t.startsWith("[")) return "ID";
+                return t.startsWith("{") ? structKind(t) : "OTHER";
         }
     }
 
@@ -378,16 +420,17 @@ public final class SignatureConformanceTest {
     }
 
     private static boolean retCompat(String a, String r) {
-        if ("VOID".equals(a)) return true;   // return value intentionally ignored
-        if ("OTHER".equals(r)) return true;  // real struct the model does not name
+        if ("VOID".equals(a)) return true;   // return value intentionally ignored (counted/capped at the call site)
+        // No OTHER tolerance: an unmodelled real struct in return position is a mismatch.
         return argCompat(a, r);
     }
 
     private static boolean argCompat(String a, String r) {
-        if ("OTHER".equals(r)) return true;
+        // No OTHER tolerance: an unmodelled real struct in argument position is a mismatch.
+        // No BOOL<->INT interchange and no RECT<->EDGEINSETS alias either: an
+        // i/I/q/Q/l/L/s/S where BOOL is declared (or vice versa), and NSEdgeInsets
+        // vs NSRect confusion, are now mismatches.
         if (a.equals(r)) return true;
-        if (("BOOL".equals(a) || "INT".equals(a)) && ("BOOL".equals(r) || "INT".equals(r))) return true;
-        if (("RECT".equals(a) && "EDGEINSETS".equals(r)) || ("EDGEINSETS".equals(a) && "RECT".equals(r))) return true;
         return false;
     }
 

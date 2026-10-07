@@ -31,7 +31,7 @@ import static nsui.objc.Sig.Ret;
 public final class NSImage extends NSObject {
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
-    private record Handles(MethodHandle hInitFromFile, MethodHandle hInitFromURL, MethodHandle hInitSize, MethodHandle hLayerContents, MethodHandle hSize, MethodHandle hDrawRect, MethodHandle hTIFF, MethodHandle hName, MethodHandle hSetName, MethodHandle hCapInsets, MethodHandle hSetCapInsets, MethodHandle hTemplate, MethodHandle hSetTemplate, MethodHandle hResizingMode, MethodHandle hSetResizingMode, MethodHandle hAccDesc, MethodHandle hSetAccDesc) {}
+    private record Handles(MethodHandle hInitFromFile, MethodHandle hInitFromURL, MethodHandle hInitSize, MethodHandle hLayerContents, MethodHandle hSize, MethodHandle hDrawRect, MethodHandle hTIFF, MethodHandle hName, MethodHandle hSetName, MethodHandle hCapInsets, MethodHandle hSetCapInsets, MethodHandle hTemplate, MethodHandle hSetTemplate, MethodHandle hResizingMode, MethodHandle hSetResizingMode, MethodHandle hAccDesc, MethodHandle hSetAccDesc, MethodHandle hCapEdgeInsets, MethodHandle hSetCapEdgeInsets) {}
     private static volatile Handles H;
 
     private NSImage(MemorySegment peer) {
@@ -67,7 +67,9 @@ public final class NSImage extends NSObject {
                 ObjC.handle(Sig.of(Ret.INT)),
                 ObjC.handle(Sig.of(Ret.VOID, Arg.INT)),
                 ObjC.handle(Sig.of(Ret.ID)),
-                ObjC.handle(Sig.of(Ret.VOID, Arg.ID)));
+                ObjC.handle(Sig.of(Ret.VOID, Arg.ID)),
+                ObjC.handle(Sig.of(Ret.EDGEINSETS)),
+                ObjC.handle(Sig.of(Ret.VOID, Arg.EDGEINSETS)));
     }
 
     /// Load an image from a file on disk. Modern AppKit (macOS SDK) has no
@@ -226,21 +228,20 @@ public final class NSImage extends NSObject {
         }
     }
 
-    /// [image capInsets] — edge insets for 9-part scaling (NSEdgeInsets ~ 4 doubles, returned as NSRect).
-    public NSRect capInsets() {
+    /// [image capInsets] — edge insets for 9-part scaling (NSEdgeInsets, 32-byte struct return).
+    public NSEdgeInsets capInsets() {
         try {
-            MemorySegment s = (MemorySegment) H.hCapInsets().invokeExact(ObjC.structSlot(), peer, ObjC.sel("capInsets"));
-            // NSEdgeInsets is {top,left,bottom,right} -> map to NSRect {x=top,y=left,w=bottom,h=right}
-            return NSRect.fromSegment(s);
+            MemorySegment s = (MemorySegment) H.hCapEdgeInsets().invokeExact(ObjC.structSlot(), peer, ObjC.sel("capInsets"));
+            return NSEdgeInsets.fromSegment(s);
         } catch (Throwable t) {
             throw new RuntimeException("capInsets failed", t);
         }
     }
 
-    /// [image setCapInsets:] — edge insets for 9-part scaling.
-    public void setCapInsets(NSRect insets) {
+    /// [image setCapInsets:] — edge insets for 9-part scaling (NSEdgeInsets by value).
+    public void setCapInsets(NSEdgeInsets insets) {
         try {
-            H.hSetCapInsets().invokeExact(peer, ObjC.sel("setCapInsets:"), insets.toSegment());
+            H.hSetCapEdgeInsets().invokeExact(peer, ObjC.sel("setCapInsets:"), insets.toSegment());
         } catch (Throwable t) {
             throw new RuntimeException("setCapInsets: failed", t);
         }

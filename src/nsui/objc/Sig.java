@@ -34,10 +34,12 @@ import java.util.List;
 public final class Sig {
 
     /// Argument classes. `ID` covers id/SEL/Class/pointers — one ABI class.
-    public enum Arg { ID, INT, BOOL, DOUBLE, RECT, POINT, SIZE, FLOAT, RANGE, REGION, TRANSFORM3D, MTLVIEWPORT, MTLSCISSORRECT }
+    /// `BYTE` is a 1-byte scalar (C char); `EDGEINSETS` is NSEdgeInsets (4 doubles,
+    /// 32 bytes — same size class as RECT but a distinct nominal type).
+    public enum Arg { ID, INT, BOOL, DOUBLE, RECT, POINT, SIZE, FLOAT, RANGE, REGION, TRANSFORM3D, MTLVIEWPORT, MTLSCISSORRECT, BYTE, EDGEINSETS }
 
     /// Return classes. `RECT` is a 32-byte struct (stret on x86_64); POINT/SIZE/RANGE are 16-byte structs.
-    public enum Ret { VOID, ID, INT, BOOL, DOUBLE, RECT, POINT, SIZE, FLOAT, RANGE, TRANSFORM3D }
+    public enum Ret { VOID, ID, INT, BOOL, DOUBLE, RECT, POINT, SIZE, FLOAT, RANGE, TRANSFORM3D, BYTE, EDGEINSETS }
 
     /// A message signature: return class plus argument classes, packed into a
     /// 4-bits-per-arg long key so the record's value-based `equals`/`hashCode`
@@ -79,7 +81,10 @@ public final class Sig {
     private static final ValueLayout DOUBLE = (ValueLayout) Linker.nativeLinker().canonicalLayouts().get("double");
     private static final ValueLayout BOOL   = (ValueLayout) Linker.nativeLinker().canonicalLayouts().get("bool");
     private static final ValueLayout FLOAT  = ValueLayout.JAVA_FLOAT;
+    private static final ValueLayout BYTE   = ValueLayout.JAVA_BYTE;
     private static final MemoryLayout NS_RECT  = MemoryLayout.structLayout(DOUBLE, DOUBLE, DOUBLE, DOUBLE);
+    /// NSEdgeInsets == struct { CGFloat top, left, bottom, right } (4 doubles, 32 bytes).
+    private static final MemoryLayout NS_INSETS = MemoryLayout.structLayout(DOUBLE, DOUBLE, DOUBLE, DOUBLE);
     private static final MemoryLayout NS_POINT = MemoryLayout.structLayout(DOUBLE, DOUBLE);
     private static final MemoryLayout NS_SIZE  = MemoryLayout.structLayout(DOUBLE, DOUBLE);
     private static final MemoryLayout NS_RANGE = MemoryLayout.structLayout(LONG, LONG);
@@ -117,6 +122,8 @@ public final class Sig {
                 case TRANSFORM3D -> CA_TRANSFORM3D;
                 case MTLVIEWPORT -> MTL_VIEWPORT;
                 case MTLSCISSORRECT -> MTL_SCISSOR_RECT;
+                case BYTE -> BYTE;
+                case EDGEINSETS -> NS_INSETS;
             };
         }
         return switch (s.ret()) {
@@ -131,6 +138,8 @@ public final class Sig {
             case FLOAT -> FunctionDescriptor.of(FLOAT, args);
             case RANGE -> FunctionDescriptor.of(NS_RANGE, args);
             case TRANSFORM3D -> FunctionDescriptor.of(CA_TRANSFORM3D, args);
+            case BYTE -> FunctionDescriptor.of(BYTE, args);
+            case EDGEINSETS -> FunctionDescriptor.of(NS_INSETS, args);
         };
     }
 
@@ -152,6 +161,7 @@ public final class Sig {
             case SIZE -> NS_SIZE.byteSize();
             case RANGE -> NS_RANGE.byteSize();
             case TRANSFORM3D -> CA_TRANSFORM3D.byteSize();
+            case EDGEINSETS -> NS_INSETS.byteSize();
             default -> 0L;
         };
     }
@@ -279,6 +289,10 @@ public final class Sig {
         of(Ret.VOID, Arg.FLOAT, Arg.FLOAT, Arg.FLOAT),      // setDepthBias:slopeScale:clamp:
         of(Ret.VOID, Arg.MTLVIEWPORT),                      // setViewport:
         of(Ret.VOID, Arg.MTLSCISSORRECT),                   // setScissorRect:
-        of(Ret.VOID, Arg.INT, Arg.INT, Arg.INT, Arg.ID, Arg.INT) // drawIndexedPrimitives:indexCount:indexType:indexBuffer:indexBufferOffset:
+        of(Ret.VOID, Arg.INT, Arg.INT, Arg.INT, Arg.ID, Arg.INT), // drawIndexedPrimitives:indexCount:indexType:indexBuffer:indexBufferOffset:
+        // --- 1-byte scalars and edge insets (append-only) ---
+        of(Ret.BYTE),                                       // charValue / unsignedCharValue
+        of(Ret.EDGEINSETS),                                 // contentInsets / capInsets / safeAreaInsets / edgeInsets
+        of(Ret.VOID, Arg.EDGEINSETS)                        // setContentInsets: / setCapInsets: / setEdgeInsets:
     );
 }

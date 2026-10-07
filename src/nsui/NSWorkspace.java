@@ -52,14 +52,18 @@ public final class NSWorkspace extends NSObject {
         }
     }
 
-    /// [workspace openURL:] — URL string -> BOOL
+    /// [workspace openURL:] — URL string -> BOOL (nil input yields NO).
     public boolean openURL(String urlString) {
         ensureInit();
-        // Build NSURL via NSURL URLWithString:
-        MemorySegment url = ObjC.msgSendIdId(ObjC.cls("NSURL"), ObjC.sel("URLWithString:"), ObjC.nsstring(urlString));
-        if (url == null || url.address() == 0) {
-            // try fileURLWithPath:
-            url = ObjC.msgSendIdId(ObjC.cls("NSURL"), ObjC.sel("fileURLWithPath:"), ObjC.nsstring(urlString));
+        // nil string maps straight to a nil URL: fileURLWithPath: would raise on nil.
+        MemorySegment url = MemorySegment.NULL;
+        if (urlString != null) {
+            // Build NSURL via NSURL URLWithString:
+            url = ObjC.msgSendIdId(ObjC.cls("NSURL"), ObjC.sel("URLWithString:"), ObjC.nsstring(urlString));
+            if (url == null || url.address() == 0) {
+                // try fileURLWithPath:
+                url = ObjC.msgSendIdId(ObjC.cls("NSURL"), ObjC.sel("fileURLWithPath:"), ObjC.nsstring(urlString));
+            }
         }
         try {
             return (boolean) handles.hOpenURL().invokeExact(peer, ObjC.sel("openURL:"), url);
@@ -79,22 +83,22 @@ public final class NSWorkspace extends NSObject {
         }
     }
 
-    /// [workspace iconForFile:] -> NSImage
+    /// [workspace iconForFile:] -> NSImage (nil input yields nil).
     public NSImage iconForFile(String fullPath) {
         ensureInit();
         try {
-            MemorySegment img = (MemorySegment) handles.hIconFile().invokeExact(peer, ObjC.sel("iconForFile:"), ObjC.nsstring(fullPath));
+            MemorySegment img = (MemorySegment) handles.hIconFile().invokeExact(peer, ObjC.sel("iconForFile:"), (MemorySegment) (fullPath == null ? MemorySegment.NULL : ObjC.nsstring(fullPath)));
             return NSImage.wrap(img);
         } catch (Throwable t) {
             throw new RuntimeException("iconForFile: failed", t);
         }
     }
 
-    /// [workspace iconForFileType:] -> NSImage
+    /// [workspace iconForFileType:] -> NSImage (nil input yields nil).
     public NSImage iconForFileType(String fileType) {
         ensureInit();
         try {
-            MemorySegment img = (MemorySegment) handles.hIconFile().invokeExact(peer, ObjC.sel("iconForFileType:"), ObjC.nsstring(fileType));
+            MemorySegment img = (MemorySegment) handles.hIconFile().invokeExact(peer, ObjC.sel("iconForFileType:"), (MemorySegment) (fileType == null ? MemorySegment.NULL : ObjC.nsstring(fileType)));
             return NSImage.wrap(img);
         } catch (Throwable t) {
             throw new RuntimeException("iconForFileType: failed", t);
@@ -112,22 +116,22 @@ public final class NSWorkspace extends NSObject {
         }
     }
 
-    /// [workspace openFile:]
+    /// [workspace openFile:] (nil input yields NO).
     public boolean openFile(String fullPath) {
         ensureInit();
         try {
-            return (boolean) handles.hOpenURL().invokeExact(peer, ObjC.sel("openFile:"), ObjC.nsstring(fullPath));
+            return (boolean) handles.hOpenURL().invokeExact(peer, ObjC.sel("openFile:"), (MemorySegment) (fullPath == null ? MemorySegment.NULL : ObjC.nsstring(fullPath)));
         } catch (Throwable t) {
             throw new RuntimeException("openFile: failed", t);
         }
     }
 
-    /// [workspace launchApplication:] -> BOOL
+    /// [workspace launchApplication:] -> BOOL (nil input yields NO).
     public boolean launchApplication(String appName) {
         ensureInit();
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.BOOL, Arg.ID));
-            return (boolean) h.invokeExact(peer, ObjC.sel("launchApplication:"), ObjC.nsstring(appName));
+            return (boolean) h.invokeExact(peer, ObjC.sel("launchApplication:"), (MemorySegment) (appName == null ? MemorySegment.NULL : ObjC.nsstring(appName)));
         } catch (Throwable t) {
             throw new RuntimeException("launchApplication: failed", t);
         }

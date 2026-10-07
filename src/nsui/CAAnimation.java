@@ -54,7 +54,7 @@ public class CAAnimation extends NSObject {
         try { handles.hSetFrom().invokeExact(peer, ObjC.sel("setToValue:"), (MemorySegment) (value == null ? MemorySegment.NULL : value)); } catch (Throwable t) { throw new RuntimeException("setToValue: failed", t); }
     }
     public void setKeyPath(String kp) {
-        try { handles.hSetFrom().invokeExact(peer, ObjC.sel("setKeyPath:"), ObjC.nsstring(kp)); } catch (Throwable t) { throw new RuntimeException("setKeyPath: failed", t); }
+        try { handles.hSetFrom().invokeExact(peer, ObjC.sel("setKeyPath:"), (MemorySegment) (kp == null ? MemorySegment.NULL : ObjC.nsstring(kp))); } catch (Throwable t) { throw new RuntimeException("setKeyPath: failed", t); }
     }
     public void setDuration(double d) {
         try { handles.hSetDuration().invokeExact(peer, ObjC.sel("setDuration:"), d); } catch (Throwable t) { throw new RuntimeException("setDuration: failed", t); }

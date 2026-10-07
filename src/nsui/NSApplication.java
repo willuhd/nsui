@@ -151,6 +151,8 @@ public final class NSApplication extends NSObject {
     /// Mode string resolved per call (not cached): nsstring is autoreleased, so
     /// holding its peer across pool drains would dangle; per-call cost is trivial.
     public NSEvent nextEvent(long mask, MemorySegment untilDate, String mode, boolean dequeue) {
+        // nil mode is invalid natively: fail fast in Java instead of trapping.
+        if (mode == null) throw new IllegalArgumentException("nextEvent requires a non-null mode");
         MemorySegment modeSeg = ObjC.nsstring(mode);
         MemorySegment ev = ObjC.msgSendIdLongIdIdBool(peer,
                 ObjC.sel("nextEventMatchingMask:untilDate:inMode:dequeue:"),

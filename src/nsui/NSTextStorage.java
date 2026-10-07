@@ -60,9 +60,10 @@ public class NSTextStorage extends NSMutableAttributedString {
         }
     }
 
-    /// `[[NSTextStorage alloc] initWithString:string]`
+    /// `[[NSTextStorage alloc] initWithString:string]` — a name is required.
     public static NSTextStorage create(String s) {
         ensureInit();
+        if (s == null) throw new IllegalArgumentException("NSTextStorage.create requires a non-null string");
         MemorySegment alloc = ObjC.msgSendId(ObjC.cls("NSTextStorage"), ObjC.sel("alloc"));
         try {
             MethodHandle hInitStr = ObjC.handle(Sig.of(Ret.ID, Arg.ID));

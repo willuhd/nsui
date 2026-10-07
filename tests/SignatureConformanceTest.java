@@ -77,7 +77,7 @@ public final class SignatureConformanceTest {
     // so the steady state is 0. VOID_IGNORED measured 0 on the hardened run
     // (no VOID-declared site ignores a real return), so the cap is 0.
     private static final int NO_MATCH_BASELINE = 192;
-    private static final int OTHER_BASELINE = 1;
+    private static final int OTHER_CAP = 0;
     private static final int VOID_IGNORED_CAP = 0;
 
     private static final class Resolved {
@@ -111,7 +111,7 @@ public final class SignatureConformanceTest {
         System.out.println("call sites checked: " + st.checked
                 + "  unresolved: " + st.unresolved
                 + "  no runtime method: " + st.noMatch + " (baseline " + NO_MATCH_BASELINE + ")"
-                + "  non-modelled struct in real sig: " + st.other + " (baseline " + OTHER_BASELINE + ")"
+                + "  non-modelled struct in real sig: " + st.other + " (cap " + OTHER_CAP + ")"
                 + "  void-return-ignored: " + st.voidIgnored + " (cap " + VOID_IGNORED_CAP + ")");
         System.out.println("ABI mismatches: " + bad.size());
         for (String s : bad) System.out.println("  MISMATCH " + s);
@@ -125,9 +125,9 @@ public final class SignatureConformanceTest {
         TestKit.check(st.noMatch <= NO_MATCH_BASELINE,
                 "no-runtime-method count within baseline (got " + st.noMatch
                 + ", baseline " + NO_MATCH_BASELINE + ")");
-        TestKit.check(st.other <= OTHER_BASELINE,
-                "non-modelled struct count within baseline (got " + st.other
-                + ", baseline " + OTHER_BASELINE + ")");
+        TestKit.check(st.other <= OTHER_CAP,
+                "non-modelled struct count within cap (got " + st.other
+                + ", cap " + OTHER_CAP + ")");
         TestKit.check(st.voidIgnored <= VOID_IGNORED_CAP,
                 "void-ignored return count within cap (got " + st.voidIgnored
                 + ", cap " + VOID_IGNORED_CAP + ")");

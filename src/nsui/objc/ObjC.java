@@ -90,11 +90,13 @@ public final class ObjC {
     private static MethodHandle hLong;        // (id, SEL) -> long
     private static MethodHandle hBool;        // (id, SEL) -> bool
     private static MethodHandle hRect;        // (id, SEL) -> NSRect (objc_msgSend_stret on x86_64)
+    private static MethodHandle hEdgeInsets;  // (id, SEL) -> NSEdgeInsets (32 bytes, same stret class as NSRect)
+    private static MethodHandle hVoidEdgeInsets; // (id, SEL, NSEdgeInsets) -> void
     private static MethodHandle hEscapeId;    // (id, SEL, id x6) -> id
     private static MethodHandle hEscapeVoid;  // (id, SEL, id x6) -> void
 
     /// Reusable per-thread destination for ALL struct returns up to 32 bytes
-    /// (RECT 32, POINT/SIZE/RANGE 16). Lazily allocated from the global arena
+    /// (RECT and EDGEINSETS 32, POINT/SIZE/RANGE 16). Lazily allocated from the global arena
     /// on first use per thread; never rewound, just overwritten by the next
     /// struct call on the same thread. Safe because every caller copies the
     /// values out immediately — never hold the segment across another call
@@ -163,6 +165,8 @@ public final class ObjC {
         hLong = handle(Sig.of(Ret.INT));
         hBool = handle(Sig.of(Ret.BOOL));
         hRect = handle(Sig.of(Ret.RECT));
+        hEdgeInsets = handle(Sig.of(Ret.EDGEINSETS));
+        hVoidEdgeInsets = handle(Sig.of(Ret.VOID, Arg.EDGEINSETS));
         hEscapeId = handle(Sig.of(Ret.ID, Arg.ID, Arg.ID, Arg.ID, Arg.ID, Arg.ID, Arg.ID));
         hEscapeVoid = handle(Sig.of(Ret.VOID, Arg.ID, Arg.ID, Arg.ID, Arg.ID, Arg.ID, Arg.ID));
         STRING_CLS = cls("NSString");
@@ -379,6 +383,16 @@ public final class ObjC {
     /// SegmentAllocator parameter, which is where the returned struct is written.
     public static MemorySegment msgSendRect(MemorySegment recv, MemorySegment s) {
         try { return (MemorySegment) hRect.invokeExact((SegmentAllocator) RECT_SLOT.get(), recv, s); } catch (Throwable t) { throw fail(t); }
+    }
+
+    /// Struct-returning message (NSEdgeInsets, 32 bytes — same stret class as NSRect).
+    public static MemorySegment msgSendEdgeInsets(MemorySegment recv, MemorySegment s) {
+        try { return (MemorySegment) hEdgeInsets.invokeExact((SegmentAllocator) RECT_SLOT.get(), recv, s); } catch (Throwable t) { throw fail(t); }
+    }
+
+    /// Struct-argument message (NSEdgeInsets by value).
+    public static void msgSendVoidEdgeInsets(MemorySegment recv, MemorySegment s, MemorySegment insets) {
+        try { hVoidEdgeInsets.invokeExact(recv, s, insets); } catch (Throwable t) { throw fail(t); }
     }
 
     /// Generic object-argument message: any selector whose arguments are all objects

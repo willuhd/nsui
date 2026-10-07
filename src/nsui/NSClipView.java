@@ -234,11 +234,11 @@ public class NSClipView extends NSView {
         }
     }
 
-    /// [clip contentInsets] — NSEdgeInsets (32-byte struct, same ABI class as NSRect).
+    /// [clip contentInsets] — NSEdgeInsets (32-byte struct return).
     public NSEdgeInsets contentInsets() {
         ensureInit();
         try {
-            MethodHandle h = ObjC.handle(Sig.of(Ret.RECT));
+            MethodHandle h = ObjC.handle(Sig.of(Ret.EDGEINSETS));
             MemorySegment s = (MemorySegment) h.invokeExact(ObjC.structSlot(), peer, ObjC.sel("contentInsets"));
             return NSEdgeInsets.fromSegment(s);
         } catch (Throwable t) {
@@ -246,11 +246,11 @@ public class NSClipView extends NSView {
         }
     }
 
-    /// [clip setContentInsets:] — NSEdgeInsets by value (RECT shape).
+    /// [clip setContentInsets:] — NSEdgeInsets by value.
     public void setContentInsets(NSEdgeInsets insets) {
         ensureInit();
         try {
-            MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.RECT));
+            MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.EDGEINSETS));
             h.invokeExact(peer, ObjC.sel("setContentInsets:"), insets.toSegment());
         } catch (Throwable t) {
             throw new RuntimeException("setContentInsets: failed", t);

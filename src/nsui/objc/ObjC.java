@@ -114,11 +114,17 @@ public final class ObjC {
 
     private static volatile boolean INIT;
 
+    /// True while init() is building the tables below. The fail-fast guards in
+    /// handle()/sel()/cls() allow calls from inside init() itself.
+    private static volatile boolean INITIALIZING;
+
     /// Must run at RUNTIME, from main() — not from a static initializer (native-image rule).
     /// Synchronized + idempotent like every other ensureInit in this package;
     /// re-entry (EdgeTest double-init) is a harmless no-op.
     public static synchronized void init() {
         if (INIT) return;
+        INITIALIZING = true;
+        try {
         LINKER = Linker.nativeLinker();
         PTR = (ValueLayout) LINKER.canonicalLayouts().get("void*");
         LONG = (ValueLayout) LINKER.canonicalLayouts().get("long");
@@ -173,12 +179,16 @@ public final class ObjC {
         STRING_WITH_UTF8_SEL = sel("stringWithUTF8String:");
         UTF8STRING_SEL = sel("UTF8String");
         INIT = true;
+        } finally {
+            INITIALIZING = false;
+        }
     }
 
     /// The downcall handle for a vocabulary signature. Fails loudly when the signature
     /// is missing — in BOTH JVM and AOT modes, so the vocabulary (the single source of
     /// truth for registration) can never drift from what the code actually sends.
     public static MethodHandle handle(S s) {
+        if (!INIT && !INITIALIZING) throw new IllegalStateException("ObjC.init() must run first (from main, at runtime)");
         MethodHandle h = HANDLES.get(s);
         if (h == null) {
             throw new IllegalStateException("message signature not in the vocabulary: " + s.shape()
@@ -240,6 +250,7 @@ public final class ObjC {
     /// get (a name repeats forever once seen); only a miss takes the atomic path and
     /// allocates the immortal cstring.
     public static MemorySegment cls(String name) {
+        if (!INIT && !INITIALIZING) throw new IllegalStateException("ObjC.init() must run first (from main, at runtime)");
         MemorySegment c = CLASS_RESULT.get(name);
         if (c != null) return c;
         return CLASS_RESULT.computeIfAbsent(name,
@@ -248,6 +259,7 @@ public final class ObjC {
 
     /// sel_registerName(name) — cached per distinct name. See cls() for the fast path.
     public static MemorySegment sel(String name) {
+        if (!INIT && !INITIALIZING) throw new IllegalStateException("ObjC.init() must run first (from main, at runtime)");
         MemorySegment s = SEL_RESULT.get(name);
         if (s != null) return s;
         return SEL_RESULT.computeIfAbsent(name,
@@ -257,6 +269,7 @@ public final class ObjC {
     /// NSString from a Java string ([NSString stringWithUTF8String:]). Typed
     /// invokeExact (not boxed invokeX): this sits on every setter hot path.
     public static MemorySegment nsstring(String s) {
+        if (!INIT && !INITIALIZING) throw new IllegalStateException("ObjC.init() must run first (from main, at runtime)");
         try {
             return (MemorySegment) hIdId.invokeExact(STRING_CLS, STRING_WITH_UTF8_SEL, cstring(s));
         } catch (Throwable t) {
@@ -329,10 +342,12 @@ public final class ObjC {
     // no boxing, no adaptation — the steady-state cost of every message.
 
     public static MemorySegment msgSendId(MemorySegment recv, MemorySegment s) {
+        if (!INIT && !INITIALIZING) throw new IllegalStateException("ObjC.init() must run first (from main, at runtime)");
         try { return (MemorySegment) hId.invokeExact(recv, s); } catch (Throwable t) { throw fail(t); }
     }
 
     public static MemorySegment msgSendIdId(MemorySegment recv, MemorySegment s, MemorySegment a1) {
+        if (!INIT && !INITIALIZING) throw new IllegalStateException("ObjC.init() must run first (from main, at runtime)");
         try { return (MemorySegment) hIdId.invokeExact(recv, s, a1); } catch (Throwable t) { throw fail(t); }
     }
 
@@ -355,26 +370,32 @@ public final class ObjC {
     }
 
     public static void msgSendVoid(MemorySegment recv, MemorySegment s) {
+        if (!INIT && !INITIALIZING) throw new IllegalStateException("ObjC.init() must run first (from main, at runtime)");
         try { hVoid.invokeExact(recv, s); } catch (Throwable t) { throw fail(t); }
     }
 
     public static void msgSendVoidId(MemorySegment recv, MemorySegment s, MemorySegment a1) {
+        if (!INIT && !INITIALIZING) throw new IllegalStateException("ObjC.init() must run first (from main, at runtime)");
         try { hVoidId.invokeExact(recv, s, a1); } catch (Throwable t) { throw fail(t); }
     }
 
     public static void msgSendVoidLong(MemorySegment recv, MemorySegment s, long a1) {
+        if (!INIT && !INITIALIZING) throw new IllegalStateException("ObjC.init() must run first (from main, at runtime)");
         try { hVoidLong.invokeExact(recv, s, a1); } catch (Throwable t) { throw fail(t); }
     }
 
     public static void msgSendVoidBool(MemorySegment recv, MemorySegment s, boolean a1) {
+        if (!INIT && !INITIALIZING) throw new IllegalStateException("ObjC.init() must run first (from main, at runtime)");
         try { hVoidBool.invokeExact(recv, s, a1); } catch (Throwable t) { throw fail(t); }
     }
 
     public static long msgSendLong(MemorySegment recv, MemorySegment s) {
+        if (!INIT && !INITIALIZING) throw new IllegalStateException("ObjC.init() must run first (from main, at runtime)");
         try { return (long) hLong.invokeExact(recv, s); } catch (Throwable t) { throw fail(t); }
     }
 
     public static boolean msgSendBool(MemorySegment recv, MemorySegment s) {
+        if (!INIT && !INITIALIZING) throw new IllegalStateException("ObjC.init() must run first (from main, at runtime)");
         try { return (boolean) hBool.invokeExact(recv, s); } catch (Throwable t) { throw fail(t); }
     }
 
@@ -382,16 +403,19 @@ public final class ObjC {
     /// FFM gives downcalls with group-layout returns an implicit leading
     /// SegmentAllocator parameter, which is where the returned struct is written.
     public static MemorySegment msgSendRect(MemorySegment recv, MemorySegment s) {
+        if (!INIT && !INITIALIZING) throw new IllegalStateException("ObjC.init() must run first (from main, at runtime)");
         try { return (MemorySegment) hRect.invokeExact((SegmentAllocator) RECT_SLOT.get(), recv, s); } catch (Throwable t) { throw fail(t); }
     }
 
     /// Struct-returning message (NSEdgeInsets, 32 bytes — same stret class as NSRect).
     public static MemorySegment msgSendEdgeInsets(MemorySegment recv, MemorySegment s) {
+        if (!INIT && !INITIALIZING) throw new IllegalStateException("ObjC.init() must run first (from main, at runtime)");
         try { return (MemorySegment) hEdgeInsets.invokeExact((SegmentAllocator) RECT_SLOT.get(), recv, s); } catch (Throwable t) { throw fail(t); }
     }
 
     /// Struct-argument message (NSEdgeInsets by value).
     public static void msgSendVoidEdgeInsets(MemorySegment recv, MemorySegment s, MemorySegment insets) {
+        if (!INIT && !INITIALIZING) throw new IllegalStateException("ObjC.init() must run first (from main, at runtime)");
         try { hVoidEdgeInsets.invokeExact(recv, s, insets); } catch (Throwable t) { throw fail(t); }
     }
 

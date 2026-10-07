@@ -100,9 +100,14 @@ public final class CATransaction {
         ensureInit();
         try {
             MemorySegment block;
+            // +[CATransaction setCompletionBlock:] replaces any previous block, so at
+            // most one body may be outstanding; clear first so a replaced body cannot
+            // leak into the next transaction.
             if (action == null) {
+                PENDING.clear();
                 block = MemorySegment.NULL;
             } else {
+                PENDING.clear();
                 PENDING.add(action);
                 block = SHARED_BLOCK;
             }

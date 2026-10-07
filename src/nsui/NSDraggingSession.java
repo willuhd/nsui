@@ -63,7 +63,7 @@ public final class NSDraggingSession extends NSObject {
     /// draggingLocation — location in screen coordinates (if available).
     public NSPoint draggingLocation() {
         ensureInit();
-        if (handles.hDraggingLocation() == null) return NSPoint.ZERO;
+        if (handles.hDraggingLocation() == null) throw new IllegalStateException("draggingLocation handle is null");
         try {
             MemorySegment seg = (MemorySegment) handles.hDraggingLocation().invokeExact(ObjC.structSlot(), peer, ObjC.sel("draggingLocation"));
             return NSPoint.fromSegment(seg);

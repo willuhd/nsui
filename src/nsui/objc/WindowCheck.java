@@ -70,10 +70,12 @@ public final class WindowCheck {
 
     /// List on-screen windows owned by `pid`; returns true if our window is there.
     public static boolean report(long pid, long expectedWindowNumber) {
+        Arena arena = Arena.ofConfined();
         try {
             MemorySegment list = (MemorySegment) invoke(hListCopy, KCG_WINDOW_LIST_OPTION_ON_SCREEN_ONLY, 0L);
             if (list == null || list.address() == 0) {
                 System.out.println("[CGWindowList] CGWindowListCopyWindowInfo returned NULL");
+                arena.close();
                 return false;
             }
             long count = 0;
@@ -94,18 +96,18 @@ public final class WindowCheck {
                     MemorySegment dict = (MemorySegment) invoke(hArrGet, list, i);
                     MemorySegment pidNum = (MemorySegment) invoke(hDictGet, dict, kOwnerPid);
                     if (pidNum == null || pidNum.address() == 0) continue;
-                    if (cfNumLong(pidNum) != pid) continue;
+                    if (cfNumLong(pidNum, arena) != pid) continue;
                     found = true;
-                    long num = cfNumLong((MemorySegment) invoke(hDictGet, dict, kWindowNumber));
-                    String owner = cfString((MemorySegment) invoke(hDictGet, dict, kOwnerName));
-                    String title = cfString((MemorySegment) invoke(hDictGet, dict, kWindowName));
+                    long num = cfNumLong((MemorySegment) invoke(hDictGet, dict, kWindowNumber), arena);
+                    String owner = cfString((MemorySegment) invoke(hDictGet, dict, kOwnerName), arena);
+                    String title = cfString((MemorySegment) invoke(hDictGet, dict, kWindowName), arena);
                     double bx = Double.NaN, by = Double.NaN, bw = Double.NaN, bh = Double.NaN;
                     MemorySegment bounds = (MemorySegment) invoke(hDictGet, dict, kBounds);
                     if (bounds != null && bounds.address() != 0) {
-                        bx = cfDictDouble(bounds, kX);
-                        by = cfDictDouble(bounds, kY);
-                        bw = cfDictDouble(bounds, kW);
-                        bh = cfDictDouble(bounds, kH);
+                        bx = cfDictDouble(bounds, kX, arena);
+                        by = cfDictDouble(bounds, kY, arena);
+                        bw = cfDictDouble(bounds, kW, arena);
+                        bh = cfDictDouble(bounds, kH, arena);
                     }
                     String ours = num == expectedWindowNumber ? "   <-- THIS IS OUR WINDOW" : "";
                     System.out.printf("[CGWindowList] owner=%-14s windowNumber=%-6d title=%-40s bounds={%.0f,%.0f %.0fx%.0f}%s%n",
@@ -122,8 +124,10 @@ public final class WindowCheck {
                 release(kW);
                 release(kH);
                 release(list);
+                arena.close();
             }
         } catch (Throwable t) {
+            if (arena.scope().isAlive()) arena.close();
             System.out.println("[CGWindowList] verification failed: " + t);
             return false;
         }
@@ -131,16 +135,16 @@ public final class WindowCheck {
 
     // ------------------------------------------------------------------ helpers
 
-    private static long cfNumLong(MemorySegment num) {
-        MemorySegment out = ARENA.allocate(LONG);
+    private static long cfNumLong(MemorySegment num, Arena arena) {
+        MemorySegment out = arena.allocate(LONG);
         invoke(hNumGet, num, 4L /* kCFNumberSInt64Type */, out);
         return out.get(ValueLayout.JAVA_LONG, 0);
     }
 
-    private static double cfDictDouble(MemorySegment dict, MemorySegment key) {
+    private static double cfDictDouble(MemorySegment dict, MemorySegment key, Arena arena) {
         MemorySegment num = (MemorySegment) invoke(hDictGet, dict, key);
         if (num == null || num.address() == 0) return Double.NaN;
-        MemorySegment out = ARENA.allocate(LINKER.canonicalLayouts().get("double"));
+        MemorySegment out = arena.allocate(LINKER.canonicalLayouts().get("double"));
         invoke(hNumGet, num, 13L /* kCFNumberDoubleType */, out);
         return out.get(ValueLayout.JAVA_DOUBLE, 0);
     }
@@ -150,9 +154,9 @@ public final class WindowCheck {
         invoke(hRelease, seg);
     }
 
-    private static String cfString(MemorySegment str) {
+    private static String cfString(MemorySegment str, Arena arena) {
         if (str == null || str.address() == 0) return null;
-        MemorySegment buf = ARENA.allocate(1024);
+        MemorySegment buf = arena.allocate(1024);
         boolean ok = (boolean) invoke(hStrGetC, str, buf, 1024L, 0x08000100L /* kCFStringEncodingUTF8 */);
         return ok ? buf.getString(0L) : null;
     }

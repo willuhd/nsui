@@ -125,7 +125,7 @@ public final class MTLRenderCommandEncoder extends NSObject {
 
     /// setViewport: — MTLViewport (6 doubles) passed BY VALUE.
     public void setViewport(MTLViewport viewport) {
-        if (viewport == null) return;
+        if (viewport == null) throw new IllegalArgumentException("viewport is null");
         ensureInit();
         try {
             handles.hViewport().invokeExact(peer, ObjC.sel("setViewport:"), viewport.toSegment());
@@ -136,7 +136,7 @@ public final class MTLRenderCommandEncoder extends NSObject {
 
     /// setScissorRect: — MTLScissorRect (4 NSUInteger) passed BY VALUE.
     public void setScissorRect(MTLScissorRect rect) {
-        if (rect == null) return;
+        if (rect == null) throw new IllegalArgumentException("rect is null");
         ensureInit();
         try {
             handles.hScissorRect().invokeExact(peer, ObjC.sel("setScissorRect:"), rect.toSegment());
@@ -148,6 +148,7 @@ public final class MTLRenderCommandEncoder extends NSObject {
     /// setVertexBytes:length:atIndex: — bytes are copied synchronously.
     public void setVertexBytes(byte[] data, long index) {
         if (data == null || data.length == 0) throw new IllegalArgumentException("vertex data empty");
+        ensureInit();
         MemorySegment buf = nsui.objc.Scratch.allocInput(data.length);
         MemorySegment.copy(data, 0, buf, java.lang.foreign.ValueLayout.JAVA_BYTE, 0, data.length);
         try {
@@ -171,6 +172,7 @@ public final class MTLRenderCommandEncoder extends NSObject {
 
     /// drawPrimitives:vertexStart:vertexCount:.
     public void drawTriangles(long start, long count) {
+        ensureInit();
         try {
             handles.hDraw().invokeExact(peer, ObjC.sel("drawPrimitives:vertexStart:vertexCount:"),
                     PRIMITIVE_TRIANGLE, start, count);

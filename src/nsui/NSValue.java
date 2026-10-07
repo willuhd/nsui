@@ -158,10 +158,20 @@ public class NSValue extends NSObject {
         try {
             MemorySegment c = (MemorySegment) handles.hObjCType().invokeExact(peer, ObjC.sel("objCType"));
             if (c == null || c.address() == 0) return null;
-            long len = 0;
-            while (c.reinterpret(len + 1).get(java.lang.foreign.ValueLayout.JAVA_BYTE, len) != 0) len++;
+            long len = -1;
+            long base = 0;
+            while (true) {
+                MemorySegment w = c.reinterpret(base + 4096);
+                for (long i = 0; i < 4096; i++) {
+                    if (w.get(java.lang.foreign.ValueLayout.JAVA_BYTE, base + i) == 0) { len = base + i; break; }
+                }
+                if (len >= 0) break;
+                base += 4096;
+                if (base >= 16_000_000) { len = 16_000_000; break; }
+            }
             if (len == 0) return "";
-            return c.reinterpret(len + 1).getString(0);
+            byte[] bytes = c.reinterpret(len).toArray(java.lang.foreign.ValueLayout.JAVA_BYTE);
+            return new String(bytes, 0, (int) len, java.nio.charset.StandardCharsets.UTF_8);
         } catch (Throwable t) { throw new RuntimeException("objCType failed", t); }
     }
 

@@ -29,6 +29,7 @@ public final class WindowCheck {
     private static MethodHandle hNumGet;       // CFNumberGetValue
     private static MethodHandle hStrGetC;      // CFStringGetCString
     private static MethodHandle hStrCreate;    // CFStringCreateWithCString
+    private static MethodHandle hRelease;      // CFRelease
 
     private static MemorySegment kOwnerPid;
     private static MemorySegment kOwnerName;
@@ -58,6 +59,7 @@ public final class WindowCheck {
         hNumGet = down(cf, "CFNumberGetValue", NsuiForeign.cfNumberGetValue());
         hStrGetC = down(cf, "CFStringGetCString", NsuiForeign.cfStringGetCString());
         hStrCreate = down(cf, "CFStringCreateWithCString", NsuiForeign.cfStringCreateWithCString());
+        hRelease = down(cf, "CFRelease", NsuiForeign.cfRelease());
 
         kOwnerPid = readConst(cg, "kCGWindowOwnerPID");
         kOwnerName = readConst(cg, "kCGWindowOwnerName");
@@ -74,35 +76,53 @@ public final class WindowCheck {
                 System.out.println("[CGWindowList] CGWindowListCopyWindowInfo returned NULL");
                 return false;
             }
-            long count = (long) invoke(hArrCount, list);
-            System.out.println("[CGWindowList] " + count + " on-screen window(s) total");
-            boolean found = false;
-            for (long i = 0; i < count; i++) {
-                MemorySegment dict = (MemorySegment) invoke(hArrGet, list, i);
-                MemorySegment pidNum = (MemorySegment) invoke(hDictGet, dict, kOwnerPid);
-                if (pidNum == null || pidNum.address() == 0) continue;
-                if (cfNumLong(pidNum) != pid) continue;
-                found = true;
-                long num = cfNumLong((MemorySegment) invoke(hDictGet, dict, kWindowNumber));
-                String owner = cfString((MemorySegment) invoke(hDictGet, dict, kOwnerName));
-                String title = cfString((MemorySegment) invoke(hDictGet, dict, kWindowName));
-                double bx = Double.NaN, by = Double.NaN, bw = Double.NaN, bh = Double.NaN;
-                MemorySegment bounds = (MemorySegment) invoke(hDictGet, dict, kBounds);
-                if (bounds != null && bounds.address() != 0) {
-                    bx = cfDictDouble(bounds, "X");
-                    by = cfDictDouble(bounds, "Y");
-                    bw = cfDictDouble(bounds, "Width");
-                    bh = cfDictDouble(bounds, "Height");
+            long count = 0;
+            MemorySegment kX = null, kY = null, kW = null, kH = null;
+            try {
+                kX = (MemorySegment) invoke(hStrCreate,
+                        MemorySegment.NULL, ObjC.cstring("X"), 0x08000100L /* kCFStringEncodingUTF8 */);
+                kY = (MemorySegment) invoke(hStrCreate,
+                        MemorySegment.NULL, ObjC.cstring("Y"), 0x08000100L /* kCFStringEncodingUTF8 */);
+                kW = (MemorySegment) invoke(hStrCreate,
+                        MemorySegment.NULL, ObjC.cstring("Width"), 0x08000100L /* kCFStringEncodingUTF8 */);
+                kH = (MemorySegment) invoke(hStrCreate,
+                        MemorySegment.NULL, ObjC.cstring("Height"), 0x08000100L /* kCFStringEncodingUTF8 */);
+                count = (long) invoke(hArrCount, list);
+                System.out.println("[CGWindowList] " + count + " on-screen window(s) total");
+                boolean found = false;
+                for (long i = 0; i < count; i++) {
+                    MemorySegment dict = (MemorySegment) invoke(hArrGet, list, i);
+                    MemorySegment pidNum = (MemorySegment) invoke(hDictGet, dict, kOwnerPid);
+                    if (pidNum == null || pidNum.address() == 0) continue;
+                    if (cfNumLong(pidNum) != pid) continue;
+                    found = true;
+                    long num = cfNumLong((MemorySegment) invoke(hDictGet, dict, kWindowNumber));
+                    String owner = cfString((MemorySegment) invoke(hDictGet, dict, kOwnerName));
+                    String title = cfString((MemorySegment) invoke(hDictGet, dict, kWindowName));
+                    double bx = Double.NaN, by = Double.NaN, bw = Double.NaN, bh = Double.NaN;
+                    MemorySegment bounds = (MemorySegment) invoke(hDictGet, dict, kBounds);
+                    if (bounds != null && bounds.address() != 0) {
+                        bx = cfDictDouble(bounds, kX);
+                        by = cfDictDouble(bounds, kY);
+                        bw = cfDictDouble(bounds, kW);
+                        bh = cfDictDouble(bounds, kH);
+                    }
+                    String ours = num == expectedWindowNumber ? "   <-- THIS IS OUR WINDOW" : "";
+                    System.out.printf("[CGWindowList] owner=%-14s windowNumber=%-6d title=%-40s bounds={%.0f,%.0f %.0fx%.0f}%s%n",
+                            owner == null ? "?" : owner, num, title == null ? "(hidden)" : title,
+                            bx, by, bw, bh, ours);
                 }
-                String ours = num == expectedWindowNumber ? "   <-- THIS IS OUR WINDOW" : "";
-                System.out.printf("[CGWindowList] owner=%-14s windowNumber=%-6d title=%-40s bounds={%.0f,%.0f %.0fx%.0f}%s%n",
-                        owner == null ? "?" : owner, num, title == null ? "(hidden)" : title,
-                        bx, by, bw, bh, ours);
+                if (!found) {
+                    System.out.println("[CGWindowList] no on-screen window owned by pid " + pid + "!");
+                }
+                return found;
+            } finally {
+                release(kX);
+                release(kY);
+                release(kW);
+                release(kH);
+                release(list);
             }
-            if (!found) {
-                System.out.println("[CGWindowList] no on-screen window owned by pid " + pid + "!");
-            }
-            return found;
         } catch (Throwable t) {
             System.out.println("[CGWindowList] verification failed: " + t);
             return false;
@@ -117,14 +137,17 @@ public final class WindowCheck {
         return out.get(ValueLayout.JAVA_LONG, 0);
     }
 
-    private static double cfDictDouble(MemorySegment dict, String keyName) {
-        MemorySegment key = (MemorySegment) invoke(hStrCreate,
-                MemorySegment.NULL, ObjC.cstring(keyName), 0x08000100L /* kCFStringEncodingUTF8 */);
+    private static double cfDictDouble(MemorySegment dict, MemorySegment key) {
         MemorySegment num = (MemorySegment) invoke(hDictGet, dict, key);
         if (num == null || num.address() == 0) return Double.NaN;
         MemorySegment out = ARENA.allocate(LINKER.canonicalLayouts().get("double"));
         invoke(hNumGet, num, 13L /* kCFNumberDoubleType */, out);
         return out.get(ValueLayout.JAVA_DOUBLE, 0);
+    }
+
+    private static void release(MemorySegment seg) {
+        if (seg == null || seg.address() == 0) return;
+        invoke(hRelease, seg);
     }
 
     private static String cfString(MemorySegment str) {

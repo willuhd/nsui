@@ -75,6 +75,9 @@ public final class Sig {
     }
 
     // ---- canonical layouts (resolved at class-load; identical in the image builder) ----
+    // Build-time constraint: these resolve Linker.canonicalLayouts() at class-load, which
+    // must happen at native-image build time (NsuiFeature calls s.descriptor() during setup).
+    // Do not move them to initialize-at-runtime; only ObjC and WindowCheck initialize at run time.
 
     private static final ValueLayout PTR    = (ValueLayout) Linker.nativeLinker().canonicalLayouts().get("void*");
     private static final ValueLayout LONG   = (ValueLayout) Linker.nativeLinker().canonicalLayouts().get("long");

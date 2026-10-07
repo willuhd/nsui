@@ -24,6 +24,10 @@ public final class NsuiForeign {
 
     private NsuiForeign() {}
 
+    // Build-time constraint: the canonical layouts below resolve Linker.canonicalLayouts()
+    // at class-load, which must happen at native-image build time (NsuiFeature registers
+    // these descriptors during setup). Do not move them to initialize-at-runtime; only
+    // ObjC and WindowCheck initialize at run time.
     private static Linker L = Linker.nativeLinker();
     private static ValueLayout PTR = (ValueLayout) L.canonicalLayouts().get("void*");
     private static ValueLayout LONG = (ValueLayout) L.canonicalLayouts().get("long");
@@ -225,14 +229,6 @@ public final class NsuiForeign {
     /// CoreText text rendering shim.
     public static final List<FunctionDescriptor> CT_TEXT = List.of(
             ctFontCreateWithName(), ctLineCreateWithAttributedString(), ctLineDraw(), ctLineGetTypographicBounds());
-
-    /// Upcall descriptors (methods implemented in Java, called by ObjC/AppKit).
-    public static final List<FunctionDescriptor> UPCALLS = List.of(
-            delegateShouldTerminate(), delegateWindowWillClose(),
-            drawRectUpcall(), deallocUpcall(), blockVoidUpcall(), setExceptionPreprocessor(),
-            methodSignatureUpcall(), delegateIntUpcall(), delegateIdIdIntUpcall(),
-            delegateWindowWillResize(), delegateIdIdUpcall(),
-            eventVoidUpcall(), eventBoolUpcall(), responderBoolUpcall());
 
     /// ThemeObserver (CoreFoundation) — downcalls for dark-mode observation.
     public static final List<FunctionDescriptor> THEME = List.of(

@@ -1,12 +1,13 @@
 package nsui;
 
-import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 import nsui.objc.Blocks;
+import nsui.objc.NsuiForeign;
 import nsui.objc.ObjC;
 import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
@@ -26,8 +27,13 @@ public final class CATransaction {
     private record Handles(MethodHandle hVoidClass, MethodHandle hSetDuration, MethodHandle hGetValueForKey, MethodHandle hSetValueForKey, MethodHandle hVoidId) {}
     private static volatile Handles handles;
 
-    /// Lazily resolved upcall bridge: (blockSelf, Runnable) -> void, bound per call.
-    private static volatile MethodHandle hCompletionBridge;
+    /// Runnables awaiting their completion delivery (FIFO).
+    private static final ConcurrentLinkedQueue<Runnable> PENDING = new ConcurrentLinkedQueue<>();
+
+    /// One shared immortal block for every completion: bodies travel via
+    /// PENDING (each delivery pops exactly one), so no per-call block or stub
+    /// is ever built.
+    private static volatile MemorySegment SHARED_BLOCK;
 
     private CATransaction() {}
 
@@ -39,13 +45,17 @@ public final class CATransaction {
         private static synchronized void ensureInitLocked() {
         if (handles != null) return;
         try { ObjC.ensureFramework("QuartzCore"); } catch (Throwable ignored) {}
-        handles = new Handles(
+        Handles h = new Handles(
                 ObjC.handle(Sig.of(Ret.VOID)),
                 ObjC.handle(Sig.of(Ret.VOID, Arg.DOUBLE)),
                 ObjC.handle(Sig.of(Ret.ID, Arg.ID)),
                 ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.ID)),
                 ObjC.handle(Sig.of(Ret.VOID, Arg.ID))
         );
+        if (SHARED_BLOCK == null) {
+            SHARED_BLOCK = Blocks.block(completionThunkHandle(), NsuiForeign.blockVoidUpcall());
+        }
+        handles = h;
     }
 
     /// +[CATransaction begin] — start an explicit transaction on this thread.
@@ -82,9 +92,9 @@ public final class CATransaction {
     }
 
     /// +[CATransaction setCompletionBlock:] — Java Runnable invoked after the
-    /// current transaction's animations finish. The block is a capture-less
-    /// global block whose upcall target carries the Runnable as a bound argument,
-    /// so it safely outlives this frame (same pattern as NSWindow sheet handlers).
+    /// current transaction's animations finish. The body is enqueued and a
+    /// single shared global block is installed; when the transaction drains,
+    /// the thunk pops the body and runs it.
     /// The callback fires on the main thread once the runloop drains the commit.
     public static void setCompletionBlock(Runnable action) {
         ensureInit();
@@ -93,8 +103,8 @@ public final class CATransaction {
             if (action == null) {
                 block = MemorySegment.NULL;
             } else {
-                MethodHandle bound = MethodHandles.insertArguments(completionBridge(), 1, action);
-                block = Blocks.block(bound, FunctionDescriptor.ofVoid(ObjC.PTR));
+                PENDING.add(action);
+                block = SHARED_BLOCK;
             }
             handles.hVoidId().invokeExact(ObjC.cls("CATransaction"), ObjC.sel("setCompletionBlock:"), (MemorySegment) (block == null ? MemorySegment.NULL : block));
         } catch (Throwable t) { throw new RuntimeException("setCompletionBlock: failed", t); }
@@ -126,25 +136,23 @@ public final class CATransaction {
         } catch (Throwable t) { throw new RuntimeException("setValue:forKey: failed", t); }
     }
 
-    /// Lazily resolve the static upcall bridge (runtime only — never a static initializer).
-    private static MethodHandle completionBridge() {
-        MethodHandle h = hCompletionBridge;
-        if (h != null) return h;
-        synchronized (CATransaction.class) {
-            if (hCompletionBridge == null) {
-                try {
-                    hCompletionBridge = MethodHandles.lookup().findStatic(CATransaction.class, "completionThunk",
-                            MethodType.methodType(void.class, MemorySegment.class, Runnable.class));
-                } catch (Throwable t) {
-                    throw new RuntimeException("completion bridge resolve failed", t);
-                }
-            }
-            return hCompletionBridge;
+    /// Lazily resolve the static upcall target (runtime only — never a static initializer).
+    private static MethodHandle completionThunkHandle() {
+        try {
+            return MethodHandles.lookup().findStatic(CATransaction.class, "completionThunk",
+                    MethodType.methodType(void.class, MemorySegment.class));
+        } catch (NoSuchMethodException | IllegalAccessException e) {
+            throw new IllegalStateException("cannot resolve completion block target", e);
         }
     }
 
-    /// Upcall target: the block pointer arrives first, then the bound Runnable.
-    private static void completionThunk(MemorySegment blockSelf, Runnable action) {
-        action.run();
+    /// Block body: pops one enqueued Runnable and runs it. STATIC and capture-free —
+    /// the single upcall target behind every completion block, registered for AOT in NsuiFeature.
+    /// Public because NsuiFeature (nsui.objc) resolves it at build time.
+    public static void completionThunk(MemorySegment blockSelf) {
+        Runnable body = PENDING.poll();
+        if (body != null) {
+            body.run();
+        }
     }
 }

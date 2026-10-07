@@ -828,8 +828,11 @@ public class CALayer extends NSObject {
             MemorySegment cls = ObjC.cls("CATransaction");
             hBegin.invokeExact(cls, Sels.begin);
             hSetDur.invokeExact(cls, Sels.setAnimationDuration, duration);
-            block.run();
-            hCommit.invokeExact(cls, Sels.commit);
+            try {
+                block.run();
+            } finally {
+                hCommit.invokeExact(cls, Sels.commit);
+            }
         } catch (Throwable t) { throw new RuntimeException("CATransaction failed", t); }
     }
     // ---- Core Animation completeness: transforms, contents geometry, media timing,

@@ -110,6 +110,8 @@ public final class NsuiForeign {
     public static FunctionDescriptor deallocUpcall() { return FunctionDescriptor.ofVoid(PTR, PTR); }
     /// void (^)(void) — upcall shape for a capture-less block body
     public static FunctionDescriptor blockVoidUpcall() { return FunctionDescriptor.ofVoid(PTR); }
+    /// void (^)(NSInteger) — sheet completion block shape (blockSelf + response)
+    public static FunctionDescriptor sheetBlockUpcall() { return FunctionDescriptor.ofVoid(PTR, LONG); }
     /// -(NSMethodSignature *)methodSignatureForSelector:(SEL) — PTR-returning upcall
     public static FunctionDescriptor methodSignatureUpcall() { return FunctionDescriptor.of(PTR, PTR, PTR, PTR); }
     /// -(NSInteger)method:(id) — data-source upcall shape (numberOfRowsInTableView:); NSInteger = long on 64-bit

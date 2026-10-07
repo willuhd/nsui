@@ -104,6 +104,14 @@ public final class DockSheetTest {
             }
         }
 
+        // ---- Sheet out-of-order routing ----
+        try {
+            testSheetOutOfOrder(app);
+        } catch (Throwable t) {
+            check(false, "out-of-order sheet section threw: " + t);
+            t.printStackTrace(System.out);
+        }
+
         // Also test raw block plumbing (Blocks.block) sanity
         try {
             testBlockPlumbing();
@@ -612,6 +620,72 @@ public final class DockSheetTest {
         try {
             check(parent.attachedSheet() == null || parent.attachedSheet().peer().address() == 0, "parent attachedSheet null after full cleanup");
         } catch (Throwable t) { TestKit.skipCase("final attachedSheet probe guarded"); }
+    }
+
+    // Two concurrent sheets dismissed in reverse order route each response to its own handler.
+    private static void testSheetOutOfOrder(NSApplication app) throws Throwable {
+        System.out.println("\n--- Sheet out-of-order routing ---");
+        if (app == null) {
+            TestKit.skipCase("SKIP out-of-order sheet routing (no app/headless)");
+            return;
+        }
+        NSWindow parentA = TestKit.hiddenWindow(400, 300);
+        NSWindow sheetA = TestKit.hiddenWindow(200, 100);
+        NSWindow parentB = TestKit.hiddenWindow(400, 300);
+        NSWindow sheetB = TestKit.hiddenWindow(200, 100);
+        TestKit.show(parentA);
+        TestKit.show(parentB);
+        try { app.finishLaunching(); } catch (Throwable ignore) {}
+        TestKit.pump(app, 200);
+        AtomicInteger codeA = new AtomicInteger(-999);
+        AtomicInteger countA = new AtomicInteger(0);
+        AtomicInteger codeB = new AtomicInteger(-999);
+        AtomicInteger countB = new AtomicInteger(0);
+        java.util.function.IntConsumer hA = c -> { countA.incrementAndGet(); codeA.set(c); };
+        java.util.function.IntConsumer hB = c -> { countB.incrementAndGet(); codeB.set(c); };
+        TestKit.noThrow("beginSheet A did not throw", () -> parentA.beginSheet(sheetA, hA));
+        TestKit.noThrow("beginSheet B did not throw", () -> parentB.beginSheet(sheetB, hB));
+        TestKit.pump(app, 300);
+        boolean attached;
+        try {
+            NSWindow atA = parentA.attachedSheet();
+            NSWindow atB = parentB.attachedSheet();
+            attached = atA != null && atA.peer().address() != 0 && atB != null && atB.peer().address() != 0;
+        } catch (Throwable t) {
+            System.out.println("  NOTE attach probe threw (guarded): " + t);
+            attached = false;
+        }
+        if (!attached) {
+            System.out.println("  NOTE sheets not attached (headless), skipping routing asserts");
+            TestKit.skipCase("out-of-order routing guarded (attach failed)");
+            try { sheetA.orderOut(null); } catch (Throwable ignore) {}
+            try { sheetB.orderOut(null); } catch (Throwable ignore) {}
+            try { parentA.orderOut(null); } catch (Throwable ignore) {}
+            try { parentB.orderOut(null); } catch (Throwable ignore) {}
+            TestKit.pump(app, 200);
+            return;
+        }
+        TestKit.noThrow("endSheet B did not throw", () -> parentB.endSheet(sheetB, 1L));
+        TestKit.noThrow("endSheet A did not throw", () -> parentA.endSheet(sheetA, 0L));
+        TestKit.pump(app, 400);
+        try { app.updateWindows(); } catch (Throwable ignore) {}
+        if (countA.get() == 0 && countB.get() == 0) {
+            TestKit.pump(app, 400);
+        }
+        check(countA.get() == 1, "handler A fired exactly once (got " + countA.get() + ")");
+        check(countB.get() == 1, "handler B fired exactly once (got " + countB.get() + ")");
+        check(codeA.get() == 0, "handler A received its own response 0 (got " + codeA.get() + ")");
+        check(codeB.get() == 1, "handler B received its own response 1 (got " + codeB.get() + ")");
+        try { sheetA.orderOut(null); } catch (Throwable ignore) {}
+        try { sheetB.orderOut(null); } catch (Throwable ignore) {}
+        try { parentA.orderOut(null); } catch (Throwable ignore) {}
+        try { parentB.orderOut(null); } catch (Throwable ignore) {}
+        TestKit.pump(app, 200);
+        try { TestKit.close(sheetA); } catch (Throwable ignore) {}
+        try { TestKit.close(sheetB); } catch (Throwable ignore) {}
+        try { TestKit.close(parentA); } catch (Throwable ignore) {}
+        try { TestKit.close(parentB); } catch (Throwable ignore) {}
+        TestKit.pump(app, 200);
     }
 
     // ------------------------------------------------------------------ block plumbing sanity

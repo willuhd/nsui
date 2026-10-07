@@ -9,7 +9,8 @@ import nsui.objc.Sig;
 import static nsui.objc.Sig.Ret;
 
 /// NSData — minimal wrapper over native `NSData` / `NSMutableData`.
-/// Factories build real native data (retained: immortal by design), so AppKit
+/// Factories return autoreleased objects (pool discipline: the caller drains
+/// via Autorelease per frame, matching NSString/NSArray), so AppKit
 /// APIs reading the peer see the bytes. No side map, no address keys.
 ///
 /// Header-completeness (`NSData.h`, immutable): every safe method whose shape is in the
@@ -28,7 +29,6 @@ import static nsui.objc.Sig.Ret;
 /// base64Encoding/initWithBase64Encoding: (deprecated); NSPurgeableData (no wrapper in this batch).
 public class NSData extends NSObject {
 
-    private static MemorySegment retain(MemorySegment v) { return ObjC.msgSendId(v, ObjC.sel("retain")); }
             private record Handles(MethodHandle hLength, MethodHandle hBytes) {}
     private static volatile Handles handles;
 
@@ -48,7 +48,7 @@ public class NSData extends NSObject {
         return wrap(s);
     }
 
-    /// Create NSData from Java bytes — real native data, retained.
+    /// Create NSData from Java bytes — real native data, autoreleased.
     /// Composed from NSMutableData.data + appendBytes:length: (same copying semantics):
     /// the native dataWithBytes:length: needs of(ID,ID,INT), not in Sig (see class docs).
     public static NSData dataWithBytes(byte[] bytes) {
@@ -56,7 +56,7 @@ public class NSData extends NSObject {
         ensureInit();
         NSMutableData md = NSMutableData.data();
         md.appendBytes(bytes);
-        return wrap(retain(md.peer()));
+        return wrap(md.peer());
     }
 
     /// dataWithBytesNoCopy variant — same as dataWithBytes for minimal.
@@ -124,7 +124,7 @@ public class NSData extends NSObject {
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Sig.Arg.RANGE));
             MemorySegment s = (MemorySegment) h.invokeExact(peer, ObjC.sel("subdataWithRange:"), range.toSegment());
-            return wrap(retain(s));
+            return wrap(s);
         } catch (Throwable t) { throw new RuntimeException("subdataWithRange: failed", t); }
     }
 
@@ -148,14 +148,14 @@ public class NSData extends NSObject {
     public static NSData dataWithData(NSData other) {
         ensureInit();
         if (other == null) return data();
-        return wrap(retain(ObjC.msgSendIdId(ObjC.cls("NSData"), ObjC.sel("dataWithData:"), other.peer())));
+        return wrap(ObjC.msgSendIdId(ObjC.cls("NSData"), ObjC.sel("dataWithData:"), other.peer()));
     }
 
     /// [NSData dataWithContentsOfFile:] — read a file (nil when missing/unreadable).
     public static NSData dataWithContentsOfFile(String path) {
         ensureInit();
         if (path == null || path.isEmpty()) return null;
-        return wrap(retain(ObjC.msgSendIdId(ObjC.cls("NSData"), ObjC.sel("dataWithContentsOfFile:"), ObjC.nsstring(path))));
+        return wrap(ObjC.msgSendIdId(ObjC.cls("NSData"), ObjC.sel("dataWithContentsOfFile:"), ObjC.nsstring(path)));
     }
 
     /// [NSData dataWithContentsOfURL:] — NSURL peer (nil-safe: null for nil).
@@ -164,7 +164,7 @@ public class NSData extends NSObject {
     public static NSData dataWithContentsOfURL(MemorySegment url) {
         ensureInit();
         if (url == null || url.address() == 0) return null;
-        return wrap(retain(ObjC.msgSendIdId(ObjC.cls("NSData"), ObjC.sel("dataWithContentsOfURL:"), url)));
+        return wrap(ObjC.msgSendIdId(ObjC.cls("NSData"), ObjC.sel("dataWithContentsOfURL:"), url));
     }
 
     /// [data writeToURL:atomically:] — NSURL peer (nil-safe: false for nil).
@@ -193,7 +193,7 @@ public class NSData extends NSObject {
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Sig.Arg.INT));
             MemorySegment r = (MemorySegment) h.invokeExact(peer, ObjC.sel("base64EncodedDataWithOptions:"), options);
-            return wrap(retain(r));
+            return wrap(r);
         } catch (Throwable t) { throw new RuntimeException("base64EncodedDataWithOptions: failed", t); }
     }
 

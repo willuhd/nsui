@@ -9,7 +9,8 @@ import static nsui.objc.Sig.Ret;
 
 /// NSValue — minimal wrapper over native `NSValue`.
 /// Provides wrap/create and typed accessors for common struct types.
-/// Factories build real native values (retained: immortal by design):
+/// Factories return autoreleased values (pool discipline: the caller drains
+/// via Autorelease per frame):
 /// AppKit APIs reading the peer see the value (dummy peers never could).
 /// no side map, no address keys, no ABA hazard.
 /// Getters read live values via struct-return msgSend.
@@ -22,7 +23,6 @@ import static nsui.objc.Sig.Ret;
 /// getValue:/getValue:size: (raw buffers + type strings; unsafe); initWithCoder: (needs NSCoder).
 public class NSValue extends NSObject {
 
-    private static MemorySegment retain(MemorySegment v) { return ObjC.msgSendId(v, ObjC.sel("retain")); }
             private record Handles(MethodHandle hPointValue, MethodHandle hSizeValue, MethodHandle hRectValue, MethodHandle hRangeValue, MethodHandle hObjCType, MethodHandle hWithPoint, MethodHandle hWithSize, MethodHandle hWithRect, MethodHandle hWithRange) {}
     private static volatile Handles handles;
 
@@ -56,47 +56,47 @@ public class NSValue extends NSObject {
         );
     }
 
-    /// valueWithPoint: — real native value, retained.
+    /// valueWithPoint: — real native value, autoreleased.
     public static NSValue valueWithPoint(NSPoint point) {
         if (point == null) throw new IllegalArgumentException("point null");
         ensureInit();
         try {
             MemorySegment peer = (MemorySegment) handles.hWithPoint().invokeExact(
                     ObjC.cls("NSValue"), ObjC.sel("valueWithPoint:"), point.toSegment());
-            return wrap(retain(peer));
+            return wrap(peer);
         } catch (Throwable t) { throw new RuntimeException("valueWithPoint: failed", t); }
     }
 
-    /// valueWithSize: — real native value, retained.
+    /// valueWithSize: — real native value, autoreleased.
     public static NSValue valueWithSize(NSSize size) {
         if (size == null) throw new IllegalArgumentException("size null");
         ensureInit();
         try {
             MemorySegment peer = (MemorySegment) handles.hWithSize().invokeExact(
                     ObjC.cls("NSValue"), ObjC.sel("valueWithSize:"), size.toSegment());
-            return wrap(retain(peer));
+            return wrap(peer);
         } catch (Throwable t) { throw new RuntimeException("valueWithSize: failed", t); }
     }
 
-    /// valueWithRect: — real native value, retained.
+    /// valueWithRect: — real native value, autoreleased.
     public static NSValue valueWithRect(NSRect rect) {
         if (rect == null) throw new IllegalArgumentException("rect null");
         ensureInit();
         try {
             MemorySegment peer = (MemorySegment) handles.hWithRect().invokeExact(
                     ObjC.cls("NSValue"), ObjC.sel("valueWithRect:"), rect.toSegment());
-            return wrap(retain(peer));
+            return wrap(peer);
         } catch (Throwable t) { throw new RuntimeException("valueWithRect: failed", t); }
     }
 
-    /// valueWithRange: — real native value, retained.
+    /// valueWithRange: — real native value, autoreleased.
     public static NSValue valueWithRange(NSRange range) {
         if (range == null) throw new IllegalArgumentException("range null");
         ensureInit();
         try {
             MemorySegment peer = (MemorySegment) handles.hWithRange().invokeExact(
                     ObjC.cls("NSValue"), ObjC.sel("valueWithRange:"), range.toSegment());
-            return wrap(retain(peer));
+            return wrap(peer);
         } catch (Throwable t) { throw new RuntimeException("valueWithRange: failed", t); }
     }
 

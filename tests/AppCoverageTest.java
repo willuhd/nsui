@@ -113,12 +113,12 @@ public final class AppCoverageTest {
                 System.out.println("  showsApplicationBadge orig=" + origShows + " after-toggle=" + toggled);
                 TestKit.probe("NSDockTile showsApplicationBadge set/get no crash");
                 tile.setShowsApplicationBadge(origShows);
-                TestKit.check(tile.showsApplicationBadge() == origShows || true, "NSDockTile showsApplicationBadge restore no crash");
+                TestKit.check(tile.showsApplicationBadge() == origShows, "NSDockTile showsApplicationBadge restore no crash");
             } catch (Throwable t) { TestKit.check(false, "showsApplicationBadge threw: " + t); }
             // size / contentView / owner (new, read-only except contentView).
             try {
                 var sz = tile.size();
-                TestKit.check(sz != null && sz.width() >= 0 && sz.height() >= 0, "NSDockTile size non-null (" + sz + ")");
+                TestKit.check(sz != null && sz.width() > 0 && sz.height() > 0, "NSDockTile size non-null (" + sz + ")");
             } catch (Throwable t) { TestKit.check(false, "NSDockTile size threw: " + t); }
             try {
                 var cv = tile.contentView();
@@ -127,7 +127,7 @@ public final class AppCoverageTest {
             } catch (Throwable t) { TestKit.check(false, "contentView threw: " + t); }
             try {
                 MemorySegment owner = tile.owner();
-                TestKit.check(owner != null, "NSDockTile owner probe no crash");
+                TestKit.check(owner != null && owner.address() != 0, "NSDockTile owner probe no crash");
             } catch (Throwable t) { TestKit.check(false, "owner threw: " + t); }
         } catch (Throwable t) {
             TestKit.check(false, "NSDockTile section threw: " + t);
@@ -153,9 +153,10 @@ public final class AppCoverageTest {
                 System.out.println("  current icon = " + icon);
                 TestKit.probe("NSRunningApplication icon no crash");
             } catch (Throwable t) { TestKit.check(false, "icon threw: " + t); }
-            TestKit.check(cur.bundleURL() != null || true, "bundleURL probe no crash");
-            TestKit.check(cur.executableURL() != null || true, "executableURL probe no crash");
-            TestKit.check(cur.launchDate() != null || true, "launchDate probe no crash");
+            TestKit.check(cur.bundleURL() != null && cur.bundleURL().address() != 0, "bundleURL probe no crash");
+            TestKit.check(cur.executableURL() != null && cur.executableURL().address() != 0, "executableURL probe no crash");
+            cur.launchDate();
+            TestKit.probe("launchDate probe no crash");
             // Lookup by pid should resolve to the same process.
             try {
                 NSRunningApplication byPid = NSRunningApplication.runningApplicationWithProcessIdentifier(pid);
@@ -189,13 +190,13 @@ public final class AppCoverageTest {
             String bpath = null;
             try { bpath = main.bundlePath(); } catch (Throwable t) { bpath = null; }
             System.out.println("  mainBundle path=" + bpath + " id=" + main.bundleIdentifier());
-            TestKit.check(bpath == null || !bpath.isEmpty(), "NSBundle main bundlePath probe no crash");
+            TestKit.check(bpath != null && !bpath.isEmpty(), "NSBundle main bundlePath probe no crash");
             TestKit.check(main.bundleIdentifier() == null || !main.bundleIdentifier().isEmpty(), "bundleIdentifier probe no crash");
-            TestKit.check(main.resourcePath() == null || true, "resourcePath probe no crash");
-            TestKit.check(main.executablePath() == null || true, "executablePath probe no crash");
-            TestKit.check(main.infoDictionary() != null || true, "infoDictionary probe no crash");
-            TestKit.check(main.localizations() != null || true, "localizations probe no crash");
-            TestKit.check(main.preferredLocalizations() != null || true, "preferredLocalizations probe no crash");
+            TestKit.check(main.resourcePath() != null, "resourcePath probe no crash");
+            TestKit.check(main.executablePath() != null, "executablePath probe no crash");
+            TestKit.check(main.infoDictionary() != null, "infoDictionary probe no crash");
+            TestKit.check(main.localizations() != null, "localizations probe no crash");
+            TestKit.check(main.preferredLocalizations() != null, "preferredLocalizations probe no crash");
             TestKit.check(NSBundle.allBundles() != null, "NSBundle.allBundles non-nil");
             TestKit.check(NSBundle.allFrameworks() != null, "NSBundle.allFrameworks non-nil");
             // Resource lookup for a missing name must return nil without crashing.
@@ -245,10 +246,10 @@ public final class AppCoverageTest {
             TestKit.check(defs.stringForKey(kStr) == null, "NSUserDefaults string removed (nil after removal)");
             TestKit.check(defs.integerForKey(kInt) == 0L, "NSUserDefaults integer removed (0 after removal)");
             // Extra typed accessors (no crash, nil-safe).
-            TestKit.check(defs.objectForKey(kStr) == null || true, "objectForKey probe no crash");
+            TestKit.check(defs.objectForKey(kStr) == null || defs.objectForKey(kStr).address() == 0, "objectForKey probe no crash");
             TestKit.check(defs.arrayForKey(kStr) == null, "arrayForKey(missing) == nil");
             TestKit.check(defs.dictionaryRepresentation() != null, "dictionaryRepresentation non-nil");
-            TestKit.check(defs.volatileDomainNames() != null || true, "volatileDomainNames probe no crash");
+            TestKit.check(defs.volatileDomainNames() != null, "volatileDomainNames probe no crash");
         } catch (Throwable t) {
             TestKit.check(false, "NSUserDefaults section threw: " + t);
             t.printStackTrace(System.out);
@@ -320,18 +321,21 @@ public final class AppCoverageTest {
                 System.out.println("  trySetActivationPolicy(current) = " + ok);
                 TestKit.probe("NSApplication trySetActivationPolicy no crash");
             } catch (Throwable t) { TestKit.check(false, "trySetActivationPolicy threw: " + t); }
-            TestKit.check(app.currentSystemPresentationOptions() >= 0 || true, "currentSystemPresentationOptions probe no crash");
-            TestKit.check(app.occlusionState() >= 0 || true, "occlusionState probe no crash");
-            TestKit.check(app.userInterfaceLayoutDirection() >= 0 || true, "userInterfaceLayoutDirection probe no crash");
-            TestKit.check(app.windowsMenu() == null || true, "windowsMenu probe no crash");
-            TestKit.check(app.servicesMenu() == null || true, "servicesMenu probe no crash");
-            TestKit.check(app.mainMenu() == null || true, "mainMenu probe no crash");
-            TestKit.check(app.dockTile() != null || true, "dockTile probe no crash");
-            TestKit.check(app.isFullKeyboardAccessEnabled() || true, "isFullKeyboardAccessEnabled probe no crash");
-            TestKit.check(app.effectiveAppearance() == null || true, "effectiveAppearance probe no crash");
+            TestKit.check(app.currentSystemPresentationOptions() == 0, "currentSystemPresentationOptions probe no crash");
+            TestKit.probe("occlusionState probe no crash (" + app.occlusionState() + ")");
+            TestKit.probe("userInterfaceLayoutDirection probe no crash (" + app.userInterfaceLayoutDirection() + ")");
+            app.windowsMenu();
+            TestKit.probe("windowsMenu probe no crash");
+            app.servicesMenu();
+            TestKit.probe("servicesMenu probe no crash");
+            app.mainMenu();
+            TestKit.probe("mainMenu probe no crash");
+            TestKit.check(app.dockTile() != null && app.dockTile().address() != 0, "dockTile probe no crash");
+            TestKit.check(!app.isFullKeyboardAccessEnabled(), "isFullKeyboardAccessEnabled probe no crash");
+            TestKit.check(app.effectiveAppearance() != null, "effectiveAppearance probe no crash");
             // Event plumbing without side effects.
-            TestKit.check(app.currentEvent() == null || true, "currentEvent probe no crash");
-            TestKit.check(app.targetForAction("terminate:") == null || true, "targetForAction probe no crash");
+            TestKit.check(app.currentEvent() == null, "currentEvent probe no crash");
+            TestKit.check(app.targetForAction("terminate:") != null && app.targetForAction("terminate:").address() != 0, "targetForAction probe no crash");
             TestKit.noThrow("NSApplication updateWindows no crash", () -> app.updateWindows());
         } catch (Throwable t) {
             TestKit.check(false, "NSApplication section threw: " + t);
@@ -343,16 +347,16 @@ public final class AppCoverageTest {
             NSWorkspace ws = NSWorkspace.sharedWorkspace();
             TestKit.check(ws != null && ws.peer().address() != 0, "NSWorkspace.sharedWorkspace non-nil");
             TestKit.check(ws.isKindOfClass("NSWorkspace"), "sharedWorkspace isKindOfClass NSWorkspace");
-            TestKit.check(ws.notificationCenter() != null || true, "notificationCenter probe no crash");
+            TestKit.check(ws.notificationCenter() != null && ws.notificationCenter().address() != 0, "notificationCenter probe no crash");
             TestKit.check(ws.runningApplications() != null, "NSWorkspace runningApplications non-nil");
             NSImage icon = null;
             try { icon = ws.iconForFile(saFile.toString()); } catch (Throwable t) { icon = null; }
             TestKit.check(icon != null, "NSWorkspace iconForFile(saFile) non-nil");
             TestKit.check(!ws.isFilePackageAtPath(saFile.toString()), "isFilePackageAtPath(saFile) == false");
-            TestKit.check(ws.isFilePackageAtPath(saDir.toString()) || true, "isFilePackageAtPath(saDir) probe no crash");
-            TestKit.check(ws.fileLabels() != null || true, "fileLabels probe no crash");
-            TestKit.check(ws.frontmostApplication() == null || true, "frontmostApplication probe no crash");
-            TestKit.check(ws.menuBarOwningApplication() == null || true, "menuBarOwningApplication probe no crash");
+            TestKit.check(!ws.isFilePackageAtPath(saDir.toString()), "isFilePackageAtPath(saDir) probe no crash");
+            TestKit.check(ws.fileLabels() != null, "fileLabels probe no crash");
+            TestKit.check(ws.frontmostApplication() != null, "frontmostApplication probe no crash");
+            TestKit.check(ws.menuBarOwningApplication() != null, "menuBarOwningApplication probe no crash");
             try {
                 MemorySegment finderURL = ws.URLForApplicationWithBundleIdentifier("com.apple.finder");
                 System.out.println("  finder URL peer = " + finderURL);
@@ -379,22 +383,22 @@ public final class AppCoverageTest {
             TestKit.check(menu.itemWithTitle("Beta") != null, "itemWithTitle Beta non-nil");
             TestKit.check(menu.itemWithTag(9001L) != null, "itemWithTag 9001 non-nil");
             TestKit.check(menu.indexOfItem(a) == 0, "indexOfItem(a) == 0");
-            TestKit.check(menu.indexOfItemWithRepresentedObject(null) < 0 || true, "indexOfItemWithRepresentedObject(nil) no crash");
-            TestKit.check(menu.indexOfItemWithSubmenu(null) < 0 || true, "indexOfItemWithSubmenu(nil) no crash");
-            TestKit.check(menu.indexOfItemWithTargetAndAction(null, null) < 0 || true, "indexOfItemWithTargetAndAction(nil,nil) no crash");
+            TestKit.check(menu.indexOfItemWithRepresentedObject(null) == 0, "indexOfItemWithRepresentedObject(nil) no crash");
+            TestKit.check(menu.indexOfItemWithSubmenu(null) == 0, "indexOfItemWithSubmenu(nil) no crash");
+            TestKit.check(menu.indexOfItemWithTargetAndAction(null, null) == 0, "indexOfItemWithTargetAndAction(nil,nil) no crash");
             boolean origAuto = menu.autoenablesItems();
             menu.setAutoenablesItems(!origAuto);
             TestKit.check(menu.autoenablesItems() == !origAuto, "NSMenu autoenablesItems toggled");
             menu.setAutoenablesItems(origAuto);
-            TestKit.check(menu.menuBarHeight() >= 0 || true, "menuBarHeight probe no crash");
+            TestKit.check(menu.menuBarHeight() == 0.0, "menuBarHeight probe no crash");
             // propertiesToUpdate may only be called from within menuNeedsUpdate: (header raises otherwise) — probe responds only.
             TestKit.check(responds(menu.peer(), "propertiesToUpdate"), "menu respondsTo propertiesToUpdate (not called outside callback)");
-            TestKit.check(menu.userInterfaceLayoutDirection() >= 0 || true, "userInterfaceLayoutDirection probe no crash");
+            TestKit.check(menu.userInterfaceLayoutDirection() == 0, "userInterfaceLayoutDirection probe no crash");
             menu.cancelTracking();
             TestKit.noThrow("NSMenu cancelTracking* no crash while hidden", () -> menu.cancelTrackingWithoutAnimation());
-            TestKit.check(NSMenuItem.usesUserKeyEquivalents() || true, "usesUserKeyEquivalents probe no crash");
-            TestKit.check(a.userKeyEquivalent() == null || true, "userKeyEquivalent probe no crash");
-            TestKit.check(!a.isHighlighted() || true, "isHighlighted probe no crash");
+            TestKit.check(NSMenuItem.usesUserKeyEquivalents(), "usesUserKeyEquivalents probe no crash");
+            TestKit.check(a.userKeyEquivalent() != null, "userKeyEquivalent probe no crash");
+            TestKit.check(!a.isHighlighted(), "isHighlighted probe no crash");
             TestKit.check(!a.isHiddenOrHasHiddenAncestor(), "isHiddenOrHasHiddenAncestor == false for fresh item");
             // Submenu attach (hidden, no tracking).
             NSMenu sub = NSMenu.createWithTitle("Sub");
@@ -416,14 +420,14 @@ public final class AppCoverageTest {
             TestKit.check(bar.thickness() > 0, "NSStatusBar thickness > 0");
             si = bar.statusItemWithLength(NSStatusBar.VARIABLE_LENGTH);
             TestKit.check(si != null && si.peer().address() != 0, "statusItemWithLength VARIABLE non-nil");
-            TestKit.check(si.length() == NSStatusBar.VARIABLE_LENGTH || true, "statusItem length probe no crash (got " + si.length() + ")");
+            TestKit.check(si.length() == NSStatusBar.VARIABLE_LENGTH, "statusItem length probe no crash (got " + si.length() + ")");
             si.setTitle("AC");
             TestKit.check("AC".equals(si.title()), "NSStatusItem title round-trip AC");
             long origBehavior = si.behavior();
             si.setBehavior(NSStatusItem.BEHAVIOR_REMOVAL_ALLOWED);
             TestKit.check(si.behavior() == NSStatusItem.BEHAVIOR_REMOVAL_ALLOWED, "behavior REMOVAL_ALLOWED");
             si.setBehavior(origBehavior);
-            TestKit.check(si.autosaveName() == null || true, "autosaveName probe no crash");
+            TestKit.check(si.autosaveName() != null, "autosaveName probe no crash");
             TestKit.check(si.statusBar() != null, "NSStatusItem statusBar non-nil");
         } catch (Throwable t) {
             TestKit.check(false, "NSStatusBar section threw: " + t);

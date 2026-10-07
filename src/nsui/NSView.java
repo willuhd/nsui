@@ -616,7 +616,7 @@ public class NSView extends NSResponder {
         if (!ObjC.addMethod(drawableClass, "acceptsFirstResponder", s.acceptsFirstResponder(), "B@:")) {
             throw new RuntimeException("class_addMethod acceptsFirstResponder failed");
         }
-        H = new Handles(
+        Handles h = new Handles(
                 ObjC.handle(Sig.of(Ret.ID, Arg.RECT)),
                 ObjC.handle(Sig.of(Ret.VOID, Arg.RECT)),
                 ObjC.handle(Sig.of(Ret.VOID, Arg.RECT)),
@@ -647,6 +647,7 @@ public class NSView extends NSResponder {
                 ObjC.handle(Sig.of(Ret.SIZE, Arg.SIZE)),
                 ObjC.handle(Sig.of(Ret.ID, Arg.ID, Arg.ID)));
             Sels.populate();
+        H = h;
 }
 
     // ---- upcall-stub builders (called only from the lazy ensureInit, never class-init) ----

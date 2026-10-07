@@ -272,7 +272,7 @@ public class NSTableView extends NSView {
 
     protected static synchronized void ensureInitLocked() {
         if (H != null) return;
-        H = new Handles(
+        Handles h = new Handles(
                 ObjC.handle(Sig.of(Ret.VOID, Arg.ID)),
                 ObjC.handle(Sig.of(Ret.VOID)),
                 ObjC.handle(Sig.of(Ret.INT)),
@@ -296,6 +296,7 @@ public class NSTableView extends NSView {
                 ObjC.handle(Sig.of(Ret.ID, Arg.RECT)),
                 ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.INT)));
             Sels.populate();
+        H = h;
 }
 
     /// `[[NSTableView alloc] initWithFrame:frame]` — a new table view.

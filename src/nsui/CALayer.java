@@ -301,7 +301,7 @@ public class CALayer extends NSObject {
         if (handles != null) return;
         // Ensure QuartzCore is loaded so CALayer class is visible
         try { ObjC.ensureFramework("QuartzCore"); } catch (Throwable ignored) {}
-        handles = new Handles(
+        Handles h = new Handles(
                 ObjC.handle(Sig.of(Ret.DOUBLE)),
                 ObjC.handle(Sig.of(Ret.VOID, Arg.DOUBLE)),
                 ObjC.handle(Sig.of(Ret.FLOAT)),
@@ -329,6 +329,7 @@ public class CALayer extends NSObject {
                 ObjC.handle(Sig.of(Ret.VOID, Arg.TRANSFORM3D))
         );
             Sels.populate();
+        handles = h;
 }
 
     /// `[[CALayer alloc] init]`

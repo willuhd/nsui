@@ -110,7 +110,7 @@ public final class ObjC {
 
     private ObjC() {}
 
-    private static boolean INIT;
+    private static volatile boolean INIT;
 
     /// Must run at RUNTIME, from main() — not from a static initializer (native-image rule).
     /// Synchronized + idempotent like every other ensureInit in this package;

@@ -226,8 +226,9 @@ public final class NSString extends NSObject {
         if (handles != null) return;
         // hash is INT return, no args
         // UTF8String is ID return? Actually returns const char* (PTR) but we don't use handle for it; ObjC.toString handles directly.
-        handles = new Handles(ObjC.handle(Sig.of(Ret.INT)), ObjC.handle(Sig.of(Ret.BOOL, Arg.ID)), null);
+        Handles h = new Handles(ObjC.handle(Sig.of(Ret.INT)), ObjC.handle(Sig.of(Ret.BOOL, Arg.ID)), null);
             Sels.populate();
+        handles = h;
 }
 
     /// Java String contents via `UTF8String` (uses ObjC.toString).

@@ -210,7 +210,7 @@ public final class NSEvent extends NSObject {
 
         private static synchronized void ensureInitLocked() {
         if (handles != null) return;
-        handles = new Handles(
+        Handles h = new Handles(
                 ObjC.handle(Sig.of(Ret.POINT)),
                 ObjC.handle(Sig.of(Ret.DOUBLE)),
                 ObjC.handle(Sig.of(Ret.BOOL)),
@@ -218,6 +218,7 @@ public final class NSEvent extends NSObject {
                 ObjC.handle(Sig.of(Ret.FLOAT))
         );
             Sels.populate();
+        handles = h;
 }
 
     /// NSEventType (NSUInteger). 1=leftMouseDown 2=leftMouseUp 10=keyDown 11=keyUp.

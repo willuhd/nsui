@@ -93,6 +93,12 @@ public final class NsuiFeature implements Feature {
                             MethodType.methodType(void.class, MemorySegment.class)),
                     NsuiForeign.blockVoidUpcall());
             upcalls++;
+            // NSWindow: per-block sheet completion routing via block address
+            RuntimeForeignAccess.registerForDirectUpcall(
+                    MethodHandles.lookup().findStatic(nsui.NSWindow.class, "sheetCompletionThunk",
+                            MethodType.methodType(void.class, MemorySegment.class, long.class)),
+                    NsuiForeign.sheetBlockUpcall());
+            upcalls++;
             // Exceptions: the ObjC exception preprocessor
             RuntimeForeignAccess.registerForDirectUpcall(
                     MethodHandles.lookup().findStatic(Exceptions.class, "preprocessor",

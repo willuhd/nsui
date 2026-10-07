@@ -389,11 +389,16 @@ public final class NSColor extends NSObject {
         }
     }
 
+    /// Component-reader guard: pattern/catalog colors raise natively.
+    private void requireRGB() {
+        if (type() != 0) throw new IllegalArgumentException("not an RGB-convertible color");
+    }
+
     /// Read the RGBA components back via `getRed:green:blue:alpha:` (four
     /// CGFloat* out-params). Goes through the `ObjC.invokeVoid` escape hatch
     /// (6-object-arg descriptor, NULL-padded) with four 8-byte out-buffers.
     public double[] rgba() {
-        // One 32-byte bump slice (not 4 immortal allocs): the callee fills the
+        requireRGB();
         // out-params synchronously, so call-scoped scratch is exact.
         MemorySegment out = Scratch.allocInput(32);
         MemorySegment b0 = out.asSlice(0, 8);
@@ -554,6 +559,7 @@ public final class NSColor extends NSObject {
 
     /// getHue:saturation:brightness:alpha: via the escape hatch (RGB colors only).
     public double[] hsba() {
+        requireRGB();
         MemorySegment out = Scratch.allocInput(32);
         MemorySegment b0 = out.asSlice(0, 8);
         MemorySegment b1 = out.asSlice(8, 8);
@@ -570,6 +576,7 @@ public final class NSColor extends NSObject {
 
     /// getWhite:alpha: via the escape hatch (gray-model colors only).
     public double[] whiteAlpha() {
+        requireRGB();
         MemorySegment out = Scratch.allocInput(16);
         MemorySegment b0 = out.asSlice(0, 8);
         MemorySegment b1 = out.asSlice(8, 8);
@@ -579,6 +586,7 @@ public final class NSColor extends NSObject {
 
     /// getCyan:magenta:yellow:black:alpha: via the escape hatch (CMYK colors only).
     public double[] cmyka() {
+        requireRGB();
         MemorySegment out = Scratch.allocInput(40);
         MemorySegment b0 = out.asSlice(0, 8);
         MemorySegment b1 = out.asSlice(8, 8);
@@ -597,6 +605,7 @@ public final class NSColor extends NSObject {
 
     /// getComponents: — all floating-point components incl. alpha.
     public double[] getComponents() {
+        requireRGB();
         int n = (int) numberOfComponents();
         if (n <= 0) return new double[0];
         MemorySegment out = Scratch.allocInput((long) n * 8L);

@@ -74,9 +74,10 @@ public class CAMetalLayer extends CALayer {
 
     /// drawableSize.
     public NSSize drawableSize() {
+        ensureInit();
         try {
             return NSSize.fromSegment((MemorySegment) handles.hGetSize().invokeExact(
-                    (java.lang.foreign.SegmentAllocator) java.lang.foreign.Arena.global(),
+                    ObjC.structSlot(),
                     peer, ObjC.sel("drawableSize")));
         } catch (Throwable t) {
             throw new RuntimeException("drawableSize failed", t);

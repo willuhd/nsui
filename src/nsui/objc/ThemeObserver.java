@@ -158,7 +158,7 @@ public final class ThemeObserver {
         MemorySegment value = MemorySegment.NULL;
         try {
             value = (MemorySegment) CFPreferencesCopyAppValue.invoke(preferenceKeyCf, kCFPreferencesAnyApplication);
-            if (value == null || value.equals(MemorySegment.NULL)) {
+            if (value == null || value.address() == 0) {
                 return false;
             }
             long typeId = (long) CFGetTypeID.invoke(value);
@@ -174,7 +174,7 @@ public final class ThemeObserver {
     }
 
     private static void safeRelease(MemorySegment seg) {
-        if (seg != null && !seg.equals(MemorySegment.NULL)) {
+        if (seg != null && seg.address() != 0) {
             try {
                 CFRelease.invoke(seg);
             } catch (Throwable ignored) {}
@@ -308,7 +308,7 @@ public final class ThemeObserver {
 
     private void stopNativeObserver() {
         try {
-            if (callbackStub != null && !callbackStub.equals(MemorySegment.NULL)) {
+            if (callbackStub != null && callbackStub.address() != 0) {
                 CFNotificationCenterRemoveObserver.invoke(
                         CFNotificationCenterGetDistributedCenter.invoke(),
                         callbackStub,

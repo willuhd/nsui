@@ -1422,8 +1422,6 @@ ensureInit(); return ObjC.msgSendBool(peer, Sels.hasDynamicDepthLimit); }
     // - backingAlignedRect:options: — needs of(RECT,RECT,INT), not registered.
     // - windowNumberAtPoint:belowWindowWithWindowNumber: — needs
     //   of(INT,POINT,INT), not registered.
-    // - setFrameAutosaveName: natively returns BOOL; the existing void wrapper
-    //   discards it (kept for compatibility).
     // - parentWindow setter omitted: header property is effectively derived from
     //   addChildWindow:/removeChildWindow: (getter only here).
     //

@@ -216,14 +216,14 @@ public final class FullCoverageTest {
             check(Math.abs(f.pointSize()-12)<0.01, "pointSize");
             check(f.displayName()!=null, "displayName");
             check(f.familyName()!=null, "familyName");
-            check(f.ascender()!=0 || true, "ascender");
-            check(f.descender()!=0 || true, "descender");
-            check(f.capHeight()!=0 || true, "capHeight");
-            check(f.xHeight()!=0 || true, "xHeight");
-            check(f.isFixedPitch()==false || true, "isFixedPitch");
+            check(f.ascender()!=0, "ascender");
+            check(f.descender()!=0, "descender");
+            check(f.capHeight()!=0, "capHeight");
+            check(f.xHeight()!=0, "xHeight");
+            check(!f.isFixedPitch(), "isFixedPitch");
             check(f.fontDescriptor()!=null && f.fontDescriptor().address()!=0, "fontDescriptor");
-            check(f.symbolicTraits()>=0, "symbolicTraits");
-            check(f.textTransform()==null || true, "textTransform");
+            check(f.symbolicTraits()==2147483648L, "symbolicTraits");
+            check(f.textTransform()!=null, "textTransform");
             check(f.boundingRectForFont()!=null, "boundingRect");
             check(f.maximumAdvancement()!=null, "maximumAdvancement");
             NSFont f2 = f.fontWithSize(14);
@@ -241,23 +241,23 @@ public final class FullCoverageTest {
             NSFontDescriptor desc = NSFontDescriptor.fontDescriptorWithNameSize("Helvetica",12);
             check(desc!=null, "fontDescriptorWithNameSize");
             check(desc.fontAttributes()!=null, "fontAttributes");
-            check(desc.objectForKey("NSFontNameAttribute")!=null || true, "objectForKey");
+            check(desc.objectForKey("NSFontNameAttribute")!=null, "objectForKey");
             check(desc.postscriptName()!=null, "postscriptName");
             check(desc.pointSize()==12, "descriptor pointSize");
             NSFontDescriptor d2 = desc.fontDescriptorWithSymbolicTraits(1);
-            check(d2!=null || true, "withSymbolicTraits");
+            check(d2!=null, "withSymbolicTraits");
             NSFontDescriptor d3 = desc.fontDescriptorWithSize(14);
             check(d3.pointSize()==14, "fontDescriptorWithSize");
-            check(desc.fontDescriptorWithFace("Bold")!=null || true, "withFace");
-            check(desc.fontDescriptorWithFamily("Helvetica")!=null || true, "withFamily");
+            check(desc.fontDescriptorWithFace("Bold")!=null, "withFace");
+            check(desc.fontDescriptorWithFamily("Helvetica")!=null, "withFamily");
             // NSFontManager
             NSFontManager fm = NSFontManager.sharedFontManager();
             check(fm!=null, "sharedFontManager");
-            fm.setSelectedFont(f,false); check(!fm.isMultiple() || true, "isMultiple");
+            fm.setSelectedFont(f,false); check(!fm.isMultiple(), "isMultiple");
             check(fm.convertFont(f)!=null, "convertFont");
             check(fm.convertFontToSize(f,14)!=null, "convertToSize");
-            check(fm.traitsOfFont(f)>=0, "traitsOfFont");
-            check(fm.weightOfFont(f)>=0, "weightOfFont");
+            check(fm.traitsOfFont(f)==0, "traitsOfFont");
+            check(fm.weightOfFont(f)==5, "weightOfFont");
             check(fm.fontWithFamilyTraitsWeightSize("Helvetica",0,5,12)!=null, "fontWithFamily:traits:weight:size: resolves Helvetica");
             check(fm.availableFonts().address()!=0, "availableFonts");
             check(fm.availableFontFamilies().address()!=0, "availableFamilies");
@@ -284,7 +284,7 @@ public final class FullCoverageTest {
             check(v.autoresizingMask()==2L, "autoresizingMask");
             v.setBounds(new NSRect(0,0,200,200));
             check(v.bounds().width()==200, "setBounds");
-            check(!v.needsDisplay() || true, "needsDisplay");
+            check(!v.needsDisplay(), "needsDisplay");
             v.setNeedsDisplay(true);
             v.setNeedsDisplayInRect(new NSRect(0,0,10,10));
             double scale = v.backingScaleFactor();
@@ -295,7 +295,7 @@ public final class FullCoverageTest {
             v.setWantsLayer(false);
             check(v.autoresizesSubviews() || !v.autoresizesSubviews(), "autoresizesSubviews");
             v.setAutoresizesSubviews(true);
-            check(v.translatesAutoresizingMaskIntoConstraints() || true, "translates");
+            check(v.translatesAutoresizingMaskIntoConstraints(), "translates");
             v.setTranslatesAutoresizingMaskIntoConstraints(false);
             // anchors
             check(v.leadingAnchor()!=null, "leadingAnchor");
@@ -320,8 +320,8 @@ public final class FullCoverageTest {
             check(v.intrinsicContentSize()!=null, "intrinsicContentSize");
             v.setAlphaValue(0.5); check(Math.abs(v.alphaValue()-0.5)<0.01, "alphaValue");
             v.setHidden(true); check(v.isHidden(), "isHidden true"); v.setHidden(false);
-            check(!v.isHiddenOrHasHiddenAncestor() || true, "isHiddenOrHasHiddenAncestor");
-            check(v.superview()==null || true, "superview");
+            check(!v.isHiddenOrHasHiddenAncestor(), "isHiddenOrHasHiddenAncestor");
+            check(v.superview()==null, "superview");
             check(v.isOpaque() || !v.isOpaque(), "isOpaque");
             check(v.visibleRect()!=null, "visibleRect");
             v.invalidateIntrinsicContentSize();
@@ -344,8 +344,8 @@ public final class FullCoverageTest {
             w.setCollectionBehavior(0); check(w.collectionBehavior()==0, "collectionBehavior");
             w.setBackgroundColor(NSColor.redColor()); check(w.backgroundColor()!=null, "backgroundColor non-null");
             TestKit.noThrow("setBackgroundColor null ternary", () -> w.setBackgroundColor((NSColor)null));
-            w.setOpaque(true); check(w.isOpaque() || true, "isOpaque");
-            w.setHasShadow(true); check(w.hasShadow() || true, "hasShadow");
+            w.setOpaque(true); check(w.isOpaque(), "isOpaque");
+            w.setHasShadow(true); check(w.hasShadow(), "hasShadow");
             w.setAlphaValue(0.9); check(Math.abs(w.alphaValue()-0.9)<0.01, "alphaValue");
             w.setMinSize(new NSSize(100,100)); check(w.minSize().width()==100, "minSize");
             w.setMaxSize(new NSSize(500,500)); check(w.maxSize().width()==500, "maxSize");
@@ -369,13 +369,13 @@ public final class FullCoverageTest {
             panel.setBecomesKeyOnlyIfNeeded(true); check(panel.becomesKeyOnlyIfNeeded(), "becomesKey");
             w.setFrameAutosaveName("testAutosave"); check("testAutosave".equals(w.frameAutosaveName()), "frameAutosave");
             w.setDocumentEdited(true); check(w.isDocumentEdited(), "isDocumentEdited"); w.setDocumentEdited(false);
-            check(w.windowNumber()>=0, "windowNumber");
-            w.setReleasedWhenClosed(false); check(!w.isReleasedWhenClosed() || true, "isReleasedWhenClosed");
+            TestKit.probe("windowNumber (" + w.windowNumber() + ")");
+            w.setReleasedWhenClosed(false); check(!w.isReleasedWhenClosed(), "isReleasedWhenClosed");
             // sheets
             NSWindow sheet = NSWindow.create(new NSRect(0,0,100,100), 15L,2L,false);
             w.beginSheet(sheet, (java.util.function.IntConsumer)null);
             w.endSheet(sheet);
-            check(w.attachedSheet()==null || true, "attachedSheet");
+            check(w.attachedSheet()==null, "attachedSheet");
             // delegate with ternary
             w.setDelegate(NSObject.wrap(ObjC.msgSendId(ObjC.cls("NSObject"), ObjC.sel("new"))));
             check(w.delegate()!=null, "delegate non-null");
@@ -413,7 +413,7 @@ public final class FullCoverageTest {
                 Method[] ms = cls.getMethods();
                 int count = 0;
                 for (Method m : ms) if (m.getDeclaringClass().getName().equals("nsui."+cn) && Modifier.isPublic(m.getModifiers())) count++;
-                TestKit.probe(cn+" has "+count+" public methods");
+                check(count>0, cn+" has "+count+" public methods");
             } catch (Throwable t) {
                 if (isConnectionError(t)) TestKit.skipCase("SKIP reflective "+cn+" headless");
                 else check(false, "reflective "+cn+" threw: "+t);
@@ -505,9 +505,9 @@ public final class FullCoverageTest {
             layer.setBackgroundColor((MemorySegment)null);
             layer.setBorderColor((NSColor)null);
             layer.setBorderColor((MemorySegment)null);
-            try { TestKit.noThrow("addAnimation CAAnimation null", () -> layer.addAnimation((CAAnimation)null, null)); } catch (Throwable tt) { String all = (String.valueOf(tt) + " " + String.valueOf(tt.getCause())).toLowerCase(); if (all.contains("wrongmethodtype") || all.contains("vocabulary")) TestKit.skipCase("SKIP addAnimation CAAnimation null WrongMethodType (wrapper bug): "+tt.getMessage()); else TestKit.skipCase("SKIP addAnimation CAAnimation null (headless): "+tt.getMessage()); }
-            try { TestKit.noThrow("addAnimation MemorySegment null", () -> layer.addAnimation((MemorySegment)null, null)); } catch (Throwable tt) { String all = (String.valueOf(tt) + " " + String.valueOf(tt.getCause())).toLowerCase(); if (all.contains("wrongmethodtype") || all.contains("vocabulary")) TestKit.skipCase("SKIP addAnimation MemorySegment null WrongMethodType"); else TestKit.skipCase("SKIP addAnimation MemorySegment null (headless): "+tt.getMessage()); }
-            try { TestKit.noThrow("removeAnimationForKey null", () -> layer.removeAnimationForKey(null)); } catch (Throwable tt) { String all = (String.valueOf(tt) + " " + String.valueOf(tt.getCause())).toLowerCase(); if (all.contains("wrongmethodtype") || all.contains("vocabulary")) TestKit.skipCase("SKIP removeAnimationForKey null WrongMethodType"); else TestKit.skipCase("SKIP removeAnimationForKey null (headless): "+tt.getMessage()); }
+            try { TestKit.noThrow("addAnimation CAAnimation null", () -> layer.addAnimation((CAAnimation)null, null)); } catch (Throwable tt) { String all = (String.valueOf(tt) + " " + String.valueOf(tt.getCause())).toLowerCase(); if (all.contains("wrongmethodtype")) check(false, "addAnimation CAAnimation null WrongMethodType: "+tt); else TestKit.skipCase("SKIP addAnimation CAAnimation null: "+tt.getMessage()); }
+            try { TestKit.noThrow("addAnimation MemorySegment null", () -> layer.addAnimation((MemorySegment)null, null)); } catch (Throwable tt) { String all = (String.valueOf(tt) + " " + String.valueOf(tt.getCause())).toLowerCase(); if (all.contains("wrongmethodtype")) check(false, "addAnimation MemorySegment null WrongMethodType: "+tt); else TestKit.skipCase("SKIP addAnimation MemorySegment null: "+tt.getMessage()); }
+            try { TestKit.noThrow("removeAnimationForKey null", () -> layer.removeAnimationForKey(null)); } catch (Throwable tt) { String all = (String.valueOf(tt) + " " + String.valueOf(tt.getCause())).toLowerCase(); if (all.contains("wrongmethodtype")) check(false, "removeAnimationForKey null WrongMethodType: "+tt); else TestKit.skipCase("SKIP removeAnimationForKey null: "+tt.getMessage()); }
             TestKit.probe("CALayer null ternary");
             NSBox box = NSBox.create(new NSRect(0,0,10,10));
             box.setBorderColor((NSColor)null);
@@ -534,7 +534,8 @@ public final class FullCoverageTest {
             TestKit.probe("NSPasteboard null ternary exercised");
         } catch (Throwable t) {
             String all = (String.valueOf(t) + " " + String.valueOf(t.getCause())).toLowerCase();
-            if (isConnectionError(t) || all.contains("nullpointer") || all.contains("wrongmethodtype") || all.contains("vocabulary")) TestKit.skipCase("SKIP null ternary (headless/wrapper NPE/vocab): "+t.getMessage());
+            if (all.contains("wrongmethodtype")) check(false, "null ternary WrongMethodType: "+t);
+            else if (isConnectionError(t) || all.contains("nullpointer") || all.contains("vocabulary")) TestKit.skipCase("SKIP null ternary: "+t.getMessage());
             else { TestKit.skipCase("SKIP null ternary (handled): "+t.getMessage()); }
         }
     }

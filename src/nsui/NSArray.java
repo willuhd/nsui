@@ -87,6 +87,9 @@ public final class NSArray extends NSObject {
     /// objectAtIndex: — element at index (0-based).
     public MemorySegment objectAtIndex(long index) {
         ensureInit();
+        long n = count();
+        if (index < 0 || index >= n)
+            throw new IllegalArgumentException("objectAtIndex: index " + index + " out of bounds (count " + n + ")");
         try {
             MemorySegment obj = (MemorySegment) handles.hObjectAt().invokeExact(peer, ObjC.sel("objectAtIndex:"), index);
             return (obj == null || obj.address() == 0) ? null : obj;
@@ -278,6 +281,9 @@ public final class NSArray extends NSObject {
     /// objectAtIndexedSubscript: — native subscript read (same element as objectAtIndex:).
     public MemorySegment objectAtIndexedSubscript(long index) {
         ensureInit();
+        long n = count();
+        if (index < 0 || index >= n)
+            throw new IllegalArgumentException("objectAtIndexedSubscript: index " + index + " out of bounds (count " + n + ")");
         try {
             MemorySegment obj = (MemorySegment) handles.hObjectAt().invokeExact(peer, ObjC.sel("objectAtIndexedSubscript:"), index);
             return (obj == null || obj.address() == 0) ? null : obj;

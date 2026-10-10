@@ -607,6 +607,17 @@ public final class MetalDepthStencilTest {
                 IllegalArgumentException.class, () -> color.getBytes(W * 4, MTLRegion.of2D(W - 4, 0, 8, 8), 0));
         TestKit.expectThrows("readback row shorter than width*bytesPerPixel is rejected",
                 IllegalArgumentException.class, () -> color.getBytes(4, MTLRegion.of2D(0, 0, W, H), 0));
+        MTLRenderPassDescriptor passForGuard = MTLRenderPassDescriptor.create();
+        TestKit.expectThrows("render pass colorAttachment(negative) rejected",
+                IllegalArgumentException.class, () -> passForGuard.colorAttachment(-1));
+        // Huge indices cannot be guarded: the attachment array exposes no count
+        // and objectAtIndexedSubscript: raises natively (uncatchable abort), so
+        // this path is documented, never executed.
+        TestKit.skipCase("render pass colorAttachment(huge) untestable: native abort, no count API");
+        MTLRenderPipelineDescriptor pipeForGuard = MTLRenderPipelineDescriptor.create();
+        TestKit.expectThrows("pipeline colorAttachment(negative) rejected",
+                IllegalArgumentException.class, () -> pipeForGuard.colorAttachment(-1));
+        TestKit.skipCase("pipeline colorAttachment(huge) untestable: native abort, no count API");
 
         TestKit.check(color.pixelFormat() == COLOR_FORMAT, "colour texture reports BGRA8Unorm");
     }

@@ -141,6 +141,9 @@ public final class NSMutableData extends NSData {
     public void replaceBytesInRange(NSRange range, byte[] bytes) {
         ensureMutInit();
         if (bytes == null) bytes = new byte[0];
+        if (range == null) throw new IllegalArgumentException("replaceBytesInRange:withBytes: null range");
+        if (bytes.length < range.length())
+            throw new IllegalArgumentException("replaceBytesInRange:withBytes: bytes.length " + bytes.length + " < range.length " + range.length());
         try {
             MemorySegment buf = nsui.objc.Scratch.allocInput(Math.max(1, bytes.length));
             if (bytes.length > 0) {

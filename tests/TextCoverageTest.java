@@ -25,6 +25,7 @@ import nsui.NSValue;
 import nsui.NSView;
 import nsui.NSWindow;
 import nsui.objc.ObjC;
+import nsui.objc.Sig;
 
 /// TextCoverageTest — batch coverage for the Text file group.
 ///
@@ -200,6 +201,15 @@ public final class TextCoverageTest {
         dst.setParagraphStyle(m);
         TestKit.check(dst.alignment() == 2 && Math.abs(dst.paragraphSpacing() - 9.0) < 1e-9,
                 "setParagraphStyle copies values");
+    }
+
+    private static boolean responds(MemorySegment target, String selectorName) {
+        try {
+            return (boolean) ObjC.handle(Sig.of(Sig.Ret.BOOL, Sig.Arg.ID)).invokeExact(
+                    target, ObjC.sel("respondsToSelector:"), ObjC.sel(selectorName));
+        } catch (Throwable t) {
+            return false;
+        }
     }
 
     private static double lineSpacingOf(nsui.NSParagraphStyle s) {
@@ -837,7 +847,9 @@ public final class TextCoverageTest {
         TestKit.noThrow("registerForServices did not crash", () -> NSTextView.registerForServices());
         NSArray ql = tv.quickLookPreviewableItemsInRanges(NSArray.array());
         TestKit.check(ql == null || ql.count() == 0, "quickLookPreviewableItems(empty) empty");
-        TestKit.noThrow("orderFrontSubstitutionsPanel(NULL) did not crash", () -> tv.orderFrontSubstitutionsPanel(null));
+        // Never invoking: orderFrontSubstitutionsPanel shows system UI.
+        TestKit.check(responds(tv.peer(), "orderFrontSubstitutionsPanel:"),
+                "NSTextView respondsToSelector: orderFrontSubstitutionsPanel:");
 
         // TouchBar flags (no UI construction)
         boolean tc0 = tv.isAutomaticTextCompletionEnabled();

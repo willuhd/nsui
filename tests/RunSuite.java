@@ -11,6 +11,8 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 /// Parallel JVM test runner (one OS process per test, pooled threads).
 ///
@@ -19,8 +21,9 @@ import java.util.concurrent.Future;
 /// processes: launch, wait, file the exit code. Each test's output goes to
 /// out/logs/<Test>.log; only launch lines and SKIP/FAIL lines print live.
 /// Exit codes keep the tests.sh protocol: 0 pass, 2 setup-impossible skip,
-/// anything else fail. Zero matched tests exits 1. Focus suites
-/// (NSUI_FOCUS_TESTS=1) force one job: key/focus cannot be shared.
+/// anything else fail. Zero matched tests exits 1. Filter is a substring
+/// match by design: filter "Window" runs every Window-prefixed suite.
+/// Focus suites (NSUI_FOCUS_TESTS=1) force one job: key/focus cannot be shared.
 public final class RunSuite {
 
     private RunSuite() {}
@@ -40,6 +43,7 @@ public final class RunSuite {
         String testsDir = "out/tests";
         String logsDir = "out/logs";
         int jobs = Runtime.getRuntime().availableProcessors();
+        long timeoutSecs = -1;
         for (int i = 0; i < args.length; i++) {
             String a = args[i];
             if (a.equals("-j") || a.equals("--jobs")) {
@@ -49,9 +53,61 @@ public final class RunSuite {
                     return;
                 }
                 i++;
-                jobs = Integer.parseInt(args[i]);
+                try {
+                    jobs = Integer.parseInt(args[i]);
+                } catch (NumberFormatException e) {
+                    System.out.println("invalid job count: " + args[i]);
+                    System.out.println("usage: RunSuite [-j N] [--timeout Secs] [filter]");
+                    System.exit(1);
+                    return;
+                }
             } else if (a.startsWith("--jobs=")) {
-                jobs = Integer.parseInt(a.substring("--jobs=".length()));
+                String jobsValue = a.substring("--jobs=".length());
+                try {
+                    jobs = Integer.parseInt(jobsValue);
+                } catch (NumberFormatException e) {
+                    System.out.println("invalid job count: " + jobsValue);
+                    System.out.println("usage: RunSuite [-j N] [--timeout Secs] [filter]");
+                    System.exit(1);
+                    return;
+                }
+            } else if (a.equals("--timeout")) {
+                if (i + 1 >= args.length) {
+                    System.out.println("missing seconds after " + a);
+                    System.exit(1);
+                    return;
+                }
+                i++;
+                try {
+                    timeoutSecs = Long.parseLong(args[i]);
+                } catch (NumberFormatException e) {
+                    System.out.println("invalid timeout value: " + args[i]);
+                    System.out.println("usage: RunSuite [-j N] [--timeout Secs] [filter]");
+                    System.exit(1);
+                    return;
+                }
+                if (timeoutSecs < 1) {
+                    System.out.println("invalid timeout value: " + args[i]);
+                    System.out.println("usage: RunSuite [-j N] [--timeout Secs] [filter]");
+                    System.exit(1);
+                    return;
+                }
+            } else if (a.startsWith("--timeout=")) {
+                String timeoutValue = a.substring("--timeout=".length());
+                try {
+                    timeoutSecs = Long.parseLong(timeoutValue);
+                } catch (NumberFormatException e) {
+                    System.out.println("invalid timeout value: " + timeoutValue);
+                    System.out.println("usage: RunSuite [-j N] [--timeout Secs] [filter]");
+                    System.exit(1);
+                    return;
+                }
+                if (timeoutSecs < 1) {
+                    System.out.println("invalid timeout value: " + timeoutValue);
+                    System.out.println("usage: RunSuite [-j N] [--timeout Secs] [filter]");
+                    System.exit(1);
+                    return;
+                }
             } else if (a.equals("--classes") && i + 1 < args.length) {
                 i++;
                 classesDir = args[i];
@@ -91,9 +147,13 @@ public final class RunSuite {
         String cp = classesDir + ":" + testsDir;
         List<String> extraFlags = List.of("-XstartOnFirstThread", "--enable-native-access=ALL-UNNAMED");
         String finalLogsDir = logsDir;
+        long limitSecs = timeoutSecs;
+        Process[] live = new Process[tests.size()];
         ExecutorService pool = Executors.newFixedThreadPool(jobs);
         List<Future<Outcome>> futures = new ArrayList<>();
-        for (String t : tests) {
+        for (int k = 0; k < tests.size(); k++) {
+            String t = tests.get(k);
+            int slot = k;
             System.out.println("== " + t);
             Callable<Outcome> task = () -> {
                 Path log = Path.of(finalLogsDir, t + ".log");
@@ -109,7 +169,11 @@ public final class RunSuite {
                 pb.redirectErrorStream(true);
                 int code;
                 try {
-                    code = pb.start().waitFor();
+                    Process p = pb.start();
+                    synchronized (live) {
+                        live[slot] = p;
+                    }
+                    code = p.waitFor();
                 } catch (IOException | InterruptedException e) {
                     Thread.currentThread().interrupt();
                     code = 1;
@@ -125,10 +189,28 @@ public final class RunSuite {
         int skipped = 0;
         StringBuilder failedList = new StringBuilder();
         StringBuilder skippedList = new StringBuilder();
-        for (Future<Outcome> f : futures) {
+        for (int k = 0; k < futures.size(); k++) {
+            Future<Outcome> f = futures.get(k);
             Outcome o;
             try {
-                o = f.get();
+                if (limitSecs > 0) {
+                    o = f.get(limitSecs, TimeUnit.SECONDS);
+                } else {
+                    o = f.get();
+                }
+            } catch (TimeoutException e) {
+                Process timed;
+                synchronized (live) {
+                    timed = live[k];
+                }
+                if (timed != null) {
+                    timed.destroyForcibly();
+                }
+                f.cancel(true);
+                System.out.println("FAIL: " + tests.get(k) + " timed out after " + limitSecs + "s");
+                failed++;
+                failedList.append(" ").append(tests.get(k));
+                continue;
             } catch (Exception e) {
                 System.out.println("FAIL: runner could not collect a result (" + e + ")");
                 failed++;

@@ -1495,10 +1495,14 @@ ensureInit(); return ObjC.msgSendBool(peer, Sels.hasDynamicDepthLimit); }
         return wrap(w);
     }
 
-    /// +defaultDepthLimit — class default window depth limit.
+    /// +defaultDepthLimit — class default window depth limit (NSWindowDepth, int32_t).
     public static long defaultDepthLimit() {
         ensureInit();
-        return ObjC.msgSendLong(ObjC.cls("NSWindow"), Sels.defaultDepthLimit);
+        try {
+            return (long) (int) ObjC.handle(Sig.of(Ret.INT32)).invokeExact(ObjC.cls("NSWindow"), Sels.defaultDepthLimit);
+        } catch (Throwable t) {
+            throw new RuntimeException("defaultDepthLimit failed", t);
+        }
     }
 
     /// +allowsAutomaticWindowTabbing / setAllowsAutomaticWindowTabbing:.
@@ -2199,10 +2203,14 @@ ensureInit(); return ObjC.msgSendBool(peer, Sels.hasDynamicDepthLimit); }
         ObjC.msgSendVoidLong(peer, Sels.setBackingType, type);
     }
 
-    /// [window depthLimit].
+    /// [window depthLimit] (NSWindowDepth, int32_t).
     public long depthLimit() {
         ensureInit();
-        return ObjC.msgSendLong(peer, Sels.depthLimit);
+        try {
+            return (long) (int) ObjC.handle(Sig.of(Ret.INT32)).invokeExact(peer, Sels.depthLimit);
+        } catch (Throwable t) {
+            throw new RuntimeException("depthLimit failed", t);
+        }
     }
 
     /// [window setDepthLimit:].

@@ -1,8 +1,11 @@
 package nsui;
 
 import java.lang.foreign.MemorySegment;
+import java.lang.invoke.MethodHandle;
 
 import nsui.objc.ObjC;
+import nsui.objc.Sig;
+import static nsui.objc.Sig.Ret;
 
 /// MTLStencilDescriptor — one face's stencil test state: compare function,
 /// the three stencil operations, and the read/write masks. Authored on the
@@ -86,9 +89,14 @@ public final class MTLStencilDescriptor extends NSObject {
         ObjC.msgSendVoidLong(peer, ObjC.sel("setDepthStencilPassOperation:"), operation);
     }
 
-    /// readMask — uint32_t; mask the (possibly sign/zero-extended) return.
+    /// readMask — uint32_t (32-bit unsigned).
     public long readMask() {
-        return ObjC.msgSendLong(peer, ObjC.sel("readMask")) & 0xFFFFFFFFL;
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.INT32));
+            return ((int) h.invokeExact(peer, ObjC.sel("readMask"))) & 0xFFFFFFFFL;
+        } catch (Throwable t) {
+            throw new RuntimeException("readMask failed", t);
+        }
     }
 
     /// setReadMask: — uint32_t.
@@ -96,9 +104,14 @@ public final class MTLStencilDescriptor extends NSObject {
         ObjC.msgSendVoidLong(peer, ObjC.sel("setReadMask:"), mask & 0xFFFFFFFFL);
     }
 
-    /// writeMask — uint32_t.
+    /// writeMask — uint32_t (32-bit unsigned).
     public long writeMask() {
-        return ObjC.msgSendLong(peer, ObjC.sel("writeMask")) & 0xFFFFFFFFL;
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.INT32));
+            return ((int) h.invokeExact(peer, ObjC.sel("writeMask"))) & 0xFFFFFFFFL;
+        } catch (Throwable t) {
+            throw new RuntimeException("writeMask failed", t);
+        }
     }
 
     /// setWriteMask: — uint32_t.

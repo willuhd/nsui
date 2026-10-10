@@ -6,7 +6,10 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import nsui.CAConstraint;
 import nsui.CALayer;
+import nsui.MTLRenderPassDescriptor;
+import nsui.MTLStencilDescriptor;
 import nsui.NSArray;
 import nsui.NSAttributedString;
 import nsui.NSData;
@@ -25,10 +28,14 @@ import nsui.NSOrderedSet;
 import nsui.NSPoint;
 import nsui.NSRange;
 import nsui.NSRect;
+import nsui.NSRunningApplication;
+import nsui.NSScreen;
 import nsui.NSSet;
 import nsui.NSSize;
 import nsui.NSString;
+import nsui.NSTextField;
 import nsui.NSValue;
+import nsui.NSWindow;
 import nsui.objc.ObjC;
 
 /// FoundationCoverageTest — header-completeness coverage for the Foundation/value-type
@@ -40,6 +47,12 @@ import nsui.objc.ObjC;
 /// File IO stays under a unique /tmp dir (never inside the repo).
 /// Uncaught ObjC exceptions are process-fatal (see nsui.objc.Exceptions), so every call
 /// below stays on strictly-valid paths (valid indexes/ranges, mutable peers for mutation).
+/// Narrow-reader oracles (testNarrowReaders) additionally cover the exact-32-bit
+/// returns found by the reader audit (NSWindowDepth/pid_t/CAConstraintAttribute/int
+/// as signed INT32, CGDirectDisplayID/MTL masks as unsigned INT32). Those readers
+/// live outside Foundation, but every oracle is windowless: descriptors, a detached
+/// button, the app identity, and screen queries — plus one hidden window, never
+/// shown, for the instance depthLimit reader.
 public final class FoundationCoverageTest {
 
     /// Long strings defeat tagged-pointer identity so peer-identity checks are honest.
@@ -80,6 +93,7 @@ public final class FoundationCoverageTest {
         testData();
         testValues();
         testRecords();
+        testNarrowReaders();
         testNegativeGuards();
 
         System.out.println("\n=== FoundationCoverageTest " + (TestKit.failures() == 0 ? "PASS" : "FAIL") + " ===");
@@ -877,6 +891,91 @@ public final class FoundationCoverageTest {
         TestKit.check(new NSRect(0.5, 0.5, 10, 10).integralWithOptions(0)
                 .equals(new NSRect(0.5, 0.5, 10, 10).integral()), "integralWithOptions==integral");
         TestKit.check(NSEdgeInsets.ZERO.isZero(), "insets ZERO (owned file smoke)");
+    }
+
+    // ---------------------------------------------------------- narrow 32-bit readers
+    // Oracles for the exact-width returns found by the reader audit: a bare
+    // 64-bit read of a 32-bit (`i`/`I`) return keeps garbage upper bits, so
+    // negative values (signed) and high-bit values (unsigned) come back wrong.
+    // Each oracle below uses such a value and is green on the INT32 handles.
+    private static void testNarrowReaders() {
+        System.out.println("\n-- narrow (32-bit) readers --");
+        // MTLStencilDescriptor masks (uint32_t): high-bit round-trips.
+        if (ObjC.cls("MTLStencilDescriptor").address() == 0) {
+            try { ObjC.ensureFramework("Metal"); } catch (Throwable ignored) { }
+        }
+        if (ObjC.cls("MTLStencilDescriptor").address() == 0) {
+            TestKit.skipCase("Metal unavailable: stencil/clearStencil oracles");
+        } else {
+            MTLStencilDescriptor stencil = MTLStencilDescriptor.create();
+            stencil.setReadMask(0x80000001L);
+            TestKit.check(stencil.readMask() == 0x80000001L, "stencil readMask high-bit round-trip");
+            stencil.setReadMask(0xFFFFFFFFL);
+            TestKit.check(stencil.readMask() == 0xFFFFFFFFL, "stencil readMask all-bits round-trip");
+            stencil.setWriteMask(0x80000001L);
+            TestKit.check(stencil.writeMask() == 0x80000001L, "stencil writeMask high-bit round-trip");
+            stencil.setWriteMask(0L);
+            TestKit.check(stencil.writeMask() == 0L, "stencil writeMask zero");
+            // clearStencil (uint32_t) via a render-pass descriptor (no device needed).
+            MTLRenderPassDescriptor pass = MTLRenderPassDescriptor.create();
+            pass.stencilAttachment().setClearStencil(0x80000001L);
+            TestKit.check(pass.stencilAttachment().clearStencil() == 0x80000001L,
+                    "clearStencil high-bit round-trip");
+            pass.stencilAttachment().setClearStencil(0xFFFFFFFFL);
+            TestKit.check(pass.stencilAttachment().clearStencil() == 0xFFFFFFFFL,
+                    "clearStencil all-bits round-trip");
+        }
+        // NSControl intValue (C int): negative round-trips on a detached text
+        // field. (A button coerces intValue to its 0/1 state, so a text field —
+        // whose cell parses the displayed integer — is the faithful vehicle.)
+        NSTextField f = NSTextField.create(new NSRect(0, 0, 120, 32));
+        f.setIntValue(-1);
+        TestKit.check(f.intValue() == -1, "control intValue -1");
+        f.setIntValue(Integer.MIN_VALUE);
+        TestKit.check(f.intValue() == Integer.MIN_VALUE, "control intValue MIN_VALUE");
+        f.setIntValue(Integer.MAX_VALUE);
+        TestKit.check(f.intValue() == Integer.MAX_VALUE, "control intValue MAX_VALUE");
+        // processIdentifier (pid_t, int): in a bare test JVM AppKit reports -1,
+        // and the old 64-bit read returned 4294967295 for it — every check
+        // below trips that read while passing on the exact INT32 handle.
+        long pid = NSRunningApplication.current().processIdentifier();
+        TestKit.check(pid == (long) (int) pid, "processIdentifier fits 32 bits");
+        if (pid == -1) {
+            TestKit.check(true, "processIdentifier reports -1 pre-app (exact signed read)");
+        } else {
+            TestKit.check(pid == ProcessHandle.current().pid(), "processIdentifier matches Java pid");
+        }
+        // CAConstraintAttribute (int): creation round-trip.
+        CAConstraint c = CAConstraint.relativeTo(
+                CAConstraint.ATTR_MAX_X, "super", CAConstraint.ATTR_WIDTH, 1.0, 0.0);
+        TestKit.check(c.attribute() == CAConstraint.ATTR_MAX_X, "constraint attribute round-trip");
+        TestKit.check(c.sourceAttribute() == CAConstraint.ATTR_WIDTH, "constraint sourceAttribute round-trip");
+        // NSWindowDepth (int32_t): class default needs no window.
+        long ddl = NSWindow.defaultDepthLimit();
+        TestKit.check(ddl == (long) (int) ddl, "defaultDepthLimit fits 32 bits");
+        TestKit.check(ddl == NSWindow.defaultDepthLimit(), "defaultDepthLimit stable");
+        // Instance depthLimit via one hidden window (never shown).
+        NSWindow win = TestKit.hiddenWindow(100, 100);
+        try {
+            long d0 = win.depthLimit();
+            TestKit.check(d0 == (long) (int) d0, "depthLimit fits 32 bits");
+            win.setDepthLimit(d0);
+            TestKit.check(win.depthLimit() == d0, "depthLimit self round-trip");
+        } finally {
+            TestKit.close(win);
+        }
+        // Screen depth (NSWindowDepth) + display id (uint32_t): guarded headless.
+        NSScreen s = NSScreen.mainScreen();
+        if (s == null) {
+            TestKit.skipCase("no main screen (headless): depth/CGDirectDisplayID");
+        } else {
+            long depth = s.depth();
+            TestKit.check(depth == (long) (int) depth, "screen depth fits 32 bits");
+            TestKit.check(depth == s.depth(), "screen depth stable");
+            long did = s.cgDirectDisplayID();
+            TestKit.check(did != 0, "CGDirectDisplayID non-zero");
+            TestKit.check(did == (did & 0xFFFFFFFFL), "CGDirectDisplayID fits 32 bits");
+        }
     }
 
     // ---------------------------------------------------------- negative guards

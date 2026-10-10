@@ -27,8 +27,23 @@ public final class CATransaction {
     private record Handles(MethodHandle hVoidClass, MethodHandle hSetDuration, MethodHandle hGetValueForKey, MethodHandle hSetValueForKey, MethodHandle hVoidId) {}
     private static volatile Handles handles;
 
-    /// Runnables awaiting their completion delivery (FIFO).
-    private static final ConcurrentLinkedQueue<Runnable> PENDING = new ConcurrentLinkedQueue<>();
+    /// Queued completion body with the generation it was installed under.
+    private record Completion(long generation, Runnable body) {}
+
+    /// Bodies awaiting delivery (FIFO, at most one outstanding).
+    private static final ConcurrentLinkedQueue<Completion> PENDING = new ConcurrentLinkedQueue<>();
+
+    /// Generation of the most recently installed completion, either mode.
+    /// Written under the class monitor, read without it.
+    private static volatile long installedGeneration;
+
+    /// Next generation to assign. Guarded by the class monitor.
+    private static long currentGeneration;
+
+    /// True while a raw block from the MemorySegment overload is installed.
+    /// While set, the shared-block thunk drops runnable bodies; the two
+    /// modes are not intended to be interleaved within one transaction.
+    private static volatile boolean rawInstalled;
 
     /// One shared immortal block for every completion: bodies travel via
     /// PENDING (each delivery pops exactly one), so no per-call block or stub
@@ -106,12 +121,15 @@ public final class CATransaction {
             // the class monitor (the file's ensureInitLocked idiom), so concurrent
             // setters cannot interleave a clear between another thread's add.
             synchronized (CATransaction.class) {
+                currentGeneration++;
+                installedGeneration = currentGeneration;
+                rawInstalled = false;
                 if (action == null) {
                     PENDING.clear();
                     block = MemorySegment.NULL;
                 } else {
                     PENDING.clear();
-                    PENDING.add(action);
+                    PENDING.add(new Completion(installedGeneration, action));
                     block = SHARED_BLOCK;
                 }
             }
@@ -121,9 +139,19 @@ public final class CATransaction {
 
     /// +[CATransaction setCompletionBlock:] with a pre-built raw block literal
     /// (advanced use; must be a `void(^)(void)` global block).
+    /// Installing a raw block supersedes any queued runnable body, and
+    /// installing a runnable body supersedes a raw block; the two modes
+    /// are not intended to be interleaved within one transaction.
     public static void setCompletionBlock(MemorySegment rawBlock) {
         ensureInit();
         try {
+            synchronized (CATransaction.class) {
+                currentGeneration++;
+                installedGeneration = currentGeneration;
+                boolean empty = (rawBlock == null || rawBlock.address() == 0);
+                rawInstalled = !empty;
+                PENDING.clear();
+            }
             handles.hVoidId().invokeExact(ObjC.cls("CATransaction"), ObjC.sel("setCompletionBlock:"), (MemorySegment) (rawBlock == null ? MemorySegment.NULL : rawBlock));
         } catch (Throwable t) { throw new RuntimeException("setCompletionBlock: failed", t); }
     }
@@ -163,9 +191,14 @@ public final class CATransaction {
     /// (DelegateProxy.java:57-60) and Dispatch.onMain bodies (Dispatch.java:87).
     /// No behavior change here; this comment ratifies the existing semantics.
     public static void completionThunk(MemorySegment blockSelf) {
-        Runnable body = PENDING.poll();
-        if (body != null) {
-            body.run();
+        Completion item;
+        boolean stale;
+        synchronized (CATransaction.class) {
+            item = PENDING.poll();
+            stale = (item == null) || rawInstalled || item.generation() != installedGeneration;
+        }
+        if (item != null && !stale) {
+            item.body().run();
         }
     }
 }

@@ -673,11 +673,14 @@ public class NSWindow extends NSResponder {
     /// "settings / utility" panel. Panels also support the behavior properties
     /// `setHidesOnDeactivate` and `setBecomesKeyOnlyIfNeeded`.
     public static NSWindow createPanel(NSRect contentRect, long styleMask, long backingStoreType, boolean defer) {
+        ObjC.requireMainThread("NSWindow.createPanel");
         ensureInit();
         MemorySegment panel = ObjC.msgSendId(ObjC.cls("NSPanel"), Sels.alloc);
         panel = ObjC.msgSendIdRectLongLongBool(panel, Sels.initWithContentRect_styleMask_backing_defer,
                 contentRect.toSegment(), styleMask, backingStoreType, defer);
-        return new NSWindow(panel);
+        NSWindow w = new NSWindow(panel);
+        w.setReleasedWhenClosed(false);
+        return w;
     }
 
     public void setTitle(String title) {

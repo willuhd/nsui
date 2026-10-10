@@ -75,9 +75,16 @@ public final class ButtonTest {
 
         TestKit.check(DelegateProxy.registrySize() >= 1, "DelegateProxy registered the action target (size=" + DelegateProxy.registrySize() + ")");
 
-        // Onscreen AND key: the injected event carries screen coordinates, so the
-        // window must be under its click point. One of two onscreen tests.
-        TestKit.showKey(window);
+        // Parked and ordered front but never key, never activating: the queued
+        // click path below carries window-base coordinates, so hit-testing does
+        // not need a visible window. If AppKit will not route to it, the honest
+        // direct-send fallback still proves the wiring. Set NSUI_FOCUS_TESTS=1
+        // to run the onscreen-and-key variant instead.
+        if ("1".equals(System.getenv("NSUI_FOCUS_TESTS"))) {
+            TestKit.showKey(window);
+        } else {
+            TestKit.show(window);
+        }
         app.finishLaunching();
         TestKit.pump(app, 600); // let the window settle
 

@@ -11,7 +11,7 @@ import static nsui.objc.Sig.Ret;
 /// MTLTexture — GPU image: render target or shader input, with CPU readback.
 public final class MTLTexture extends NSObject {
 
-    private record Handles(MethodHandle hGetBytes) {}
+    private record Handles(MethodHandle hGetBytes, MethodHandle hReplaceRegion) {}
     private static volatile Handles handles;
 
     private MTLTexture(MemorySegment peer) {
@@ -31,7 +31,8 @@ public final class MTLTexture extends NSObject {
 
     private static synchronized void ensureInitLocked() {
         if (handles != null) return;
-        handles = new Handles(ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.INT, Arg.REGION, Arg.INT)));
+        handles = new Handles(ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.INT, Arg.REGION, Arg.INT)),
+                ObjC.handle(Sig.of(Ret.VOID, Arg.REGION, Arg.INT, Arg.ID, Arg.INT)));
     }
 
     /// width in pixels.
@@ -97,5 +98,52 @@ public final class MTLTexture extends NSObject {
             MemorySegment.copy(buf, java.lang.foreign.ValueLayout.JAVA_BYTE, 0, out, 0, out.length);
         }
         return out;
+    }
+
+    /// replaceRegion:mipmapLevel:withBytes:bytesPerRow: from a Java array.
+    /// Mirrors getBytes' validation: the region is checked against the texture
+    /// and the row stride against the pixel size before touching the GPU, so an
+    /// out-of-range region or a too-small stride fails here rather than writing
+    /// out of bounds. Sizing uses long math so a large region cannot silently
+    /// overflow. The upload is copied synchronously via the call-scoped bump
+    /// buffer (as with setVertexBytes); streaming uploads should prefer a blit
+    /// encoder instead of repeated small replaces.
+    public void replaceRegion(MTLRegion region, long level, byte[] data, int bytesPerRow) {
+        ensureInit();
+        if (region == null) throw new IllegalArgumentException("region is null");
+        if (data == null) throw new IllegalArgumentException("data is null");
+        if (bytesPerRow <= 0) throw new IllegalArgumentException("bytesPerRow must be > 0, got " + bytesPerRow);
+        long w = region.width(), h = region.height();
+        if (w <= 0 || h <= 0) throw new IllegalArgumentException("region is empty: " + w + "x" + h);
+        if (region.z() != 0 || region.depth() != 1) {
+            throw new IllegalArgumentException("region z/depth must be 0/1 for 2D textures, got z="
+                    + region.z() + " depth=" + region.depth());
+        }
+        if (level < 0) throw new IllegalArgumentException("mipmap level must be >= 0, got " + level);
+        long tw = width(), th = height();
+        if (region.x() < 0 || region.y() < 0 || region.x() + w > tw || region.y() + h > th) {
+            throw new IllegalArgumentException("region " + region.x() + "," + region.y() + " " + w + "x" + h
+                    + " is outside texture " + tw + "x" + th);
+        }
+        long bpp = bytesPerPixel(pixelFormat());
+        if (bpp > 0 && bytesPerRow < w * bpp) {
+            throw new IllegalArgumentException("bytesPerRow " + bytesPerRow + " < width*bytesPerPixel "
+                    + (w * bpp) + " (format " + pixelFormat() + ")");
+        }
+        long len = (long) bytesPerRow * h;
+        if (len > Integer.MAX_VALUE) throw new IllegalArgumentException("upload too large: " + len + " bytes");
+        if ((long) data.length < len) {
+            throw new IllegalArgumentException("data too short: " + data.length + " < bytesPerRow*height "
+                    + len + " (bytesPerRow " + bytesPerRow + " height " + h + ")");
+        }
+        MemorySegment buf = nsui.objc.Scratch.allocInput(len);
+        MemorySegment.copy(data, 0, buf, java.lang.foreign.ValueLayout.JAVA_BYTE, 0, (int) len);
+        try {
+            handles.hReplaceRegion().invokeExact(peer,
+                    ObjC.sel("replaceRegion:mipmapLevel:withBytes:bytesPerRow:"),
+                    region.toSegment(), level, buf, (long) bytesPerRow);
+        } catch (Throwable t) {
+            throw new RuntimeException("replaceRegion:... failed", t);
+        }
     }
 }

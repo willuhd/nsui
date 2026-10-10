@@ -381,20 +381,24 @@ public final class ObjC {
     }
 
     public static MemorySegment msgSendIdIdSelId(MemorySegment recv, MemorySegment s, MemorySegment a1, MemorySegment a2, MemorySegment a3) {
+        if (!INIT && !INITIALIZING) throw new IllegalStateException("ObjC.init() must run first (from main, at runtime)");
         try { return (MemorySegment) hId3.invokeExact(recv, s, a1, a2, a3); } catch (Throwable t) { throw fail(t); }
     }
 
     public static MemorySegment msgSendIdRectLongLongBool(MemorySegment recv, MemorySegment s,
             MemorySegment rect, long styleMask, long backing, boolean defer) {
+        if (!INIT && !INITIALIZING) throw new IllegalStateException("ObjC.init() must run first (from main, at runtime)");
         try { return (MemorySegment) hIdRect.invokeExact(recv, s, rect, styleMask, backing, defer); } catch (Throwable t) { throw fail(t); }
     }
 
     public static MemorySegment msgSendIdLongIdIdBool(MemorySegment recv, MemorySegment s,
             long mask, MemorySegment until, MemorySegment mode, boolean dequeue) {
+        if (!INIT && !INITIALIZING) throw new IllegalStateException("ObjC.init() must run first (from main, at runtime)");
         try { return (MemorySegment) hIdEvent.invokeExact(recv, s, mask, until, mode, dequeue); } catch (Throwable t) { throw fail(t); }
     }
 
     public static MemorySegment msgSendIdDouble(MemorySegment recv, MemorySegment s, double d) {
+        if (!INIT && !INITIALIZING) throw new IllegalStateException("ObjC.init() must run first (from main, at runtime)");
         try { return (MemorySegment) hIdDouble.invokeExact(recv, s, d); } catch (Throwable t) { throw fail(t); }
     }
 

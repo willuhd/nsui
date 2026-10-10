@@ -18,7 +18,7 @@ public final class MTLDevice extends NSObject {
 
     private record Handles(MethodHandle hLibSource, MethodHandle hQueue,
             MethodHandle hTexture, MethodHandle hPipeline, MethodHandle hDepthStencil,
-            MethodHandle hBuffer) {}
+            MethodHandle hBuffer, MethodHandle hSampler) {}
     private static volatile Handles handles;
     private static volatile MethodHandle hCreate;
     private static volatile boolean ready;
@@ -53,7 +53,8 @@ public final class MTLDevice extends NSObject {
                 ObjC.handle(Sig.of(Ret.ID, Arg.ID)),
                 ObjC.handle(Sig.of(Ret.ID, Arg.ID, Arg.ID)),
                 ObjC.handle(Sig.of(Ret.ID, Arg.ID)),
-                ObjC.handle(Sig.of(Ret.ID, Arg.INT, Arg.INT)));
+                ObjC.handle(Sig.of(Ret.ID, Arg.INT, Arg.INT)),
+                ObjC.handle(Sig.of(Ret.ID, Arg.ID)));
         ready = true;
     }
 
@@ -172,6 +173,27 @@ public final class MTLDevice extends NSObject {
             throw t;
         } catch (Throwable t) {
             throw new RuntimeException("newDepthStencilStateWithDescriptor: failed", t);
+        }
+    }
+
+    /// newSamplerStateWithDescriptor: — compile a sampler state.
+    /// Unlike the pipeline/error paths this selector has no NSError out-param,
+    /// so a nil return is a hard failure (invalid descriptor combination):
+    /// throw instead of handing back a silently unusable null state.
+    public MTLSamplerState newSamplerState(MTLSamplerDescriptor descriptor) {
+        ensureInit();
+        if (descriptor == null) throw new IllegalArgumentException("descriptor is null");
+        try {
+            MemorySegment state = (MemorySegment) handles.hSampler().invokeExact(peer,
+                    ObjC.sel("newSamplerStateWithDescriptor:"), descriptor.peer());
+            if (state.address() == 0)
+                throw new IllegalStateException("newSamplerStateWithDescriptor: returned nil "
+                        + "(invalid sampler descriptor)");
+            return MTLSamplerState.wrap(state);
+        } catch (RuntimeException t) {
+            throw t;
+        } catch (Throwable t) {
+            throw new RuntimeException("newSamplerStateWithDescriptor: failed", t);
         }
     }
 }

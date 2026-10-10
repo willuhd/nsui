@@ -598,6 +598,11 @@ public class NSWindow extends NSResponder {
     private record Handles(MethodHandle hSetFrameDisplay, MethodHandle hSetFrameOrigin, MethodHandle hSetContentSize, MethodHandle hStdWinButton, MethodHandle hGetDouble, MethodHandle hSetDouble, MethodHandle hGetSize, MethodHandle hSetSize, MethodHandle hRectRect, MethodHandle hGetPoint, MethodHandle hDoubleInt, MethodHandle hVoidDoubleInt, MethodHandle hBoolInt, MethodHandle hVoidBoolInt, MethodHandle hVoidIdInt, MethodHandle hVoidIntInt, MethodHandle hIdInt, MethodHandle hIdIntInt, MethodHandle hBoolIdId, MethodHandle hIdIdId, MethodHandle hVoidIntId, MethodHandle hIdIntIdIdBool, MethodHandle hVoidIdBool, MethodHandle hBoolIdBool, MethodHandle hBoolId, MethodHandle hIdRect, MethodHandle hIdIdIdId) {}
     private static volatile Handles H;
 
+    /// Set by close(); further use of the main accessors fails fast via checkClosed().
+    /// Per-wrapper state (two wrappers over one peer do not share it); the remaining
+    /// getters consult it as a follow-up.
+    private boolean closed;
+
     protected NSWindow(MemorySegment peer) {
         super(peer);
         ensureInit();
@@ -647,12 +652,17 @@ public class NSWindow extends NSResponder {
 }
 
     /// alloc + initWithContentRect:styleMask:backing:defer:.
+    /// Main thread only; the window is created with released-when-closed disabled
+    /// (matches the test-suite convention) so the Java wrapper stays valid.
     public static NSWindow create(NSRect contentRect, long styleMask, long backingStoreType, boolean defer) {
+        ObjC.requireMainThread("NSWindow.create");
         ensureInit();
         MemorySegment win = ObjC.msgSendId(ObjC.cls("NSWindow"), Sels.alloc);
         win = ObjC.msgSendIdRectLongLongBool(win, Sels.initWithContentRect_styleMask_backing_defer,
                 contentRect.toSegment(), styleMask, backingStoreType, defer);
-        return new NSWindow(win);
+        NSWindow w = new NSWindow(win);
+        w.setReleasedWhenClosed(false);
+        return w;
     }
 
     /// Create an `NSPanel` with the SAME
@@ -672,6 +682,7 @@ public class NSWindow extends NSResponder {
 
     public void setTitle(String title) {
         ensureInit();
+        checkClosed();
         ObjC.msgSendVoidId(peer, Sels.setTitle, ObjC.nsstring(title));
     }
 
@@ -718,6 +729,7 @@ public class NSWindow extends NSResponder {
     /// Struct-returning message: frame (objc_msgSend_stret on x86_64).
     public NSRect frame() {
         ensureInit();
+        checkClosed();
         return NSRect.fromSegment(ObjC.msgSendRect(peer, Sels.frame));
     }
 
@@ -738,6 +750,7 @@ public class NSWindow extends NSResponder {
     /// setFrame:display: — resize/reposition (and optionally redraw immediately).
     public void setFrameDisplay(NSRect frame, boolean display) {
         ensureInit();
+        checkClosed();
         try {
             H.hSetFrameDisplay().invokeExact(peer, Sels.setFrame_display, frame.toSegment(), display);
         } catch (Throwable t) {
@@ -986,6 +999,7 @@ public class NSWindow extends NSResponder {
     /// [window title] — the window title string.
     public String title() {
         ensureInit();
+        checkClosed();
         MemorySegment s = ObjC.msgSendId(peer, Sels.title);
         return ObjC.toString(s);
     }
@@ -1007,6 +1021,7 @@ public class NSWindow extends NSResponder {
     /// [window contentView] — the window's root content view.
     public NSView contentView() {
         ensureInit();
+        checkClosed();
         MemorySegment v = ObjC.msgSendId(peer, Sels.contentView);
         return NSView.wrap(v);
     }
@@ -1874,9 +1889,16 @@ ensureInit(); return ObjC.msgSendBool(peer, Sels.hasDynamicDepthLimit); }
     // ---- close / miniaturize / zoom actions ----
 
     /// [window close] — close now (delegate `windowShouldClose:` still consulted).
+    /// Marks this wrapper closed; the five main accessors (frame, setFrameDisplay,
+    /// title, setTitle, contentView) fail fast after this.
     public void close() {
         ensureInit();
         ObjC.msgSendVoid(peer, Sels.close);
+        closed = true;
+    }
+
+    private void checkClosed() {
+        if (closed) throw new IllegalStateException("NSWindow is closed");
     }
 
     /// [window miniaturize:] — sender may be null.

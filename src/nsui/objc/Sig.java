@@ -293,6 +293,7 @@ public final class Sig {
         of(Ret.VOID, Arg.MTLVIEWPORT),                      // setViewport:
         of(Ret.VOID, Arg.MTLSCISSORRECT),                   // setScissorRect:
         of(Ret.VOID, Arg.INT, Arg.INT, Arg.INT, Arg.ID, Arg.INT), // drawIndexedPrimitives:indexCount:indexType:indexBuffer:indexBufferOffset:
+        of(Ret.VOID, Arg.REGION, Arg.INT, Arg.ID, Arg.INT), // replaceRegion:mipmapLevel:withBytes:bytesPerRow:
         // --- 1-byte scalars and edge insets (append-only) ---
         of(Ret.BYTE),                                       // charValue / unsignedCharValue
         of(Ret.EDGEINSETS),                                 // contentInsets / capInsets / safeAreaInsets / edgeInsets

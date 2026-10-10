@@ -24,7 +24,7 @@ import static nsui.objc.Sig.Ret;
 /// initWithCoder: (needs NSCoder).
 public final class NSNumber extends NSValue {
 
-            private record Handles(MethodHandle hIntValue, MethodHandle hDoubleValue, MethodHandle hBoolValue, MethodHandle hFloatValue, MethodHandle hByteValue, MethodHandle hShortValue) {}
+            private record Handles(MethodHandle hIntValue, MethodHandle hDoubleValue, MethodHandle hBoolValue, MethodHandle hFloatValue, MethodHandle hByteValue, MethodHandle hShortValue, MethodHandle hInt32Value) {}
     private static volatile Handles handles;
 
     private NSNumber(MemorySegment peer) { super(peer); }
@@ -46,7 +46,8 @@ public final class NSNumber extends NSValue {
                 ObjC.handle(Sig.of(Ret.BOOL)),
                 ObjC.handle(Sig.of(Ret.FLOAT)),
                 ObjC.handle(Sig.of(Ret.BYTE)),
-                ObjC.handle(Sig.of(Ret.SHORT))
+                ObjC.handle(Sig.of(Ret.SHORT)),
+                ObjC.handle(Sig.of(Ret.INT32))
         );
         handles = h;
     }
@@ -196,10 +197,10 @@ public final class NSNumber extends NSValue {
         } catch (Throwable t) { throw new RuntimeException("numberWithUnsignedInteger: failed", t); }
     }
 
-    /// intValue
+    /// intValue — C int (32-bit, signed).
     public long intValue() {
         ensureNumInit();
-        try { return (long) handles.hIntValue().invokeExact(peer, ObjC.sel("intValue")); }
+        try { return (long) (int) handles.hInt32Value().invokeExact(peer, ObjC.sel("intValue")); }
         catch (Throwable t) { throw new RuntimeException("intValue failed", t); }
     }
 
@@ -278,10 +279,10 @@ public final class NSNumber extends NSValue {
         catch (Throwable t) { throw new RuntimeException("unsignedShortValue failed", t); }
     }
 
-    /// unsignedIntValue.
+    /// unsignedIntValue — C unsigned int (32-bit, zero-extended).
     public long unsignedIntValue() {
         ensureNumInit();
-        try { return (long) handles.hIntValue().invokeExact(peer, ObjC.sel("unsignedIntValue")); }
+        try { return ((int) handles.hInt32Value().invokeExact(peer, ObjC.sel("unsignedIntValue"))) & 0xFFFFFFFFL; }
         catch (Throwable t) { throw new RuntimeException("unsignedIntValue failed", t); }
     }
 

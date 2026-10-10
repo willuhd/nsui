@@ -664,12 +664,12 @@ public final class NSString extends NSObject {
         }
     }
 
-    /// intValue.
+    /// intValue — C int (32-bit, signed).
     public long intValue() {
         ensureInit();
         try {
-            MethodHandle h = ObjC.handle(Sig.of(Ret.INT));
-            return (long) h.invokeExact(peer, Sels.intValue);
+            MethodHandle h = ObjC.handle(Sig.of(Ret.INT32));
+            return (long) (int) h.invokeExact(peer, Sels.intValue);
         } catch (Throwable t) {
             throw new RuntimeException("intValue failed", t);
         }

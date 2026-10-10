@@ -16,7 +16,8 @@ public final class MTLRenderCommandEncoder extends NSObject {
     private record Handles(MethodHandle hVertexBytes, MethodHandle hDraw,
             MethodHandle hStencilFront, MethodHandle hDepthBias,
             MethodHandle hViewport, MethodHandle hScissorRect,
-            MethodHandle hVertexBuffer, MethodHandle hDrawIndexed) {}
+            MethodHandle hVertexBuffer, MethodHandle hDrawIndexed,
+            MethodHandle hObjIndex) {}
     private static volatile Handles handles;
 
     private MTLRenderCommandEncoder(MemorySegment peer) {
@@ -44,7 +45,8 @@ public final class MTLRenderCommandEncoder extends NSObject {
                 ObjC.handle(Sig.of(Ret.VOID, Arg.MTLVIEWPORT)),
                 ObjC.handle(Sig.of(Ret.VOID, Arg.MTLSCISSORRECT)),
                 ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.INT, Arg.INT)),
-                ObjC.handle(Sig.of(Ret.VOID, Arg.INT, Arg.INT, Arg.INT, Arg.ID, Arg.INT)));
+                ObjC.handle(Sig.of(Ret.VOID, Arg.INT, Arg.INT, Arg.INT, Arg.ID, Arg.INT)),
+                ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.INT)));
     }
 
     /// Primitive types (MTLPrimitiveType, MTLRenderCommandEncoder.h).
@@ -167,6 +169,75 @@ public final class MTLRenderCommandEncoder extends NSObject {
                     ObjC.nullablePeer(buffer), offset, index);
         } catch (Throwable t) {
             throw new RuntimeException("setVertexBuffer:offset:atIndex: failed", t);
+        }
+    }
+
+    /// setFragmentBytes:length:atIndex: — bytes are copied synchronously.
+    public void setFragmentBytes(byte[] data, long index) {
+        if (data == null || data.length == 0) throw new IllegalArgumentException("fragment data empty");
+        ensureInit();
+        MemorySegment buf = nsui.objc.Scratch.allocInput(data.length);
+        MemorySegment.copy(data, 0, buf, java.lang.foreign.ValueLayout.JAVA_BYTE, 0, data.length);
+        try {
+            handles.hVertexBytes().invokeExact(peer, ObjC.sel("setFragmentBytes:length:atIndex:"),
+                    buf, (long) data.length, index);
+        } catch (Throwable t) {
+            throw new RuntimeException("setFragmentBytes:length:atIndex: failed", t);
+        }
+    }
+
+    /// setFragmentBuffer:offset:atIndex: (nil unbinds the slot).
+    public void setFragmentBuffer(MTLBuffer buffer, long offset, long index) {
+        ensureInit();
+        try {
+            handles.hVertexBuffer().invokeExact(peer, ObjC.sel("setFragmentBuffer:offset:atIndex:"),
+                    ObjC.nullablePeer(buffer), offset, index);
+        } catch (Throwable t) {
+            throw new RuntimeException("setFragmentBuffer:offset:atIndex: failed", t);
+        }
+    }
+
+    /// setVertexTexture:atIndex: (nil unbinds the slot).
+    public void setVertexTexture(MTLTexture texture, long index) {
+        ensureInit();
+        try {
+            handles.hObjIndex().invokeExact(peer, ObjC.sel("setVertexTexture:atIndex:"),
+                    ObjC.nullablePeer(texture), index);
+        } catch (Throwable t) {
+            throw new RuntimeException("setVertexTexture:atIndex: failed", t);
+        }
+    }
+
+    /// setFragmentTexture:atIndex: (nil unbinds the slot).
+    public void setFragmentTexture(MTLTexture texture, long index) {
+        ensureInit();
+        try {
+            handles.hObjIndex().invokeExact(peer, ObjC.sel("setFragmentTexture:atIndex:"),
+                    ObjC.nullablePeer(texture), index);
+        } catch (Throwable t) {
+            throw new RuntimeException("setFragmentTexture:atIndex: failed", t);
+        }
+    }
+
+    /// setVertexSamplerState:atIndex: (nil unbinds the slot).
+    public void setVertexSamplerState(MTLSamplerState sampler, long index) {
+        ensureInit();
+        try {
+            handles.hObjIndex().invokeExact(peer, ObjC.sel("setVertexSamplerState:atIndex:"),
+                    ObjC.nullablePeer(sampler), index);
+        } catch (Throwable t) {
+            throw new RuntimeException("setVertexSamplerState:atIndex: failed", t);
+        }
+    }
+
+    /// setFragmentSamplerState:atIndex: (nil unbinds the slot).
+    public void setFragmentSamplerState(MTLSamplerState sampler, long index) {
+        ensureInit();
+        try {
+            handles.hObjIndex().invokeExact(peer, ObjC.sel("setFragmentSamplerState:atIndex:"),
+                    ObjC.nullablePeer(sampler), index);
+        } catch (Throwable t) {
+            throw new RuntimeException("setFragmentSamplerState:atIndex: failed", t);
         }
     }
 

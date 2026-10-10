@@ -33,6 +33,7 @@ public final class MTLRenderPassDescriptor extends NSObject {
 
     private static synchronized void ensureInitLocked() {
         if (handles != null) return;
+        try { ObjC.ensureFramework("Metal"); } catch (Throwable ignored) {}
         handles = new Handles(ObjC.handle(Sig.of(Ret.ID, Arg.INT)));
     }
 
@@ -65,8 +66,13 @@ public final class MTLRenderPassDescriptor extends NSObject {
     }
 
     /// colorAttachments[i] via objectAtIndexedSubscript:.
+    /// Negative indices fail fast in Java. There is no upper-bound check:
+    /// the attachment array exposes no count, and an out-of-range index
+    /// raises natively (uncatchable), so callers must stay in range.
     public MTLRenderPassColorAttachmentDescriptor colorAttachment(long index) {
         ensureInit();
+        if (index < 0)
+            throw new IllegalArgumentException("colorAttachment: index " + index + " out of bounds (negative)");
         try {
             MemorySegment arr = ObjC.msgSendId(peer, ObjC.sel("colorAttachments"));
             if (arr.address() == 0) return null;

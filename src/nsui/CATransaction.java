@@ -102,14 +102,18 @@ public final class CATransaction {
             MemorySegment block;
             // +[CATransaction setCompletionBlock:] replaces any previous block, so at
             // most one body may be outstanding; clear first so a replaced body cannot
-            // leak into the next transaction.
-            if (action == null) {
-                PENDING.clear();
-                block = MemorySegment.NULL;
-            } else {
-                PENDING.clear();
-                PENDING.add(action);
-                block = SHARED_BLOCK;
+            // leak into the next transaction. The clear()+add() pair is atomic under
+            // the class monitor (the file's ensureInitLocked idiom), so concurrent
+            // setters cannot interleave a clear between another thread's add.
+            synchronized (CATransaction.class) {
+                if (action == null) {
+                    PENDING.clear();
+                    block = MemorySegment.NULL;
+                } else {
+                    PENDING.clear();
+                    PENDING.add(action);
+                    block = SHARED_BLOCK;
+                }
             }
             handles.hVoidId().invokeExact(ObjC.cls("CATransaction"), ObjC.sel("setCompletionBlock:"), (MemorySegment) (block == null ? MemorySegment.NULL : block));
         } catch (Throwable t) { throw new RuntimeException("setCompletionBlock: failed", t); }
@@ -154,6 +158,10 @@ public final class CATransaction {
     /// Block body: pops one enqueued Runnable and runs it. STATIC and capture-free —
     /// the single upcall target behind every completion block, registered for AOT in NsuiFeature.
     /// Public because NsuiFeature (nsui.objc) resolves it at build time.
+    /// Fail-fast by design: a throwing body aborts at the upcall stub instead of
+    /// being swallowed — the same contract as DelegateProxy's callbacks
+    /// (DelegateProxy.java:57-60) and Dispatch.onMain bodies (Dispatch.java:87).
+    /// No behavior change here; this comment ratifies the existing semantics.
     public static void completionThunk(MemorySegment blockSelf) {
         Runnable body = PENDING.poll();
         if (body != null) {

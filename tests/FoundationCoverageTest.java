@@ -670,9 +670,18 @@ public final class FoundationCoverageTest {
         TestKit.check(NSNumber.numberWithLongLong(Long.MAX_VALUE).longLongValue() == Long.MAX_VALUE, "longLong MAX_VALUE");
         TestKit.check("c".equals(NSNumber.numberWithChar(65).objCType()), "char objCType c");
         TestKit.check(NSNumber.numberWithShort(300).shortValue() == 300, "short 300");
+        TestKit.check(NSNumber.numberWithShort(-1).shortValue() == -1, "short sign-extends");
+        TestKit.check(NSNumber.numberWithUnsignedShort(60000).unsignedShortValue() == 60000, "unsigned short high value");
+        TestKit.check(NSNumber.numberWithInt(-1).intValue() == -1, "int sign-extends");
+        TestKit.check(NSNumber.numberWithUnsignedInt(4294967295L).unsignedIntValue() == 4294967295L, "unsigned int high value");
         CALayer maskLayer = CALayer.create();
         maskLayer.setEdgeAntialiasingMask(7);
         TestKit.check(maskLayer.edgeAntialiasingMask() == 7, "edgeAntialiasingMask round-trip");
+        maskLayer.setEdgeAntialiasingMask(0xFL);
+        TestKit.check(maskLayer.edgeAntialiasingMask() == 0xFL, "edgeAntialiasingMask all valid bits round-trip");
+        // Out-of-domain bits never survive: AppKit keeps only the 4 edge bits.
+        maskLayer.setEdgeAntialiasingMask(0xFFFFFFFFL);
+        TestKit.check(maskLayer.edgeAntialiasingMask() == 0xFL, "edgeAntialiasingMask clamps to valid bits");
         TestKit.check(Math.abs(NSNumber.numberWithDouble(3.14).doubleValue() - 3.14) < 1e-12, "double");
         TestKit.check(NSNumber.numberWithFloat(1.5f).floatValue() == 1.5f, "float fallback exact");
         TestKit.check("d".equals(NSNumber.numberWithFloat(1.5f).objCType()), "float fallback objCType d (documented)");

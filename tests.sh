@@ -8,6 +8,7 @@
 #   ./tests.sh Bench           # only tests whose name contains "Bench"
 #   ./tests.sh -j 4            # all tests on 4 jobs
 #   ./tests.sh Bench -j 1      # filtered tests, one job (sequential)
+#   ./tests.sh --timeout 60    # per-test timeout 60s (default 300s)
 #
 # Convention: every test is a plain main() in its own JVM (no JUnit),
 # sharing the TestKit primitives (reporting, unobtrusive windows, pump,
@@ -37,6 +38,13 @@ rm -f "$TEST_LIST"
 echo "==> compiled"
 # One compile, then the pooled launcher runs each test main in its own JVM.
 # (No mid-run rebuilds, so the old snapshot-copy dance is unnecessary.)
+# Default per-test timeout 300s (longest suite runs well under it; override
+# with an explicit --timeout).
+TIMEOUT_ARGS="--timeout 300"
+for a in "$@"; do
+    case "$a" in --timeout|--timeout=*) TIMEOUT_ARGS="" ;; esac
+done
+# shellcheck disable=SC2086
 "$JAVA" -XstartOnFirstThread --enable-native-access=ALL-UNNAMED \
     -cp "$ROOT/out/classes:$ROOT/out/tests" nsui.tests.RunSuite \
-    --classes "$ROOT/out/classes" --tests "$ROOT/out/tests" --logs "$ROOT/out/logs" "$@"
+    --classes "$ROOT/out/classes" --tests "$ROOT/out/tests" --logs "$ROOT/out/logs" $TIMEOUT_ARGS "$@"

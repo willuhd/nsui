@@ -76,7 +76,13 @@ public final class SignatureConformanceTest {
     // run (192/1); the single OTHER then was the `[2f]` array now modelled below,
     // so the steady state is 0. VOID_IGNORED measured 0 on the hardened run
     // (no VOID-declared site ignores a real return), so the cap is 0.
-    private static final int NO_MATCH_BASELINE = 192;
+    // NO_MATCH rose 192 -> 242 with the sampler/upload/blend wrappers: those
+    // selectors are genuine Metal API (verified against MTL*.h), but the lookup
+    // cannot see them — MTLDevice/MTLTexture/MTLRenderCommandEncoder are
+    // protocols (no class object) and the descriptor/state classes resolve to
+    // method-less cluster stubs while msgSend works. Behavior for all of them
+    // is proven by the readback suites instead.
+    private static final int NO_MATCH_BASELINE = 242;
     private static final int OTHER_CAP = 0;
     private static final int VOID_IGNORED_CAP = 0;
 

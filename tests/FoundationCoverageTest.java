@@ -6,12 +6,18 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import nsui.CAConstraint;
+import nsui.CALayer;
+import nsui.MTLRenderPassDescriptor;
+import nsui.MTLStencilDescriptor;
 import nsui.NSArray;
+import nsui.NSAttributedString;
 import nsui.NSData;
 import nsui.NSDate;
 import nsui.NSDictionary;
 import nsui.NSEdgeInsets;
 import nsui.NSIndexSet;
+import nsui.NSMutableAttributedString;
 import nsui.NSMutableData;
 import nsui.NSMutableIndexSet;
 import nsui.NSMutableOrderedSet;
@@ -22,10 +28,14 @@ import nsui.NSOrderedSet;
 import nsui.NSPoint;
 import nsui.NSRange;
 import nsui.NSRect;
+import nsui.NSRunningApplication;
+import nsui.NSScreen;
 import nsui.NSSet;
 import nsui.NSSize;
 import nsui.NSString;
+import nsui.NSTextField;
 import nsui.NSValue;
+import nsui.NSWindow;
 import nsui.objc.ObjC;
 
 /// FoundationCoverageTest — header-completeness coverage for the Foundation/value-type
@@ -37,6 +47,12 @@ import nsui.objc.ObjC;
 /// File IO stays under a unique /tmp dir (never inside the repo).
 /// Uncaught ObjC exceptions are process-fatal (see nsui.objc.Exceptions), so every call
 /// below stays on strictly-valid paths (valid indexes/ranges, mutable peers for mutation).
+/// Narrow-reader oracles (testNarrowReaders) additionally cover the exact-32-bit
+/// returns found by the reader audit (NSWindowDepth/pid_t/CAConstraintAttribute/int
+/// as signed INT32, CGDirectDisplayID/MTL masks as unsigned INT32). Those readers
+/// live outside Foundation, but every oracle is windowless: descriptors, a detached
+/// button, the app identity, and screen queries — plus one hidden window, never
+/// shown, for the instance depthLimit reader.
 public final class FoundationCoverageTest {
 
     /// Long strings defeat tagged-pointer identity so peer-identity checks are honest.
@@ -77,6 +93,8 @@ public final class FoundationCoverageTest {
         testData();
         testValues();
         testRecords();
+        testNarrowReaders();
+        testNegativeGuards();
 
         System.out.println("\n=== FoundationCoverageTest " + (TestKit.failures() == 0 ? "PASS" : "FAIL") + " ===");
         TestKit.end();
@@ -663,6 +681,21 @@ public final class FoundationCoverageTest {
         TestKit.check(NSNumber.numberWithUnsignedLongLong(-1).unsignedLongLongValue() == -1, "unsignedLongLong bits");
         TestKit.check(NSNumber.numberWithInteger(11).integerValue() == 11, "integer");
         TestKit.check(NSNumber.numberWithUnsignedInteger(11).unsignedIntegerValue() == 11, "unsignedInteger");
+        TestKit.check(NSNumber.numberWithLongLong(Long.MAX_VALUE).longLongValue() == Long.MAX_VALUE, "longLong MAX_VALUE");
+        TestKit.check("c".equals(NSNumber.numberWithChar(65).objCType()), "char objCType c");
+        TestKit.check(NSNumber.numberWithShort(300).shortValue() == 300, "short 300");
+        TestKit.check(NSNumber.numberWithShort(-1).shortValue() == -1, "short sign-extends");
+        TestKit.check(NSNumber.numberWithUnsignedShort(60000).unsignedShortValue() == 60000, "unsigned short high value");
+        TestKit.check(NSNumber.numberWithInt(-1).intValue() == -1, "int sign-extends");
+        TestKit.check(NSNumber.numberWithUnsignedInt(4294967295L).unsignedIntValue() == 4294967295L, "unsigned int high value");
+        CALayer maskLayer = CALayer.create();
+        maskLayer.setEdgeAntialiasingMask(7);
+        TestKit.check(maskLayer.edgeAntialiasingMask() == 7, "edgeAntialiasingMask round-trip");
+        maskLayer.setEdgeAntialiasingMask(0xFL);
+        TestKit.check(maskLayer.edgeAntialiasingMask() == 0xFL, "edgeAntialiasingMask all valid bits round-trip");
+        // Out-of-domain bits never survive: AppKit keeps only the 4 edge bits.
+        maskLayer.setEdgeAntialiasingMask(0xFFFFFFFFL);
+        TestKit.check(maskLayer.edgeAntialiasingMask() == 0xFL, "edgeAntialiasingMask clamps to valid bits");
         TestKit.check(Math.abs(NSNumber.numberWithDouble(3.14).doubleValue() - 3.14) < 1e-12, "double");
         TestKit.check(NSNumber.numberWithFloat(1.5f).floatValue() == 1.5f, "float fallback exact");
         TestKit.check("d".equals(NSNumber.numberWithFloat(1.5f).objCType()), "float fallback objCType d (documented)");
@@ -858,5 +891,145 @@ public final class FoundationCoverageTest {
         TestKit.check(new NSRect(0.5, 0.5, 10, 10).integralWithOptions(0)
                 .equals(new NSRect(0.5, 0.5, 10, 10).integral()), "integralWithOptions==integral");
         TestKit.check(NSEdgeInsets.ZERO.isZero(), "insets ZERO (owned file smoke)");
+    }
+
+    // ---------------------------------------------------------- narrow 32-bit readers
+    // Oracles for the exact-width returns found by the reader audit: a bare
+    // 64-bit read of a 32-bit (`i`/`I`) return keeps garbage upper bits, so
+    // negative values (signed) and high-bit values (unsigned) come back wrong.
+    // Each oracle below uses such a value and is green on the INT32 handles.
+    private static void testNarrowReaders() {
+        System.out.println("\n-- narrow (32-bit) readers --");
+        // MTLStencilDescriptor masks (uint32_t): high-bit round-trips.
+        if (ObjC.cls("MTLStencilDescriptor").address() == 0) {
+            try { ObjC.ensureFramework("Metal"); } catch (Throwable ignored) { }
+        }
+        if (ObjC.cls("MTLStencilDescriptor").address() == 0) {
+            TestKit.skipCase("Metal unavailable: stencil/clearStencil oracles");
+        } else {
+            MTLStencilDescriptor stencil = MTLStencilDescriptor.create();
+            stencil.setReadMask(0x80000001L);
+            TestKit.check(stencil.readMask() == 0x80000001L, "stencil readMask high-bit round-trip");
+            stencil.setReadMask(0xFFFFFFFFL);
+            TestKit.check(stencil.readMask() == 0xFFFFFFFFL, "stencil readMask all-bits round-trip");
+            stencil.setWriteMask(0x80000001L);
+            TestKit.check(stencil.writeMask() == 0x80000001L, "stencil writeMask high-bit round-trip");
+            stencil.setWriteMask(0L);
+            TestKit.check(stencil.writeMask() == 0L, "stencil writeMask zero");
+            // clearStencil (uint32_t) via a render-pass descriptor (no device needed).
+            MTLRenderPassDescriptor pass = MTLRenderPassDescriptor.create();
+            pass.stencilAttachment().setClearStencil(0x80000001L);
+            TestKit.check(pass.stencilAttachment().clearStencil() == 0x80000001L,
+                    "clearStencil high-bit round-trip");
+            pass.stencilAttachment().setClearStencil(0xFFFFFFFFL);
+            TestKit.check(pass.stencilAttachment().clearStencil() == 0xFFFFFFFFL,
+                    "clearStencil all-bits round-trip");
+        }
+        // NSControl intValue (C int): negative round-trips on a detached text
+        // field. (A button coerces intValue to its 0/1 state, so a text field —
+        // whose cell parses the displayed integer — is the faithful vehicle.)
+        NSTextField f = NSTextField.create(new NSRect(0, 0, 120, 32));
+        f.setIntValue(-1);
+        TestKit.check(f.intValue() == -1, "control intValue -1");
+        f.setIntValue(Integer.MIN_VALUE);
+        TestKit.check(f.intValue() == Integer.MIN_VALUE, "control intValue MIN_VALUE");
+        f.setIntValue(Integer.MAX_VALUE);
+        TestKit.check(f.intValue() == Integer.MAX_VALUE, "control intValue MAX_VALUE");
+        // processIdentifier (pid_t, int): in a bare test JVM AppKit reports -1,
+        // and the old 64-bit read returned 4294967295 for it — every check
+        // below trips that read while passing on the exact INT32 handle.
+        long pid = NSRunningApplication.current().processIdentifier();
+        TestKit.check(pid == (long) (int) pid, "processIdentifier fits 32 bits");
+        if (pid == -1) {
+            TestKit.check(pid == -1, "processIdentifier reports -1 pre-app (exact signed read)");
+        } else {
+            TestKit.check(pid == ProcessHandle.current().pid(), "processIdentifier matches Java pid");
+        }
+        // CAConstraintAttribute (int): creation round-trip.
+        CAConstraint c = CAConstraint.relativeTo(
+                CAConstraint.ATTR_MAX_X, "super", CAConstraint.ATTR_WIDTH, 1.0, 0.0);
+        TestKit.check(c.attribute() == CAConstraint.ATTR_MAX_X, "constraint attribute round-trip");
+        TestKit.check(c.sourceAttribute() == CAConstraint.ATTR_WIDTH, "constraint sourceAttribute round-trip");
+        // NSWindowDepth (int32_t): class default needs no window.
+        long ddl = NSWindow.defaultDepthLimit();
+        TestKit.check(ddl == (long) (int) ddl, "defaultDepthLimit fits 32 bits");
+        TestKit.check(ddl == NSWindow.defaultDepthLimit(), "defaultDepthLimit stable");
+        // Instance depthLimit via one hidden window (never shown).
+        NSWindow win = TestKit.hiddenWindow(100, 100);
+        try {
+            long d0 = win.depthLimit();
+            TestKit.check(d0 == (long) (int) d0, "depthLimit fits 32 bits");
+            win.setDepthLimit(d0);
+            TestKit.check(win.depthLimit() == d0, "depthLimit self round-trip");
+        } finally {
+            TestKit.close(win);
+        }
+        // Screen depth (NSWindowDepth) + display id (uint32_t): guarded headless.
+        NSScreen s = NSScreen.mainScreen();
+        if (s == null) {
+            TestKit.skipCase("no main screen (headless): depth/CGDirectDisplayID");
+        } else {
+            long depth = s.depth();
+            TestKit.check(depth == (long) (int) depth, "screen depth fits 32 bits");
+            TestKit.check(depth == s.depth(), "screen depth stable");
+            long did = s.cgDirectDisplayID();
+            TestKit.check(did != 0, "CGDirectDisplayID non-zero");
+            TestKit.check(did == (did & 0xFFFFFFFFL), "CGDirectDisplayID fits 32 bits");
+        }
+    }
+
+    // ---------------------------------------------------------- negative guards
+    // Java-side pre-validation: bad indexes/ranges throw IllegalArgumentException
+    // instead of aborting the JVM via native raise. One per guarded family,
+    // using clearly-bad values (index == count, range past end, short out-buffer).
+    private static void testNegativeGuards() {
+        System.out.println("\n-- negative guards (IAE, no native abort) --");
+        NSArray two = strArray("a", "b");
+        TestKit.expectThrows("NSArray objectAtIndex(count) rejected", IllegalArgumentException.class,
+                () -> two.objectAtIndex(2));
+        TestKit.expectThrows("NSArray objectAtIndexedSubscript(count) rejected", IllegalArgumentException.class,
+                () -> two.objectAtIndexedSubscript(2));
+        NSOrderedSet oset = NSOrderedSet.orderedSetWithArray(strArray("a", "b"));
+        TestKit.expectThrows("NSOrderedSet objectAtIndex(count) rejected", IllegalArgumentException.class,
+                () -> oset.objectAtIndex(2));
+        TestKit.expectThrows("NSOrderedSet objectAtIndexedSubscript(count) rejected", IllegalArgumentException.class,
+                () -> oset.objectAtIndexedSubscript(2));
+        NSString hello = NSString.of("hello");
+        TestKit.expectThrows("NSString substringWithRange past end rejected", IllegalArgumentException.class,
+                () -> hello.substringWithRange(new NSRange(3, 3)));
+        TestKit.expectThrows("NSString characterAtIndex(length) rejected", IllegalArgumentException.class,
+                () -> hello.characterAtIndex(5));
+        TestKit.expectThrows("NSString substringFromIndex past end rejected", IllegalArgumentException.class,
+                () -> hello.substringFromIndex(6));
+        TestKit.expectThrows("NSString substringToIndex past end rejected", IllegalArgumentException.class,
+                () -> hello.substringToIndex(6));
+        TestKit.expectThrows("NSString stringByReplacingCharactersInRange past end rejected",
+                IllegalArgumentException.class,
+                () -> hello.stringByReplacingCharactersInRange(new NSRange(4, 2), "x"));
+        NSData d5 = NSData.dataWithBytes(new byte[]{0, 1, 2, 3, 4});
+        TestKit.expectThrows("NSData subdataWithRange past end rejected", IllegalArgumentException.class,
+                () -> d5.subdataWithRange(new NSRange(4, 2)));
+        NSAttributedString attr = NSAttributedString.create("Hello");
+        MemorySegment shortOut = java.lang.foreign.Arena.global().allocate(8);
+        TestKit.expectThrows("NSAttributedString attribute short out-buffer rejected",
+                IllegalArgumentException.class,
+                () -> attr.attribute("NSForegroundColorAttributeName", 0, shortOut));
+        TestKit.expectThrows("NSAttributedString attributesAtIndex short out-buffer rejected",
+                IllegalArgumentException.class,
+                () -> attr.attributesAtIndexEffectiveRange(0, shortOut));
+        NSMutableData md = NSMutableData.dataWithLength(4);
+        TestKit.expectThrows("NSMutableData replaceBytes short bytes rejected", IllegalArgumentException.class,
+                () -> md.replaceBytesInRange(new NSRange(0, 2), new byte[]{1}));
+        NSMutableAttributedString mut = NSMutableAttributedString.create("Hello");
+        TestKit.expectThrows("NSMutableAttributedString replaceCharacters past end rejected",
+                IllegalArgumentException.class,
+                () -> mut.replaceCharactersInRangeWithString(new NSRange(0, 99), "x"));
+        TestKit.expectThrows("NSMutableAttributedString insert past end rejected", IllegalArgumentException.class,
+                () -> mut.insertAttributedString(NSAttributedString.create("x"), 99));
+        TestKit.expectThrows("NSMutableAttributedString delete past end rejected", IllegalArgumentException.class,
+                () -> mut.deleteCharactersInRange(new NSRange(0, 99)));
+        // NSDictionary dictionaryWithObjects:forKeys:count: has no wrapper in-file
+        // (document-only, no guard) — no negative test. MTL colorAttachment
+        // negatives live in MetalDepthStencilTest (owning suite).
     }
 }

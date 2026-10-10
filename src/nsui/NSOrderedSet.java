@@ -92,6 +92,9 @@ public class NSOrderedSet extends NSObject {
     /// objectAtIndex:
     public MemorySegment objectAtIndex(long index) {
         ensureInit();
+        long n = count();
+        if (index < 0 || index >= n)
+            throw new IllegalArgumentException("objectAtIndex: index " + index + " out of bounds (count " + n + ")");
         try {
             MemorySegment r = (MemorySegment) hObjectAt.invokeExact(peer, ObjC.sel("objectAtIndex:"), index);
             return (r == null || r.address() == 0) ? null : r;
@@ -156,6 +159,9 @@ public class NSOrderedSet extends NSObject {
     /// objectAtIndexedSubscript: — native subscript read (same element as objectAtIndex:).
     public MemorySegment objectAtIndexedSubscript(long index) {
         ensureInit();
+        long n = count();
+        if (index < 0 || index >= n)
+            throw new IllegalArgumentException("objectAtIndexedSubscript: index " + index + " out of bounds (count " + n + ")");
         try {
             MemorySegment r = (MemorySegment) hObjectAt.invokeExact(peer, ObjC.sel("objectAtIndexedSubscript:"), index);
             return (r == null || r.address() == 0) ? null : r;

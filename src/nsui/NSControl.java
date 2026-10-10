@@ -343,9 +343,13 @@ public class NSControl extends NSView {
     }
 
     // ---- numeric values ----
+    /// [control intValue] — C int (32-bit, signed).
     public int intValue() {
         ensureInit();
-        return (int) ObjC.msgSendLong(peer, Sels.intValue);
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.INT32));
+            return (int) h.invokeExact(peer, Sels.intValue);
+        } catch (Throwable t) { throw new RuntimeException("intValue failed", t); }
     }
     public void setIntValue(int v) {
         ensureInit();

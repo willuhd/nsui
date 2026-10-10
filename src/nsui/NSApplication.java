@@ -134,7 +134,9 @@ public final class NSApplication extends NSObject {
     }
 
     /// Blocking: runs the AppKit run loop on this thread. Returns when the app terminates.
+    /// Must run on the main thread; AppKit run-loop control is not thread-safe.
     public void run() {
+        ObjC.requireMainThread("NSApplication.run");
         ObjC.msgSendVoid(peer, ObjC.sel("run"));
     }
 

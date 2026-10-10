@@ -63,6 +63,7 @@ public final class SignatureConformanceTest {
         HELPERS.put("msgSendVoidBool", "VOID,BOOL");
         HELPERS.put("msgSendLong", "INT");
         HELPERS.put("msgSendBool", "BOOL");
+        HELPERS.put("msgSendShort", "SHORT");
         HELPERS.put("msgSendRect", "RECT");
     }
 
@@ -389,11 +390,14 @@ public final class SignatureConformanceTest {
             // 1-byte encodings split by signedness source: 'B' (C++ bool /
             // _Bool) is BOOL; 'c' (signed char) and 'C' (unsigned char) are
             // BYTE, read numerically (see NSNumber charValue/unsignedCharValue).
-            // Wider integers (i/I/q/Q/l/L/s/S) normalise to INT and never
-            // match BOOL or BYTE in either direction.
+            // 's' (signed short) and 'S' (unsigned short) are SHORT, read
+            // numerically (see NSNumber shortValue/unsignedShortValue).
+            // Wider integers (i/I/q/Q/l/L) normalise to INT and never
+            // match BOOL, BYTE, or SHORT in either direction.
             case "B": return "BOOL";
             case "c": case "C": return "BYTE";
-            case "q": case "Q": case "i": case "I": case "l": case "L": case "s": case "S": return "INT";
+            case "s": case "S": return "SHORT";
+            case "q": case "Q": case "i": case "I": case "l": case "L": return "INT";
             default:
                 // C array in argument position (observed: `[2f]` in
                 // `v32@0:8Q16[2f]24` = CAMediaTimingFunction
@@ -434,9 +438,13 @@ public final class SignatureConformanceTest {
     private static boolean argCompat(String a, String r) {
         // No OTHER tolerance: an unmodelled real struct in argument position is a mismatch.
         // No BOOL<->INT interchange and no RECT<->EDGEINSETS alias either: an
-        // i/I/q/Q/l/L/s/S where BOOL is declared (or vice versa), and NSEdgeInsets
+        // i/I/q/Q/l/L where BOOL is declared (or vice versa), and NSEdgeInsets
         // vs NSRect confusion, are now mismatches.
         if (a.equals(r)) return true;
+        // Declared INT32 (exact 32-bit call shape) matches real INT: the runtime
+        // encoding layer does not split 32/64-bit ints, so `I` reads as INT while
+        // the call itself uses the exact JAVA_INT descriptor.
+        if (a.equals("INT32") && r.equals("INT")) return true;
         return false;
     }
 

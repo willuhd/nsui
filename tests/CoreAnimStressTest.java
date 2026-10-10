@@ -1,10 +1,14 @@
 package nsui.tests;
 
 import java.lang.foreign.MemorySegment;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.lang.invoke.WrongMethodTypeException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import nsui.*;
+import nsui.objc.Blocks;
+import nsui.objc.NsuiForeign;
 import nsui.objc.ObjC;
 
 /// CoreAnimStressTest — non-interactive stress + regression suite for the
@@ -59,6 +63,7 @@ public final class CoreAnimStressTest {
         layerTreeStress();
         transactionBatches();
         completionBlockBestEffort();
+        completionSupersedeProof();
         basicAnimationCycles();
         animationGroupRoundTrip();
         shapeTextGradientRoundTrips();
@@ -260,6 +265,88 @@ public final class CoreAnimStressTest {
                     "completion block FIRED within 2s of commit (count=" + fired.get() + ")");
         } catch (Throwable t) {
             check(false, "completion block section threw: " + t);
+            t.printStackTrace(System.out);
+        }
+    }
+
+    /// Completion ordering: a later install supersedes an earlier one in the
+    /// same transaction. Uses a hidden layer only (no window) and runloop pumps.
+    /// Raw blocks (MemorySegment overload) and runnable bodies share the one
+    /// native completion slot, so the two modes are not interleaved within one
+    /// transaction: installing one supersedes the other.
+    private static void completionSupersedeProof() {
+        System.out.println("--- CATransaction completion ordering (later install supersedes) ---");
+        try {
+            CALayer l = CALayer.create();
+            MemorySegment loop = ObjC.msgSendId(ObjC.cls("NSRunLoop"), ObjC.sel("currentRunLoop"));
+
+            // Phase 1: two runnable installs, one commit; only the second runs.
+            AtomicInteger aFired = new AtomicInteger(0);
+            AtomicInteger bFired = new AtomicInteger(0);
+            CATransaction.begin();
+            CATransaction.setAnimationDuration(0.01);
+            CATransaction.setCompletionBlock(aFired::incrementAndGet);
+            CATransaction.setCompletionBlock(bFired::incrementAndGet);
+            l.setPosition(new NSPoint(7, 7));
+            CATransaction.commit();
+            long deadline = System.currentTimeMillis() + 2000;
+            while (bFired.get() == 0 && System.currentTimeMillis() < deadline) {
+                CATransaction.flush();
+                MemorySegment until = ObjC.msgSendIdDouble(
+                        ObjC.cls("NSDate"), ObjC.sel("dateWithTimeIntervalSinceNow:"), 0.05);
+                try {
+                    ObjC.msgSendVoidId(loop, ObjC.sel("runUntilDate:"), until);
+                } catch (Throwable t) {
+                    Thread.sleep(20);
+                }
+            }
+            check(bFired.get() > 0, "second completion runs after supersede (count=" + bFired.get() + ")");
+            check(aFired.get() == 0, "first completion does not run after supersede (count=" + aFired.get() + ")");
+
+            // Phase 2: a raw install supersedes a queued runnable body.
+            // The raw block reuses the registered thunk target, so no new upcall
+            // is introduced; its delivery finds an empty queue and drops.
+            java.lang.invoke.MethodHandle target = MethodHandles.lookup().findStatic(
+                    CATransaction.class, "completionThunk",
+                    MethodType.methodType(void.class, MemorySegment.class));
+            MemorySegment rawAlias = Blocks.block(target, NsuiForeign.blockVoidUpcall());
+            AtomicInteger runFired = new AtomicInteger(0);
+            CATransaction.begin();
+            CATransaction.setCompletionBlock(runFired::incrementAndGet);
+            CATransaction.setCompletionBlock(rawAlias);
+            l.setPosition(new NSPoint(8, 8));
+            CATransaction.commit();
+            CATransaction.completionThunk(MemorySegment.NULL);
+            check(runFired.get() == 0, "runnable body does not run after raw supersede (count=" + runFired.get() + ")");
+            CATransaction.setCompletionBlock((Runnable) null);
+            try { CATransaction.commit(); } catch (Throwable ignore) {}
+            CATransaction.flush();
+
+            // Phase 3: a runnable install after a raw install runs.
+            AtomicInteger cFired = new AtomicInteger(0);
+            CATransaction.begin();
+            CATransaction.setAnimationDuration(0.01);
+            CATransaction.setCompletionBlock(rawAlias);
+            CATransaction.setCompletionBlock(cFired::incrementAndGet);
+            l.setPosition(new NSPoint(9, 9));
+            CATransaction.commit();
+            long deadline2 = System.currentTimeMillis() + 2000;
+            while (cFired.get() == 0 && System.currentTimeMillis() < deadline2) {
+                CATransaction.flush();
+                MemorySegment until = ObjC.msgSendIdDouble(
+                        ObjC.cls("NSDate"), ObjC.sel("dateWithTimeIntervalSinceNow:"), 0.05);
+                try {
+                    ObjC.msgSendVoidId(loop, ObjC.sel("runUntilDate:"), until);
+                } catch (Throwable t) {
+                    Thread.sleep(20);
+                }
+            }
+            check(cFired.get() > 0, "runnable completion runs after raw-then-runnable (count=" + cFired.get() + ")");
+            CATransaction.setCompletionBlock((Runnable) null);
+            try { CATransaction.commit(); } catch (Throwable ignore) {}
+            CATransaction.flush();
+        } catch (Throwable t) {
+            check(false, "completion ordering section threw: " + t);
             t.printStackTrace(System.out);
         }
     }

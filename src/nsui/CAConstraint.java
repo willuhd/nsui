@@ -88,11 +88,25 @@ public final class CAConstraint extends NSObject {
     }
 
     /// attribute / sourceName / sourceAttribute / scale / offset (readonly).
-    public long attribute() { return ObjC.msgSendLong(peer, ObjC.sel("attribute")); }
+    /// attribute (CAConstraintAttribute, NS_ENUM(int), 32-bit signed).
+    public long attribute() {
+        try {
+            return (long) (int) ObjC.handle(Sig.of(Ret.INT32)).invokeExact(peer, ObjC.sel("attribute"));
+        } catch (Throwable t) {
+            throw new RuntimeException("attribute failed", t);
+        }
+    }
     /// sourceName (nil-safe).
     public String sourceName() { return ObjC.toString(ObjC.msgSendId(peer, ObjC.sel("sourceName"))); }
     /// sourceAttribute.
-    public long sourceAttribute() { return ObjC.msgSendLong(peer, ObjC.sel("sourceAttribute")); }
+    /// sourceAttribute (CAConstraintAttribute, NS_ENUM(int), 32-bit signed).
+    public long sourceAttribute() {
+        try {
+            return (long) (int) ObjC.handle(Sig.of(Ret.INT32)).invokeExact(peer, ObjC.sel("sourceAttribute"));
+        } catch (Throwable t) {
+            throw new RuntimeException("sourceAttribute failed", t);
+        }
+    }
     private double getDouble(String selector) {
         ensureInit();
         try {

@@ -6,12 +6,15 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import nsui.CALayer;
 import nsui.NSArray;
+import nsui.NSAttributedString;
 import nsui.NSData;
 import nsui.NSDate;
 import nsui.NSDictionary;
 import nsui.NSEdgeInsets;
 import nsui.NSIndexSet;
+import nsui.NSMutableAttributedString;
 import nsui.NSMutableData;
 import nsui.NSMutableIndexSet;
 import nsui.NSMutableOrderedSet;
@@ -77,6 +80,7 @@ public final class FoundationCoverageTest {
         testData();
         testValues();
         testRecords();
+        testNegativeGuards();
 
         System.out.println("\n=== FoundationCoverageTest " + (TestKit.failures() == 0 ? "PASS" : "FAIL") + " ===");
         TestKit.end();
@@ -663,6 +667,12 @@ public final class FoundationCoverageTest {
         TestKit.check(NSNumber.numberWithUnsignedLongLong(-1).unsignedLongLongValue() == -1, "unsignedLongLong bits");
         TestKit.check(NSNumber.numberWithInteger(11).integerValue() == 11, "integer");
         TestKit.check(NSNumber.numberWithUnsignedInteger(11).unsignedIntegerValue() == 11, "unsignedInteger");
+        TestKit.check(NSNumber.numberWithLongLong(Long.MAX_VALUE).longLongValue() == Long.MAX_VALUE, "longLong MAX_VALUE");
+        TestKit.check("c".equals(NSNumber.numberWithChar(65).objCType()), "char objCType c");
+        TestKit.check(NSNumber.numberWithShort(300).shortValue() == 300, "short 300");
+        CALayer maskLayer = CALayer.create();
+        maskLayer.setEdgeAntialiasingMask(7);
+        TestKit.check(maskLayer.edgeAntialiasingMask() == 7, "edgeAntialiasingMask round-trip");
         TestKit.check(Math.abs(NSNumber.numberWithDouble(3.14).doubleValue() - 3.14) < 1e-12, "double");
         TestKit.check(NSNumber.numberWithFloat(1.5f).floatValue() == 1.5f, "float fallback exact");
         TestKit.check("d".equals(NSNumber.numberWithFloat(1.5f).objCType()), "float fallback objCType d (documented)");
@@ -858,5 +868,60 @@ public final class FoundationCoverageTest {
         TestKit.check(new NSRect(0.5, 0.5, 10, 10).integralWithOptions(0)
                 .equals(new NSRect(0.5, 0.5, 10, 10).integral()), "integralWithOptions==integral");
         TestKit.check(NSEdgeInsets.ZERO.isZero(), "insets ZERO (owned file smoke)");
+    }
+
+    // ---------------------------------------------------------- negative guards
+    // Java-side pre-validation: bad indexes/ranges throw IllegalArgumentException
+    // instead of aborting the JVM via native raise. One per guarded family,
+    // using clearly-bad values (index == count, range past end, short out-buffer).
+    private static void testNegativeGuards() {
+        System.out.println("\n-- negative guards (IAE, no native abort) --");
+        NSArray two = strArray("a", "b");
+        TestKit.expectThrows("NSArray objectAtIndex(count) rejected", IllegalArgumentException.class,
+                () -> two.objectAtIndex(2));
+        TestKit.expectThrows("NSArray objectAtIndexedSubscript(count) rejected", IllegalArgumentException.class,
+                () -> two.objectAtIndexedSubscript(2));
+        NSOrderedSet oset = NSOrderedSet.orderedSetWithArray(strArray("a", "b"));
+        TestKit.expectThrows("NSOrderedSet objectAtIndex(count) rejected", IllegalArgumentException.class,
+                () -> oset.objectAtIndex(2));
+        TestKit.expectThrows("NSOrderedSet objectAtIndexedSubscript(count) rejected", IllegalArgumentException.class,
+                () -> oset.objectAtIndexedSubscript(2));
+        NSString hello = NSString.of("hello");
+        TestKit.expectThrows("NSString substringWithRange past end rejected", IllegalArgumentException.class,
+                () -> hello.substringWithRange(new NSRange(3, 3)));
+        TestKit.expectThrows("NSString characterAtIndex(length) rejected", IllegalArgumentException.class,
+                () -> hello.characterAtIndex(5));
+        TestKit.expectThrows("NSString substringFromIndex past end rejected", IllegalArgumentException.class,
+                () -> hello.substringFromIndex(6));
+        TestKit.expectThrows("NSString substringToIndex past end rejected", IllegalArgumentException.class,
+                () -> hello.substringToIndex(6));
+        TestKit.expectThrows("NSString stringByReplacingCharactersInRange past end rejected",
+                IllegalArgumentException.class,
+                () -> hello.stringByReplacingCharactersInRange(new NSRange(4, 2), "x"));
+        NSData d5 = NSData.dataWithBytes(new byte[]{0, 1, 2, 3, 4});
+        TestKit.expectThrows("NSData subdataWithRange past end rejected", IllegalArgumentException.class,
+                () -> d5.subdataWithRange(new NSRange(4, 2)));
+        NSAttributedString attr = NSAttributedString.create("Hello");
+        MemorySegment shortOut = java.lang.foreign.Arena.global().allocate(8);
+        TestKit.expectThrows("NSAttributedString attribute short out-buffer rejected",
+                IllegalArgumentException.class,
+                () -> attr.attribute("NSForegroundColorAttributeName", 0, shortOut));
+        TestKit.expectThrows("NSAttributedString attributesAtIndex short out-buffer rejected",
+                IllegalArgumentException.class,
+                () -> attr.attributesAtIndexEffectiveRange(0, shortOut));
+        NSMutableData md = NSMutableData.dataWithLength(4);
+        TestKit.expectThrows("NSMutableData replaceBytes short bytes rejected", IllegalArgumentException.class,
+                () -> md.replaceBytesInRange(new NSRange(0, 2), new byte[]{1}));
+        NSMutableAttributedString mut = NSMutableAttributedString.create("Hello");
+        TestKit.expectThrows("NSMutableAttributedString replaceCharacters past end rejected",
+                IllegalArgumentException.class,
+                () -> mut.replaceCharactersInRangeWithString(new NSRange(0, 99), "x"));
+        TestKit.expectThrows("NSMutableAttributedString insert past end rejected", IllegalArgumentException.class,
+                () -> mut.insertAttributedString(NSAttributedString.create("x"), 99));
+        TestKit.expectThrows("NSMutableAttributedString delete past end rejected", IllegalArgumentException.class,
+                () -> mut.deleteCharactersInRange(new NSRange(0, 99)));
+        // NSDictionary dictionaryWithObjects:forKeys:count: has no wrapper in-file
+        // (document-only, no guard) — no negative test. MTL colorAttachment
+        // negatives live in MetalDepthStencilTest (owning suite).
     }
 }

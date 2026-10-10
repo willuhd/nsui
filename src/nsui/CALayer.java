@@ -280,7 +280,7 @@ public class CALayer extends NSObject {
         }
     }
 
-            private record Handles(MethodHandle hGetDouble, MethodHandle hSetDouble, MethodHandle hGetFloat, MethodHandle hSetFloat, MethodHandle hGetId, MethodHandle hSetId, MethodHandle hGetPoint, MethodHandle hSetPoint, MethodHandle hGetSize, MethodHandle hSetSize, MethodHandle hGetBool, MethodHandle hSetBool, MethodHandle hGetRect, MethodHandle hSetRect, MethodHandle hGetInt, MethodHandle hSetInt, MethodHandle hGetIdId, MethodHandle hSetIdId, MethodHandle hSetIdInt, MethodHandle hGetIdPoint, MethodHandle hGetBoolPoint, MethodHandle hGetPointPointId, MethodHandle hGetDoubleDoubleId, MethodHandle hGetTransform, MethodHandle hSetTransform) {}
+            private record Handles(MethodHandle hGetDouble, MethodHandle hSetDouble, MethodHandle hGetFloat, MethodHandle hSetFloat, MethodHandle hGetId, MethodHandle hSetId, MethodHandle hGetPoint, MethodHandle hSetPoint, MethodHandle hGetSize, MethodHandle hSetSize, MethodHandle hGetBool, MethodHandle hSetBool, MethodHandle hGetRect, MethodHandle hSetRect, MethodHandle hGetInt, MethodHandle hSetInt, MethodHandle hGetIdId, MethodHandle hSetIdId, MethodHandle hSetIdInt, MethodHandle hGetIdPoint, MethodHandle hGetBoolPoint, MethodHandle hGetPointPointId, MethodHandle hGetDoubleDoubleId, MethodHandle hGetTransform, MethodHandle hSetTransform, MethodHandle hGetInt32, MethodHandle hSetInt32) {}
     private static volatile Handles handles;
 
     protected CALayer(MemorySegment peer) {
@@ -326,7 +326,9 @@ public class CALayer extends NSObject {
                 ObjC.handle(Sig.of(Ret.POINT, Arg.POINT, Arg.ID)),
                 ObjC.handle(Sig.of(Ret.DOUBLE, Arg.DOUBLE, Arg.ID)),
                 ObjC.handle(Sig.of(Ret.TRANSFORM3D)),
-                ObjC.handle(Sig.of(Ret.VOID, Arg.TRANSFORM3D))
+                ObjC.handle(Sig.of(Ret.VOID, Arg.TRANSFORM3D)),
+                ObjC.handle(Sig.of(Ret.INT32)),
+                ObjC.handle(Sig.of(Ret.VOID, Arg.INT32))
         );
             Sels.populate();
         handles = h;
@@ -1253,19 +1255,19 @@ public class CALayer extends NSObject {
         } catch (Throwable t) { throw new RuntimeException("setAllowsEdgeAntialiasing: failed", t); }
     }
 
-    /// [layer edgeAntialiasingMask] — CAEdgeAntialiasingMask (unsigned int bitmask).
+    /// [layer edgeAntialiasingMask] — CAEdgeAntialiasingMask (unsigned int, exactly 32 bits).
     public long edgeAntialiasingMask() {
         ensureInit();
         try {
-            return (long) handles.hGetInt().invokeExact(peer, Sels.edgeAntialiasingMask);
+            return ((int) handles.hGetInt32().invokeExact(peer, Sels.edgeAntialiasingMask)) & 0xFFFFFFFFL;
         } catch (Throwable t) { throw new RuntimeException("edgeAntialiasingMask failed", t); }
     }
 
-    /// [layer setEdgeAntialiasingMask:]
+    /// [layer setEdgeAntialiasingMask:] — keeps the low 32 bits.
     public void setEdgeAntialiasingMask(long mask) {
         ensureInit();
         try {
-            handles.hSetInt().invokeExact(peer, Sels.setEdgeAntialiasingMask, mask);
+            handles.hSetInt32().invokeExact(peer, Sels.setEdgeAntialiasingMask, (int) mask);
         } catch (Throwable t) { throw new RuntimeException("setEdgeAntialiasingMask: failed", t); }
     }
 

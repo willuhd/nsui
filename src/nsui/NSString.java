@@ -279,6 +279,10 @@ public final class NSString extends NSObject {
     /// substringWithRange: — returns a new NSString for the given range (requires RANGE vocab).
     public NSString substringWithRange(NSRange range) {
         ensureInit();
+        if (range == null) throw new IllegalArgumentException("substringWithRange: null range");
+        long n = length();
+        if (range.location() < 0 || range.length() < 0 || range.location() > n || range.length() > n - range.location())
+            throw new IllegalArgumentException("substringWithRange: range " + range + " out of bounds (length " + n + ")");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.RANGE));
             MemorySegment r = (MemorySegment) h.invokeExact(peer, Sels.substringWithRange, range.toSegment());
@@ -330,12 +334,15 @@ public final class NSString extends NSObject {
         }
     }
 
-    /// characterAtIndex: — UTF-16 code unit at index (long, as unichar is unsigned short).
+    /// characterAtIndex: — UTF-16 code unit at index (unichar is unsigned short).
     public long characterAtIndex(long index) {
         ensureInit();
+        long n = length();
+        if (index < 0 || index >= n)
+            throw new IllegalArgumentException("characterAtIndex: index " + index + " out of bounds (length " + n + ")");
         try {
-            MethodHandle h = ObjC.handle(Sig.of(Ret.INT, Arg.INT));
-            return (long) h.invokeExact(peer, Sels.characterAtIndex, index);
+            MethodHandle h = ObjC.handle(Sig.of(Ret.SHORT, Arg.INT));
+            return ((short) h.invokeExact(peer, Sels.characterAtIndex, index)) & 0xFFFFL;
         } catch (Throwable t) {
             throw new RuntimeException("characterAtIndex: failed", t);
         }
@@ -344,6 +351,9 @@ public final class NSString extends NSObject {
     /// substringFromIndex: — tail from index to the end.
     public NSString substringFromIndex(long index) {
         ensureInit();
+        long n = length();
+        if (index < 0 || index > n)
+            throw new IllegalArgumentException("substringFromIndex: index " + index + " out of bounds (length " + n + ")");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.INT));
             return wrap((MemorySegment) h.invokeExact(peer, Sels.substringFromIndex, index));
@@ -355,6 +365,9 @@ public final class NSString extends NSObject {
     /// substringToIndex: — head up to (excluding) index.
     public NSString substringToIndex(long index) {
         ensureInit();
+        long n = length();
+        if (index < 0 || index > n)
+            throw new IllegalArgumentException("substringToIndex: index " + index + " out of bounds (length " + n + ")");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.INT));
             return wrap((MemorySegment) h.invokeExact(peer, Sels.substringToIndex, index));
@@ -818,6 +831,10 @@ public final class NSString extends NSObject {
     public NSString stringByReplacingCharactersInRange(NSRange range, NSString replacement) {
         ensureInit();
         if (replacement == null) throw new IllegalArgumentException("stringByReplacingCharactersInRange: null");
+        if (range == null) throw new IllegalArgumentException("stringByReplacingCharactersInRange: null range");
+        long n = length();
+        if (range.location() < 0 || range.length() < 0 || range.location() > n || range.length() > n - range.location())
+            throw new IllegalArgumentException("stringByReplacingCharactersInRange: range " + range + " out of bounds (length " + n + ")");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.RANGE, Arg.ID));
             MemorySegment r = (MemorySegment) h.invokeExact(

@@ -36,13 +36,14 @@ public final class Sig {
     /// Argument classes. `ID` covers id/SEL/Class/pointers — one ABI class.
     /// `BYTE` is a 1-byte scalar (C char); `EDGEINSETS` is NSEdgeInsets (4 doubles,
     /// 32 bytes — same size class as RECT but a distinct nominal type).
-    public enum Arg { ID, INT, BOOL, DOUBLE, RECT, POINT, SIZE, FLOAT, RANGE, REGION, TRANSFORM3D, MTLVIEWPORT, MTLSCISSORRECT, BYTE, EDGEINSETS }
+    /// `SHORT` is a 2-byte scalar (C short); `INT32` is a 4-byte scalar (C int).
+    public enum Arg { ID, INT, BOOL, DOUBLE, RECT, POINT, SIZE, FLOAT, RANGE, REGION, TRANSFORM3D, MTLVIEWPORT, MTLSCISSORRECT, BYTE, EDGEINSETS, SHORT, INT32 }
 
     /// Return classes. `RECT` is a 32-byte struct (stret on x86_64); POINT/SIZE/RANGE are 16-byte structs.
-    public enum Ret { VOID, ID, INT, BOOL, DOUBLE, RECT, POINT, SIZE, FLOAT, RANGE, TRANSFORM3D, BYTE, EDGEINSETS }
+    public enum Ret { VOID, ID, INT, BOOL, DOUBLE, RECT, POINT, SIZE, FLOAT, RANGE, TRANSFORM3D, BYTE, EDGEINSETS, SHORT, INT32 }
 
     /// A message signature: return class plus argument classes, packed into a
-    /// 4-bits-per-arg long key so the record's value-based `equals`/`hashCode`
+    /// 5-bits-per-arg long key so the record's value-based `equals`/`hashCode`
     /// are exact and cheap.
     public record S(Ret ret, long key, int argc) {
 
@@ -56,7 +57,7 @@ public final class Sig {
             b.append('(');
             for (int i = 0; i < argc; i++) {
                 if (i > 0) b.append(',');
-                b.append(Arg.values()[(int) (key >>> (i * 4)) & 0xF].name().toLowerCase());
+                b.append(Arg.values()[(int) (key >>> (i * 5)) & 0x1F].name().toLowerCase());
             }
             return b.append(')').toString();
         }
@@ -70,7 +71,7 @@ public final class Sig {
     /// Build a signature from its return class and argument classes.
     public static S of(Ret ret, Arg... args) {
         long key = 0;
-        for (int i = 0; i < args.length; i++) key |= ((long) args[i].ordinal()) << (i * 4);
+        for (int i = 0; i < args.length; i++) key |= ((long) args[i].ordinal()) << (i * 5);
         return new S(ret, key, args.length);
     }
 
@@ -85,6 +86,8 @@ public final class Sig {
     private static final ValueLayout BOOL   = (ValueLayout) Linker.nativeLinker().canonicalLayouts().get("bool");
     private static final ValueLayout FLOAT  = ValueLayout.JAVA_FLOAT;
     private static final ValueLayout BYTE   = ValueLayout.JAVA_BYTE;
+    private static final ValueLayout SHORT  = ValueLayout.JAVA_SHORT;
+    private static final ValueLayout INT32  = ValueLayout.JAVA_INT;
     private static final MemoryLayout NS_RECT  = MemoryLayout.structLayout(DOUBLE, DOUBLE, DOUBLE, DOUBLE);
     /// NSEdgeInsets == struct { CGFloat top, left, bottom, right } (4 doubles, 32 bytes).
     private static final MemoryLayout NS_INSETS = MemoryLayout.structLayout(DOUBLE, DOUBLE, DOUBLE, DOUBLE);
@@ -111,7 +114,7 @@ public final class Sig {
         args[0] = PTR; // id (receiver)
         args[1] = PTR; // SEL (_cmd)
         for (int i = 0; i < s.argc(); i++) {
-            args[i + 2] = switch (Arg.values()[(int) (s.key() >>> (i * 4)) & 0xF]) {
+            args[i + 2] = switch (Arg.values()[(int) (s.key() >>> (i * 5)) & 0x1F]) {
                 case ID -> PTR;
                 case INT -> LONG;
                 case BOOL -> BOOL;
@@ -127,6 +130,8 @@ public final class Sig {
                 case MTLSCISSORRECT -> MTL_SCISSOR_RECT;
                 case BYTE -> BYTE;
                 case EDGEINSETS -> NS_INSETS;
+                case SHORT -> SHORT;
+                case INT32 -> INT32;
             };
         }
         return switch (s.ret()) {
@@ -143,6 +148,8 @@ public final class Sig {
             case TRANSFORM3D -> FunctionDescriptor.of(CA_TRANSFORM3D, args);
             case BYTE -> FunctionDescriptor.of(BYTE, args);
             case EDGEINSETS -> FunctionDescriptor.of(NS_INSETS, args);
+            case SHORT -> FunctionDescriptor.of(SHORT, args);
+            case INT32 -> FunctionDescriptor.of(INT32, args);
         };
     }
 
@@ -296,7 +303,22 @@ public final class Sig {
         of(Ret.VOID, Arg.REGION, Arg.INT, Arg.ID, Arg.INT), // replaceRegion:mipmapLevel:withBytes:bytesPerRow:
         // --- 1-byte scalars and edge insets (append-only) ---
         of(Ret.BYTE),                                       // charValue / unsignedCharValue
+        of(Ret.SHORT, Arg.INT),                           // characterAtIndex:
         of(Ret.EDGEINSETS),                                 // contentInsets / capInsets / safeAreaInsets / edgeInsets
-        of(Ret.VOID, Arg.EDGEINSETS)                        // setContentInsets: / setCapInsets: / setEdgeInsets:
+        of(Ret.VOID, Arg.EDGEINSETS),                       // setContentInsets: / setCapInsets: / setEdgeInsets:
+        // --- narrow scalars (append-only) ---
+        // Ret.INT stays the C-long class: NSInteger/NSUInteger and the long/long-long
+        // families are genuinely 64-bit, and the remaining 32-bit `i` returns read the
+        // full register, which is benign on LE like the rest of the tree. Only the
+        // genuinely narrow shapes below get exact descriptors.
+        of(Ret.ID, Arg.BYTE),                               // numberWithChar:/numberWithUnsignedChar: (real `c`/`C`)
+        of(Ret.ID, Arg.SHORT),                              // numberWithShort:/numberWithUnsignedShort: (real `s`/`S`)
+        of(Ret.SHORT),                                      // shortValue/unsignedShortValue (real `s`/`S`)
+        // of(Ret.ID, Arg.INT) already covers numberWithInt:/UnsignedInt:/Long:/
+        // UnsignedLong:/LongLong:/UnsignedLongLong:/Integer:/UnsignedInteger: — real
+        // encodings i/I/l/Q/q all map nominally to INT and the callee reads the low
+        // bits correctly on LE.
+        of(Ret.INT32),                                      // edgeAntialiasingMask (real `I`, 32-bit unsigned int)
+        of(Ret.VOID, Arg.INT32)                             // setEdgeAntialiasingMask: (real `I`)
     );
 }

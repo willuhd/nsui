@@ -941,7 +941,7 @@ public final class FoundationCoverageTest {
         long pid = NSRunningApplication.current().processIdentifier();
         TestKit.check(pid == (long) (int) pid, "processIdentifier fits 32 bits");
         if (pid == -1) {
-            TestKit.check(true, "processIdentifier reports -1 pre-app (exact signed read)");
+            TestKit.check(pid == -1, "processIdentifier reports -1 pre-app (exact signed read)");
         } else {
             TestKit.check(pid == ProcessHandle.current().pid(), "processIdentifier matches Java pid");
         }

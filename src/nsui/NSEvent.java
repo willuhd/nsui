@@ -273,13 +273,13 @@ public final class NSEvent extends NSObject {
         return ObjC.msgSendLong(peer, Sels.modifierFlags);
     }
 
-    /// [event keyCode] — hardware keyboard code.
+    /// [event keyCode] — hardware keyboard code (CGKeyCode, unsigned short).
     ///
     /// **Key events only.** Guarded.
     public long keyCode() {
         ensureInit();
         requireKeyEvent("keyCode");
-        return ObjC.msgSendLong(peer, Sels.keyCode);
+        return ((short) ObjC.msgSendShort(peer, Sels.keyCode)) & 0xFFFFL;
     }
 
     /// [event buttonNumber] — which mouse button generated the event.
@@ -328,9 +328,9 @@ public final class NSEvent extends NSObject {
 
     // ---- additional accessors (80% completeness) ----
 
-    /// [event subtype] — NSEventSubtype.
+    /// [event subtype] — NSEventSubtype (short).
     public long subtype() {
-ensureInit(); return ObjC.msgSendLong(peer, Sels.subtype); }
+ensureInit(); return (long) ObjC.msgSendShort(peer, Sels.subtype); }
 
     /// [event eventNumber]
     public long eventNumber() {

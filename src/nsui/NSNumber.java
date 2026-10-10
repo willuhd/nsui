@@ -12,9 +12,11 @@ import static nsui.objc.Sig.Ret;
 /// Provides wrap/create and numeric accessors.
 ///
 /// Header-completeness (`NSValue.h`, NSNumber interface + creation): every safe method
-/// whose shape is in the Sig vocabulary is wrapped below. Narrow-width factories
-/// (numberWithChar:/UnsignedChar:/Short:/.../LongLong:/...) all ride of(ID,INT) — the
-/// FFM long fills the register the callee reads. OMITTED — numberWithFloat: NATIVE form
+/// whose shape is in the Sig vocabulary is wrapped below. Narrow-width factories use
+/// exact shapes — of(ID,BYTE) for Char/UnsignedChar, of(ID,SHORT) for Short/
+/// UnsignedShort — while the int/long/long-long/integer families keep of(ID,INT)
+/// (real encodings i/I/l/Q/q map nominally to INT and the callee reads the low bits
+/// correctly on LE). OMITTED — numberWithFloat: NATIVE form
 /// (needs of(ID,FLOAT), not in Sig): numberWithFloat(float) below doubles through
 /// numberWithDouble (exact: every float is exactly representable as a double; objCType
 /// reports "d" instead of "f" — flagged for the Sig owner to add of(ID,FLOAT));
@@ -22,7 +24,7 @@ import static nsui.objc.Sig.Ret;
 /// initWithCoder: (needs NSCoder).
 public final class NSNumber extends NSValue {
 
-            private record Handles(MethodHandle hIntValue, MethodHandle hDoubleValue, MethodHandle hBoolValue, MethodHandle hFloatValue, MethodHandle hByteValue) {}
+            private record Handles(MethodHandle hIntValue, MethodHandle hDoubleValue, MethodHandle hBoolValue, MethodHandle hFloatValue, MethodHandle hByteValue, MethodHandle hShortValue) {}
     private static volatile Handles handles;
 
     private NSNumber(MemorySegment peer) { super(peer); }
@@ -43,7 +45,8 @@ public final class NSNumber extends NSValue {
                 ObjC.handle(Sig.of(Ret.DOUBLE)),
                 ObjC.handle(Sig.of(Ret.BOOL)),
                 ObjC.handle(Sig.of(Ret.FLOAT)),
-                ObjC.handle(Sig.of(Ret.BYTE))
+                ObjC.handle(Sig.of(Ret.BYTE)),
+                ObjC.handle(Sig.of(Ret.SHORT))
         );
         handles = h;
     }
@@ -93,54 +96,104 @@ public final class NSNumber extends NSValue {
         return numberWithDouble((double) value);
     }
 
-    /// numberWithChar:.
+    /// numberWithChar: (C char, 1 byte).
     public static NSNumber numberWithChar(long value) {
-        return numberWithInt(value);
+        ensureNumInit();
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.BYTE));
+            MemorySegment s = (MemorySegment) h.invokeExact(ObjC.cls("NSNumber"), ObjC.sel("numberWithChar:"), (byte) value);
+            return wrap(s);
+        } catch (Throwable t) { throw new RuntimeException("numberWithChar: failed", t); }
     }
 
-    /// numberWithUnsignedChar:.
+    /// numberWithUnsignedChar: (C unsigned char, 1 byte, low 8 bits kept).
     public static NSNumber numberWithUnsignedChar(long value) {
-        return numberWithInt(value);
+        ensureNumInit();
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.BYTE));
+            MemorySegment s = (MemorySegment) h.invokeExact(ObjC.cls("NSNumber"), ObjC.sel("numberWithUnsignedChar:"), (byte) (value & 0xFFL));
+            return wrap(s);
+        } catch (Throwable t) { throw new RuntimeException("numberWithUnsignedChar: failed", t); }
     }
 
-    /// numberWithShort:.
+    /// numberWithShort: (C short, 2 bytes).
     public static NSNumber numberWithShort(long value) {
-        return numberWithInt(value);
+        ensureNumInit();
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.SHORT));
+            MemorySegment s = (MemorySegment) h.invokeExact(ObjC.cls("NSNumber"), ObjC.sel("numberWithShort:"), (short) value);
+            return wrap(s);
+        } catch (Throwable t) { throw new RuntimeException("numberWithShort: failed", t); }
     }
 
-    /// numberWithUnsignedShort:.
+    /// numberWithUnsignedShort: (low 16 bits kept).
     public static NSNumber numberWithUnsignedShort(long value) {
-        return numberWithInt(value);
+        ensureNumInit();
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.SHORT));
+            MemorySegment s = (MemorySegment) h.invokeExact(ObjC.cls("NSNumber"), ObjC.sel("numberWithUnsignedShort:"), (short) (value & 0xFFFFL));
+            return wrap(s);
+        } catch (Throwable t) { throw new RuntimeException("numberWithUnsignedShort: failed", t); }
     }
 
     /// numberWithUnsignedInt:.
     public static NSNumber numberWithUnsignedInt(long value) {
-        return numberWithInt(value);
+        ensureNumInit();
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.INT));
+            MemorySegment s = (MemorySegment) h.invokeExact(ObjC.cls("NSNumber"), ObjC.sel("numberWithUnsignedInt:"), value);
+            return wrap(s);
+        } catch (Throwable t) { throw new RuntimeException("numberWithUnsignedInt: failed", t); }
     }
 
     /// numberWithLong:.
     public static NSNumber numberWithLong(long value) {
-        return numberWithInt(value);
+        ensureNumInit();
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.INT));
+            MemorySegment s = (MemorySegment) h.invokeExact(ObjC.cls("NSNumber"), ObjC.sel("numberWithLong:"), value);
+            return wrap(s);
+        } catch (Throwable t) { throw new RuntimeException("numberWithLong: failed", t); }
     }
 
     /// numberWithUnsignedLong:.
     public static NSNumber numberWithUnsignedLong(long value) {
-        return numberWithInt(value);
+        ensureNumInit();
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.INT));
+            MemorySegment s = (MemorySegment) h.invokeExact(ObjC.cls("NSNumber"), ObjC.sel("numberWithUnsignedLong:"), value);
+            return wrap(s);
+        } catch (Throwable t) { throw new RuntimeException("numberWithUnsignedLong: failed", t); }
     }
 
     /// numberWithLongLong:.
     public static NSNumber numberWithLongLong(long value) {
-        return numberWithInt(value);
+        ensureNumInit();
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.INT));
+            MemorySegment s = (MemorySegment) h.invokeExact(ObjC.cls("NSNumber"), ObjC.sel("numberWithLongLong:"), value);
+            return wrap(s);
+        } catch (Throwable t) { throw new RuntimeException("numberWithLongLong: failed", t); }
     }
 
     /// numberWithUnsignedLongLong: (bits preserved in the long).
     public static NSNumber numberWithUnsignedLongLong(long value) {
-        return numberWithInt(value);
+        ensureNumInit();
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.INT));
+            MemorySegment s = (MemorySegment) h.invokeExact(ObjC.cls("NSNumber"), ObjC.sel("numberWithUnsignedLongLong:"), value);
+            return wrap(s);
+        } catch (Throwable t) { throw new RuntimeException("numberWithUnsignedLongLong: failed", t); }
     }
 
     /// numberWithUnsignedInteger:.
     public static NSNumber numberWithUnsignedInteger(long value) {
-        return numberWithInt(value);
+        ensureNumInit();
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.INT));
+            MemorySegment s = (MemorySegment) h.invokeExact(ObjC.cls("NSNumber"), ObjC.sel("numberWithUnsignedInteger:"), value);
+            return wrap(s);
+        } catch (Throwable t) { throw new RuntimeException("numberWithUnsignedInteger: failed", t); }
     }
 
     /// intValue
@@ -211,17 +264,17 @@ public final class NSNumber extends NSValue {
         catch (Throwable t) { throw new RuntimeException("unsignedCharValue failed", t); }
     }
 
-    /// shortValue.
+    /// shortValue (C short, 2 bytes, sign-extended to long).
     public long shortValue() {
         ensureNumInit();
-        try { return (long) handles.hIntValue().invokeExact(peer, ObjC.sel("shortValue")); }
+        try { return (long) (short) handles.hShortValue().invokeExact(peer, ObjC.sel("shortValue")); }
         catch (Throwable t) { throw new RuntimeException("shortValue failed", t); }
     }
 
-    /// unsignedShortValue.
+    /// unsignedShortValue (C unsigned short, 2 bytes, zero-extended to long).
     public long unsignedShortValue() {
         ensureNumInit();
-        try { return (long) handles.hIntValue().invokeExact(peer, ObjC.sel("unsignedShortValue")); }
+        try { return ((short) handles.hShortValue().invokeExact(peer, ObjC.sel("unsignedShortValue"))) & 0xFFFFL; }
         catch (Throwable t) { throw new RuntimeException("unsignedShortValue failed", t); }
     }
 

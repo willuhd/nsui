@@ -89,6 +89,7 @@ public final class ObjC {
     private static MethodHandle hVoidBool;    // (id, SEL, bool) -> void
     private static MethodHandle hLong;        // (id, SEL) -> long
     private static MethodHandle hBool;        // (id, SEL) -> bool
+    private static MethodHandle hShort;       // (id, SEL) -> short
     private static MethodHandle hRect;        // (id, SEL) -> NSRect (objc_msgSend_stret on x86_64)
     private static MethodHandle hEdgeInsets;  // (id, SEL) -> NSEdgeInsets (32 bytes, same stret class as NSRect)
     private static MethodHandle hVoidEdgeInsets; // (id, SEL, NSEdgeInsets) -> void
@@ -170,6 +171,7 @@ public final class ObjC {
         hVoidBool = handle(Sig.of(Ret.VOID, Arg.BOOL));
         hLong = handle(Sig.of(Ret.INT));
         hBool = handle(Sig.of(Ret.BOOL));
+        hShort = handle(Sig.of(Ret.SHORT));
         hRect = handle(Sig.of(Ret.RECT));
         hEdgeInsets = handle(Sig.of(Ret.EDGEINSETS));
         hVoidEdgeInsets = handle(Sig.of(Ret.VOID, Arg.EDGEINSETS));
@@ -248,13 +250,17 @@ public final class ObjC {
 
     /// objc_getClass(name) — cached per distinct name. Steady state is a plain map
     /// get (a name repeats forever once seen); only a miss takes the atomic path and
-    /// allocates the immortal cstring.
+    /// allocates the immortal cstring. NULL (address 0, framework not loaded) is
+    /// never cached: a later dlopen can make the class visible, and caching NULL
+    /// would pin the miss. The hit path is unchanged (one map get).
     public static MemorySegment cls(String name) {
         if (!INIT && !INITIALIZING) throw new IllegalStateException("ObjC.init() must run first (from main, at runtime)");
         MemorySegment c = CLASS_RESULT.get(name);
         if (c != null) return c;
-        return CLASS_RESULT.computeIfAbsent(name,
-                n -> (MemorySegment) invokeX(hGetClass, globalCstring(n)));
+        MemorySegment fresh = (MemorySegment) invokeX(hGetClass, globalCstring(name));
+        if (fresh == null || fresh.address() == 0) return fresh;
+        MemorySegment prev = CLASS_RESULT.putIfAbsent(name, fresh);
+        return prev != null ? prev : fresh;
     }
 
     /// sel_registerName(name) — cached per distinct name. See cls() for the fast path.
@@ -264,6 +270,29 @@ public final class ObjC {
         if (s != null) return s;
         return SEL_RESULT.computeIfAbsent(name,
                 n -> (MemorySegment) invokeX(hSelRegister, globalCstring(n)));
+    }
+
+    /// True when the calling thread is AppKit's main thread ([NSThread isMainThread]).
+    /// Uses the existing (BOOL) vocabulary shape — no new signature needed.
+    public static boolean isMainThread() {
+        if (!INIT && !INITIALIZING) throw new IllegalStateException("ObjC.init() must run first (from main, at runtime)");
+        try {
+            return (boolean) handle(Sig.of(Ret.BOOL)).invokeExact(cls("NSThread"), sel("isMainThread"));
+        } catch (Throwable t) {
+            throw fail(t);
+        }
+    }
+
+    /// Fail-fast main-thread guard for AppKit entry points that must run on the
+    /// main thread (window creation, run-loop control). AppKit cannot move an
+    /// off-main call onto the main thread after the fact, so checking here is
+    /// the guard: offenders get an IllegalStateException naming `what` instead
+    /// of undefined native behavior.
+    public static void requireMainThread(String what) {
+        if (!isMainThread()) {
+            throw new IllegalStateException(what + " must run on the main thread"
+                    + " (AppKit is not thread-safe; dispatch via Dispatch.onMain and pump the run loop)");
+        }
     }
 
     /// NSString from a Java string ([NSString stringWithUTF8String:]). Typed
@@ -397,6 +426,11 @@ public final class ObjC {
     public static boolean msgSendBool(MemorySegment recv, MemorySegment s) {
         if (!INIT && !INITIALIZING) throw new IllegalStateException("ObjC.init() must run first (from main, at runtime)");
         try { return (boolean) hBool.invokeExact(recv, s); } catch (Throwable t) { throw fail(t); }
+    }
+
+    public static short msgSendShort(MemorySegment recv, MemorySegment s) {
+        if (!INIT && !INITIALIZING) throw new IllegalStateException("ObjC.init() must run first (from main, at runtime)");
+        try { return (short) hShort.invokeExact(recv, s); } catch (Throwable t) { throw fail(t); }
     }
 
     /// Struct-returning message (NSRect); uses objc_msgSend_stret on x86_64.

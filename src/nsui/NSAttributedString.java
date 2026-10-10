@@ -98,6 +98,8 @@ public class NSAttributedString extends NSObject {
     /// @return attribute value as MemorySegment (id) or NULL
     public MemorySegment attribute(String attrName, long index, MemorySegment effectiveRangeOut) {
         ensureInit();
+        if (effectiveRangeOut != null && effectiveRangeOut.address() != 0 && effectiveRangeOut.byteSize() < 16)
+            throw new IllegalArgumentException("attribute:atIndex:effectiveRange: effectiveRangeOut must be null or >= 16 bytes (got " + effectiveRangeOut.byteSize() + ")");
         try {
             MemorySegment range = (MemorySegment) (effectiveRangeOut == null ? MemorySegment.NULL : effectiveRangeOut);
             return (MemorySegment) handles.hAttr().invokeExact(peer, ObjC.sel("attribute:atIndex:effectiveRange:"), ObjC.nsstring(attrName), index, range);
@@ -120,6 +122,8 @@ public class NSAttributedString extends NSObject {
     /// [attributedString attributesAtIndex:effectiveRange:] -> NSDictionary*
     public MemorySegment attributesAtIndexEffectiveRange(long index, MemorySegment effectiveRangeOut) {
         ensureInit();
+        if (effectiveRangeOut != null && effectiveRangeOut.address() != 0 && effectiveRangeOut.byteSize() < 16)
+            throw new IllegalArgumentException("attributesAtIndex:effectiveRange: effectiveRangeOut must be null or >= 16 bytes (got " + effectiveRangeOut.byteSize() + ")");
         try {
             MemorySegment range = (MemorySegment) (effectiveRangeOut == null ? MemorySegment.NULL : effectiveRangeOut);
             return (MemorySegment) handles.hAttrDictAt().invokeExact(peer, ObjC.sel("attributesAtIndex:effectiveRange:"), index, range);

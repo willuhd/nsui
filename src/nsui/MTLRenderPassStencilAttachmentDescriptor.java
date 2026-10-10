@@ -1,8 +1,11 @@
 package nsui;
 
 import java.lang.foreign.MemorySegment;
+import java.lang.invoke.MethodHandle;
 
 import nsui.objc.ObjC;
+import nsui.objc.Sig;
+import static nsui.objc.Sig.Ret;
 
 /// One render-pass stencil target: texture + load/store actions + clear
 /// stencil value. Pair it with a depth attachment when the pass uses a
@@ -59,9 +62,14 @@ public final class MTLRenderPassStencilAttachmentDescriptor extends NSObject {
         ObjC.msgSendVoidLong(peer, ObjC.sel("setStoreAction:"), action);
     }
 
-    /// clearStencil — uint32_t; mask the widened return.
+    /// clearStencil — uint32_t (32-bit unsigned).
     public long clearStencil() {
-        return ObjC.msgSendLong(peer, ObjC.sel("clearStencil")) & 0xFFFFFFFFL;
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.INT32));
+            return ((int) h.invokeExact(peer, ObjC.sel("clearStencil"))) & 0xFFFFFFFFL;
+        } catch (Throwable t) {
+            throw new RuntimeException("clearStencil failed", t);
+        }
     }
 
     /// setClearStencil: — uint32_t.

@@ -1,6 +1,7 @@
 package nsui;
 
 import java.lang.foreign.MemorySegment;
+import java.lang.invoke.MethodHandle;
 
 import nsui.objc.ObjC;
 import nsui.objc.Sig;
@@ -61,9 +62,14 @@ public final class NSRunningApplication extends NSObject {
         return ObjC.toString(ObjC.msgSendId(peer, ObjC.sel("bundleIdentifier")));
     }
 
-    /// processIdentifier (pid_t).
+    /// processIdentifier (pid_t, 32-bit signed int).
     public long processIdentifier() {
-        return ObjC.msgSendLong(peer, ObjC.sel("processIdentifier"));
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.INT32));
+            return (long) (int) h.invokeExact(peer, ObjC.sel("processIdentifier"));
+        } catch (Throwable t) {
+            throw new RuntimeException("processIdentifier failed", t);
+        }
     }
 
     /// ownsMenuBar.

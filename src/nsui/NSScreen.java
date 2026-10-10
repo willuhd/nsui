@@ -133,9 +133,13 @@ public final class NSScreen extends NSObject {
 
     // ---- depth ----
 
-    /// [screen depth] — NSWindowDepth of the display.
+    /// [screen depth] — NSWindowDepth of the display (NS_ENUM(int32_t), 32-bit signed).
     public long depth() {
-        return ObjC.msgSendLong(peer, ObjC.sel("depth"));
+        try {
+            return (long) (int) ObjC.handle(Sig.of(Ret.INT32)).invokeExact(peer, ObjC.sel("depth"));
+        } catch (Throwable t) {
+            throw new RuntimeException("depth failed", t);
+        }
     }
 
     /// [screen supportedWindowDepths] — NUL-terminated depth list, inner pointer.
@@ -288,9 +292,13 @@ public final class NSScreen extends NSObject {
         }
     }
 
-    /// [screen CGDirectDisplayID] (macOS 26.0+) — the CoreGraphics display id.
+    /// [screen CGDirectDisplayID] (macOS 26.0+) — the CoreGraphics display id (uint32_t, 32-bit unsigned).
     public long cgDirectDisplayID() {
-        return ObjC.msgSendLong(peer, ObjC.sel("CGDirectDisplayID"));
+        try {
+            return ((int) ObjC.handle(Sig.of(Ret.INT32)).invokeExact(peer, ObjC.sel("CGDirectDisplayID"))) & 0xFFFFFFFFL;
+        } catch (Throwable t) {
+            throw new RuntimeException("CGDirectDisplayID failed", t);
+        }
     }
 
     /// [screen displayLinkWithTarget:selector:] (macOS 14.0+) — display-synced

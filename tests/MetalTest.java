@@ -389,12 +389,13 @@ public final class MetalTest {
             }
         }
         TestKit.check(neighbors, "2x2 subregion overwrite leaves neighbors identical");
+        boolean rejected = false;
         try {
             tex.replaceRegion(MTLRegion.of2D(3, 3, 2, 2), 0, checker, 16);
-            TestKit.check(false, "out-of-range upload did not throw");
         } catch (IllegalArgumentException e) {
-            TestKit.check(true, "out-of-range upload rejected");
+            rejected = true;
         }
+        TestKit.check(rejected, "out-of-range upload rejected");
     }
 
     /// Textured quad through a bound texture and sampler: a 2x2 pattern

@@ -1540,6 +1540,74 @@ public final class AuditRegressionTest {
             TestKit.check(false, "version-gated accessor block threw: " + t);
         }
 
+        // --- 8au. two more self-cycles that HANG (worse than aborting) ---
+        // Verified with a watchdog: [scrollView setDocumentView:self] and a menu set as its own
+        // submenu both never return (>15 s). The guards walk the superview / supermenu chains.
+        try {
+            nsui.NSScrollView scv = nsui.NSScrollView.create(new NSRect(0, 0, 200, 100));
+            TestKit.expectThrows("setDocumentView(self) rejects instead of hanging",
+                    IllegalArgumentException.class, () -> scv.setDocumentView(scv));
+            NSView outer = NSView.create(new NSRect(0, 0, 400, 300), (v, d) -> {});
+            outer.addSubview(scv);
+            TestKit.expectThrows("setDocumentView(ancestor-of-self) rejects",
+                    IllegalArgumentException.class, () -> scv.setDocumentView(outer));
+            NSView docView = NSView.create(new NSRect(0, 0, 50, 50), (v, d) -> {});
+            TestKit.noThrow("a normal document view is still accepted",
+                    () -> scv.setDocumentView(docView));
+
+            NSMenu selfMenu = NSMenu.createWithTitle("selfmenu");
+            nsui.NSMenuItem selfItem = selfMenu.addItemWithTitle("i", "", "");
+            TestKit.check(selfItem != null, "the menu item was created");
+            TestKit.expectThrows("menu as its own submenu rejects instead of hanging",
+                    IllegalArgumentException.class,
+                    () -> selfMenu.setSubmenu(selfItem, selfMenu));
+            NSMenu childMenu = NSMenu.createWithTitle("child");
+            TestKit.noThrow("a distinct submenu is still accepted",
+                    () -> selfMenu.setSubmenu(selfItem, childMenu));
+        } catch (Throwable t) {
+            TestKit.check(false, "hang-cycle block threw: " + t);
+        }
+
+        // --- 8av. sheet/presenter cycles (self aborts, ancestor HANGS) ---
+        // Verified: `[w beginSheet:w]` -> 134 "cannot be attached to itself"; attaching an
+        // ancestor sheet -> HANG (>12 s, watchdog); `[vc presentViewControllerAsSheet:vc]` ->
+        // 134, while presentViewControllerAsModalWindow:self is tolerated (exit 0) and is NOT
+        // guarded.
+        try {
+            NSWindow hostW = TestKit.hiddenWindow(300, 200);
+            TestKit.expectThrows("beginSheet(self) rejects (native 'cannot be attached to itself')",
+                    IllegalArgumentException.class, () -> hostW.beginSheet(hostW, (MemorySegment) null));
+            NSWindow sheet2 = TestKit.hiddenWindow(200, 100);
+            TestKit.noThrow("attaching a distinct sheet is legal",
+                    () -> hostW.beginSheet(sheet2, (MemorySegment) null));
+            TestKit.expectThrows("beginSheet(ancestor sheet) rejects instead of hanging",
+                    IllegalArgumentException.class,
+                    () -> sheet2.beginSheet(hostW, (MemorySegment) null));
+            hostW.endSheet(sheet2);
+
+            nsui.NSViewController vc1 = nsui.NSViewController.create();
+            vc1.setView(NSView.create(new NSRect(0, 0, 50, 50), (v, d) -> {}));
+            TestKit.expectThrows("presentViewControllerAsSheet(self) rejects",
+                    IllegalArgumentException.class, () -> vc1.presentViewControllerAsSheet(vc1));
+        } catch (Throwable t) {
+            TestKit.check(false, "sheet-cycle block threw: " + t);
+        }
+
+        // --- 8aw. NSMenu.removeItem needs a member item (foreign -> 134) ---
+        try {
+            NSMenu rm = NSMenu.createWithTitle("rm");
+            nsui.NSMenuItem member = rm.addItemWithTitle("m", "", "");
+            NSMenu foreignHost = NSMenu.createWithTitle("other");
+            nsui.NSMenuItem foreignItem = foreignHost.addItemWithTitle("f", "", "");
+            TestKit.expectThrows("removeItem(foreign item) rejects (native abort)",
+                    IllegalArgumentException.class, () -> rm.removeItem(foreignItem));
+            TestKit.noThrow("removeItem(member) is legal", () -> rm.removeItem(member));
+            TestKit.expectThrows("removeItem(same item twice) rejects",
+                    IllegalArgumentException.class, () -> rm.removeItem(member));
+        } catch (Throwable t) {
+            TestKit.check(false, "removeItem block threw: " + t);
+        }
+
         // --- 8z. type-confusion guards on the raw collection-view setters ---
         // AppKit does NOT raise a type error here, it either asserts isKindOfClass: or
         // messages the object: setCollectionViewLayout: with a plain NSView raised

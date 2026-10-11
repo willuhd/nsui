@@ -300,9 +300,19 @@ public final class NSMenu extends NSObject {
         Bounds.index(index, numberOfItems(), "removeItemAtIndex:");
         ObjC.msgSendVoidLong(peer, Sels.removeItemAtIndex, index);
     }
+    /// [menu removeItem:] — the item must belong to this menu.
+    ///
+    /// A foreign item (or the same item twice) aborts with NSInternalInconsistencyException
+    /// (verified, exit 134); indexOfItem: returns -1 for one, so that is the guard. Removing by
+    /// INDEX is already bounded, and setSubmenu:forItem: with a foreign item is tolerated
+    /// natively (measured exit 0), so it stays unguarded.
     public void removeItem(NSMenuItem item) {
         ensureInit();
         Bounds.nonNull(item, "removeItem:");
+        if (indexOfItem(item) < 0) {
+            throw new IllegalArgumentException("removeItem: the item is not in this menu "
+                    + "(AppKit raises NSInternalInconsistencyException for a foreign item)");
+        }
         ObjC.msgSendVoidId(peer, Sels.removeItem, item.peer());
     }
     public void removeAllItems() {
@@ -315,6 +325,16 @@ public final class NSMenu extends NSObject {
     public void setSubmenu(NSMenuItem item, NSMenu submenu) {
         ensureInit();
         Bounds.nonNull(item, "setSubmenu:forItem: (item)");
+        // A menu that becomes its own submenu (directly or through the supermenu chain) HANGS
+        // AppKit (>15 s, verified) instead of raising, so the chain is walked like the
+        // view/layer guards.
+        for (NSMenu m = this; m != null; m = m.supermenu()) {
+            if (submenu != null && m.peer() != null && submenu.peer() != null
+                    && m.peer().address() == submenu.peer().address()) {
+                throw new IllegalArgumentException("setSubmenu:forItem: the menu is already this "
+                        + "menu or one of its ancestors; AppKit hangs on that cycle");
+            }
+        }
         ObjC.msgSendVoidId(item.peer(), Sels.setSubmenu, (MemorySegment) (submenu == null ? MemorySegment.NULL : submenu.peer()));
     }
     /// [self setSubmenu:submenu forItem:item] — the NSMenu variant (both peers as ID).

@@ -154,6 +154,18 @@ public final class RunSuite {
         List<String> extraFlags = List.of("-XstartOnFirstThread", "--enable-native-access=ALL-UNNAMED");
         String finalLogsDir = logsDir;
         long limitSecs = timeoutSecs;
+        // Children must run with the repo root as their working directory: two gates
+        // (SignatureConformanceTest, AssertionQualityTest) locate sources through
+        // relative paths (src/nsui, tests). Without this they silently skip() whenever
+        // the suite is invoked from anywhere but the repo root, and RunSuite still
+        // exits 0. Derive the root from the classes dir (<root>/out/classes), and only
+        // use it when <root>/src actually exists.
+        Path classesPath = Path.of(classesDir).toAbsolutePath().normalize();
+        Path repoRoot = (classesPath.getParent() == null) ? null : classesPath.getParent().getParent();
+        if (repoRoot == null || !Files.isDirectory(repoRoot.resolve("src"))) {
+            repoRoot = null;
+        }
+        final Path childCwd = repoRoot;
         Process[] live = new Process[tests.size()];
         ExecutorService pool = Executors.newFixedThreadPool(jobs);
         List<Future<Outcome>> futures = new ArrayList<>();
@@ -171,6 +183,11 @@ public final class RunSuite {
                 cmd.add(cp);
                 cmd.add("nsui.tests." + t);
                 pb.command(cmd);
+                // Run the child from the repo root so relative-path gates (src/, tests/)
+                // resolve no matter where tests.sh / RunSuite was started.
+                if (childCwd != null) {
+                    pb.directory(childCwd.toFile());
+                }
                 pb.redirectOutput(log.toFile());
                 pb.redirectErrorStream(true);
                 int code;
@@ -237,6 +254,33 @@ public final class RunSuite {
         System.out.println("----------------------------------------");
         System.out.println("PASSED: " + passed + "  FAILED: " + failed + failedList
                 + "  SKIPPED: " + skipped + skippedList);
+        // skipCase()/probe()/PARTIAL PASS never affect a test's exit code, so they are
+        // counted PASSED above. Surface them: a green summary that hides unproven cases
+        // is how several abort-path gaps survived the suite.
+        int caseSkips = 0;
+        int probes = 0;
+        int partials = 0;
+        for (int k = 0; k < tests.size(); k++) {
+            String text;
+            try {
+                text = Files.readString(Path.of(finalLogsDir, tests.get(k) + ".log"));
+            } catch (IOException e) {
+                continue;
+            }
+            for (String line : text.split("\n")) {
+                if (line.contains("PARTIAL PASS")) {
+                    partials++;
+                } else if (line.startsWith("RESULT:") && line.endsWith("CASE SKIP(S)")) {
+                    caseSkips += leadingCount(line);
+                } else if (line.startsWith("RESULT:") && line.contains("PROBE(S)")) {
+                    probes += leadingCount(line);
+                }
+            }
+        }
+        if (caseSkips > 0 || probes > 0 || partials > 0) {
+            System.out.println("NOTE: " + caseSkips + " skipped case(s), " + probes
+                    + " no-oracle probe(s), " + partials + " partial-pass line(s) — counted PASS, not proven");
+        }
         if (failed != 0) {
             System.out.println("TESTS FAILED");
             System.exit(1);
@@ -255,6 +299,23 @@ public final class RunSuite {
             return;
         }
         System.out.println("ALL TESTS PASSED");
+    }
+
+    /// Leading integer of a "RESULT: N ..." summary line (0 when there is none).
+    static int leadingCount(String line) {
+        String s = line.substring("RESULT:".length()).trim();
+        int i = 0;
+        while (i < s.length() && Character.isDigit(s.charAt(i))) {
+            i++;
+        }
+        if (i == 0) {
+            return 0;
+        }
+        try {
+            return Integer.parseInt(s.substring(0, i));
+        } catch (NumberFormatException e) {
+            return 0;
+        }
     }
 
     /// Test names discovered from compiled classes: top-level *Test only.

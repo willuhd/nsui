@@ -706,9 +706,12 @@ public class NSWindow extends NSResponder {
     }
 
     /// setContentView: replaces the window's root content view.
+    /// `contentView` is a nullable AppKit property, so a null view passes nil
+    /// (matching setDelegate: below); previously it threw a raw NPE.
     public void setContentView(NSView view) {
         ensureInit();
-        ObjC.msgSendVoidId(peer, Sels.setContentView, view.peer());
+        ObjC.msgSendVoidId(peer, Sels.setContentView,
+                view == null ? MemorySegment.NULL : view.peer());
     }
 
     public void setDelegate(NSObject delegate) {

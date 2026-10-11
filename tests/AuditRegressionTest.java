@@ -14,9 +14,11 @@ import nsui.NSApplication;
 import nsui.NSFont;
 import nsui.NSFontDescriptor;
 import nsui.NSEdgeInsets;
+import nsui.NSMenu;
 import nsui.NSPoint;
 import nsui.NSPrintInfo;
 import nsui.NSRect;
+import nsui.NSScrollView;
 import nsui.NSSize;
 import nsui.NSSlider;
 import nsui.NSTableView;
@@ -160,6 +162,32 @@ public final class AuditRegressionTest {
         // No run-loop pumping here: the mode check fires before any native call.
         TestKit.expectThrows("NSApplication.nextEvent(null mode) rejects nil mode",
                 IllegalArgumentException.class, () -> app.nextEvent(-1L, MemorySegment.NULL, null, true));
+
+        // --- 8b. nullable-vs-required null arguments (the sweep that closed the rest) ---
+        // Nullable AppKit arguments must pass nil, not throw a raw NPE.
+        NSWindow cw = TestKit.hiddenWindow(180, 120);
+        TestKit.noThrow("NSWindow.setContentView(null) passes nil", () -> cw.setContentView(null));
+        NSScrollView sv = NSScrollView.create(new NSRect(0, 0, 180, 120));
+        TestKit.noThrow("NSScrollView.setDocumentView(null) passes nil", () -> sv.setDocumentView(null));
+        TestKit.noThrow("NSApplication.sendEvent(null) is a no-op", () -> app.sendEvent(null));
+        TestKit.noThrow("NSApplication.postEvent(null) is a no-op", () -> app.postEvent(null, false));
+        TestKit.noThrow("NSControl.setAction(null) passes a NULL SEL", () -> slider.setAction(null));
+        TestKit.noThrow("NSControl.sendAction(sel, null target) passes nil",
+                () -> slider.sendAction(ObjC.sel("performClick:"), null));
+        // Required (nonnull) arguments must fail fast with a named IAE, not an NPE.
+        NSView host = NSView.create(new NSRect(0, 0, 50, 50), (c, d) -> {});
+        TestKit.expectThrows("NSView.addSubview(null) rejects nil subview",
+                IllegalArgumentException.class, () -> host.addSubview(null));
+        TestKit.expectThrows("NSControl.updateCell(null) rejects nil cell",
+                IllegalArgumentException.class, () -> slider.updateCell(null));
+        NSMenu menu = NSMenu.create();
+        TestKit.expectThrows("NSMenu.addItem(null) rejects nil item",
+                IllegalArgumentException.class, () -> menu.addItem(null));
+        TestKit.expectThrows("NSMenu.removeItemAtIndex(count) rejects out-of-range index",
+                IllegalArgumentException.class, () -> menu.removeItemAtIndex(3));
+        TestKit.expectThrows("NSView.addConstraint(null) rejects nil constraint",
+                IllegalArgumentException.class, () -> host.addConstraint(null));
+        TestKit.close(cw);
 
         // --- 9. value and layer struct round-trips ---
         try {

@@ -108,6 +108,7 @@ public final class NSMutableData extends NSData {
     /// resetBytesInRange:
     public void resetBytesInRange(NSRange range) {
         ensureMutInit();
+        Bounds.range(range, length(), "resetBytesInRange:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.RANGE));
             h.invokeExact(peer, ObjC.sel("resetBytesInRange:"), range.toSegment());
@@ -144,6 +145,7 @@ public final class NSMutableData extends NSData {
         if (range == null) throw new IllegalArgumentException("replaceBytesInRange:withBytes: null range");
         if (bytes.length < range.length())
             throw new IllegalArgumentException("replaceBytesInRange:withBytes: bytes.length " + bytes.length + " < range.length " + range.length());
+        Bounds.range(range, length(), "replaceBytesInRange:withBytes:");
         try {
             MemorySegment buf = nsui.objc.Scratch.allocInput(Math.max(1, bytes.length));
             if (bytes.length > 0) {

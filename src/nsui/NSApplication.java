@@ -163,11 +163,15 @@ public final class NSApplication extends NSObject {
         return ev.address() == 0 ? null : new NSEvent(ev);
     }
 
+    /// [app sendEvent:] — a null event is a no-op, matching NSWindow.sendEvent:.
     public void sendEvent(NSEvent event) {
+        if (event == null) return;
         ObjC.msgSendVoidId(peer, ObjC.sel("sendEvent:"), event.peer());
     }
 
+    /// [app postEvent:atStart:] — a null event is a no-op, matching NSWindow.postEvent:.
     public void postEvent(NSEvent event, boolean atStart) {
+        if (event == null) return;
         try {
             var h = ObjC.handle(nsui.objc.Sig.of(nsui.objc.Sig.Ret.VOID, nsui.objc.Sig.Arg.ID, nsui.objc.Sig.Arg.BOOL));
             h.invokeExact(peer, ObjC.sel("postEvent:atStart:"), event.peer(), atStart);

@@ -122,8 +122,17 @@ public class NSText extends NSView {
         ObjC.msgSendVoidId(peer, ObjC.sel("setBackgroundColor:"), (MemorySegment) (color == null ? MemorySegment.NULL : color.peer()));
     }
 
+    /// Character count of the current text — for Java-side range validation. Reuses
+    /// the already-wrapped `string()` accessor rather than introducing a new
+    /// msgSend call site.
+    private long textLength() {
+        String s = string();
+        return s == null ? 0 : s.length();
+    }
+
     /// [text replaceCharactersInRange:withString:]
     public void replaceCharactersInRangeWithString(NSRange range, String string) {
+        Bounds.range(range, textLength(), "replaceCharactersInRange:withString:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.RANGE, Arg.ID));
             h.invokeExact(peer, ObjC.sel("replaceCharactersInRange:withString:"),
@@ -135,6 +144,7 @@ public class NSText extends NSView {
 
     /// [text replaceCharactersInRange:withRTF:] — rtf is NSData* (raw segment).
     public void replaceCharactersInRangeWithRTF(NSRange range, MemorySegment rtfData) {
+        Bounds.range(range, textLength(), "replaceCharactersInRange:withRTF:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.RANGE, Arg.ID));
             h.invokeExact(peer, ObjC.sel("replaceCharactersInRange:withRTF:"),
@@ -146,6 +156,7 @@ public class NSText extends NSView {
 
     /// [text replaceCharactersInRange:withRTFD:] — rtfd is NSData* (raw segment).
     public void replaceCharactersInRangeWithRTFD(NSRange range, MemorySegment rtfdData) {
+        Bounds.range(range, textLength(), "replaceCharactersInRange:withRTFD:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.RANGE, Arg.ID));
             h.invokeExact(peer, ObjC.sel("replaceCharactersInRange:withRTFD:"),
@@ -157,6 +168,7 @@ public class NSText extends NSView {
 
     /// [text RTFFromRange:] -> NSData* (raw segment, may be nil).
     public MemorySegment rtfFromRange(NSRange range) {
+        Bounds.range(range, textLength(), "RTFFromRange:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.RANGE));
             return (MemorySegment) h.invokeExact(peer, ObjC.sel("RTFFromRange:"), range.toSegment());

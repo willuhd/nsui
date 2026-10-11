@@ -310,8 +310,13 @@ public class NSText extends NSView {
         }
     }
 
-    /// [text setFont:range:]
+    /// [text setFont:range:] — an out-of-bounds range raises NSRangeException natively
+    /// ("NSMutableRLEArray objectAtIndex:effectiveRange:: Out of bounds") and a nil font
+    /// raises NSInvalidArgumentException ("nil NSFont given"); both abort the JVM.
+    /// setTextColor:range: is the nullable one above (nil removes the colour).
     public void setFontRange(NSFont font, NSRange range) {
+        Bounds.range(range, textLength(), "setFont:range:");
+        Bounds.nonNull(font, "setFont:range: (font)");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.RANGE));
             h.invokeExact(peer, ObjC.sel("setFont:range:"),

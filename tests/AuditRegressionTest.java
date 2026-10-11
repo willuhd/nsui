@@ -267,6 +267,60 @@ public final class AuditRegressionTest {
             TestKit.check(false, "collection count-guard block threw: " + t);
         }
 
+        // --- 8f. text: nil arguments and out-of-range NSRange ---
+        // Each of these aborts the JVM natively (verified) instead of raising, so the
+        // guard is the only thing standing between a caller mistake and a dead process.
+        try {
+            nsui.NSTextStorage storage = nsui.NSTextStorage.create("abc");
+            TestKit.expectThrows("NSTextStorage.addLayoutManager(null) rejects nil",
+                    IllegalArgumentException.class, () -> storage.addLayoutManager(null));
+            TestKit.noThrow("NSTextStorage.removeLayoutManager(null) stays a no-op",
+                    () -> storage.removeLayoutManager(null));
+
+            nsui.NSText text = nsui.NSText.create(new NSRect(0, 0, 200, 100));
+            text.setString("abc");
+            TestKit.expectThrows("NSText.setFontRange out-of-range rejects",
+                    IllegalArgumentException.class, () -> text.setFontRange(null, new nsui.NSRange(0, 4)));
+            // A nil font is nonnull in NSText.h and aborts natively ("nil NSFont given"),
+            // which is easy to miss because the range guard fires first for the case above.
+            TestKit.expectThrows("NSText.setFontRange(null font) rejects",
+                    IllegalArgumentException.class,
+                    () -> text.setFontRange(null, new nsui.NSRange(0, 3)));
+            TestKit.noThrow("NSText.setFontRange in-range still works",
+                    () -> text.setFontRange(NSFont.systemFontOfSize(12), new nsui.NSRange(0, 3)));
+
+            nsui.NSMutableAttributedString mut = nsui.NSMutableAttributedString.create("abc");
+            TestKit.expectThrows("NSMutableAttributedString.append(null) rejects nil",
+                    IllegalArgumentException.class, () -> mut.append(null));
+            TestKit.expectThrows("NSMutableAttributedString.insertAttributedString(null,0) rejects nil",
+                    IllegalArgumentException.class, () -> mut.insertAttributedString(null, 0));
+            TestKit.expectThrows("NSMutableAttributedString.setAttributedString(null) rejects nil",
+                    IllegalArgumentException.class, () -> mut.setAttributedString(null));
+            TestKit.expectThrows("NSMutableAttributedString.replaceCharactersInRangeWithAttributedString(·,null) rejects nil",
+                    IllegalArgumentException.class,
+                    () -> mut.replaceCharactersInRangeWithAttributedString(new nsui.NSRange(0, 1), null));
+            TestKit.expectThrows("NSMutableAttributedString.addAttribute(nil value) rejects",
+                    IllegalArgumentException.class,
+                    () -> mut.addAttribute("NSFont", null, new nsui.NSRange(0, 1)));
+            TestKit.expectThrows("NSMutableAttributedString.addAttributes(nil) rejects",
+                    IllegalArgumentException.class,
+                    () -> mut.addAttributes(null, new nsui.NSRange(0, 1)));
+            // setAttributes: is the documented-nullable one and must stay accepted.
+            TestKit.noThrow("NSMutableAttributedString.setAttributes(null) passes nil",
+                    () -> mut.setAttributes(null, new nsui.NSRange(0, 1)));
+
+            nsui.NSString s = nsui.NSString.of("abc");
+            TestKit.expectThrows("NSString.lineRangeForRange out-of-range rejects",
+                    IllegalArgumentException.class, () -> s.lineRangeForRange(new nsui.NSRange(0, 4)));
+            TestKit.expectThrows("NSString.paragraphRangeForRange out-of-range rejects",
+                    IllegalArgumentException.class, () -> s.paragraphRangeForRange(new nsui.NSRange(0, 4)));
+            TestKit.expectThrows("NSString.rangeOfComposedCharacterSequencesForRange out-of-range rejects",
+                    IllegalArgumentException.class,
+                    () -> s.rangeOfComposedCharacterSequencesForRange(new nsui.NSRange(0, 4)));
+        } catch (Throwable t) {
+            TestKit.check(false, "text guard block threw: " + t);
+        }
+
         // --- 9. value and layer struct round-trips ---
         try {
             NSValue v = NSValue.valueWithPoint(new NSPoint(3, 4));

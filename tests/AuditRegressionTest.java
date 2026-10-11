@@ -1171,6 +1171,38 @@ public final class AuditRegressionTest {
             TestKit.check(false, "rangeOfString range block threw: " + t);
         }
 
+        // --- 8ai. NSView backing-geometry family (of(POINT,POINT) / of(RECT,RECT,INT)) ---
+        // Round-trip based so it holds at 1x or 2x: toBacking then fromBacking must be exact,
+        // and aligning an already-aligned rect must be idempotent.
+        try {
+            NSView bv = NSView.create(new NSRect(0, 0, 100, 100), (v, d) -> {});
+            NSPoint p0 = new NSPoint(3.5, 7.25);
+            NSPoint backPt = bv.convertPointFromBacking(bv.convertPointToBacking(p0));
+            TestKit.check(Math.abs(backPt.x() - p0.x()) < 0.0001 && Math.abs(backPt.y() - p0.y()) < 0.0001,
+                    "convertPointToBacking/FromBacking round-trips (got " + backPt.x() + "," + backPt.y() + ")");
+            // Masks verified natively as VALID: 15, 51, 60, 3840, 983040 (see
+            // validateAlignmentOptions). 0 is INVALID (measured) even though it reads like
+            // "no alignment", and so are single-attribute and over-specified masks.
+            NSRect alignedOnce = bv.backingAlignedRect(new NSRect(0.3, 0.3, 10.7, 10.7),
+                    NSView.ALIGN_ALL_EDGES_INWARD);
+            NSRect alignedTwice = bv.backingAlignedRect(alignedOnce, NSView.ALIGN_ALL_EDGES_INWARD);
+            TestKit.check(Math.abs(alignedOnce.x() - alignedTwice.x()) < 0.0001
+                            && Math.abs(alignedOnce.width() - alignedTwice.width()) < 0.0001,
+                    "backingAlignedRect is idempotent (once " + alignedOnce + ")");
+            TestKit.noThrow("backingAlignedRect accepts 51 (min+size, both axes)",
+                    () -> bv.backingAlignedRect(new NSRect(0.3, 0.3, 10.7, 10.7), 51L));
+            TestKit.noThrow("backingAlignedRect accepts 60 (max+size, both axes)",
+                    () -> bv.backingAlignedRect(new NSRect(0.3, 0.3, 10.7, 10.7), 60L));
+            for (long badMask : new long[] {0L, 1L, 5L, 17L, 21L, 48L, 63L, 65535L}) {
+                final long b = badMask;
+                TestKit.expectThrows("backingAlignedRect rejects invalid mask " + b,
+                        IllegalArgumentException.class,
+                        () -> bv.backingAlignedRect(new NSRect(0.3, 0.3, 10.7, 10.7), b));
+            }
+        } catch (Throwable t) {
+            TestKit.check(false, "backing-geometry block threw: " + t);
+        }
+
         // --- 8z. type-confusion guards on the raw collection-view setters ---
         // AppKit does NOT raise a type error here, it either asserts isKindOfClass: or
         // messages the object: setCollectionViewLayout: with a plain NSView raised

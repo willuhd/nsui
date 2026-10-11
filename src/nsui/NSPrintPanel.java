@@ -122,10 +122,12 @@ public final class NSPrintPanel extends NSObject {
     // ---- accessory controllers (macOS 10.5; NSViewController<NSPrintPanelAccessorizing>) ----
     /// addAccessoryController:.
     public void addAccessoryController(NSViewController controller) {
+        Bounds.nonNull(controller, "addAccessoryController:");
         ObjC.msgSendVoidId(peer, ObjC.sel("addAccessoryController:"), (MemorySegment) (controller == null ? MemorySegment.NULL : controller.peer()));
     }
     /// addAccessoryController: with raw id.
     public void addAccessoryController(MemorySegment controller) {
+        Bounds.nonNull(controller, "addAccessoryController:");
         ObjC.msgSendVoidId(peer, ObjC.sel("addAccessoryController:"), (MemorySegment) (controller == null ? MemorySegment.NULL : controller));
     }
     /// removeAccessoryController:.

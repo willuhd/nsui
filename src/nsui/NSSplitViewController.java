@@ -49,10 +49,14 @@ public final class NSSplitViewController extends NSViewController {
     public NSArray splitViewItems() { return NSArray.wrap(ObjC.msgSendId(peer, ObjC.sel("splitViewItems"))); }
     /// addSplitViewItem: (raw peer).
     public void addSplitViewItem(MemorySegment item) {
+        Bounds.nonNull(item, "addSplitViewItem:");
         ObjC.msgSendVoidId(peer, ObjC.sel("addSplitViewItem:"), ObjC.nullable(item));
     }
     /// insertSplitViewItem:atIndex:.
     public void insertSplitViewItem(MemorySegment item, long index) {
+        Bounds.nonNull(item, "insertSplitViewItem:atIndex:");
+        NSArray items = splitViewItems();
+        Bounds.insertIndex(index, items == null ? 0 : items.count(), "insertSplitViewItem:atIndex:");
         ensureInit();
         try {
             handles.hInsert().invokeExact(peer, ObjC.sel("insertSplitViewItem:atIndex:"), ObjC.nullable(item), index);

@@ -368,6 +368,7 @@ public final class NSCollectionView extends NSView {
 
     /// [view setSelectionIndexPaths:]
     public void setSelectionIndexPaths(MemorySegment indexPaths) {
+        Bounds.nonNull(indexPaths, "setSelectionIndexPaths:");
         try {
             MemorySegment arg = (indexPaths == null || indexPaths.address() == 0) ? MemorySegment.NULL : indexPaths;
             handles.hSetDataSource().invokeExact(peer, ObjC.sel("setSelectionIndexPaths:"), (MemorySegment) arg);
@@ -378,6 +379,7 @@ public final class NSCollectionView extends NSView {
 
     /// [view selectItemsAtIndexPaths:scrollPosition:] — no delegate callbacks.
     public void selectItemsAtIndexPaths(MemorySegment indexPaths, long scrollPosition) {
+        Bounds.nonNull(indexPaths, "selectItemsAtIndexPaths:scrollPosition:");
         try {
             handles.hVoidIdInt().invokeExact(peer, ObjC.sel("selectItemsAtIndexPaths:scrollPosition:"), (MemorySegment) (indexPaths == null ? MemorySegment.NULL : indexPaths), scrollPosition);
         } catch (Throwable t) {
@@ -387,6 +389,7 @@ public final class NSCollectionView extends NSView {
 
     /// [view deselectItemsAtIndexPaths:] — no delegate callbacks.
     public void deselectItemsAtIndexPaths(MemorySegment indexPaths) {
+        Bounds.nonNull(indexPaths, "deselectItemsAtIndexPaths:");
         try {
             handles.hSetDataSource().invokeExact(peer, ObjC.sel("deselectItemsAtIndexPaths:"), (MemorySegment) (indexPaths == null ? MemorySegment.NULL : indexPaths));
         } catch (Throwable t) {
@@ -460,6 +463,7 @@ public final class NSCollectionView extends NSView {
 
     /// [view makeItemWithIdentifier:forIndexPath:] — dequeued or newly instantiated item.
     public NSCollectionViewItem makeItemWithIdentifier(String identifier, MemorySegment indexPath) {
+        Bounds.nonNull(indexPath, "makeItemWithIdentifier:forIndexPath: (indexPath)");
         try {
             return NSCollectionViewItem.wrap((MemorySegment) handles.hIdIdId().invokeExact(peer, ObjC.sel("makeItemWithIdentifier:forIndexPath:"),
                     (MemorySegment) (identifier == null ? MemorySegment.NULL : ObjC.nsstring(identifier)),
@@ -483,6 +487,7 @@ public final class NSCollectionView extends NSView {
 
     /// [view itemAtIndex:] — item at a section-0 index, or nil (soft-deprecated, single section only).
     public NSCollectionViewItem itemAtIndex(long index) {
+        Bounds.index(index, numberOfItemsInSection(0), "itemAtIndex:");
         try {
             return NSCollectionViewItem.wrap((MemorySegment) handles.hIdInt().invokeExact(peer, ObjC.sel("itemAtIndex:"), index));
         } catch (Throwable t) {
@@ -539,6 +544,7 @@ public final class NSCollectionView extends NSView {
 
     /// [view supplementaryViewForElementKind:atIndexPath:] — live view or nil.
     public NSView supplementaryViewForElementKind(String kind, MemorySegment indexPath) {
+        Bounds.nonNull(indexPath, "supplementaryViewForElementKind:atIndexPath: (indexPath)");
         try {
             return NSView.wrap((MemorySegment) handles.hIdIdId().invokeExact(peer, ObjC.sel("supplementaryViewForElementKind:atIndexPath:"),
                     (MemorySegment) (kind == null ? MemorySegment.NULL : ObjC.nsstring(kind)),
@@ -631,6 +637,8 @@ public final class NSCollectionView extends NSView {
 
     /// [view moveItemAtIndexPath:toIndexPath:]
     public void moveItemAtIndexPath(MemorySegment from, MemorySegment to) {
+        Bounds.nonNull(from, "moveItemAtIndexPath:toIndexPath: (from)");
+        Bounds.nonNull(to, "moveItemAtIndexPath:toIndexPath: (to)");
         try {
             handles.hVoidIdId().invokeExact(peer, ObjC.sel("moveItemAtIndexPath:toIndexPath:"),
                     (MemorySegment) (from == null ? MemorySegment.NULL : from),

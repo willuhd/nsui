@@ -382,15 +382,14 @@ public final class AuditRegressionTest {
             TestKit.expectThrows("unhideRowsAtIndexes(row 3 == count) rejects",
                     IllegalArgumentException.class, () -> tvRows.unhideRowsAtIndexes(set3, 0));
 
-            // moveRowAtIndex:toIndex: — both indexes bounded, and the reason is STATE, not an
-            // exception: AppKit does not raise for an out-of-range destination (measured raw:
-            // -1, 0, 3, 4, 50 all return) but silently leaves an extra NSTableRowView behind.
-            // Measured here: three valid moves (0,1) keep subviews == rows (3), while (0,4),
-            // (0,-1) and even (0,3) == count grow it 3 -> 4 -> 5 with numberOfRows() fixed at
-            // 3. So 0..count-1 is the safe set, and the assertions below observe the state too
-            // (a rejection-only test would not notice the accumulation).
-            // The FIRST move realizes the row views (measured: 0 -> rows), so take the stable
-            // baseline after one valid move and check that a second one does not grow it.
+            // moveRowAtIndex:toIndex: — both indexes bounded. The DISCRIMINATING assertions
+            // are the three expectThrows below: with the bound removed the JVM dies there.
+            // The stability check is a baseline/documentation oracle only — under an unbounded
+            // guard these same in-range moves would also run — so it is written against
+            // numberOfRows() (an 0 == 0 comparison would pass trivially).
+            // Measured raw: valid (0,1)/(0,2) repeat as 3,3,3 subviews for 3 rows, while
+            // (0,4) and (0,-1) grow 3,4,5 and (0,3) == count grows 3,4,4.
+            // The FIRST move realizes the row views (0 -> rows), so the baseline comes after it.
             tvRows.beginUpdates();
             try {
                 tvRows.moveRowAtIndex(0, 2);
@@ -405,9 +404,9 @@ public final class AuditRegressionTest {
                 tvRows.endUpdates();
             }
             long subviewsAfterValid = tvRows.subviews() == null ? 0 : tvRows.subviews().count();
-            TestKit.check(subviewsAfterValid == subviewsStable,
-                    "a repeated valid moveRowAtIndex keeps the row-view count stable ("
-                            + subviewsStable + " -> " + subviewsAfterValid + ")");
+            TestKit.check(subviewsAfterValid == tvRows.numberOfRows(),
+                    "a valid moveRowAtIndex leaves one row view per row (subviews "
+                            + subviewsAfterValid + ", rows " + tvRows.numberOfRows() + ")");
             TestKit.expectThrows("moveRowAtIndex(0, 3) rejects (== count: accumulates row views)",
                     IllegalArgumentException.class, () -> tvRows.moveRowAtIndex(0, 3));
             TestKit.expectThrows("moveRowAtIndex(0, 4) rejects (count+1: accumulates row views)",

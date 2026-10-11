@@ -1089,21 +1089,19 @@ public class NSTableView extends NSView {
     ///
     /// AppKit does not raise for an out-of-range destination (measured raw, guard bypassed, on
     /// a 3-row view-based table: newIndex -1, 0, 3, 4, 50 all return), but it silently leaves
-    /// an extra NSTableRowView behind: three repetitions of a VALID move (0,1) keep the table
-    /// at 3 subviews for 3 rows, while three repetitions of (0,4), (0,-1) or even (0,3)
-    /// (= count) grow it 3 -> 4 -> 5 while numberOfRows() stays 3. `oldIndex` outside
-    /// [0, count) raises instead ("error inserting/removing/moving row 3 (numberOfRows: 2)",
-    /// or NSInternalInconsistencyException "a positive row should have been computed!" for -1).
-    ///
-    /// So the safe set is exactly 0..count-1 for both indexes, which is what this validates.
-    /// An earlier version passed `newIndex` through on the grounds that native tolerates it;
-    /// that made the row-view accumulation reachable from Java (verified by replaying this
-    /// change's own test sequence, which left 5 row views for 3 rows). Note count+1 and
-    /// negatives are rejected here too, and count == numberOfRows() is rejected as well
-    /// because it accumulates the same way.
+    /// an extra NSTableRowView behind. Three repetitions of a move, subviews after each:
+    ///   (0,1) and (0,2) valid  -> 3, 3, 3        (stable)
+    ///   (0,4) and (0,-1)       -> 3, 4, 5        (grows)
+    ///   (0,3) == count         -> 3, 4, 4        (grows)
+    /// with numberOfRows() fixed at 3 throughout. `oldIndex` outside [0, count) raises instead
+    /// ("error inserting/removing/moving row 3 (numberOfRows: 2)", or
+    /// NSInternalInconsistencyException "a positive row should have been computed!" for -1).
+    /// So the safe set is 0..count-1 for BOTH indexes, which is what this validates — including
+    /// `count`, which an insert-style bound would have allowed.
     public void moveRowAtIndex(long oldIndex, long newIndex) {
-        Bounds.index(oldIndex, numberOfRows(), "moveRowAtIndex:toIndex: (oldIndex)");
-        Bounds.index(newIndex, numberOfRows(), "moveRowAtIndex:toIndex: (newIndex)");
+        long rows = numberOfRows();
+        Bounds.index(oldIndex, rows, "moveRowAtIndex:toIndex: (oldIndex)");
+        Bounds.index(newIndex, rows, "moveRowAtIndex:toIndex: (newIndex)");
         ensureInit();
         try { H.hVoidIntInt().invokeExact(peer, Sels.moveRowAtIndex_toIndex, oldIndex, newIndex); } catch (Throwable t) { throw new RuntimeException("moveRowAtIndex:toIndex: failed", t); }
     }

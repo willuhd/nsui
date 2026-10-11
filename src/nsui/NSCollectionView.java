@@ -129,14 +129,13 @@ public final class NSCollectionView extends NSView {
     /// NSCollectionViewItem, and subclasses (including KVO subclasses) pass isKindOfClass:,
     /// so this mirrors the requirement instead of adding a stricter rule.
     public void setItemPrototype(MemorySegment prototype) {
-        if (prototype != null && prototype.address() != 0
-                && !NSObject.wrap(prototype).isKindOfClass("NSCollectionViewItem")) {
+        MemorySegment arg = (prototype == null || prototype.address() == 0) ? MemorySegment.NULL : prototype;
+        if (arg.address() != 0 && !NSObject.wrap(arg).isKindOfClass("NSCollectionViewItem")) {
             throw new IllegalArgumentException("setItemPrototype: the prototype must be an "
-                    + "NSCollectionViewItem (AppKit messages it with _setCollectionView:, which "
-                    + "aborts for any other class)");
+                    + "NSCollectionViewItem (AppKit messages it with _setCollectionView: and "
+                    + "-view, which abort for any other class)");
         }
         try {
-            MemorySegment arg = (prototype == null || prototype.address() == 0) ? MemorySegment.NULL : prototype;
             handles.hSetDataSource().invokeExact(peer, ObjC.sel("setItemPrototype:"), (MemorySegment) arg);
         } catch (Throwable t) {
             throw new RuntimeException("setItemPrototype: failed", t);

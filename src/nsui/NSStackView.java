@@ -80,12 +80,20 @@ public class NSStackView extends NSView {
     /// addArrangedSubview: — append a view to the stack (also a subview).
     public void addArrangedSubview(NSView subview) {
         Bounds.nonNull(subview, "addArrangedSubview:");
+        requireNotSelfOrAncestor(subview, "addArrangedSubview:");
         ObjC.msgSendVoidId(peer, ObjC.sel("addArrangedSubview:"), subview.peer());
     }
 
     /// removeArrangedSubview: — take a view back out of the stack's layout (still a subview).
+    /// The view must be an arranged subview: AppKit raises NSInternalInconsistencyException
+    /// ("View ... is not (and has to be) in stack view ...") for a foreign one or a repeat
+    /// removal (verified, exit 134), so isArrangedView gates it like the priority accessors.
     public void removeArrangedSubview(NSView subview) {
         Bounds.nonNull(subview, "removeArrangedSubview:");
+        if (!isArrangedView(this, subview)) {
+            throw new IllegalArgumentException("removeArrangedSubview: the view is not an "
+                    + "arranged subview of this stack view (AppKit raises otherwise)");
+        }
         ObjC.msgSendVoidId(peer, ObjC.sel("removeArrangedSubview:"), subview.peer());
     }
 
@@ -334,6 +342,7 @@ public class NSStackView extends NSView {
     /// [stack insertArrangedSubview:atIndex:].
     public void insertArrangedSubview(NSView view, long index) {
         Bounds.nonNull(view, "insertArrangedSubview:atIndex:");
+        requireNotSelfOrAncestor(view, "insertArrangedSubview:atIndex:");
         Bounds.insertIndex(index, arrangedSubviews().size(), "insertArrangedSubview:atIndex:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.INT));

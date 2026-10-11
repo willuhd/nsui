@@ -1246,6 +1246,49 @@ public final class AuditRegressionTest {
             TestKit.check(false, "NSString variant block threw: " + t);
         }
 
+        // --- 8ak. self/ancestor insertion cycles (measured: SIGSEGV for views, 134 for others) ---
+        // Raw probes: v.addSubview(v) -> exit 139; stack.addArrangedSubview(stack) -> 139;
+        // w.addChildWindow(w) -> 134 "cannot add self as child of itself";
+        // layer.addSublayer(layer) -> 134 CALayerInvalid cycle. The indirect forms HANG
+        // (>8 s), which the ancestry walk also prevents.
+        try {
+            NSView cv1 = NSView.create(new NSRect(0, 0, 100, 100), (v, d) -> {});
+            NSView cv2 = NSView.create(new NSRect(0, 0, 50, 50), (v, d) -> {});
+            NSView cv3 = NSView.create(new NSRect(0, 0, 25, 25), (v, d) -> {});
+            cv1.addSubview(cv2);
+            cv2.addSubview(cv3);
+            TestKit.expectThrows("addSubview(self) rejects (native SIGSEGV)",
+                    IllegalArgumentException.class, () -> cv1.addSubview(cv1));
+            TestKit.expectThrows("addSubview(ancestor) rejects (would hang)",
+                    IllegalArgumentException.class, () -> cv3.addSubview(cv1));
+            TestKit.noThrow("re-parenting a descendant stays legal", () -> cv1.addSubview(cv3));
+
+            nsui.NSStackView stk2 = nsui.NSStackView.create(new NSRect(0, 0, 100, 100));
+            TestKit.expectThrows("addArrangedSubview(self) rejects (native SIGSEGV)",
+                    IllegalArgumentException.class, () -> stk2.addArrangedSubview(stk2));
+            NSView arranged2 = NSView.create(new NSRect(0, 0, 20, 20), (v, d) -> {});
+            stk2.addArrangedSubview(arranged2);
+            TestKit.expectThrows("removeArrangedSubview(twice) rejects (membership precondition)",
+                    IllegalArgumentException.class,
+                    () -> { stk2.removeArrangedSubview(arranged2); stk2.removeArrangedSubview(arranged2); });
+
+            NSWindow cycleWin = TestKit.hiddenWindow(120, 80);
+            TestKit.expectThrows("addChildWindow(self) rejects",
+                    IllegalArgumentException.class, () -> cycleWin.addChildWindow(cycleWin, 1));
+
+            nsui.CALayer cl1 = nsui.CALayer.create();
+            nsui.CALayer cl2 = nsui.CALayer.create();
+            cl1.addSublayer(cl2);
+            TestKit.expectThrows("CALayer.addSublayer(self) rejects (native cycle abort)",
+                    IllegalArgumentException.class, () -> cl1.addSublayer(cl1));
+            TestKit.expectThrows("CALayer.addSublayer(ancestor) rejects",
+                    IllegalArgumentException.class, () -> cl2.addSublayer(cl1));
+            TestKit.noThrow("inserting a fresh layer stays legal",
+                    () -> cl1.insertSublayer(nsui.CALayer.create(), 0));
+        } catch (Throwable t) {
+            TestKit.check(false, "self/ancestor cycle block threw: " + t);
+        }
+
         // --- 8z. type-confusion guards on the raw collection-view setters ---
         // AppKit does NOT raise a type error here, it either asserts isKindOfClass: or
         // messages the object: setCollectionViewLayout: with a plain NSView raised

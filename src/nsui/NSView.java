@@ -985,10 +985,27 @@ public class NSView extends NSResponder {
 
     // ---------------------------------------------------------------- instance API
 
+    /// Reject inserting a view that is the receiver itself or one of its ANCESTORS.
+    ///
+    /// AppKit faults or hangs on that cycle. Measured with a bare probe:
+    /// `v.addSubview(v)` -> SIGSEGV (exit 139), `stack.addArrangedSubview(stack)` -> SIGSEGV,
+    /// and the indirect form `a.addSubview(b); b.addSubview(a)` never returns (>8 s). Walking
+    /// up from the receiver catches both the self and the ancestor case in O(depth); adding a
+    /// DESCENDANT (a legitimate re-parent/re-order) is unaffected.
+    void requireNotSelfOrAncestor(NSView view, String what) {
+        for (NSView p = this; p != null; p = p.superview()) {
+            if (p.peer() != null && p.peer().address() == view.peer().address()) {
+                throw new IllegalArgumentException(what + ": the view is the receiver or one of "
+                        + "its ancestors; AppKit faults or hangs on that cycle");
+            }
+        }
+    }
+
     /// addSubview: — attach a child view (non-null; null is a caller error).
     public void addSubview(NSView subview) {
         ensureInit();
         Bounds.nonNull(subview, "addSubview:");
+        requireNotSelfOrAncestor(subview, "addSubview:");
         ObjC.msgSendVoidId(peer, Sels.addSubview, subview.peer());
     }
 
@@ -1563,6 +1580,7 @@ public class NSView extends NSResponder {
         ensureInit();
         Bounds.nonNull(oldView, "replaceSubview:with:");
         Bounds.nonNull(newView, "replaceSubview:with:");
+        requireNotSelfOrAncestor(newView, "replaceSubview:with:");
         try {
             H.hVoidIdId().invokeExact(peer, Sels.replaceSubview_with, oldView.peer(), newView.peer());
         } catch (Throwable t) {

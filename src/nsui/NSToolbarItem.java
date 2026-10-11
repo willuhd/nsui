@@ -337,6 +337,7 @@ public final class NSToolbarItem extends NSObject implements NSUserInterfaceItem
     // ---- backgroundTintColor (NSColor, macOS 26) ----
     /// backgroundTintColor.
     public NSColor backgroundTintColor() {
+        if (!respondsToSelector(ObjC.sel("backgroundTintColor"))) return null;   // macOS 26+
         return NSColor.wrap(ObjC.msgSendId(peer, ObjC.sel("backgroundTintColor")));
     }
     /// setBackgroundTintColor:.
@@ -366,10 +367,12 @@ public final class NSToolbarItem extends NSObject implements NSUserInterfaceItem
     // ---- style (NSToolbarItemStyle long, macOS 26) ----
     /// style.
     public long style() {
+        if (!respondsToSelector(ObjC.sel("style"))) return 0L;   // macOS 26+
         return ObjC.msgSendLong(peer, ObjC.sel("style"));
     }
     /// setStyle:.
     public void setStyle(long style) {
+        if (!respondsToSelector(ObjC.sel("setStyle:"))) return;   // macOS 26+
         try { handles.hSetTag().invokeExact(peer, ObjC.sel("setStyle:"), style); }
         catch (Throwable t) { throw new RuntimeException("setStyle: failed", t); }
     }

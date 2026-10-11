@@ -294,6 +294,7 @@ public final class NSScreen extends NSObject {
 
     /// [screen CGDirectDisplayID] (macOS 26.0+) — the CoreGraphics display id (uint32_t, 32-bit unsigned).
     public long cgDirectDisplayID() {
+        if (!respondsToSelector(ObjC.sel("CGDirectDisplayID"))) return 0L;   // version-gated
         try {
             return ((int) ObjC.handle(Sig.of(Ret.INT32)).invokeExact(peer, ObjC.sel("CGDirectDisplayID"))) & 0xFFFFFFFFL;
         } catch (Throwable t) {

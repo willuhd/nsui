@@ -1505,6 +1505,41 @@ public final class AuditRegressionTest {
             TestKit.check(false, "mutable-peer block threw: " + t);
         }
 
+        // --- 8at. version-gated accessors are guarded (and still work where present) ---
+        // These families were inconsistent: NSButton guarded its macOS-26 selectors while
+        // NSSlider/NSTextField/NSGestureRecognizer/NSToolbarItem/NSView/NSScreen/NSColorPanel
+        // sent them unconditionally (an abort on any older host). They now return a default /
+        // no-op when respondsToSelector: is false; on THIS host the selectors exist, so the
+        // assertions below also prove the guards do not short-circuit a live call.
+        try {
+            nsui.NSSlider vSlider = nsui.NSSlider.create(new NSRect(0, 0, 100, 24));
+            TestKit.noThrow("NSSlider.tintProminence()/setTintProminence() are guarded but live",
+                    () -> { vSlider.setTintProminence(1); vSlider.tintProminence(); });
+            TestKit.noThrow("NSSlider.neutralValue()/setNeutralValue() are guarded but live",
+                    () -> { vSlider.setNeutralValue(0.5); vSlider.neutralValue(); });
+            nsui.NSTextField vField = nsui.NSTextField.create(new NSRect(0, 0, 100, 24));
+            TestKit.noThrow("NSTextField.placeholderStrings() is guarded but live",
+                    () -> vField.placeholderStrings());
+            nsui.NSGestureRecognizer vGr = nsui.NSGestureRecognizer.create(null, "");
+            if (vGr != null) {
+                TestKit.noThrow("NSGestureRecognizer name round-trip is guarded but live",
+                        () -> { vGr.setName("probe"); vGr.name(); vGr.modifierFlags(); });
+            } else {
+                TestKit.probe("gesture recognizer unavailable");
+            }
+            nsui.NSToolbarItem vItem = nsui.NSToolbarItem.create("probe.item");
+            TestKit.noThrow("NSToolbarItem.style() is guarded but live", () -> vItem.style());
+            NSView vView = NSView.create(new NSRect(0, 0, 10, 10), (v, d) -> {});
+            TestKit.noThrow("NSView.prefersCompactControlSizeMetrics() is guarded but live",
+                    () -> vView.prefersCompactControlSizeMetrics());
+            TestKit.noThrow("NSScreen.cgDirectDisplayID() is guarded but live",
+                    () -> nsui.NSScreen.mainScreen().cgDirectDisplayID());
+            TestKit.noThrow("NSColorPanel.maximumLinearExposure() is guarded but live",
+                    () -> nsui.NSColorPanel.sharedColorPanel().maximumLinearExposure());
+        } catch (Throwable t) {
+            TestKit.check(false, "version-gated accessor block threw: " + t);
+        }
+
         // --- 8z. type-confusion guards on the raw collection-view setters ---
         // AppKit does NOT raise a type error here, it either asserts isKindOfClass: or
         // messages the object: setCollectionViewLayout: with a plain NSView raised

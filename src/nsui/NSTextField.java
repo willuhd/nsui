@@ -279,15 +279,18 @@ public class NSTextField extends NSControl {
     // ---- placeholderStrings / placeholderAttributedStrings (ID shapes in vocabulary) ----
     /// [field placeholderStrings] — animated cycling placeholders (macOS 26+), or nil.
     public NSArray placeholderStrings() {
+        if (!respondsToSelector(ObjC.sel("placeholderStrings"))) return null;   // macOS 26+
         return NSArray.wrap(ObjC.msgSendId(peer, ObjC.sel("placeholderStrings")));
     }
     /// [field setPlaceholderStrings:] — pass null to clear.
     public void setPlaceholderStrings(NSArray strings) {
+        if (!respondsToSelector(ObjC.sel("setPlaceholderStrings:"))) return;    // macOS 26+
         ObjC.msgSendVoidId(peer, ObjC.sel("setPlaceholderStrings:"),
                 (MemorySegment) (strings == null ? MemorySegment.NULL : strings.peer()));
     }
     /// [field placeholderAttributedStrings] — attributed variant (macOS 26+), or nil.
     public NSArray placeholderAttributedStrings() {
+        if (!respondsToSelector(ObjC.sel("placeholderAttributedStrings"))) return null;  // macOS 26+
         return NSArray.wrap(ObjC.msgSendId(peer, ObjC.sel("placeholderAttributedStrings")));
     }
     /// [field setPlaceholderAttributedStrings:].
@@ -299,6 +302,7 @@ public class NSTextField extends NSControl {
     // ---- resolvesNaturalAlignmentWithBaseWritingDirection (BOOL shapes) ----
     /// [field resolvesNaturalAlignmentWithBaseWritingDirection] (macOS 26+).
     public boolean resolvesNaturalAlignmentWithBaseWritingDirection() {
+        if (!respondsToSelector(ObjC.sel("resolvesNaturalAlignmentWithBaseWritingDirection"))) return false;  // macOS 26+
         return ObjC.msgSendBool(peer, ObjC.sel("resolvesNaturalAlignmentWithBaseWritingDirection"));
     }
     /// [field setResolvesNaturalAlignmentWithBaseWritingDirection:].

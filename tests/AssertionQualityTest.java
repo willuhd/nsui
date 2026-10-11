@@ -45,7 +45,10 @@ public final class AssertionQualityTest {
         for (Path p : files) {
             String code = mask(Files.readString(p));
             String flat = code.replaceAll("\\s+", "");
-            int t = count(code, tautology);
+            // Whitespace-insensitive: "check( true" and "check(true" are the same
+            // tautology. Boolean.TRUE is the same literal spelled differently.
+            int t = count(flat, tautology) + count(flat, "check(" + "Boolean.TRUE")
+                    + countAlwaysTrueNames(code);
             Matcher te = tautExpr.matcher(code);
             StringBuilder locs = new StringBuilder();
             while (te.find()) {
@@ -138,7 +141,9 @@ public final class AssertionQualityTest {
         return n;
     }
 
-    /// Blank out comments and string/char literals so counts ignore prose.
+    /// Blank out comments and string/char literals so counts ignore prose, and so a
+    /// pattern can never hide inside a literal. Newlines are preserved so
+    /// `lineOf` offsets stay meaningful.
     private static String mask(String text) {
         char[] out = text.toCharArray();
         int i = 0, n = text.length();
@@ -147,25 +152,50 @@ public final class AssertionQualityTest {
             if (c == '/' && i + 1 < n && text.charAt(i + 1) == '/') {
                 int j = text.indexOf('\n', i);
                 j = j < 0 ? n : j;
-                for (int k = i; k < j; k++) if (out[k] != '\n') out[k] = ' ';
+                blank(out, i, j);
                 i = j;
             } else if (c == '/' && i + 1 < n && text.charAt(i + 1) == '*') {
                 int j = text.indexOf("*/", i + 2);
                 j = j < 0 ? n : j + 2;
-                for (int k = i; k < j; k++) if (out[k] != '\n') out[k] = ' ';
+                blank(out, i, j);
                 i = j;
             } else if (c == '"') {
-                i++;
-                while (i < n && text.charAt(i) != '"') { if (text.charAt(i) == '\\') i++; i++; }
-                i++;
+                int j = i + 1;
+                while (j < n && text.charAt(j) != '"') { if (text.charAt(j) == '\\') j++; j++; }
+                j = Math.min(j + 1, n);
+                blank(out, i, j);
+                i = j;
             } else if (c == '\'') {
-                i++;
-                while (i < n && text.charAt(i) != '\'') { if (text.charAt(i) == '\\') i++; i++; }
-                i++;
+                int j = i + 1;
+                while (j < n && text.charAt(j) != '\'') { if (text.charAt(j) == '\\') j++; j++; }
+                j = Math.min(j + 1, n);
+                blank(out, i, j);
+                i = j;
             } else {
                 i++;
             }
         }
         return new String(out);
+    }
+
+    private static void blank(char[] out, int from, int to) {
+        for (int k = from; k < to; k++) if (out[k] != '\n') out[k] = ' ';
+    }
+
+    /// Count `boolean x = true;` locals/fields that are never reassigned and then
+    /// passed straight to `check(x, ...)` — an always-true assertion the literal
+    /// scans cannot see (`x = true; check(x, ...)`).
+    private static int countAlwaysTrueNames(String code) {
+        int n = 0;
+        Matcher decl = Pattern.compile("\\bboolean\\s+([A-Za-z_]\\w*)\\s*=\\s*true\\b").matcher(code);
+        while (decl.find()) {
+            String name = decl.group(1);
+            Matcher assigns = Pattern.compile("\\b" + Pattern.quote(name) + "\\s*=(?!=)").matcher(code);
+            int assignCount = 0;
+            while (assigns.find()) assignCount++;
+            if (assignCount != 1) continue;   // reassigned somewhere: not a constant
+            if (Pattern.compile("\\bcheck\\s*\\(\\s*" + Pattern.quote(name) + "\\s*,").matcher(code).find()) n++;
+        }
+        return n;
     }
 }

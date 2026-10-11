@@ -45,19 +45,21 @@ public final class CAConstraint extends NSObject {
         if (handles != null) return;
         try { ObjC.ensureFramework("QuartzCore"); } catch (Throwable ignored) {}
         handles = new Handles(
-                ObjC.handle(Sig.of(Ret.ID, Arg.INT, Arg.ID, Arg.INT, Arg.DOUBLE, Arg.DOUBLE)),
-                ObjC.handle(Sig.of(Ret.ID, Arg.INT, Arg.ID, Arg.INT, Arg.DOUBLE)),
-                ObjC.handle(Sig.of(Ret.ID, Arg.INT, Arg.ID, Arg.INT)),
+                ObjC.handle(Sig.of(Ret.ID, Arg.INT32, Arg.ID, Arg.INT32, Arg.DOUBLE, Arg.DOUBLE)),
+                ObjC.handle(Sig.of(Ret.ID, Arg.INT32, Arg.ID, Arg.INT32, Arg.DOUBLE)),
+                ObjC.handle(Sig.of(Ret.ID, Arg.INT32, Arg.ID, Arg.INT32)),
                 ObjC.handle(Sig.of(Ret.DOUBLE)));
     }
 
     /// constraintWithAttribute:relativeTo:attribute:scale:offset:.
+    /// Both attribute arguments are C `int` (CAConstraintAttribute), so they use the
+    /// exact INT32 call shape.
     public static CAConstraint relativeTo(long attr, String sourceId, long sourceAttr, double scale, double offset) {
         ensureInit();
         try {
             return wrap((MemorySegment) handles.hFull().invokeExact(ObjC.cls("CAConstraint"),
                     ObjC.sel("constraintWithAttribute:relativeTo:attribute:scale:offset:"),
-                    attr, ObjC.nsstring(sourceId), sourceAttr, scale, offset));
+                    (int) attr, ObjC.nsstring(sourceId), (int) sourceAttr, scale, offset));
         } catch (Throwable t) {
             throw new RuntimeException("constraintWithAttribute:... failed", t);
         }
@@ -69,7 +71,7 @@ public final class CAConstraint extends NSObject {
         try {
             return wrap((MemorySegment) handles.hOffset().invokeExact(ObjC.cls("CAConstraint"),
                     ObjC.sel("constraintWithAttribute:relativeTo:attribute:offset:"),
-                    attr, ObjC.nsstring(sourceId), sourceAttr, offset));
+                    (int) attr, ObjC.nsstring(sourceId), (int) sourceAttr, offset));
         } catch (Throwable t) {
             throw new RuntimeException("constraintWithAttribute:... failed", t);
         }
@@ -81,7 +83,7 @@ public final class CAConstraint extends NSObject {
         try {
             return wrap((MemorySegment) handles.hPlain().invokeExact(ObjC.cls("CAConstraint"),
                     ObjC.sel("constraintWithAttribute:relativeTo:attribute:"),
-                    attr, ObjC.nsstring(sourceId), sourceAttr));
+                    (int) attr, ObjC.nsstring(sourceId), (int) sourceAttr));
         } catch (Throwable t) {
             throw new RuntimeException("constraintWithAttribute:... failed", t);
         }

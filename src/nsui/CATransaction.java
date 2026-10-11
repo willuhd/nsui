@@ -4,7 +4,7 @@ import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ConcurrentHashMap;
 
 import nsui.objc.Blocks;
 import nsui.objc.NsuiForeign;
@@ -27,28 +27,25 @@ public final class CATransaction {
     private record Handles(MethodHandle hVoidClass, MethodHandle hSetDuration, MethodHandle hGetValueForKey, MethodHandle hSetValueForKey, MethodHandle hVoidId) {}
     private static volatile Handles handles;
 
-    /// Queued completion body with the generation it was installed under.
-    private record Completion(long generation, Runnable body) {}
+    /// Java completion bodies keyed by the address of the block literal installed
+    /// for them.
+    ///
+    /// Each `setCompletionBlock(Runnable)` installs its OWN block, so the block the
+    /// runtime calls back identifies which body to run. A single shared block
+    /// cannot do that: at fire time two transactions are indistinguishable, and a
+    /// single queue slot lets a second transaction's install destroy the first
+    /// transaction's still-pending body (it would then run early, and the first
+    /// would never run at all).
+    ///
+    /// Entries are removed when their body fires. QuartzCore delivers a replaced
+    /// block as well as its replacement (see `setCompletionBlock` below), so the
+    /// only entries that could outlive their block are ones whose transaction
+    /// never drains before the process exits — bounded by the number of
+    /// outstanding installs, the same trade-off NSWindow's SHEET_HANDLERS makes.
+    private static final ConcurrentHashMap<Long, Runnable> BODIES = new ConcurrentHashMap<>();
 
-    /// Bodies awaiting delivery (FIFO, at most one outstanding).
-    private static final ConcurrentLinkedQueue<Completion> PENDING = new ConcurrentLinkedQueue<>();
-
-    /// Generation of the most recently installed completion, either mode.
-    /// Written under the class monitor, read without it.
-    private static volatile long installedGeneration;
-
-    /// Next generation to assign. Guarded by the class monitor.
-    private static long currentGeneration;
-
-    /// True while a raw block from the MemorySegment overload is installed.
-    /// While set, the shared-block thunk drops runnable bodies; the two
-    /// modes are not intended to be interleaved within one transaction.
-    private static volatile boolean rawInstalled;
-
-    /// One shared immortal block for every completion: bodies travel via
-    /// PENDING (each delivery pops exactly one), so no per-call block or stub
-    /// is ever built.
-    private static volatile MemorySegment SHARED_BLOCK;
+    /// The static upcall target shared by every completion block, resolved once.
+    private static volatile MethodHandle hThunk;
 
     private CATransaction() {}
 
@@ -67,8 +64,8 @@ public final class CATransaction {
                 ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.ID)),
                 ObjC.handle(Sig.of(Ret.VOID, Arg.ID))
         );
-        if (SHARED_BLOCK == null) {
-            SHARED_BLOCK = Blocks.block(completionThunkHandle(), NsuiForeign.blockVoidUpcall());
+        if (hThunk == null) {
+            thunkHandle();
         }
         handles = h;
     }
@@ -107,52 +104,58 @@ public final class CATransaction {
     }
 
     /// +[CATransaction setCompletionBlock:] — Java Runnable invoked after the
-    /// current transaction's animations finish. The body is enqueued and a
-    /// single shared global block is installed; when the transaction drains,
-    /// the thunk pops the body and runs it.
+    /// current transaction's animations finish.
+    ///
+    /// A fresh global block literal is installed for every call, so each body is
+    /// bound to the transaction it was set on: two transactions (or two threads)
+    /// each keep their own pending completion, and each body runs exactly once,
+    /// with its own transaction.
+    ///
+    /// Setting the block again replaces the transaction property, and — per the
+    /// QuartzCore header, "if no animations are added before the current
+    /// transaction group is committed **or the completion block is set to a
+    /// different value**, the block will be invoked immediately" — the replaced
+    /// body is still delivered. Both bodies therefore run exactly once when the
+    /// group drains, so a registered completion is never silently dropped.
+    ///
+    /// (The previous implementation installed one shared block, which made two
+    /// installs the *same* property value: the replaced body was suppressed and,
+    /// worse, a second transaction's install destroyed the first transaction's
+    /// still-pending body.)
+    ///
     /// The callback fires on the main thread once the runloop drains the commit.
     public static void setCompletionBlock(Runnable action) {
         ensureInit();
+        MemorySegment block = MemorySegment.NULL;
+        long key = 0L;
         try {
-            MemorySegment block;
-            // +[CATransaction setCompletionBlock:] replaces any previous block, so at
-            // most one body may be outstanding; clear first so a replaced body cannot
-            // leak into the next transaction. The clear()+add() pair is atomic under
-            // the class monitor (the file's ensureInitLocked idiom), so concurrent
-            // setters cannot interleave a clear between another thread's add.
-            synchronized (CATransaction.class) {
-                currentGeneration++;
-                installedGeneration = currentGeneration;
-                rawInstalled = false;
-                if (action == null) {
-                    PENDING.clear();
-                    block = MemorySegment.NULL;
-                } else {
-                    PENDING.clear();
-                    PENDING.add(new Completion(installedGeneration, action));
-                    block = SHARED_BLOCK;
-                }
+            if (action != null) {
+                block = Blocks.block(thunkHandle(), NsuiForeign.blockVoidUpcall());
+                key = block.address();
+                BODIES.put(key, action);
             }
-            handles.hVoidId().invokeExact(ObjC.cls("CATransaction"), ObjC.sel("setCompletionBlock:"), (MemorySegment) (block == null ? MemorySegment.NULL : block));
-        } catch (Throwable t) { throw new RuntimeException("setCompletionBlock: failed", t); }
+            handles.hVoidId().invokeExact(ObjC.cls("CATransaction"),
+                    ObjC.sel("setCompletionBlock:"), block);
+        } catch (Throwable t) {
+            if (key != 0L) {
+                BODIES.remove(key);   // never leave a body whose block was never installed
+            }
+            throw new RuntimeException("setCompletionBlock: failed", t);
+        }
     }
 
     /// +[CATransaction setCompletionBlock:] with a pre-built raw block literal
     /// (advanced use; must be a `void(^)(void)` global block).
-    /// Installing a raw block supersedes any queued runnable body, and
-    /// installing a runnable body supersedes a raw block; the two modes
-    /// are not intended to be interleaved within one transaction.
+    ///
+    /// The raw block is installed verbatim — the toolkit does not route it — so it
+    /// replaces any runnable body set on the same transaction, and a runnable set
+    /// afterwards replaces it in turn, exactly as Core Animation does.
     public static void setCompletionBlock(MemorySegment rawBlock) {
         ensureInit();
         try {
-            synchronized (CATransaction.class) {
-                currentGeneration++;
-                installedGeneration = currentGeneration;
-                boolean empty = (rawBlock == null || rawBlock.address() == 0);
-                rawInstalled = !empty;
-                PENDING.clear();
-            }
-            handles.hVoidId().invokeExact(ObjC.cls("CATransaction"), ObjC.sel("setCompletionBlock:"), (MemorySegment) (rawBlock == null ? MemorySegment.NULL : rawBlock));
+            handles.hVoidId().invokeExact(ObjC.cls("CATransaction"),
+                    ObjC.sel("setCompletionBlock:"),
+                    (MemorySegment) (rawBlock == null ? MemorySegment.NULL : rawBlock));
         } catch (Throwable t) { throw new RuntimeException("setCompletionBlock: failed", t); }
     }
 
@@ -173,32 +176,48 @@ public final class CATransaction {
         } catch (Throwable t) { throw new RuntimeException("setValue:forKey: failed", t); }
     }
 
-    /// Lazily resolve the static upcall target (runtime only — never a static initializer).
-    private static MethodHandle completionThunkHandle() {
-        try {
-            return MethodHandles.lookup().findStatic(CATransaction.class, "completionThunk",
-                    MethodType.methodType(void.class, MemorySegment.class));
-        } catch (NoSuchMethodException | IllegalAccessException e) {
-            throw new IllegalStateException("cannot resolve completion block target", e);
+    /// Number of completion bodies still awaiting their block (diagnostics/tests).
+    /// Two transactions with a pending completion hold one body each; a body
+    /// superseded within its own transaction is never delivered and stays counted.
+    public static int pendingCompletionCount() {
+        return BODIES.size();
+    }
+
+    /// Lazily resolve the static upcall target (runtime only — never a static
+    /// initializer), caching it: every completion block shares the one target.
+    private static MethodHandle thunkHandle() {
+        MethodHandle h = hThunk;
+        if (h != null) return h;
+        synchronized (CATransaction.class) {
+            if (hThunk == null) {
+                try {
+                    hThunk = MethodHandles.lookup().findStatic(CATransaction.class, "completionThunk",
+                            MethodType.methodType(void.class, MemorySegment.class));
+                } catch (NoSuchMethodException | IllegalAccessException e) {
+                    throw new IllegalStateException("cannot resolve completion block target", e);
+                }
+            }
+            return hThunk;
         }
     }
 
-    /// Block body: pops one enqueued Runnable and runs it. STATIC and capture-free —
-    /// the single upcall target behind every completion block, registered for AOT in NsuiFeature.
-    /// Public because NsuiFeature (nsui.objc) resolves it at build time.
+    /// Block body: runs the Java body registered for the block the runtime called.
+    /// STATIC and capture-free — the single upcall target behind every completion
+    /// block, registered for AOT in NsuiFeature. Public because NsuiFeature
+    /// (nsui.objc) resolves it at build time.
+    ///
+    /// The block pointer identifies the install, so two transactions can never
+    /// take each other's body. A block with no registered body — a raw literal
+    /// installed through the MemorySegment overload, or a manual call — is a no-op.
+    ///
     /// Fail-fast by design: a throwing body aborts at the upcall stub instead of
     /// being swallowed — the same contract as DelegateProxy's callbacks
     /// (DelegateProxy.java:57-60) and Dispatch.onMain bodies (Dispatch.java:87).
-    /// No behavior change here; this comment ratifies the existing semantics.
     public static void completionThunk(MemorySegment blockSelf) {
-        Completion item;
-        boolean stale;
-        synchronized (CATransaction.class) {
-            item = PENDING.poll();
-            stale = (item == null) || rawInstalled || item.generation() != installedGeneration;
-        }
-        if (item != null && !stale) {
-            item.body().run();
+        if (blockSelf == null || blockSelf.address() == 0) return;
+        Runnable body = BODIES.remove(blockSelf.address());
+        if (body != null) {
+            body.run();
         }
     }
 }

@@ -13,9 +13,12 @@ import java.lang.invoke.MethodHandle;
 ///
 /// This lets any C/ObjC API that takes a block (e.g. `dispatch_async`)
 /// invoke Java logic. Only the "global block" flavor is used:
-/// - Blocks whose `isa` is `_NSConcreteGlobalBlock` are never copied —
-///   `Block_copy` returns `self` — so no copy/dispose functions are
-/// needed and the block safely outlives the frame that created it.
+/// - Blocks carry the `BLOCK_IS_GLOBAL` flag **and** the
+///   `_NSConcreteGlobalBlock` isa, so `_Block_copy` returns `self` — no
+/// copy/dispose functions are needed and the block safely outlives the frame
+/// that created it. (libclosure branches on the flag; the isa alone is not
+/// enough, and a block with `flags == 0` is silently heap-copied by every
+/// retain — which also moves its address.)
 /// - Avoids the `_NSConcreteStackBlock` (stack) flavor, which would require
 ///   copy/dispose trampolines and careful liveness handling.
 ///
@@ -53,6 +56,11 @@ public final class Blocks {
 
     /// Offset/size layout of the Block_descriptor for a capture-less global block.
     private static final long DESCRIPTOR_SIZE = 32; // reserved(8) + size(8) + copy(8) + dispose(8)
+
+    /// `BLOCK_IS_GLOBAL` from `Block.h` — libclosure's `_Block_copy` returns the
+    /// block unchanged only when this flag is set (the `_NSConcreteGlobalBlock`
+    /// isa alone is not sufficient).
+    private static final int BLOCK_IS_GLOBAL = 1 << 28;
 
     private Blocks() {}
 
@@ -100,7 +108,12 @@ public final class Blocks {
 
         // isa = address of _NSConcreteGlobalBlock (the class object itself).
         block.set(ValueLayout.ADDRESS, 0, GLOBAL_BLOCK_ISA);
-        block.set(ValueLayout.JAVA_INT, 8, 0);  // flags = 0
+        // flags: BLOCK_IS_GLOBAL (1 << 28) is what libclosure's _Block_copy
+        // actually branches on — with flags == 0 it treats this as a STACK block
+        // and silently heap-copies it on every retain (dispatch_async,
+        // CATransaction setCompletionBlock:, AppKit sheet handlers), which both
+        // moves the block's address and defeats any address-keyed routing.
+        block.set(ValueLayout.JAVA_INT, 8, BLOCK_IS_GLOBAL);
         block.set(ValueLayout.JAVA_INT, 12, 0); // reserved = 0
         block.set(ValueLayout.ADDRESS, 16, stub); // invoke
 

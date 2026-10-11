@@ -314,11 +314,18 @@ public final class Sig {
         of(Ret.ID, Arg.BYTE),                               // numberWithChar:/numberWithUnsignedChar: (real `c`/`C`)
         of(Ret.ID, Arg.SHORT),                              // numberWithShort:/numberWithUnsignedShort: (real `s`/`S`)
         of(Ret.SHORT),                                      // shortValue/unsignedShortValue (real `s`/`S`)
-        // of(Ret.ID, Arg.INT) already covers numberWithInt:/UnsignedInt:/Long:/
-        // UnsignedLong:/LongLong:/UnsignedLongLong:/Integer:/UnsignedInteger: — real
-        // encodings i/I/l/Q/q all map nominally to INT and the callee reads the low
-        // bits correctly on LE.
+        // of(Ret.ID, Arg.INT) covers the genuinely 64-bit factories: numberWithLong:/
+        // UnsignedLong:/LongLong:/UnsignedLongLong:/Integer:/UnsignedInteger: (real
+        // q/Q/l/L). The 32-bit `i`/`I` factories now use Arg.INT32 below instead.
         of(Ret.INT32),                                      // edgeAntialiasingMask (real `I`, 32-bit unsigned int)
-        of(Ret.VOID, Arg.INT32)                             // setEdgeAntialiasingMask: (real `I`)
+        of(Ret.VOID, Arg.INT32),                            // setEdgeAntialiasingMask: (real `I`)
+        // --- exact 32-bit call shapes (real `i`/`I` parameters and returns) ---
+        // These are the shapes the int-width migration needs; each is the exact
+        // JAVA_INT descriptor for a genuine C `int`/`unsigned int`.
+        of(Ret.ID, Arg.INT32),                              // numberWithInt:/UnsignedInt:, runningApplicationWithProcessIdentifier:, fontDescriptorWithSymbolicTraits:
+        of(Ret.VOID, Arg.ID, Arg.INT32),                    // insertSublayer:atIndex: (unsigned int)
+        of(Ret.ID, Arg.INT32, Arg.ID, Arg.INT32),           // CAConstraint constraintWithAttribute:relativeTo:attribute:
+        of(Ret.ID, Arg.INT32, Arg.ID, Arg.INT32, Arg.DOUBLE),                     // ...attribute:offset:
+        of(Ret.ID, Arg.INT32, Arg.ID, Arg.INT32, Arg.DOUBLE, Arg.DOUBLE)          // ...attribute:scale:offset:
     );
 }

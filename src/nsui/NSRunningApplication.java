@@ -149,10 +149,11 @@ public final class NSRunningApplication extends NSObject {
     }
 
     /// runningApplicationWithProcessIdentifier: (nil when no app has that pid).
+    /// pid_t is a 32-bit int — exact INT32 call shape.
     public static NSRunningApplication runningApplicationWithProcessIdentifier(long pid) {
         try {
-            MemorySegment p = (MemorySegment) ObjC.handle(Sig.of(Ret.ID, Arg.INT)).invokeExact(
-                    ObjC.cls("NSRunningApplication"), ObjC.sel("runningApplicationWithProcessIdentifier:"), pid);
+            MemorySegment p = (MemorySegment) ObjC.handle(Sig.of(Ret.ID, Arg.INT32)).invokeExact(
+                    ObjC.cls("NSRunningApplication"), ObjC.sel("runningApplicationWithProcessIdentifier:"), (int) pid);
             return wrap(p);
         } catch (Throwable t) { throw new RuntimeException("runningApplicationWithProcessIdentifier: failed", t); }
     }

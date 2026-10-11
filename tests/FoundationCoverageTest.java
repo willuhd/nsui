@@ -940,11 +940,13 @@ public final class FoundationCoverageTest {
         // below trips that read while passing on the exact INT32 handle.
         long pid = NSRunningApplication.current().processIdentifier();
         TestKit.check(pid == (long) (int) pid, "processIdentifier fits 32 bits");
-        if (pid == -1) {
-            TestKit.check(pid == -1, "processIdentifier reports -1 pre-app (exact signed read)");
-        } else {
-            TestKit.check(pid == ProcessHandle.current().pid(), "processIdentifier matches Java pid");
-        }
+        // One discriminating assertion covering BOTH environments: pre-app AppKit
+        // reports the 32-bit pid_t -1 (an exact signed read keeps -1, while the old
+        // 64-bit read yielded 4294967295), and a launched app reports this JVM's pid.
+        // (Previously this was `if (pid == -1) check(pid == -1, ...)` — the branch
+        // predicate, which could never fail.)
+        TestKit.check(pid == -1L || pid == ProcessHandle.current().pid(),
+                "processIdentifier is the documented -1 pre-app or this JVM's pid (got " + pid + ")");
         // CAConstraintAttribute (int): creation round-trip.
         CAConstraint c = CAConstraint.relativeTo(
                 CAConstraint.ATTR_MAX_X, "super", CAConstraint.ATTR_WIDTH, 1.0, 0.0);

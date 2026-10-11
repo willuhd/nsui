@@ -178,8 +178,11 @@ public final class MetalDepthStencilTest {
     private static boolean isRed(int c) {
         return near((c >> 16) & 0xFF, 255, 6) && near((c >> 8) & 0xFF, 0, 6) && near(c & 0xFF, 0, 6);
     }
+    /// A cleared region reads back EXACT zeros: a clear is not dithered, so this is
+    /// an exact oracle. (The coloured oracles above/below tolerate dither, which is
+    /// a real GPU readback effect; a clear has no such excuse.)
     private static boolean isBlack(int c) {
-        return ((c >> 16) & 0xFF) <= 6 && ((c >> 8) & 0xFF) <= 6 && (c & 0xFF) <= 6;
+        return (c & 0xFFFFFF) == 0;
     }
     private static boolean isOrange(int c) {
         return near((c >> 16) & 0xFF, 255, 6) && near((c >> 8) & 0xFF, 128, 6) && near(c & 0xFF, 0, 6);

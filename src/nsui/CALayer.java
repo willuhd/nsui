@@ -320,7 +320,7 @@ public class CALayer extends NSObject {
                 ObjC.handle(Sig.of(Ret.VOID, Arg.INT)),
                 ObjC.handle(Sig.of(Ret.ID, Arg.ID)),
                 ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.ID)),
-                ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.INT)),
+                ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.INT32)),
                 ObjC.handle(Sig.of(Ret.ID, Arg.POINT)),
                 ObjC.handle(Sig.of(Ret.BOOL, Arg.POINT)),
                 ObjC.handle(Sig.of(Ret.POINT, Arg.POINT, Arg.ID)),
@@ -1289,11 +1289,13 @@ public class CALayer extends NSObject {
     }
 
     /// [layer insertSublayer:atIndex:] — positional splice.
+    /// `atIndex:` is an `unsigned int` (32-bit), so hSetIdInt is the exact INT32
+    /// shape; out-of-range indices are clamped by Core Animation rather than raising.
     public void insertSublayer(CALayer sublayer, long index) {
         ensureInit();
         try {
             handles.hSetIdInt().invokeExact(peer, Sels.insertSublayer_atIndex,
-                    (MemorySegment) (sublayer == null ? MemorySegment.NULL : sublayer.peer()), index);
+                    (MemorySegment) (sublayer == null ? MemorySegment.NULL : sublayer.peer()), (int) index);
         } catch (Throwable t) { throw new RuntimeException("insertSublayer:atIndex: failed", t); }
     }
 

@@ -321,7 +321,14 @@ public final class AppCoverageTest {
                 System.out.println("  trySetActivationPolicy(current) = " + ok);
                 TestKit.probe("NSApplication trySetActivationPolicy no crash");
             } catch (Throwable t) { TestKit.check(false, "trySetActivationPolicy threw: " + t); }
-            TestKit.check(app.currentSystemPresentationOptions() == 0, "currentSystemPresentationOptions probe no crash");
+            // Environment-independent: presentation options are a user setting, so
+            // assert only documented bits are set and the read is stable, not a fixed 0.
+            long presOpts = app.currentSystemPresentationOptions();
+            TestKit.check((presOpts & ~0xFFFFL) == 0L,
+                    "currentSystemPresentationOptions uses only documented bits (got 0x"
+                            + Long.toHexString(presOpts) + ")");
+            TestKit.check(presOpts == app.currentSystemPresentationOptions(),
+                    "currentSystemPresentationOptions stable across calls");
             TestKit.probe("occlusionState probe no crash (" + app.occlusionState() + ")");
             TestKit.probe("userInterfaceLayoutDirection probe no crash (" + app.userInterfaceLayoutDirection() + ")");
             app.windowsMenu();
@@ -331,7 +338,11 @@ public final class AppCoverageTest {
             app.mainMenu();
             TestKit.probe("mainMenu probe no crash");
             TestKit.check(app.dockTile() != null && app.dockTile().address() != 0, "dockTile probe no crash");
-            TestKit.check(!app.isFullKeyboardAccessEnabled(), "isFullKeyboardAccessEnabled probe no crash");
+            // Environment-independent: full keyboard access is a user setting, so
+            // assert the read is stable rather than a fixed false.
+            boolean fka = app.isFullKeyboardAccessEnabled();
+            TestKit.check(fka == app.isFullKeyboardAccessEnabled(),
+                    "isFullKeyboardAccessEnabled stable across calls");
             TestKit.check(app.effectiveAppearance() != null, "effectiveAppearance probe no crash");
             // Event plumbing without side effects.
             TestKit.check(app.currentEvent() == null, "currentEvent probe no crash");

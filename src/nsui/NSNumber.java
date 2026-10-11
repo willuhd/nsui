@@ -52,12 +52,12 @@ public final class NSNumber extends NSValue {
         handles = h;
     }
 
-    /// numberWithInt:
+    /// numberWithInt: (C `int`, 32-bit — exact INT32 call shape).
     public static NSNumber numberWithInt(long value) {
         ensureNumInit();
         try {
-            MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.INT));
-            MemorySegment s = (MemorySegment) h.invokeExact(ObjC.cls("NSNumber"), ObjC.sel("numberWithInt:"), value);
+            MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.INT32));
+            MemorySegment s = (MemorySegment) h.invokeExact(ObjC.cls("NSNumber"), ObjC.sel("numberWithInt:"), (int) value);
             return wrap(s);
         } catch (Throwable t) { throw new RuntimeException("numberWithInt: failed", t); }
     }
@@ -137,12 +137,12 @@ public final class NSNumber extends NSValue {
         } catch (Throwable t) { throw new RuntimeException("numberWithUnsignedShort: failed", t); }
     }
 
-    /// numberWithUnsignedInt:.
+    /// numberWithUnsignedInt: (C `unsigned int`, 32-bit; low 32 bits are the value).
     public static NSNumber numberWithUnsignedInt(long value) {
         ensureNumInit();
         try {
-            MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.INT));
-            MemorySegment s = (MemorySegment) h.invokeExact(ObjC.cls("NSNumber"), ObjC.sel("numberWithUnsignedInt:"), value);
+            MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.INT32));
+            MemorySegment s = (MemorySegment) h.invokeExact(ObjC.cls("NSNumber"), ObjC.sel("numberWithUnsignedInt:"), (int) value);
             return wrap(s);
         } catch (Throwable t) { throw new RuntimeException("numberWithUnsignedInt: failed", t); }
     }

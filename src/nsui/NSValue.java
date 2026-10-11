@@ -15,6 +15,11 @@ import static nsui.objc.Sig.Ret;
 /// no side map, no address keys, no ABA hazard.
 /// Getters read live values via struct-return msgSend.
 ///
+/// **Lifetime:** an autoreleased result is valid only until the enclosing pool
+/// drains (the pool `NSApplication.pumpFor` pops each turn). Holding one across
+/// that boundary is a use-after-free; call `NSObject.keepAlive()` on any NSValue
+/// you must keep longer than the current turn.
+///
 /// Header-completeness (`NSValue.h` + `NSGeometry.h`/`NSRange.h` value categories): every
 /// safe method whose shape is in the Sig vocabulary is wrapped below. OMITTED —
 /// valueWithEdgeInsets:/edgeInsetsValue (need an NSEdgeInsets arg/return class in Sig;

@@ -11,7 +11,7 @@ import static nsui.objc.Sig.Ret;
 /// Thin 1:1 wrapper over native `NSFontDescriptor`.
 public final class NSFontDescriptor extends NSObject {
 
-            private record Handles(MethodHandle hWithNameSize, MethodHandle hWithAttrs, MethodHandle hGetId, MethodHandle hGetInt, MethodHandle hVoidId) {}
+            private record Handles(MethodHandle hWithNameSize, MethodHandle hWithAttrs, MethodHandle hGetId, MethodHandle hGetInt32, MethodHandle hVoidId) {}
     private static volatile Handles handles;
 
     private NSFontDescriptor(MemorySegment peer) {
@@ -34,7 +34,7 @@ public final class NSFontDescriptor extends NSObject {
                 ObjC.handle(Sig.of(Ret.ID, Arg.ID, Arg.DOUBLE)),
                 ObjC.handle(Sig.of(Ret.ID, Arg.ID)),
                 ObjC.handle(Sig.of(Ret.ID)),
-                ObjC.handle(Sig.of(Ret.INT)),
+                ObjC.handle(Sig.of(Ret.INT32)),
                 ObjC.handle(Sig.of(Ret.VOID, Arg.ID))
         );
     }
@@ -101,21 +101,23 @@ public final class NSFontDescriptor extends NSObject {
     }
 
     /// [descriptor symbolicTraits] -> NSFontDescriptorSymbolicTraits bitmask
+    /// (32-bit unsigned; read at its exact width and zero-extended into the long).
     public long symbolicTraits() {
         ensureInit();
         try {
-            return (long) handles.hGetInt().invokeExact(peer, ObjC.sel("symbolicTraits"));
+            return ((int) handles.hGetInt32().invokeExact(peer, ObjC.sel("symbolicTraits"))) & 0xFFFFFFFFL;
         } catch (Throwable t) {
             throw new RuntimeException("symbolicTraits failed", t);
         }
     }
 
     /// [descriptor fontDescriptorWithSymbolicTraits:] -> NSFontDescriptor
+    /// (the mask is a 32-bit unsigned int — exact INT32 call shape).
     public NSFontDescriptor fontDescriptorWithSymbolicTraits(long traits) {
         ensureInit();
         try {
-            MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.INT));
-            MemorySegment d = (MemorySegment) h.invokeExact(peer, ObjC.sel("fontDescriptorWithSymbolicTraits:"), traits);
+            MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.INT32));
+            MemorySegment d = (MemorySegment) h.invokeExact(peer, ObjC.sel("fontDescriptorWithSymbolicTraits:"), (int) traits);
             return wrap(d);
         } catch (Throwable t) {
             throw new RuntimeException("fontDescriptorWithSymbolicTraits: failed", t);

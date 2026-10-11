@@ -206,11 +206,13 @@ public final class NSProgressIndicator extends NSControl {
 
     /// [indicator observedProgress] — the NSProgress driving the bar (raw id; macOS 14+; nil becomes NULL).
     public MemorySegment observedProgress() {
+        if (!respondsToSelector(ObjC.sel("observedProgress"))) return MemorySegment.NULL;   // macOS 14+
         return ObjC.msgSendId(peer, ObjC.sel("observedProgress"));
     }
 
     /// [indicator setObservedProgress:] — track an NSProgress (nil-safe; pass `MemorySegment.NULL` for nil).
     public void setObservedProgress(MemorySegment progress) {
+        if (!respondsToSelector(ObjC.sel("setObservedProgress:"))) return;   // macOS 14+
         ObjC.msgSendVoidId(peer, ObjC.sel("setObservedProgress:"),
                 (MemorySegment) (progress == null ? MemorySegment.NULL : progress));
     }

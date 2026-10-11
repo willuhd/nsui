@@ -1618,6 +1618,7 @@ ensureInit(); return ObjC.msgSendBool(peer, Sels.hasDynamicDepthLimit); }
     /// [window toolbarStyle] — NSWindowToolbarStyle (macOS 11+).
     public long toolbarStyle() {
         ensureInit();
+        if (!respondsToSelector(Sels.toolbarStyle)) return 0L;   // macOS 11+
         return ObjC.msgSendLong(peer, Sels.toolbarStyle);
     }
 
@@ -1636,6 +1637,7 @@ ensureInit(); return ObjC.msgSendBool(peer, Sels.hasDynamicDepthLimit); }
     /// [window cascadingReferenceFrame] — reference frame for cascading (macOS 15+).
     public NSRect cascadingReferenceFrame() {
         ensureInit();
+        if (!respondsToSelector(Sels.cascadingReferenceFrame)) return NSRect.ZERO;   // macOS 15+
         return NSRect.fromSegment(ObjC.msgSendRect(peer, Sels.cascadingReferenceFrame));
     }
 
@@ -2410,6 +2412,7 @@ ensureInit(); return ObjC.msgSendBool(peer, Sels.hasDynamicDepthLimit); }
     /// [window titlebarSeparatorStyle] (macOS 11+) — NSTitlebarSeparatorStyle.
     public long titlebarSeparatorStyle() {
         ensureInit();
+        if (!respondsToSelector(Sels.titlebarSeparatorStyle)) return 0L;   // macOS 11+
         return ObjC.msgSendLong(peer, Sels.titlebarSeparatorStyle);
     }
 
@@ -2810,6 +2813,7 @@ ensureInit(); return ObjC.msgSendBool(peer, Sels.hasDynamicDepthLimit); }
     /// [window hasActiveWindowSharingSession] (macOS 13.3+).
     public boolean hasActiveWindowSharingSession() {
         ensureInit();
+        if (!respondsToSelector(Sels.hasActiveWindowSharingSession)) return false;   // macOS 13.3+
         return ObjC.msgSendBool(peer, Sels.hasActiveWindowSharingSession);
     }
 

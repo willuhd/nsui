@@ -194,6 +194,7 @@ public final class NSPrintPanel extends NSObject {
     /// Never call from tests (starts a sheet loop).
     public void beginSheetUsingPrintInfo(NSPrintInfo printInfo, NSWindow window, MemorySegment handler) {
         ensureInit();
+        if (!respondsToSelector(ObjC.sel("beginSheetUsingPrintInfo:onWindow:completionHandler:"))) return;   // macOS 14+
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.ID, Arg.ID));
             h.invokeExact(peer, ObjC.sel("beginSheetUsingPrintInfo:onWindow:completionHandler:"),

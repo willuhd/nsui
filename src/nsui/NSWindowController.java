@@ -211,6 +211,7 @@ public final class NSWindowController extends NSObject {
     /// items; nil falls back to the document's items. May be nil.
     public NSArray previewRepresentableActivityItems() {
         ensureInit();
+        if (!respondsToSelector(ObjC.sel("previewRepresentableActivityItems"))) return null;   // macOS 13.2+
         try {
             MemorySegment arr = (MemorySegment) handles.hId().invokeExact(peer,
                     ObjC.sel("previewRepresentableActivityItems"));

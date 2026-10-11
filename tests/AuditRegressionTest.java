@@ -1756,6 +1756,54 @@ public final class AuditRegressionTest {
             TestKit.check(false, "setter round-trip block threw: " + t);
         }
 
+        // --- 8bb. remaining version-gated families (NSScreen/NSToolbar/NSWindow/...) ---
+        try {
+            nsui.NSScreen sc = nsui.NSScreen.mainScreen();
+            if (sc != null) {
+                TestKit.noThrow("NSScreen safeAreaInsets is guarded but live (macOS 12+)",
+                        () -> sc.safeAreaInsets());
+                TestKit.noThrow("NSScreen refresh-interval accessors are guarded but live",
+                        () -> { sc.minimumRefreshInterval(); sc.maximumRefreshInterval();
+                                sc.displayUpdateGranularity(); sc.lastDisplayUpdateTimestamp();
+                                sc.maximumFramesPerSecond(); sc.auxiliaryTopLeftArea(); });
+            }
+            nsui.NSToolbar tb = nsui.NSToolbar.create("probe.tb");
+            if (tb.respondsToSelector(ObjC.sel("setAllowsDisplayModeCustomization:"))) {
+                tb.setAllowsDisplayModeCustomization(false);
+                TestKit.check(!tb.allowsDisplayModeCustomization(),
+                        "allowsDisplayModeCustomization round-trips (macOS 15+)");
+            } else {
+                TestKit.probe("allowsDisplayModeCustomization absent on this host");
+            }
+            nsui.NSToolbarItem tbi = nsui.NSToolbarItem.create("probe.tbi");
+            if (tbi.respondsToSelector(ObjC.sel("setNavigational:"))) {
+                tbi.setNavigational(true);
+                TestKit.check(tbi.isNavigational(), "isNavigational round-trips (macOS 11+)");
+            } else {
+                TestKit.probe("isNavigational absent on this host");
+            }
+            NSWindow tw = TestKit.hiddenWindow(160, 100);
+            if (tw.respondsToSelector(ObjC.sel("setToolbarStyle:"))) {
+                tw.setToolbarStyle(1);
+                TestKit.check(tw.toolbarStyle() == 1, "toolbarStyle round-trips (macOS 11+)");
+            } else {
+                TestKit.probe("toolbarStyle absent on this host");
+            }
+            nsui.NSTextField wtf = nsui.NSTextField.create(new NSRect(0, 0, 100, 24));
+            if (wtf.respondsToSelector(ObjC.sel("setAllowsWritingTools:"))) {
+                wtf.setAllowsWritingTools(true);
+                TestKit.check(wtf.allowsWritingTools(), "allowsWritingTools round-trips (macOS 15.2+)");
+            } else {
+                TestKit.probe("allowsWritingTools absent on this host");
+            }
+            TestKit.noThrow("NSProgressIndicator observedProgress is guarded but live (macOS 14+)",
+                    () -> nsui.NSProgressIndicator.create(new NSRect(0, 0, 100, 12)).observedProgress());
+            TestKit.noThrow("NSSharingServicePicker.standardShareMenuItem is guarded but live (13+)",
+                    () -> nsui.NSSharingServicePicker.withItems(nsui.NSArray.mutableArray())
+                            .standardShareMenuItem());
+        } catch (Throwable t) {
+            TestKit.check(false, "version batch block threw: " + t);
+        }
         // --- 8z. type-confusion guards on the raw collection-view setters ---
         // AppKit does NOT raise a type error here, it either asserts isKindOfClass: or
         // messages the object: setCollectionViewLayout: with a plain NSView raised

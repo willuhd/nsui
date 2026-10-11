@@ -251,18 +251,22 @@ public class NSTextField extends NSControl {
     // ---- allowsWritingTools / allowsWritingToolsAffordance (BOOL shapes in vocabulary) ----
     /// [field allowsWritingTools] — field editor works with Writing Tools (15.2+).
     public boolean allowsWritingTools() {
+        if (!respondsToSelector(ObjC.sel("allowsWritingTools"))) return false;   // macOS 15.2+
         return ObjC.msgSendBool(peer, ObjC.sel("allowsWritingTools"));
     }
     /// [field setAllowsWritingTools:].
     public void setAllowsWritingTools(boolean flag) {
+        if (!respondsToSelector(ObjC.sel("setAllowsWritingTools:"))) return;   // macOS 15.2+
         ObjC.msgSendVoidBool(peer, ObjC.sel("setAllowsWritingTools:"), flag);
     }
     /// [field allowsWritingToolsAffordance] (15.4+).
     public boolean allowsWritingToolsAffordance() {
+        if (!respondsToSelector(ObjC.sel("allowsWritingToolsAffordance"))) return false;   // macOS 15.4+
         return ObjC.msgSendBool(peer, ObjC.sel("allowsWritingToolsAffordance"));
     }
     /// [field setAllowsWritingToolsAffordance:].
     public void setAllowsWritingToolsAffordance(boolean flag) {
+        if (!respondsToSelector(ObjC.sel("setAllowsWritingToolsAffordance:"))) return;   // macOS 15.4+
         ObjC.msgSendVoidBool(peer, ObjC.sel("setAllowsWritingToolsAffordance:"), flag);
     }
 

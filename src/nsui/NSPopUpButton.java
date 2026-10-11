@@ -338,10 +338,12 @@ public final class NSPopUpButton extends NSControl {
     }
     /// [popup altersStateOfSelectedItem] — selected item gets NSControlStateValueOn (15.0+).
     public boolean altersStateOfSelectedItem() {
+        if (!respondsToSelector(ObjC.sel("altersStateOfSelectedItem"))) return false;   // macOS 15+
         return ObjC.msgSendBool(peer, ObjC.sel("altersStateOfSelectedItem"));
     }
     /// [popup setAltersStateOfSelectedItem:].
     public void setAltersStateOfSelectedItem(boolean flag) {
+        if (!respondsToSelector(ObjC.sel("setAltersStateOfSelectedItem:"))) return;   // macOS 15+
         ObjC.msgSendVoidBool(peer, ObjC.sel("setAltersStateOfSelectedItem:"), flag);
     }
 

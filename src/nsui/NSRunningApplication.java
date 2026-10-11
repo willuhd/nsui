@@ -121,6 +121,7 @@ public final class NSRunningApplication extends NSObject {
 
     /// activateFromApplication:options: (macOS 14+).
     public boolean activateFromApplication(NSRunningApplication app, long options) {
+        if (!respondsToSelector(ObjC.sel("activateFromApplication:options:"))) return false;   // macOS 14+
         try {
             return (boolean) ObjC.handle(Sig.of(Ret.BOOL, Arg.ID, Arg.INT)).invokeExact(peer,
                     ObjC.sel("activateFromApplication:options:"),

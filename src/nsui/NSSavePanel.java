@@ -253,6 +253,7 @@ public class NSSavePanel extends NSObject {
     /// currentContentTypePeer — raw UTType id (nil when allowedContentTypes empty).
     public MemorySegment currentContentTypePeer() {
         ensureInit();
+        if (!respondsToSelector(ObjC.sel("currentContentType"))) return MemorySegment.NULL;   // macOS 15+
         try { return (MemorySegment) hId.invokeExact(peer, ObjC.sel("currentContentType")); }
         catch (Throwable t) { throw new RuntimeException("currentContentType failed", t); }
     }
@@ -362,9 +363,11 @@ public class NSSavePanel extends NSObject {
     /// showsContentTypes — file-type picker control (hidden when allowedContentTypes empty).
     public boolean showsContentTypes() {
         ensureInit();
+        if (!respondsToSelector(ObjC.sel("showsContentTypes"))) return false;   // macOS 15+
         try { return (boolean) hBool.invokeExact(peer, ObjC.sel("showsContentTypes")); } catch (Throwable t) { throw new RuntimeException("showsContentTypes failed", t); }
     }
     public void setShowsContentTypes(boolean flag) {
+        if (!respondsToSelector(ObjC.sel("setShowsContentTypes:"))) return;   // macOS 15+
         ensureInit();
         try { hSetBool.invokeExact(peer, ObjC.sel("setShowsContentTypes:"), flag); } catch (Throwable t) { throw new RuntimeException("setShowsContentTypes: failed", t); }
     }

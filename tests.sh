@@ -21,6 +21,12 @@
 #
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")" && pwd)"
+# Run everything from the repo root: two gates (SignatureConformanceTest,
+# AssertionQualityTest) locate sources via relative paths (src/nsui, tests) and
+# silently skip() if the working directory is somewhere else — while the runner
+# still reports success. RunSuite also sets the child working directory; this
+# keeps the runner itself and any relative argument consistent too.
+cd "$ROOT"
 GRAM_VM_DIR=${GRAALVM:-/Library/Java/JavaVirtualMachines/graalvm-25.jdk/Contents/Home}
 JAVAC="$GRAM_VM_DIR/bin/javac"
 JAVA="$GRAM_VM_DIR/bin/java"

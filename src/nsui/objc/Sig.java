@@ -279,6 +279,7 @@ public final class Sig {
         of(Ret.ID, Arg.ID, Arg.BOOL),                       // NSGraphicsContext graphicsContextWithCGContext:flipped:
         of(Ret.ID, Arg.RECT, Arg.INT, Arg.ID, Arg.ID),      // NSTrackingArea initWithRect:options:owner:userInfo:
         of(Ret.VOID, Arg.POINT, Arg.POINT, Arg.POINT),      // NSBezierPath curveToPoint:controlPoint1:controlPoint2:
+        of(Ret.VOID, Arg.POINT, Arg.POINT, Arg.INT),        // NSGradient drawFromPoint:toPoint:options:
         of(Ret.VOID, Arg.ID, Arg.RECT),                     // NSWorkspace iconForFileType etc alt
         of(Ret.BOOL, Arg.ID, Arg.BOOL),                     // NSWorkspace openURL with flag variant
         of(Ret.ID, Arg.RECT, Arg.INT),                      // NSGridView helper (rect,int)->id

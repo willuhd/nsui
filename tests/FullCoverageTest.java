@@ -460,7 +460,13 @@ public final class FullCoverageTest {
         try {
             NSGradient g = NSGradient.initWithStartingColorEndingColor(NSColor.redColor(), NSColor.blueColor());
             g.drawInRectAngle(new NSRect(0,0,10,10), 0);
-            try { g.drawFromPointToPoint(new NSPoint(0,0), new NSPoint(10,10)); TestKit.probe("drawFromPoint"); } catch (Throwable tt) { TestKit.skipCase("drawFromPoint: "+tt.getMessage()); }
+            // Now implemented: the old unconditional UnsupportedOperationException claimed the
+            // (VOID,POINT,POINT,INT) shape was missing from the Sig vocabulary, which was
+            // false. Assert both overloads instead of skipping.
+            TestKit.noThrow("NSGradient.drawFromPointToPoint",
+                    () -> g.drawFromPointToPoint(new NSPoint(0, 0), new NSPoint(10, 10)));
+            TestKit.noThrow("NSGradient.drawFromPointToPoint with options",
+                    () -> g.drawFromPointToPoint(new NSPoint(0, 0), new NSPoint(10, 10), 0L));
             NSArray cols = NSArray.mutableArray(); cols.addObject(NSColor.redColor()); cols.addObject(NSColor.blueColor());
             NSGradient g2 = NSGradient.initWithColors(cols);
             g2.drawInBezierPathAngle(NSBezierPath.bezierPath(), 45);

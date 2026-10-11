@@ -81,12 +81,17 @@ The suite is developed and run on **macOS 26.x on arm64**. No minimum deployment
 declared, and there is no `operatingSystemVersion` runtime check anywhere: the guard is
 per-method `respondsToSelector:`.
 
-Every accessor whose documentation names a macOS version newer than 11 is guarded — the getter
+Every accessor whose documentation names a macOS version of 11 or later is guarded — the getter
 returns that API's "absent" default and the setter is a no-op. The guard pattern to copy is
-`NSButton.setTintProminence:`/`borderShape` (macOS 26 selectors, no-op / 0 when absent). This is
-enforced by inspection rather than by the runtime: an automated scan of the version annotations
-in `src/nsui` is part of the audit tooling and currently reports no unguarded site (only prose
-false positives such as a style-mask value that happens to read like a version).
+`NSButton.setTintProminence:`/`borderShape` (macOS 26 selectors, no-op / 0 when absent).
+
+This is enforced by `tests/VersionGuardScanTest`, which scans `src/nsui` for a version-annotated
+method with no presence check and fails the suite if one appears (82 annotated methods today,
+0 unguarded). A small allowlist inside that test covers prose that merely looks like a version —
+an NSEventType number, an `NSWindowStyleMask` bit — and every entry states why. Because the scan
+keys on the annotation adjacent to a method, a version named only in a section header can escape
+it; the name-based twin checks in `AuditRegressionTest` cover that case, and neither scan
+replaces the other.
 
 A `try`/`catch` around the send is NOT a guard, and was the source of a real bug here: an
 unrecognized selector raises an ObjC exception that terminates the process (measured, exit 134)

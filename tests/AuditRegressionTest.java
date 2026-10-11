@@ -708,6 +708,28 @@ public final class AuditRegressionTest {
             TestKit.expectThrows("setSelectedSegment(5) rejects",
                     IllegalArgumentException.class, () -> seg.setSelectedSegment(5));
 
+            // Per-segment accessors: only setSelected:/isSelectedForSegment: raise natively
+            // (re-probed all of them with segment 9 on this 2-segment control; everything else
+            // exited 0). Both are guarded; the tolerance of the rest is pinned so a future
+            // sweep does not add guards that would over-reject.
+            TestKit.expectThrows("isSelectedForSegment(9) rejects (native NSRangeException)",
+                    IllegalArgumentException.class, () -> seg.isSelectedForSegment(9));
+            TestKit.noThrow("isSelectedForSegment(1) is legal", () -> seg.isSelectedForSegment(1));
+            TestKit.expectThrows("setSelectedForSegment(true, 9) rejects",
+                    IllegalArgumentException.class, () -> seg.setSelectedForSegment(true, 9));
+            TestKit.noThrow("setEnabledForSegment(true, 9) is tolerated natively",
+                    () -> seg.setEnabledForSegment(true, 9));
+            TestKit.noThrow("setWidthForSegment(10, 9) is tolerated natively",
+                    () -> seg.setWidthForSegment(10, 9));
+            TestKit.noThrow("setToolTipForSegment(t, 9) is tolerated natively",
+                    () -> seg.setToolTipForSegment("t", 9));
+            TestKit.noThrow("setTagForSegment(1, 9) is tolerated natively",
+                    () -> seg.setTagForSegment(1, 9));
+            TestKit.noThrow("labelForSegment(9) is tolerated natively",
+                    () -> seg.labelForSegment(9));
+            TestKit.noThrow("widthForSegment(9) is tolerated natively",
+                    () -> seg.widthForSegment(9));
+
             // The native factory asserts "attributedStringValue != nil".
             TestKit.expectThrows("NSTextField.labelWithAttributedString(null) rejects",
                     IllegalArgumentException.class, () -> nsui.NSTextField.labelWithAttributedString(null));

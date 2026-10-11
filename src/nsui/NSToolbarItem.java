@@ -289,6 +289,7 @@ public final class NSToolbarItem extends NSObject implements NSUserInterfaceItem
     }
     /// setPossibleLabels: with NSSet id.
     public void setPossibleLabels(MemorySegment labels) {
+        if (!respondsToSelector(ObjC.sel("setPossibleLabels:"))) return;   // macOS 13+
         try {
             handles.hSetLabel().invokeExact(peer, ObjC.sel("setPossibleLabels:"), (MemorySegment) (labels == null ? MemorySegment.NULL : labels));
         } catch (Throwable t) { throw new RuntimeException("setPossibleLabels: failed", t); }
@@ -424,6 +425,7 @@ public final class NSToolbarItem extends NSObject implements NSUserInterfaceItem
     }
     /// setBadge: with raw id.
     public void setBadge(MemorySegment badge) {
+        if (!respondsToSelector(ObjC.sel("setBadge:"))) return;   // macOS 26+
         try {
             handles.hSetLabel().invokeExact(peer, ObjC.sel("setBadge:"), (MemorySegment) (badge == null ? MemorySegment.NULL : badge));
         } catch (Throwable t) { throw new RuntimeException("setBadge: failed", t); }

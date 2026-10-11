@@ -582,7 +582,9 @@ public final class NSColor extends NSObject {
     /// linearExposure — HDR brightness multiplier (1.0 for SDR colors).
     public double linearExposure() {
         ensureInit();
-        if (!respondsToSelector(ObjC.sel("linearExposure"))) return 0.0;   // macOS 26+
+        // Absent default is 1.0 (the neutral multiplier): NSColor.h documents non-HDR colors as
+        // returning 1.0 and the value's range as >= 1, so 0.0 would mean zero brightness.
+        if (!respondsToSelector(ObjC.sel("linearExposure"))) return 1.0;   // macOS 26+
         try {
             return (double) H.hAlpha().invokeExact(peer, ObjC.sel("linearExposure"));
         } catch (Throwable t) {

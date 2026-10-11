@@ -43,6 +43,20 @@ final class Bounds {
         }
     }
 
+    /// `index` must be `>= 0`, with no upper bound.
+    ///
+    /// For APIs where the upper bound cannot be established from Java without a false
+    /// rejection: `NSToolbar`'s item indexes are checked natively against an internal
+    /// `_currentItems` array that `-items` does not reliably report (after a successful
+    /// `insertItemWithItemIdentifier:atIndex:` on a windowless toolbar, `-items` still
+    /// returns an empty array, so validating against it rejected a legal call). Negative
+    /// indexes raise natively for the same methods, so they are the safe half to check.
+    static void nonNegative(long index, String what) {
+        if (index < 0) {
+            throw new IllegalArgumentException(what + ": index " + index + " must be >= 0");
+        }
+    }
+
     /// `index` must satisfy `0 <= index < count` (element access / removal).
     static void index(long index, long count, String what) {
         if (index < 0 || index >= count) {

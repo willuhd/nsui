@@ -179,8 +179,15 @@ public final class NSToolbar extends NSObject {
     }
 
     // ---- items ----
-    /// [toolbar insertItemWithItemIdentifier:atIndex:]
+
+    /// [toolbar insertItemWithItemIdentifier:atIndex:] — index may equal the item count.
+    /// Only the negative half is validated: the native assertion is
+    /// `0 <= index <= [_currentItems count]`, and `-items` does not reliably report that
+    /// count (a windowless toolbar keeps returning an empty array after a successful
+    /// insert), so checking an upper bound here would reject legal calls. A negative index
+    /// raises natively (verified, exit 134: "Invalid parameter not satisfying: index>=0").
     public void insertItemWithItemIdentifier(String identifier, long index) {
+        Bounds.nonNegative(index, "insertItemWithItemIdentifier:atIndex:");
         try {
             handles.hInsertItem().invokeExact(peer, ObjC.sel("insertItemWithItemIdentifier:atIndex:"), ObjC.nsstring(identifier), index);
         } catch (Throwable t) {
@@ -190,6 +197,7 @@ public final class NSToolbar extends NSObject {
 
     /// Raw peer variant: insertItemWithItemIdentifier:atIndex: with id identifier.
     public void insertItemWithItemIdentifier(MemorySegment identifier, long index) {
+        Bounds.nonNegative(index, "insertItemWithItemIdentifier:atIndex:");
         try {
             MemorySegment arg = (identifier == null || identifier.address() == 0) ? MemorySegment.NULL : identifier;
             handles.hInsertItem().invokeExact(peer, ObjC.sel("insertItemWithItemIdentifier:atIndex:"), (MemorySegment) arg, index);
@@ -198,8 +206,11 @@ public final class NSToolbar extends NSObject {
         }
     }
 
-    /// [toolbar removeItemAtIndex:]
+    /// [toolbar removeItemAtIndex:] — see insertItemWithItemIdentifier for why only the
+    /// negative half is checked (the native assertion is `0 <= index < _currentItems count`
+    /// and `-items` is not a reliable count). Negative raises natively too.
     public void removeItemAtIndex(long index) {
+        Bounds.nonNegative(index, "removeItemAtIndex:");
         try {
             handles.hSetDisplayMode().invokeExact(peer, ObjC.sel("removeItemAtIndex:"), index);
         } catch (Throwable t) {

@@ -1641,6 +1641,45 @@ public final class AuditRegressionTest {
             TestKit.check(false, "nil-through-cycle-guard block threw: " + t);
         }
 
+        // --- 8ay. the rest of the version-gated accessors (macOS 13/14/15/26) ---
+        // Round-trips where a setter/getter pair exists (a short-circuit would fail them);
+        // presence-checked noThrow where the API is a class factory or has no getter.
+        try {
+            nsui.NSColorWell well = nsui.NSColorWell.create(new NSRect(0, 0, 60, 40));
+            if (well.respondsToSelector(ObjC.sel("setColorWellStyle:"))) {
+                well.setColorWellStyle(1);
+                TestKit.check(well.colorWellStyle() == 1, "colorWellStyle round-trips (macOS 13+)");
+            } else {
+                TestKit.probe("setColorWellStyle: absent on this host");
+            }
+            nsui.NSPopover pop = nsui.NSPopover.create();
+            if (pop.respondsToSelector(ObjC.sel("setHasFullSizeContent:"))) {
+                pop.setHasFullSizeContent(true);
+                TestKit.check(pop.hasFullSizeContent(), "hasFullSizeContent round-trips (macOS 14+)");
+            } else {
+                TestKit.probe("hasFullSizeContent absent on this host");
+            }
+            nsui.NSPopUpButton pub = nsui.NSPopUpButton.create(new NSRect(0, 0, 100, 30));
+            if (pub.respondsToSelector(ObjC.sel("setUsesItemFromMenu:"))) {
+                pub.setUsesItemFromMenu(false);
+                TestKit.check(!pub.usesItemFromMenu(), "usesItemFromMenu round-trips (macOS 15+)");
+            } else {
+                TestKit.probe("usesItemFromMenu absent on this host");
+            }
+            TestKit.noThrow("NSColor.linearExposure() is guarded but live (macOS 26+)",
+                    () -> nsui.NSColor.redColor().linearExposure());
+            // The class factory either works (15+) or reports the requirement; never aborts.
+            try {
+                nsui.NSPopUpButton made = nsui.NSPopUpButton.popUpButtonWithMenu(
+                        NSMenu.createWithTitle("m"), MemorySegment.NULL, "description");
+                TestKit.check(made != null, "popUpButtonWithMenu returned a button (macOS 15+)");
+            } catch (IllegalStateException e) {
+                TestKit.probe("popUpButtonWithMenu unavailable on this host: " + e.getMessage());
+            }
+        } catch (Throwable t) {
+            TestKit.check(false, "version-gate completion block threw: " + t);
+        }
+
         // --- 8z. type-confusion guards on the raw collection-view setters ---
         // AppKit does NOT raise a type error here, it either asserts isKindOfClass: or
         // messages the object: setCollectionViewLayout: with a plain NSView raised

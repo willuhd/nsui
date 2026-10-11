@@ -162,11 +162,13 @@ public final class NSColorWell extends NSControl {
 
     /// [well setColorWellStyle:] — NSColorWellStyle (0=Default,1=Minimal,2=Expanded) macOS 13+.
     public void setColorWellStyle(long style) {
+        if (!respondsToSelector(ObjC.sel("setColorWellStyle:"))) return;   // macOS 13+
         ObjC.msgSendVoidLong(peer, ObjC.sel("setColorWellStyle:"), style);
     }
 
     /// [well colorWellStyle] — current style.
     public long colorWellStyle() {
+        if (!respondsToSelector(ObjC.sel("colorWellStyle"))) return 0L;    // macOS 13+
         return ObjC.msgSendLong(peer, ObjC.sel("colorWellStyle"));
     }
 

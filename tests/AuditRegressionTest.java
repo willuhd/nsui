@@ -1203,6 +1203,49 @@ public final class AuditRegressionTest {
             TestKit.check(false, "backing-geometry block threw: " + t);
         }
 
+        // --- 8aj. NSString option/pad/replace variants (three more shapes registered) ---
+        // Measured: compare:options: ignores unknown bits; stringByPaddingToLength: validates
+        // startingAtIndex only when padding happens (newLength > length) and tolerates a
+        // negative length; stringByReplacingOccurrencesOfString: needs both strings non-nil and
+        // a range with loc+len <= length ({3,0} is legal, {0,5} and {2,2} abort).
+        try {
+            nsui.NSString base = nsui.NSString.of("abc");
+            TestKit.check(base.compare("B", 1L) < 0 && base.compare("B", 0L) > 0,
+                    "compare:options: is case-insensitive with option 1");
+            TestKit.noThrow("compare:options: ignores an unknown option bit",
+                    () -> base.compare("abc", 1L << 30));
+            TestKit.check(base.stringByPaddingToLength(5, nsui.NSString.of("xy"), 0).toString().equals("abcxy"),
+                    "padding to 5 with xy from 0 gives abcxy (got "
+                            + base.stringByPaddingToLength(5, nsui.NSString.of("xy"), 0).toString() + ")");
+            TestKit.noThrow("padding with start 5 is legal when no padding is needed",
+                    () -> base.stringByPaddingToLength(2, nsui.NSString.of("xy"), 5));
+            TestKit.expectThrows("padding with a negative length rejects (native NSMallocException)",
+                    IllegalArgumentException.class,
+                    () -> base.stringByPaddingToLength(-1, nsui.NSString.of("xy"), 0));
+            TestKit.expectThrows("padding with start == pad length rejects when padding is needed",
+                    IllegalArgumentException.class,
+                    () -> base.stringByPaddingToLength(5, nsui.NSString.of("xy"), 2));
+            TestKit.expectThrows("padding with a null pad string rejects",
+                    IllegalArgumentException.class,
+                    () -> base.stringByPaddingToLength(5, null, 0));
+            TestKit.check(base.stringByReplacingOccurrencesOfString("b", "z", 0L, new nsui.NSRange(0, 3))
+                            .toString().equals("azc"),
+                    "replace within {0,3} gives azc");
+            TestKit.noThrow("replace with an empty range at the end is legal",
+                    () -> base.stringByReplacingOccurrencesOfString("b", "z", 0L, new nsui.NSRange(3, 0)));
+            TestKit.expectThrows("replace with an overflowing range rejects",
+                    IllegalArgumentException.class,
+                    () -> base.stringByReplacingOccurrencesOfString("b", "z", 0L, new nsui.NSRange(0, 5)));
+            TestKit.expectThrows("replace with a null target rejects",
+                    IllegalArgumentException.class,
+                    () -> base.stringByReplacingOccurrencesOfString(null, "z", 0L, new nsui.NSRange(0, 3)));
+            TestKit.expectThrows("replace with a null replacement rejects",
+                    IllegalArgumentException.class,
+                    () -> base.stringByReplacingOccurrencesOfString("b", null, 0L, new nsui.NSRange(0, 3)));
+        } catch (Throwable t) {
+            TestKit.check(false, "NSString variant block threw: " + t);
+        }
+
         // --- 8z. type-confusion guards on the raw collection-view setters ---
         // AppKit does NOT raise a type error here, it either asserts isKindOfClass: or
         // messages the object: setCollectionViewLayout: with a plain NSView raised

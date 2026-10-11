@@ -540,9 +540,13 @@ public final class ObjC {
 
     /// FFM upcall stub: a real C function pointer that calls back into Java.
     ///
-    /// CONTRACT: an exception thrown out of `target` cannot cross the stub and
-    /// aborts the VM. Anyone building a stub through this factory owns that
-    /// policy decision — document it on the callback, or catch inside it.
+    /// CONTRACT: an exception thrown out of `target` cannot cross the stub. The JDK's
+    /// upcall machinery catches it at the boundary and terminates the process:
+    /// `SharedUtils.handleUncaughtException` prints the throwable and calls
+    /// `System.exit(1)` (verified against the toolchain source), so shutdown hooks run
+    /// but the exception is neither catchable nor recoverable. Anyone building a stub
+    /// through this factory owns that policy decision — document it on the callback,
+    /// or catch inside it.
     public static MemorySegment upcall(MethodHandle target, FunctionDescriptor descriptor) {
         if (!INIT && !INITIALIZING) throw new IllegalStateException("ObjC.init() must run first (from main, at runtime)");
         return LINKER.upcallStub(target, descriptor, ARENA);

@@ -507,6 +507,26 @@ public final class AuditRegressionTest {
             TestKit.check(false, "DelegateProxy.dispose block threw: " + t);
         }
 
+        // --- 8m. nil-legality corrections verified by probing ---
+        try {
+            // CAAnimation.h:96 marks the key path nullable, and nil is accepted natively
+            // (returns a valid animation), so rejecting it was a false rejection.
+            TestKit.check(nsui.CAAnimation.animationWithKeyPath(null) != null,
+                    "animationWithKeyPath(null) returns an animation");
+
+            // MTLDepthStencil.h / MTLSampler.h mark `label` nullable, but Metal asserts on
+            // nil ("label must not be nil"); a silent no-op hid that, so it is now an IAE.
+            nsui.MTLDepthStencilDescriptor ds = nsui.MTLDepthStencilDescriptor.create();
+            TestKit.expectThrows("MTLDepthStencilDescriptor.setLabel(null) reports the Metal assertion",
+                    IllegalArgumentException.class, () -> ds.setLabel(null));
+            TestKit.noThrow("MTLDepthStencilDescriptor.setLabel(\"x\") works", () -> ds.setLabel("x"));
+            nsui.MTLSamplerDescriptor sd = nsui.MTLSamplerDescriptor.create();
+            TestKit.expectThrows("MTLSamplerDescriptor.setLabel(null) reports the Metal assertion",
+                    IllegalArgumentException.class, () -> sd.setLabel(null));
+        } catch (Throwable t) {
+            TestKit.check(false, "nil-legality correction block threw: " + t);
+        }
+
         // --- 9. value and layer struct round-trips ---
         try {
             NSValue v = NSValue.valueWithPoint(new NSPoint(3, 4));

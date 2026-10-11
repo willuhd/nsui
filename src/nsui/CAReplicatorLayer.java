@@ -9,8 +9,11 @@ import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
 /// CAReplicatorLayer — replicates its sublayers N times with per-instance
-/// offsets (color shifts here are floats; the 128-bit instanceTransform is
-/// omitted — it needs a CATransform3D struct shape outside the vocabulary).
+/// offsets (color shifts here are floats).
+/// `instanceTransform` (CATransform3D, by value) is NOT implemented — a coverage
+/// gap, not an impossibility: the TRANSFORM3D vocabulary shapes exist (Sig.java)
+/// and CALayer already uses them. Corrected from an earlier comment that claimed
+/// the shape was outside the vocabulary.
 public class CAReplicatorLayer extends CALayer {
     private record Handles(MethodHandle hGetFloat, MethodHandle hSetFloat,
             MethodHandle hGetDouble, MethodHandle hSetDouble) {}

@@ -54,10 +54,11 @@ public final class DelegateProxy {
     private DelegateProxy() {}
 
     /// Java-side `-(BOOL)method:(id)sender` — return the "should" verdict.
-    /// CONTRACT: throwing out of any callback below aborts the VM (an exception
-    /// cannot cross the FFM upcall stub — fail-fast, like AppKit terminate on
-    /// uncaught exceptions). Never let user code throw through here; there are
-    /// no safe defaults for a broken verdict, by design.
+    /// CONTRACT: throwing out of any callback below cannot cross the FFM upcall stub —
+    /// the JDK catches it at the boundary and calls `System.exit(1)` after printing it
+    /// (`SharedUtils.handleUncaughtException`), i.e. process death, not a catchable
+    /// exception. Never let user code throw through here; there are no safe defaults
+    /// for a broken verdict, by design.
     public interface BoolArg { boolean call(MemorySegment sender); }
 
     /// Java-side `-(void)method:(id)sender` — a side-effecting notification.

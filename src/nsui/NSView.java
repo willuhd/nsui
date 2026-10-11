@@ -610,10 +610,13 @@ public class NSView extends NSResponder {
                 || !ObjC.addMethod(drawableClass, "flagsChanged:", s.flagsChanged(), "v@:@")) {
             throw new RuntimeException("class_addMethod event override failed");
         }
-        if (!ObjC.addMethod(drawableClass, "performKeyEquivalent:", s.performKeyEquivalent(), "B@:@")) {
+        // BOOL is `signed char` on macOS (objc.h: OBJC_BOOL_IS_BOOL is 0 for TARGET_OS_OSX,
+        // "BOOL is explicitly signed so @encode(BOOL) == \"c\""), and the rest of the tree
+        // (DelegateProxy) publishes "c". "B" is C++ _Bool and is the wrong encoding here.
+        if (!ObjC.addMethod(drawableClass, "performKeyEquivalent:", s.performKeyEquivalent(), "c@:@")) {
             throw new RuntimeException("class_addMethod performKeyEquivalent: failed");
         }
-        if (!ObjC.addMethod(drawableClass, "acceptsFirstResponder", s.acceptsFirstResponder(), "B@:")) {
+        if (!ObjC.addMethod(drawableClass, "acceptsFirstResponder", s.acceptsFirstResponder(), "c@:")) {
             throw new RuntimeException("class_addMethod acceptsFirstResponder failed");
         }
         Handles h = new Handles(

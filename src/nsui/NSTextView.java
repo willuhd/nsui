@@ -515,7 +515,9 @@ public class NSTextView extends NSText {
                 // copy per call. Hand it to the caller's autorelease pool like every other
                 // factory result here, so a loop over this getter is pool-drained. The
                 // snapshot is pool-scoped: call keepAlive() if it must outlive the pool.
-                ObjC.msgSendVoid(snapshot, ObjC.sel("autorelease"));
+                // (msgSendId, not msgSendVoid: -autorelease returns id, and declaring void
+                // is an ABI-class mismatch the signature gate rejects.)
+                ObjC.msgSendId(snapshot, ObjC.sel("autorelease"));
                 return NSAttributedString.wrap(snapshot);
             }
             return NSAttributedString.wrap(p);

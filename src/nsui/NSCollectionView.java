@@ -485,8 +485,17 @@ public final class NSCollectionView extends NSView {
         }
     }
 
-    /// [view itemAtIndex:] — item at a section-0 index, or nil (soft-deprecated, single section only).
+    /// [view itemAtIndex:] — item at a section-0 index, or nil (soft-deprecated, single
+    /// section only). On a view with more than one section AppKit raises
+    /// NSInternalInconsistencyException ("Use -indexPathForItem:, when the CollectionView
+    /// may contain more than one section", verified, exit 134); the section-0 item count
+    /// alone does not catch that.
     public NSCollectionViewItem itemAtIndex(long index) {
+        long sections = numberOfSections();
+        if (sections > 1) {
+            throw new IllegalArgumentException("itemAtIndex: is only valid for a single-section "
+                    + "collection view (this one has " + sections + " sections); use itemAtIndexPath:");
+        }
         Bounds.index(index, numberOfItemsInSection(0), "itemAtIndex:");
         try {
             return NSCollectionViewItem.wrap((MemorySegment) handles.hIdInt().invokeExact(peer, ObjC.sel("itemAtIndex:"), index));

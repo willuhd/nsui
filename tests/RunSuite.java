@@ -158,12 +158,15 @@ public final class RunSuite {
         // (SignatureConformanceTest, AssertionQualityTest) locate sources through
         // relative paths (src/nsui, tests). Without this they silently skip() whenever
         // the suite is invoked from anywhere but the repo root, and RunSuite still
-        // exits 0. Derive the root from the classes dir (<root>/out/classes), and only
-        // use it when <root>/src actually exists.
-        Path classesPath = Path.of(classesDir).toAbsolutePath().normalize();
-        Path repoRoot = (classesPath.getParent() == null) ? null : classesPath.getParent().getParent();
-        if (repoRoot == null || !Files.isDirectory(repoRoot.resolve("src"))) {
-            repoRoot = null;
+        // exits 0. Find the nearest ancestor of the classes dir that looks like the repo
+        // root (has both src/ and tests/), so a CI layout that nests the output dir
+        // differently still gets a valid working directory.
+        Path repoRoot = null;
+        for (Path p = Path.of(classesDir).toAbsolutePath().normalize(); p != null; p = p.getParent()) {
+            if (Files.isDirectory(p.resolve("src")) && Files.isDirectory(p.resolve("tests"))) {
+                repoRoot = p;
+                break;
+            }
         }
         final Path childCwd = repoRoot;
         Process[] live = new Process[tests.size()];
@@ -256,20 +259,26 @@ public final class RunSuite {
                 + "  SKIPPED: " + skipped + skippedList);
         // skipCase()/probe()/PARTIAL PASS never affect a test's exit code, so they are
         // counted PASSED above. Surface them: a green summary that hides unproven cases
-        // is how several abort-path gaps survived the suite.
+        // is how several abort-path gaps survived the suite. A whole-test skip() writes
+        // no RESULT line, so count those from the SKIP: line too — otherwise the very
+        // failure mode this reporting exists for (a gate that skipped) reads as 0/0/0.
         int caseSkips = 0;
         int probes = 0;
         int partials = 0;
+        int testSkips = 0;
         for (int k = 0; k < tests.size(); k++) {
             String text;
             try {
                 text = Files.readString(Path.of(finalLogsDir, tests.get(k) + ".log"));
             } catch (IOException e) {
+                System.out.println("NOTE: no log for " + tests.get(k) + " (" + e + ")");
                 continue;
             }
             for (String line : text.split("\n")) {
-                if (line.contains("PARTIAL PASS")) {
+                if (line.startsWith("RESULT:") && line.contains("PARTIAL PASS")) {
                     partials++;
+                } else if (line.startsWith("SKIP:")) {
+                    testSkips++;
                 } else if (line.startsWith("RESULT:") && line.endsWith("CASE SKIP(S)")) {
                     caseSkips += leadingCount(line);
                 } else if (line.startsWith("RESULT:") && line.contains("PROBE(S)")) {
@@ -277,8 +286,9 @@ public final class RunSuite {
                 }
             }
         }
-        if (caseSkips > 0 || probes > 0 || partials > 0) {
-            System.out.println("NOTE: " + caseSkips + " skipped case(s), " + probes
+        if (caseSkips > 0 || probes > 0 || partials > 0 || testSkips > 0) {
+            System.out.println("NOTE: " + testSkips + " whole-test skip(s), " + caseSkips
+                    + " skipped case(s), " + probes
                     + " no-oracle probe(s), " + partials + " partial-pass line(s) — counted PASS, not proven");
         }
         if (failed != 0) {

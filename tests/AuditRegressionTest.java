@@ -231,8 +231,14 @@ public final class AuditRegressionTest {
             TestKit.expectThrows("NSAttributedString.createWithDocFormat short documentAttributes rejects",
                     IllegalArgumentException.class,
                     () -> nsui.NSAttributedString.createWithDocFormat(null, shortOut));
+            // A 4-byte slot must be rejected; a valid 8-byte one must still be accepted
+            // and populated (this positive is what fails if outBuffer is over-tightened).
+            byte[] rtf = "{\\rtf1\\ansi hello}".getBytes(java.nio.charset.StandardCharsets.US_ASCII);
             MemorySegment wideOut = arena.allocate(8);
-            TestKit.check(wideOut.byteSize() == 8, "an 8-byte out slot is the accepted width");
+            nsui.NSAttributedString parsed = nsui.NSAttributedString.createWithRTF(
+                    nsui.NSData.dataWithBytes(rtf).peer(), wideOut);
+            TestKit.check(parsed != null && "hello".equals(parsed.string()),
+                    "an 8-byte out slot is accepted and the RTF parses (got " + parsed + ")");
         }
 
         // --- 8e. parallel-collection counts and the insert bound ---
@@ -333,13 +339,25 @@ public final class AuditRegressionTest {
             TestKit.noThrow("NSTableView.moveColumn(0,1) still works", () -> tv.moveColumn(0, 1));
             TestKit.expectThrows("NSTableView.setRowActionsVisible(true) rejects",
                     IllegalArgumentException.class, () -> tv.setRowActionsVisible(true));
+            // No positive setRowActionsVisible(false) here on purpose: on a cell-based
+            // table AppKit raises for NO as well ("setRowActionsVisible: is only for view
+            // based NSTableView"), so asserting it would abort this test JVM.
             // NSTableView.h:467: a row outside numberOfRows raises (verified view-based).
             TestKit.expectThrows("NSTableView.rowViewAtRow(numberOfRows) rejects",
                     IllegalArgumentException.class, () -> tv.rowViewAtRow(tv.numberOfRows(), false));
 
             // NSScrollView.h:49 types contentView as NSClipView; a plain NSView aborted
-            // ("-[NSView documentView]: unrecognized selector"). The signature now
-            // requires NSClipView, so this is the type-level regression guard.
+            // ("-[NSView documentView]: unrecognized selector"). Enforcement is the Java
+            // signature, so assert the signature itself: with the old NSView parameter
+            // getMethod(NSClipView.class) throws NoSuchMethodException. (A plain
+            // setContentView(NSClipView) call would pass under either signature.)
+            java.lang.reflect.Method setContentView = null;
+            try {
+                setContentView = NSScrollView.class.getMethod("setContentView", nsui.NSClipView.class);
+            } catch (NoSuchMethodException e) {
+                // leave null: the parameter type regressed to NSView
+            }
+            TestKit.check(setContentView != null, "NSScrollView.setContentView takes NSClipView (signature-enforced)");
             NSScrollView sv2 = NSScrollView.create(new NSRect(0, 0, 200, 100));
             TestKit.noThrow("NSScrollView.setContentView(NSClipView) works",
                     () -> sv2.setContentView(nsui.NSClipView.create(new NSRect(0, 0, 100, 100))));
@@ -379,6 +397,41 @@ public final class AuditRegressionTest {
             TestKit.close(bw);
         } catch (Throwable t) {
             TestKit.check(false, "storage/window guard block threw: " + t);
+        }
+
+        // --- 8i. itemAtIndex: is single-section only ---
+        // With a 2-section data source AppKit raises NSInternalInconsistencyException
+        // ("Use -indexPathForItem:, when the CollectionView may contain more than one
+        // section", verified, exit 134); a section-0 index check alone did not catch it.
+        try {
+            nsui.NSCollectionView cv3 = nsui.NSCollectionView.create(new NSRect(0, 0, 200, 100));
+            MemorySegment ds = DelegateProxy.delegate("NSObject", "NSUISectionsOnlyDS",
+                    java.util.Map.of(), java.util.Map.of(),
+                    java.util.Map.of("numberOfSectionsInCollectionView:", sender -> 2L),
+                    java.util.Map.of(), java.util.Map.of(), java.util.Map.of(), java.util.Map.of());
+            cv3.setDataSource(ds);
+            // The data source is only consulted once a layout is installed; without this
+            // numberOfSections() is 0 and the rejection below would fire for the wrong
+            // reason (an empty view) instead of the multi-section guard.
+            MemorySegment flow = ObjC.msgSendId(
+                    ObjC.msgSendId(ObjC.cls("NSCollectionViewFlowLayout"), ObjC.sel("alloc")), ObjC.sel("init"));
+            cv3.setCollectionViewLayout(flow);
+            cv3.reloadData();
+            TestKit.check(cv3.numberOfSections() == 2,
+                    "sections-only data source reports 2 sections (got " + cv3.numberOfSections() + ")");
+            // Assert the *reason*, not just the type: with 2 sections the section-0 item
+            // count is 0, so Bounds.index would also throw IAE. Only the multi-section
+            // guard produces a message naming the section cause.
+            try {
+                cv3.itemAtIndex(0);
+                TestKit.check(false, "itemAtIndex on a 2-section view did not throw");
+            } catch (IllegalArgumentException e) {
+                String m = e.getMessage();
+                TestKit.check(m != null && m.contains("single-section"),
+                        "itemAtIndex multi-section rejection names the section cause (got '" + m + "')");
+            }
+        } catch (Throwable t) {
+            TestKit.check(false, "itemAtIndex multi-section block threw: " + t);
         }
 
         // --- 9. value and layer struct round-trips ---

@@ -1096,6 +1096,28 @@ public final class AuditRegressionTest {
             TestKit.check(false, "previously-dead wrapper block threw: " + t);
         }
 
+        // --- 8af. NSGridView.mergeCellsInHorizontalRange:verticalRange: (newly implemented) ---
+        // of(VOID,RANGE,RANGE) was missing. Measured on a 3x3 grid: locations 0, 1, 2 accepted;
+        // 3 (== count) and 5 abort with NSRangeException.
+        try {
+            nsui.NSGridView mg = nsui.NSGridView.gridViewWithNumberOfColumnsRows(3, 3);
+            TestKit.check(mg.numberOfColumns() == 3 && mg.numberOfRows() == 3,
+                    "3x3 grid reports 3 columns and rows");
+            TestKit.noThrow("mergeCells (0,0) on a 3x3 grid is legal",
+                    () -> mg.mergeCellsInHorizontalRange(new nsui.NSRange(0, 1), new nsui.NSRange(0, 1)));
+            TestKit.expectThrows("mergeCells horizontal at column count rejects",
+                    IllegalArgumentException.class,
+                    () -> mg.mergeCellsInHorizontalRange(new nsui.NSRange(3, 1), new nsui.NSRange(0, 1)));
+            TestKit.expectThrows("mergeCells vertical at row count rejects",
+                    IllegalArgumentException.class,
+                    () -> mg.mergeCellsInHorizontalRange(new nsui.NSRange(0, 1), new nsui.NSRange(5, 1)));
+            TestKit.expectThrows("mergeCells horizontal spanning past the grid rejects",
+                    IllegalArgumentException.class,
+                    () -> mg.mergeCellsInHorizontalRange(new nsui.NSRange(2, 2), new nsui.NSRange(0, 1)));
+        } catch (Throwable t) {
+            TestKit.check(false, "grid merge block threw: " + t);
+        }
+
         // --- 8z. type-confusion guards on the raw collection-view setters ---
         // AppKit does NOT raise a type error here, it either asserts isKindOfClass: or
         // messages the object: setCollectionViewLayout: with a plain NSView raised

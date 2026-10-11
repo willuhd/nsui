@@ -16,9 +16,9 @@ import static nsui.objc.Sig.Ret;
 /// follow NSGridCellPlacement (inherited 0, none 1, leading/top 2, trailing/bottom 3, center 4,
 /// fill 5) and NSGridRowAlignment (inherited 0, none 1, firstBaseline 2, lastBaseline 3).
 ///
-/// Omitted from NSGridView.h: mergeCellsInHorizontalRange:verticalRange: needs of(VOID,RANGE,RANGE)
-/// (absent from the Sig vocabulary — requested); NSGridViewSizeForContent constant (extern CGFloat,
-/// value not verifiable from headers alone).
+/// Omitted from NSGridView.h: NSGridViewSizeForContent constant (extern CGFloat, value not
+/// verifiable from headers alone). mergeCellsInHorizontalRange:verticalRange: IS implemented
+/// below — of(VOID,RANGE,RANGE) is registered now.
 public final class NSGridView extends NSView {
 
             private record Handles(MethodHandle hGridInit, MethodHandle hVoidId, MethodHandle hId, MethodHandle hInt, MethodHandle hVoidInt, MethodHandle hGetDouble, MethodHandle hSetDouble) {}
@@ -218,6 +218,25 @@ public final class NSGridView extends NSView {
             return (long) h.invokeExact(peer, ObjC.sel("indexOfColumn:"), column.peer());
         } catch (Throwable t) {
             throw new RuntimeException("indexOfColumn: failed", t);
+        }
+    }
+
+    /// [grid mergeCellsInHorizontalRange:verticalRange:] — merge a block of cells.
+    ///
+    /// Both ranges must lie inside the grid: AppKit raises NSRangeException for a range whose
+    /// location is the column/row count or beyond (verified on a 3x3 grid: locations 0, 1 and 2
+    /// are accepted, 3 and 5 abort, exit 134), so each is bounded with Bounds.range against
+    /// numberOfColumns()/numberOfRows(). Needed of(VOID,RANGE,RANGE), now registered.
+    public void mergeCellsInHorizontalRange(NSRange horizontalRange, NSRange verticalRange) {
+        ensureInit();
+        Bounds.range(horizontalRange, numberOfColumns(), "mergeCellsInHorizontalRange:verticalRange: (horizontal)");
+        Bounds.range(verticalRange, numberOfRows(), "mergeCellsInHorizontalRange:verticalRange: (vertical)");
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.RANGE, Arg.RANGE));
+            h.invokeExact(peer, ObjC.sel("mergeCellsInHorizontalRange:verticalRange:"),
+                    horizontalRange.toSegment(), verticalRange.toSegment());
+        } catch (Throwable t) {
+            throw new RuntimeException("mergeCellsInHorizontalRange:verticalRange: failed", t);
         }
     }
 

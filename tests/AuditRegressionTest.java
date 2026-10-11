@@ -1322,6 +1322,44 @@ public final class AuditRegressionTest {
             TestKit.check(false, "unimplemented-selector block threw: " + t);
         }
 
+        // --- 8am. foreign tab item + Metal set*Bytes cap (both measured aborts) ---
+        // selectTabViewItem: with an item that is not in the tab view -> 134 natively;
+        // setVertexBytes(8192) with MTL_DEBUG_LAYER=1 -> "must be <= 4096" assertion, 134.
+        try {
+            nsui.NSTabView tabV = nsui.NSTabView.create(new NSRect(0, 0, 200, 120));
+            nsui.NSTabViewItem inItem = nsui.NSTabViewItem.create("in");
+            nsui.NSTabViewItem foreign = nsui.NSTabViewItem.create("out");
+            tabV.addTabViewItem(inItem);
+            TestKit.noThrow("selectTabViewItem(added item) is legal", () -> tabV.selectTabViewItem(inItem));
+            TestKit.expectThrows("selectTabViewItem(foreign item) rejects (native abort)",
+                    IllegalArgumentException.class, () -> tabV.selectTabViewItem(foreign));
+            TestKit.expectThrows("selectTabViewItem(null) rejects",
+                    IllegalArgumentException.class, () -> tabV.selectTabViewItem(null));
+
+            TestKit.check(nsui.MTLRenderCommandEncoder.MAX_SET_BYTES == 4096L,
+                    "Metal set*Bytes cap is documented as 4096");
+            if (nsui.MTLDevice.systemDefault() != null) {
+                nsui.MTLCommandQueue q = MTLDevice.systemDefault().newCommandQueue();
+                nsui.MTLTextureDescriptor td = nsui.MTLTextureDescriptor.texture2D(80L, 8, 8, false);
+                td.setUsage(4L);
+                nsui.MTLTexture tex = MTLDevice.systemDefault().newTexture(td);
+                nsui.MTLRenderPassDescriptor pass = nsui.MTLRenderPassDescriptor.create();
+                pass.colorAttachment(0).setTexture(tex);
+                nsui.MTLRenderCommandEncoder enc = q.commandBuffer().renderEncoder(pass);
+                TestKit.noThrow("setVertexBytes(4096) is accepted",
+                        () -> enc.setVertexBytes(new byte[4096], 0));
+                TestKit.expectThrows("setVertexBytes(8192) rejects (native assertion with validation)",
+                        IllegalArgumentException.class, () -> enc.setVertexBytes(new byte[8192], 0));
+                TestKit.expectThrows("setFragmentBytes(8192) rejects",
+                        IllegalArgumentException.class, () -> enc.setFragmentBytes(new byte[8192], 0));
+                enc.endEncoding();
+            } else {
+                TestKit.probe("no Metal device; set*Bytes cap checked by constant only");
+            }
+        } catch (Throwable t) {
+            TestKit.check(false, "tab-item/Metal-cap block threw: " + t);
+        }
+
         // --- 8z. type-confusion guards on the raw collection-view setters ---
         // AppKit does NOT raise a type error here, it either asserts isKindOfClass: or
         // messages the object: setCollectionViewLayout: with a plain NSView raised

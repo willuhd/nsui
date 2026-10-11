@@ -152,8 +152,23 @@ public final class MTLRenderCommandEncoder extends NSObject {
     }
 
     /// setVertexBytes:length:atIndex: — bytes are copied synchronously.
+    ///
+    /// Metal caps this call at 4096 bytes: with API validation enabled (MTL_DEBUG_LAYER=1) a
+    /// larger length aborts with "Set Vertex Bytes Validation length(8192) must be <= 4096"
+    /// (verified, exit 134; 4096 itself is accepted), and without validation it is silent
+    /// undefined behaviour. Larger data must go through an MTLBuffer instead.
+    public static final long MAX_SET_BYTES = 4096L;
+
+    private static void checkSetBytesLength(int length, String what) {
+        if (length > MAX_SET_BYTES) {
+            throw new IllegalArgumentException(what + ": length " + length
+                    + " exceeds Metal's " + MAX_SET_BYTES + "-byte limit for set*Bytes (use an MTLBuffer)");
+        }
+    }
+
     public void setVertexBytes(byte[] data, long index) {
         if (data == null || data.length == 0) throw new IllegalArgumentException("vertex data empty");
+        checkSetBytesLength(data.length, "setVertexBytes:length:atIndex:");
         ensureInit();
         MemorySegment buf = nsui.objc.Scratch.allocInput(data.length);
         MemorySegment.copy(data, 0, buf, java.lang.foreign.ValueLayout.JAVA_BYTE, 0, data.length);
@@ -177,8 +192,10 @@ public final class MTLRenderCommandEncoder extends NSObject {
     }
 
     /// setFragmentBytes:length:atIndex: — bytes are copied synchronously.
+    /// Same 4096-byte Metal cap as setVertexBytes (see checkSetBytesLength).
     public void setFragmentBytes(byte[] data, long index) {
         if (data == null || data.length == 0) throw new IllegalArgumentException("fragment data empty");
+        checkSetBytesLength(data.length, "setFragmentBytes:length:atIndex:");
         ensureInit();
         MemorySegment buf = nsui.objc.Scratch.allocInput(data.length);
         MemorySegment.copy(data, 0, buf, java.lang.foreign.ValueLayout.JAVA_BYTE, 0, data.length);

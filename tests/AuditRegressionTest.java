@@ -1433,6 +1433,43 @@ public final class AuditRegressionTest {
             TestKit.check(false, "responder action-guard block threw: " + t);
         }
 
+        // --- 8aq. NSTableRowView.viewAtColumn: is guardable after all ---
+        // A standalone row view reports 0 columns and aborts for every index (including 0), so
+        // Bounds.index(column, numberOfColumns()) rejects them all; a table-owned row view
+        // reports N and accepts 0..N-1. Both halves are pinned here.
+        try {
+            nsui.NSTableRowView lone = nsui.NSTableRowView.create(new NSRect(0, 0, 50, 50));
+            TestKit.check(lone == null || lone.numberOfColumns() == 0,
+                    "a standalone row view reports 0 columns");
+            TestKit.expectThrows("viewAtColumn(0) on a standalone row view rejects (native abort)",
+                    IllegalArgumentException.class, () -> lone.viewAtColumn(0));
+        } catch (Throwable t) {
+            TestKit.check(false, "standalone row-view block threw: " + t);
+        }
+        try {
+            // A fresh populated 3-row/1-column view-based table (tvRows lives in another block).
+            MemorySegment rowDs2 = DelegateProxy.delegate("NSObject", "NSUIRowViewDS2",
+                    java.util.Map.of(), java.util.Map.of(),
+                    java.util.Map.of("numberOfRowsInTableView:", sender -> 3L),
+                    java.util.Map.of("tableView:viewForTableColumn:row:",
+                            (t, c, r) -> NSView.create(new NSRect(0, 0, 10, 10), (v, d) -> {}).peer()),
+                    java.util.Map.of(), java.util.Map.of(), java.util.Map.of());
+            nsui.NSTableView ownedTable = nsui.NSTableView.create(new NSRect(0, 0, 200, 100));
+            ownedTable.addTableColumn(nsui.NSTableColumn.create("c"));
+            ownedTable.setDataSource(rowDs2);
+            ownedTable.setDelegate(rowDs2);
+            ownedTable.reloadData();
+            nsui.NSTableRowView owned = nsui.NSTableRowView.wrap(ownedTable.rowViewAtRow(0, true).peer());
+            TestKit.check(owned.numberOfColumns() == 1,
+                    "a row view owned by the 1-column table reports 1 column (got "
+                            + owned.numberOfColumns() + ")");
+            TestKit.noThrow("viewAtColumn(0) on an owned row view is legal", () -> owned.viewAtColumn(0));
+            TestKit.expectThrows("viewAtColumn(1) on a 1-column owned row view rejects",
+                    IllegalArgumentException.class, () -> owned.viewAtColumn(1));
+        } catch (Throwable t) {
+            TestKit.check(false, "owned row-view block threw: " + t);
+        }
+
         // --- 8z. type-confusion guards on the raw collection-view setters ---
         // AppKit does NOT raise a type error here, it either asserts isKindOfClass: or
         // messages the object: setCollectionViewLayout: with a plain NSView raised

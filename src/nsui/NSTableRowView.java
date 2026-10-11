@@ -154,12 +154,14 @@ public final class NSTableRowView extends NSView {
 
     /// viewAtColumn: — the cell view at a column, or nil.
     ///
-    /// NOT index-guarded, and it cannot be: the native precondition is about the ROW VIEW's
-    /// column association, not the index. A standalone NSTableRowView aborts for EVERY index,
-    /// including 0 ("Invalid parameter not satisfying: colum[n]…", verified, exit 134), so a
-    /// Bounds.index check would neither prevent the abort nor be able to tell a valid row view
-    /// from a standalone one. Call it on a row view that belongs to a table view with columns.
+    /// Index-guarded against numberOfColumns(), which is exact in BOTH cases: a standalone row
+    /// view reports 0 columns and aborts for every index including 0 ("Invalid parameter not
+    /// satisfying: colum[n]…", verified, exit 134), so every column is rejected; a row view
+    /// owned by a table with N columns accepts 0..N-1 and aborts at N. An earlier version of
+    /// this javadoc claimed the call "cannot be guarded" — the standalone measurement was right
+    /// but the conclusion was wrong.
     public NSView viewAtColumn(long column) {
+        Bounds.index(column, numberOfColumns(), "viewAtColumn:");
         try {
             MemorySegment v = (MemorySegment) ObjC.handle(Sig.of(Ret.ID, Arg.INT))
                     .invokeExact(peer, ObjC.sel("viewAtColumn:"), column);

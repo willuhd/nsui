@@ -38,20 +38,6 @@ public final class NSDictionary extends NSObject {
     }
 
     /// Create an empty dictionary via `[NSDictionary dictionary]`.
-    /// Reject a mutating call on an IMMUTABLE peer.
-    ///
-    /// This class serves both roles (there is no separate mutable wrapper), and its factories
-    /// return either flavor: `dictionary()` hands back an immutable one, while `mutableDictionary()` is the
-    /// mutable peer. Sending a mutator to the immutable one aborts with an
-    /// unrecognized-selector NSInvalidArgumentException (verified), so each mutator goes
-    /// through this check and reports a named error instead.
-    private void requireMutable(String what) {
-        if (!isKindOfClass("NSMutableDictionary")) {
-            throw new IllegalStateException(what + " requires a mutable dictionary "
-                    + "(use mutableDictionary()(); dictionary()() is immutable)");
-        }
-    }
-
     public static NSDictionary dictionary() {
         ensureInit();
         MemorySegment d = ObjC.msgSendId(ObjC.cls("NSDictionary"), ObjC.sel("dictionary"));
@@ -63,6 +49,20 @@ public final class NSDictionary extends NSObject {
         ensureInit();
         MemorySegment d = ObjC.msgSendId(ObjC.cls("NSMutableDictionary"), ObjC.sel("dictionary"));
         return wrap(d);
+    }
+
+    /// Reject a mutating call on an IMMUTABLE peer.
+    ///
+    /// This class serves both roles (there is no separate mutable wrapper), and its factories
+    /// return either flavor: `dictionary()` hands back an immutable one, while `mutableDictionary()` is the
+    /// mutable peer. Sending a mutator to the immutable one aborts with an
+    /// unrecognized-selector NSInvalidArgumentException (verified), so each mutator goes
+    /// through this check and reports a named error instead.
+    private void requireMutable(String what) {
+        if (!isKindOfClass("NSMutableDictionary")) {
+            throw new IllegalStateException(what + " requires a mutable dictionary "
+                    + "(use mutableDictionary(); dictionary() is immutable)");
+        }
     }
 
         private static void ensureInit() {

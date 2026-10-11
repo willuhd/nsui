@@ -1600,6 +1600,7 @@ ensureInit(); return ObjC.msgSendBool(peer, Sels.hasDynamicDepthLimit); }
 
     /// [window subtitle] (macOS 11+) — secondary title text, may be nil.
     public String subtitle() {
+        if (!respondsToSelector(Sels.subtitle)) return null;   // macOS 11+
         ensureInit();
         return ObjC.toString(ObjC.msgSendId(peer, Sels.subtitle));
     }
@@ -1609,6 +1610,7 @@ ensureInit(); return ObjC.msgSendBool(peer, Sels.hasDynamicDepthLimit); }
     /// aborts the JVM). A Java null is therefore mapped to `""` (visually empty).
     public void setSubtitle(String subtitle) {
         ensureInit();
+        if (!respondsToSelector(Sels.setSubtitle)) return;   // macOS 11+
         ObjC.msgSendVoidId(peer, Sels.setSubtitle,
                 ObjC.nsstring(subtitle == null ? "" : subtitle));
     }
@@ -1616,12 +1618,14 @@ ensureInit(); return ObjC.msgSendBool(peer, Sels.hasDynamicDepthLimit); }
     /// [window toolbarStyle] — NSWindowToolbarStyle (macOS 11+).
     public long toolbarStyle() {
         ensureInit();
+        if (!respondsToSelector(Sels.toolbarStyle)) return 0L;   // macOS 11+
         return ObjC.msgSendLong(peer, Sels.toolbarStyle);
     }
 
     /// [window setToolbarStyle:].
     public void setToolbarStyle(long style) {
         ensureInit();
+        if (!respondsToSelector(Sels.setToolbarStyle)) return;   // macOS 11+
         ObjC.msgSendVoidLong(peer, Sels.setToolbarStyle, style);
     }
 
@@ -1634,6 +1638,7 @@ ensureInit(); return ObjC.msgSendBool(peer, Sels.hasDynamicDepthLimit); }
     /// [window cascadingReferenceFrame] — reference frame for cascading (macOS 15+).
     public NSRect cascadingReferenceFrame() {
         ensureInit();
+        if (!respondsToSelector(Sels.cascadingReferenceFrame)) return NSRect.ZERO;   // macOS 15+
         return NSRect.fromSegment(ObjC.msgSendRect(peer, Sels.cascadingReferenceFrame));
     }
 
@@ -2408,12 +2413,14 @@ ensureInit(); return ObjC.msgSendBool(peer, Sels.hasDynamicDepthLimit); }
     /// [window titlebarSeparatorStyle] (macOS 11+) — NSTitlebarSeparatorStyle.
     public long titlebarSeparatorStyle() {
         ensureInit();
+        if (!respondsToSelector(Sels.titlebarSeparatorStyle)) return 0L;   // macOS 11+
         return ObjC.msgSendLong(peer, Sels.titlebarSeparatorStyle);
     }
 
     /// [window setTitlebarSeparatorStyle:].
     public void setTitlebarSeparatorStyle(long style) {
         ensureInit();
+        if (!respondsToSelector(Sels.setTitlebarSeparatorStyle)) return;   // macOS 11+
         ObjC.msgSendVoidLong(peer, Sels.setTitlebarSeparatorStyle, style);
     }
 
@@ -2808,6 +2815,7 @@ ensureInit(); return ObjC.msgSendBool(peer, Sels.hasDynamicDepthLimit); }
     /// [window hasActiveWindowSharingSession] (macOS 13.3+).
     public boolean hasActiveWindowSharingSession() {
         ensureInit();
+        if (!respondsToSelector(Sels.hasActiveWindowSharingSession)) return false;   // macOS 13.3+
         return ObjC.msgSendBool(peer, Sels.hasActiveWindowSharingSession);
     }
 

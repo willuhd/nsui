@@ -998,7 +998,7 @@ public class NSView extends NSResponder {
         if (view == null || view.peer() == null || view.peer().address() == 0) return;
         for (NSView p = this; p != null; p = p.superview()) {
             if (p.peer() != null && p.peer().address() == view.peer().address()) {
-                throw new IllegalArgumentException(what + ": the view is the receiver or one of "
+                throw new IllegalArgumentException(what + " the view is the receiver or one of "
                         + "its ancestors; AppKit faults or hangs on that cycle");
             }
         }

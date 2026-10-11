@@ -45,20 +45,6 @@ public final class NSArray extends NSObject {
     /// Create an empty IMMUTABLE array via `[NSArray array]`. Use `mutableArray()`
     /// when you intend to add or remove elements — the returned array rejects
     /// mutation with a native exception.
-    /// Reject a mutating call on an IMMUTABLE peer.
-    ///
-    /// This class serves both roles (there is no separate mutable wrapper), and its factories
-    /// return either flavor: `array()` hands back an immutable one, while `mutableArray()` is the
-    /// mutable peer. Sending a mutator to the immutable one aborts with an
-    /// unrecognized-selector NSInvalidArgumentException (verified), so each mutator goes
-    /// through this check and reports a named error instead.
-    private void requireMutable(String what) {
-        if (!isKindOfClass("NSMutableArray")) {
-            throw new IllegalStateException(what + " requires a mutable array "
-                    + "(use mutableArray()(); array()() is immutable)");
-        }
-    }
-
     public static NSArray array() {
         ensureInit();
         MemorySegment arr = ObjC.msgSendId(ObjC.cls("NSArray"), ObjC.sel("array"));
@@ -70,6 +56,20 @@ public final class NSArray extends NSObject {
         ensureInit();
         MemorySegment arr = ObjC.msgSendId(ObjC.cls("NSMutableArray"), ObjC.sel("array"));
         return wrap(arr);
+    }
+
+    /// Reject a mutating call on an IMMUTABLE peer.
+    ///
+    /// This class serves both roles (there is no separate mutable wrapper), and its factories
+    /// return either flavor: `array()` hands back an immutable one, while `mutableArray()` is the
+    /// mutable peer. Sending a mutator to the immutable one aborts with an
+    /// unrecognized-selector NSInvalidArgumentException (verified), so each mutator goes
+    /// through this check and reports a named error instead.
+    private void requireMutable(String what) {
+        if (!isKindOfClass("NSMutableArray")) {
+            throw new IllegalStateException(what + " requires a mutable array "
+                    + "(use mutableArray(); array() is immutable)");
+        }
     }
 
         private static void ensureInit() {

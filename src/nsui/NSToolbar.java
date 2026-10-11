@@ -279,6 +279,7 @@ public final class NSToolbar extends NSObject {
     // ---- removeItemWithItemIdentifier: (macOS 15) ----
     /// removeItemWithItemIdentifier:.
     public void removeItemWithItemIdentifier(String identifier) {
+        if (!respondsToSelector(ObjC.sel("removeItemWithItemIdentifier:"))) return;   // macOS 15+
         ObjC.msgSendVoidId(peer, ObjC.sel("removeItemWithItemIdentifier:"),
                 identifier == null ? MemorySegment.NULL : ObjC.nsstring(identifier));
     }
@@ -305,16 +306,19 @@ public final class NSToolbar extends NSObject {
     // ---- allowsDisplayModeCustomization (macOS 15) ----
     /// allowsDisplayModeCustomization.
     public boolean allowsDisplayModeCustomization() {
+        if (!respondsToSelector(ObjC.sel("allowsDisplayModeCustomization"))) return true;   // macOS 15+
         return ObjC.msgSendBool(peer, ObjC.sel("allowsDisplayModeCustomization"));
     }
     /// setAllowsDisplayModeCustomization:.
     public void setAllowsDisplayModeCustomization(boolean flag) {
+        if (!respondsToSelector(ObjC.sel("setAllowsDisplayModeCustomization:"))) return;   // macOS 15+
         ObjC.msgSendVoidBool(peer, ObjC.sel("setAllowsDisplayModeCustomization:"), flag);
     }
 
     // ---- itemIdentifiers (NSArray<NSToolbarItemIdentifier>, macOS 15) ----
     /// itemIdentifiersPeer — raw NSArray id.
     public MemorySegment itemIdentifiersPeer() {
+        if (!respondsToSelector(ObjC.sel("itemIdentifiers"))) return MemorySegment.NULL;   // macOS 15+
         return ObjC.msgSendId(peer, ObjC.sel("itemIdentifiers"));
     }
     /// itemIdentifiers — identifier strings (empty when none).
@@ -345,6 +349,7 @@ public final class NSToolbar extends NSObject {
     // ---- centeredItemIdentifiers (NSSet, macOS 13) ----
     /// centeredItemIdentifiersPeer — raw NSSet id.
     public MemorySegment centeredItemIdentifiersPeer() {
+        if (!respondsToSelector(ObjC.sel("centeredItemIdentifiers"))) return MemorySegment.NULL;   // macOS 13+
         return ObjC.msgSendId(peer, ObjC.sel("centeredItemIdentifiers"));
     }
     /// setCenteredItemIdentifiers: with NSSet id.

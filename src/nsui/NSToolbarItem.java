@@ -284,6 +284,7 @@ public final class NSToolbarItem extends NSObject implements NSUserInterfaceItem
     // ---- possibleLabels (NSSet<NSString*>, macOS 13) ----
     /// possibleLabelsPeer — raw NSSet id.
     public MemorySegment possibleLabelsPeer() {
+        if (!respondsToSelector(ObjC.sel("possibleLabels"))) return MemorySegment.NULL;   // macOS 13+
         return ObjC.msgSendId(peer, ObjC.sel("possibleLabels"));
     }
     /// setPossibleLabels: with NSSet id.
@@ -342,6 +343,7 @@ public final class NSToolbarItem extends NSObject implements NSUserInterfaceItem
     }
     /// setBackgroundTintColor:.
     public void setBackgroundTintColor(NSColor color) {
+        if (!respondsToSelector(ObjC.sel("setBackgroundTintColor:"))) return;   // macOS 26+
         try {
             handles.hSetLabel().invokeExact(peer, ObjC.sel("setBackgroundTintColor:"), (MemorySegment) (color == null ? MemorySegment.NULL : color.peer()));
         } catch (Throwable t) { throw new RuntimeException("setBackgroundTintColor: failed", t); }
@@ -384,10 +386,12 @@ public final class NSToolbarItem extends NSObject implements NSUserInterfaceItem
     // ---- navigational (macOS 11, getter isNavigational) ----
     /// isNavigational.
     public boolean isNavigational() {
+        if (!respondsToSelector(ObjC.sel("isNavigational"))) return false;   // macOS 11+
         return ObjC.msgSendBool(peer, ObjC.sel("isNavigational"));
     }
     /// setNavigational:.
     public void setNavigational(boolean flag) {
+        if (!respondsToSelector(ObjC.sel("setNavigational:"))) return;   // macOS 11+
         try { handles.hSetEnabled().invokeExact(peer, ObjC.sel("setNavigational:"), flag); }
         catch (Throwable t) { throw new RuntimeException("setNavigational: failed", t); }
     }
@@ -395,16 +399,19 @@ public final class NSToolbarItem extends NSObject implements NSUserInterfaceItem
     // ---- visible (readonly, macOS 12, getter isVisible) ----
     /// isVisible.
     public boolean isVisible() {
+        if (!respondsToSelector(ObjC.sel("isVisible"))) return false;   // macOS 12+
         return ObjC.msgSendBool(peer, ObjC.sel("isVisible"));
     }
 
     // ---- hidden (macOS 15, getter isHidden) ----
     /// isHidden.
     public boolean isHidden() {
+        if (!respondsToSelector(ObjC.sel("isHidden"))) return false;   // macOS 15+
         return ObjC.msgSendBool(peer, ObjC.sel("isHidden"));
     }
     /// setHidden:.
     public void setHidden(boolean flag) {
+        if (!respondsToSelector(ObjC.sel("setHidden:"))) return;   // macOS 15+
         try { handles.hSetEnabled().invokeExact(peer, ObjC.sel("setHidden:"), flag); }
         catch (Throwable t) { throw new RuntimeException("setHidden: failed", t); }
     }
@@ -412,6 +419,7 @@ public final class NSToolbarItem extends NSObject implements NSUserInterfaceItem
     // ---- badge (NSItemBadge*, macOS 26; no wrapper — id peer) ----
     /// badgePeer — raw NSItemBadge id (may be NULL).
     public MemorySegment badgePeer() {
+        if (!respondsToSelector(ObjC.sel("badge"))) return MemorySegment.NULL;   // macOS 26+
         return ObjC.msgSendId(peer, ObjC.sel("badge"));
     }
     /// setBadge: with raw id.

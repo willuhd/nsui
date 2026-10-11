@@ -356,12 +356,14 @@ public final class NSPopover extends NSObject {
     /// hasFullSizeContent.
     public boolean hasFullSizeContent() {
         ensureInit();
+        if (!respondsToSelector(ObjC.sel("hasFullSizeContent"))) return false;   // macOS 14+
         try { return (boolean) handles.hGetBool().invokeExact(peer, ObjC.sel("hasFullSizeContent")); }
         catch (Throwable t) { throw new RuntimeException("hasFullSizeContent failed", t); }
     }
     /// setHasFullSizeContent:.
     public void setHasFullSizeContent(boolean flag) {
         ensureInit();
+        if (!respondsToSelector(ObjC.sel("setHasFullSizeContent:"))) return;     // macOS 14+
         try { handles.hSetBool().invokeExact(peer, ObjC.sel("setHasFullSizeContent:"), flag); }
         catch (Throwable t) { throw new RuntimeException("setHasFullSizeContent: failed", t); }
     }
@@ -370,6 +372,7 @@ public final class NSPopover extends NSObject {
     /// showRelativeToToolbarItem: — never call from tests (shows visibly); provided for completeness.
     public void showRelativeToToolbarItem(NSToolbarItem item) {
         ensureInit();
+        if (!respondsToSelector(ObjC.sel("showRelativeToToolbarItem:"))) return;  // macOS 14+
         try {
             handles.hSetId().invokeExact(peer, ObjC.sel("showRelativeToToolbarItem:"),
                     (MemorySegment) (item == null ? MemorySegment.NULL : item.peer()));

@@ -775,7 +775,7 @@ public class CALayer extends NSObject {
         if (sublayer == null || sublayer.peer() == null || sublayer.peer().address() == 0) return;
         for (CALayer p = this; p != null; p = p.superlayer()) {
             if (p.peer() != null && p.peer().address() == sublayer.peer().address()) {
-                throw new IllegalArgumentException(what + ": the layer is the receiver or one of "
+                throw new IllegalArgumentException(what + " the layer is the receiver or one of "
                         + "its ancestors; AppKit raises for that cycle");
             }
         }

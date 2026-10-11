@@ -211,6 +211,7 @@ public final class NSWindowController extends NSObject {
     /// items; nil falls back to the document's items. May be nil.
     public NSArray previewRepresentableActivityItems() {
         ensureInit();
+        if (!respondsToSelector(ObjC.sel("previewRepresentableActivityItems"))) return null;   // macOS 13.2+
         try {
             MemorySegment arr = (MemorySegment) handles.hId().invokeExact(peer,
                     ObjC.sel("previewRepresentableActivityItems"));
@@ -223,6 +224,7 @@ public final class NSWindowController extends NSObject {
     /// [controller setPreviewRepresentableActivityItems:] — nil restores fallback.
     public void setPreviewRepresentableActivityItems(NSArray items) {
         ensureInit();
+        if (!respondsToSelector(ObjC.sel("setPreviewRepresentableActivityItems:"))) return;   // macOS 13.2+
         try {
             handles.hVoidId().invokeExact(peer, ObjC.sel("setPreviewRepresentableActivityItems:"),
                     (MemorySegment) (items == null ? MemorySegment.NULL : items.peer()));

@@ -18,10 +18,11 @@ import java.util.List;
 ///
 /// Descriptors are keyed by *signature, not selector*: every method with the same
 /// shape (return class + argument classes) shares one descriptor and one native stub.
-/// The vocabulary below lists 134 shapes today and grows one line at a time; an earlier
-/// version of this comment claimed "438 distinct shapes, top ~40 cover ~78% of all calls",
-/// which was not reproducible from anything in the repository (there is no call corpus here),
-/// so it was replaced with the countable number.
+/// The vocabulary below is the curated core and grows one line at a time. It deliberately
+/// carries no shape count: an earlier version claimed "438 distinct shapes, top ~40 cover ~78%
+/// of all calls" (unreproducible — there is no call corpus here) and its replacement, a literal
+/// count, was stale within two commits. SignatureConformanceTest reports the real numbers it
+/// can measure: how many declared shapes resolve against the runtime encodings.
 ///
 /// ABI notes:
 /// - `id`/`SEL`/Class/pointers are one argument class (`ID`)
@@ -204,9 +205,9 @@ public final class Sig {
         of(Ret.ID, Arg.FLOAT, Arg.FLOAT, Arg.FLOAT, Arg.FLOAT), // timingFunctionWithControlPoints::::
         of(Ret.ID, Arg.ID, Arg.ID, Arg.FLOAT),        // HDR10MetadataWithDisplayInfo:contentInfo:scale:
         of(Ret.ID, Arg.FLOAT, Arg.FLOAT, Arg.FLOAT),  // HDR10MetadataWithMinLuminance:...
-        of(Ret.ID, Arg.INT, Arg.ID, Arg.INT, Arg.DOUBLE, Arg.DOUBLE), // constraintWithAttribute:scale:offset:
-        of(Ret.ID, Arg.INT, Arg.ID, Arg.INT, Arg.DOUBLE), // constraintWithAttribute:offset:
-        of(Ret.ID, Arg.INT, Arg.ID, Arg.INT),          // constraintWithAttribute: (source-relative)
+        // (the constraintWithAttribute:scale:offset: / :offset: shapes live further down as the
+        //  Arg.INT32 twins CAConstraint actually uses; these INT-width duplicates had no caller)
+        of(Ret.ID, Arg.INT, Arg.ID, Arg.INT),          // NSString stringByPaddingToLength:withString:startingAtIndex:
         of(Ret.ID, Arg.DOUBLE, Arg.DOUBLE, Arg.DOUBLE, Arg.DOUBLE),  // colorWithSRGBRed:green:blue:alpha:
         of(Ret.ID, Arg.INT, Arg.BOOL),                  // standardWindowButton:forFlag:
         // Metal v1 (all auto-registered like the rest)
@@ -273,7 +274,9 @@ public final class Sig {
         of(Ret.RANGE, Arg.ID, Arg.INT),                     // rangeOfString:options: (id,int)->range
         of(Ret.RANGE, Arg.ID, Arg.INT, Arg.RANGE),          // rangeOfString:options:range: / rangeOfCharacterFromSet:options:range:
         of(Ret.INT, Arg.ID, Arg.INT),                       // NSString compare:options:
-        of(Ret.ID, Arg.INT, Arg.ID, Arg.INT),               // NSString stringByPaddingToLength:withString:startingAtIndex:
+        // (of(Ret.ID, Arg.INT, Arg.ID, Arg.INT) is already listed above, for
+        //  stringByPaddingToLength:withString:startingAtIndex:; descriptors are keyed by SHAPE,
+        //  so the one entry serves every selector with that signature.)
         of(Ret.ID, Arg.ID, Arg.ID, Arg.INT, Arg.RANGE),     // NSString stringByReplacingOccurrencesOfString:withString:options:range:
         of(Ret.ID, Arg.RANGE, Arg.ID),                      // replaceCharactersInRange:withString: (range,id)->void/id variant
         of(Ret.VOID, Arg.RANGE, Arg.ID),                     // replaceCharactersInRange:withString: void variant

@@ -1513,8 +1513,15 @@ public final class AuditRegressionTest {
         // assertions below also prove the guards do not short-circuit a live call.
         try {
             nsui.NSSlider vSlider = nsui.NSSlider.create(new NSRect(0, 0, 100, 24));
-            TestKit.noThrow("NSSlider.tintProminence()/setTintProminence() are guarded but live",
-                    () -> { vSlider.setTintProminence(1); vSlider.tintProminence(); });
+            // Round-trips, not bare noThrow: a guard that short-circuits (returning the default
+            // without calling native) would pass a noThrow assertion but fail these.
+            if (vSlider.respondsToSelector(ObjC.sel("setTintProminence:"))) {
+                vSlider.setTintProminence(2);
+                TestKit.check(vSlider.tintProminence() == 2,
+                        "tintProminence round-trips through native (got " + vSlider.tintProminence() + ")");
+            } else {
+                TestKit.probe("tintProminence absent on this host (guard not exercised)");
+            }
             TestKit.noThrow("NSSlider.neutralValue()/setNeutralValue() are guarded but live",
                     () -> { vSlider.setNeutralValue(0.5); vSlider.neutralValue(); });
             nsui.NSTextField vField = nsui.NSTextField.create(new NSRect(0, 0, 100, 24));
@@ -1530,8 +1537,13 @@ public final class AuditRegressionTest {
             nsui.NSToolbarItem vItem = nsui.NSToolbarItem.create("probe.item");
             TestKit.noThrow("NSToolbarItem.style() is guarded but live", () -> vItem.style());
             NSView vView = NSView.create(new NSRect(0, 0, 10, 10), (v, d) -> {});
-            TestKit.noThrow("NSView.prefersCompactControlSizeMetrics() is guarded but live",
-                    () -> vView.prefersCompactControlSizeMetrics());
+            if (vView.respondsToSelector(ObjC.sel("setPrefersCompactControlSizeMetrics:"))) {
+                vView.setPrefersCompactControlSizeMetrics(true);
+                TestKit.check(vView.prefersCompactControlSizeMetrics(),
+                        "prefersCompactControlSizeMetrics round-trips through native");
+            } else {
+                TestKit.probe("prefersCompactControlSizeMetrics absent (guard not exercised)");
+            }
             TestKit.noThrow("NSScreen.cgDirectDisplayID() is guarded but live",
                     () -> nsui.NSScreen.mainScreen().cgDirectDisplayID());
             TestKit.noThrow("NSColorPanel.maximumLinearExposure() is guarded but live",
@@ -1627,6 +1639,210 @@ public final class AuditRegressionTest {
                     () -> nl.replaceSublayer(other, null));
         } catch (Throwable t) {
             TestKit.check(false, "nil-through-cycle-guard block threw: " + t);
+        }
+
+        // --- 8ay. the rest of the version-gated accessors (macOS 13/14/15/26) ---
+        // Round-trips where a setter/getter pair exists (a short-circuit would fail them);
+        // presence-checked noThrow where the API is a class factory or has no getter.
+        try {
+            nsui.NSColorWell well = nsui.NSColorWell.create(new NSRect(0, 0, 60, 40));
+            if (well.respondsToSelector(ObjC.sel("setColorWellStyle:"))) {
+                well.setColorWellStyle(1);
+                TestKit.check(well.colorWellStyle() == 1, "colorWellStyle round-trips (macOS 13+)");
+            } else {
+                TestKit.probe("setColorWellStyle: absent on this host");
+            }
+            nsui.NSPopover pop = nsui.NSPopover.create();
+            if (pop.respondsToSelector(ObjC.sel("setHasFullSizeContent:"))) {
+                pop.setHasFullSizeContent(true);
+                TestKit.check(pop.hasFullSizeContent(), "hasFullSizeContent round-trips (macOS 14+)");
+            } else {
+                TestKit.probe("hasFullSizeContent absent on this host");
+            }
+            nsui.NSPopUpButton pub = nsui.NSPopUpButton.create(new NSRect(0, 0, 100, 30));
+            if (pub.respondsToSelector(ObjC.sel("setUsesItemFromMenu:"))) {
+                pub.setUsesItemFromMenu(false);
+                TestKit.check(!pub.usesItemFromMenu(), "usesItemFromMenu round-trips (macOS 15+)");
+            } else {
+                TestKit.probe("usesItemFromMenu absent on this host");
+            }
+            TestKit.noThrow("NSColor.linearExposure() is guarded but live (macOS 26+)",
+                    () -> nsui.NSColor.redColor().linearExposure());
+            // The class factory either works (15+) or reports the requirement; never aborts.
+            try {
+                nsui.NSPopUpButton made = nsui.NSPopUpButton.popUpButtonWithMenu(
+                        NSMenu.createWithTitle("m"), MemorySegment.NULL, "description");
+                TestKit.check(made != null, "popUpButtonWithMenu returned a button (macOS 15+)");
+            } catch (IllegalStateException e) {
+                TestKit.probe("popUpButtonWithMenu unavailable on this host: " + e.getMessage());
+            }
+        } catch (Throwable t) {
+            TestKit.check(false, "version-gate completion block threw: " + t);
+        }
+
+        // --- 8az. macOS 11/12 accessors guarded for a uniform version story ---
+        try {
+            nsui.NSSearchField sf = nsui.NSSearchField.create(new NSRect(0, 0, 120, 30));
+            TestKit.noThrow("searchTextBounds() is guarded but live (macOS 11+)",
+                    () -> sf.searchTextBounds());
+            TestKit.noThrow("searchButtonBounds()/cancelButtonBounds() are guarded but live",
+                    () -> { sf.searchButtonBounds(); sf.cancelButtonBounds(); });
+            nsui.NSMutableParagraphStyle mps = nsui.NSMutableParagraphStyle.create();
+            if (mps.respondsToSelector(ObjC.sel("setUsesDefaultHyphenation:"))) {
+                mps.setUsesDefaultHyphenation(true);
+                TestKit.check(mps.usesDefaultHyphenation(),
+                        "usesDefaultHyphenation round-trips (macOS 12+)");
+            } else {
+                TestKit.probe("usesDefaultHyphenation absent on this host");
+            }
+            NSWindow subWin = TestKit.hiddenWindow(120, 80);
+            if (subWin.respondsToSelector(ObjC.sel("setSubtitle:"))) {
+                subWin.setSubtitle("probe");
+                TestKit.check("probe".equals(subWin.subtitle()),
+                        "subtitle round-trips (macOS 11+)");
+            } else {
+                TestKit.probe("subtitle absent on this host");
+            }
+            nsui.NSFontDescriptor fd = nsui.NSFontDescriptor
+                    .preferredFontDescriptorForTextStyleOptions("NSBody", null);
+            TestKit.check(fd != null, "preferredFontDescriptorForTextStyle:options: returned a descriptor (macOS 11+)");
+            TestKit.noThrow("NSImage.imageWithSystemSymbolName is guarded but live (macOS 11+)",
+                    () -> nsui.NSImage.imageWithSystemSymbolName("star.fill", null));
+        } catch (Throwable t) {
+            TestKit.check(false, "macOS 11/12 guard block threw: " + t);
+        }
+
+        // --- 8ba. discriminating coverage for the THREE setters 1c7d776 guarded ---
+        // The verifier noted the round-trips added there targeted NSSlider/NSView instead, so the
+        // three guarded setters still had only non-discriminating assertions. Round-trip each.
+        try {
+            nsui.NSTextField dField = nsui.NSTextField.create(new NSRect(0, 0, 120, 24));
+            if (dField.respondsToSelector(ObjC.sel("setPlaceholderAttributedStrings:"))) {
+                nsui.NSArray ph = nsui.NSArray.mutableArray();
+                ph.addObject(nsui.NSAttributedString.create("p"));
+                dField.setPlaceholderAttributedStrings(ph);
+                TestKit.check(dField.placeholderAttributedStrings() != null
+                                && dField.placeholderAttributedStrings().count() == 1,
+                        "placeholderAttributedStrings reaches native (count 1)");
+                dField.setPlaceholderAttributedStrings(null);
+                nsui.NSArray cleared = dField.placeholderAttributedStrings();
+                TestKit.check(cleared == null || cleared.count() == 0,
+                        "clearing placeholderAttributedStrings reaches native");
+            } else {
+                TestKit.probe("setPlaceholderAttributedStrings: absent on this host");
+            }
+            if (dField.respondsToSelector(ObjC.sel("setResolvesNaturalAlignmentWithBaseWritingDirection:"))) {
+                dField.setResolvesNaturalAlignmentWithBaseWritingDirection(true);
+                TestKit.check(dField.resolvesNaturalAlignmentWithBaseWritingDirection(),
+                        "resolvesNaturalAlignment reads back true");
+                dField.setResolvesNaturalAlignmentWithBaseWritingDirection(false);
+                TestKit.check(!dField.resolvesNaturalAlignmentWithBaseWritingDirection(),
+                        "resolvesNaturalAlignment reads back false");
+            } else {
+                TestKit.probe("setResolvesNaturalAlignment... absent on this host");
+            }
+            nsui.NSToolbarItem dItem = nsui.NSToolbarItem.create("probe.tint");
+            if (dItem.respondsToSelector(ObjC.sel("setBackgroundTintColor:"))) {
+                nsui.NSColor red = nsui.NSColor.redColor();
+                dItem.setBackgroundTintColor(red);
+                nsui.NSColor tintBack = dItem.backgroundTintColor();
+                TestKit.check(tintBack != null && tintBack.peer() != null && red.peer() != null
+                                && tintBack.peer().address() == red.peer().address(),
+                        "backgroundTintColor reaches native (same peer)");
+            } else {
+                TestKit.probe("setBackgroundTintColor: absent on this host");
+            }
+        } catch (Throwable t) {
+            TestKit.check(false, "setter round-trip block threw: " + t);
+        }
+
+        // --- 8bb. remaining version-gated families (NSScreen/NSToolbar/NSWindow/...) ---
+        try {
+            nsui.NSScreen sc = nsui.NSScreen.mainScreen();
+            if (sc != null) {
+                TestKit.noThrow("NSScreen safeAreaInsets is guarded but live (macOS 12+)",
+                        () -> sc.safeAreaInsets());
+                TestKit.noThrow("NSScreen refresh-interval accessors are guarded but live",
+                        () -> { sc.minimumRefreshInterval(); sc.maximumRefreshInterval();
+                                sc.displayUpdateGranularity(); sc.lastDisplayUpdateTimestamp();
+                                sc.maximumFramesPerSecond(); sc.auxiliaryTopLeftArea(); });
+            }
+            nsui.NSToolbar tb = nsui.NSToolbar.create("probe.tb");
+            if (tb.respondsToSelector(ObjC.sel("setAllowsDisplayModeCustomization:"))) {
+                tb.setAllowsDisplayModeCustomization(false);
+                TestKit.check(!tb.allowsDisplayModeCustomization(),
+                        "allowsDisplayModeCustomization round-trips (macOS 15+)");
+            } else {
+                TestKit.probe("allowsDisplayModeCustomization absent on this host");
+            }
+            nsui.NSToolbarItem tbi = nsui.NSToolbarItem.create("probe.tbi");
+            if (tbi.respondsToSelector(ObjC.sel("setNavigational:"))) {
+                tbi.setNavigational(true);
+                TestKit.check(tbi.isNavigational(), "isNavigational round-trips (macOS 11+)");
+            } else {
+                TestKit.probe("isNavigational absent on this host");
+            }
+            NSWindow tw = TestKit.hiddenWindow(160, 100);
+            if (tw.respondsToSelector(ObjC.sel("setToolbarStyle:"))) {
+                tw.setToolbarStyle(1);
+                TestKit.check(tw.toolbarStyle() == 1, "toolbarStyle round-trips (macOS 11+)");
+            } else {
+                TestKit.probe("toolbarStyle absent on this host");
+            }
+            nsui.NSTextField wtf = nsui.NSTextField.create(new NSRect(0, 0, 100, 24));
+            if (wtf.respondsToSelector(ObjC.sel("setAllowsWritingTools:"))) {
+                wtf.setAllowsWritingTools(true);
+                TestKit.check(wtf.allowsWritingTools(), "allowsWritingTools round-trips (macOS 15.2+)");
+            } else {
+                TestKit.probe("allowsWritingTools absent on this host");
+            }
+            TestKit.noThrow("NSProgressIndicator observedProgress is guarded but live (macOS 14+)",
+                    () -> nsui.NSProgressIndicator.create(new NSRect(0, 0, 100, 12)).observedProgress());
+            TestKit.noThrow("NSSharingServicePicker.standardShareMenuItem is guarded but live (13+)",
+                    () -> nsui.NSSharingServicePicker.withItems(nsui.NSArray.mutableArray())
+                            .standardShareMenuItem());
+        } catch (Throwable t) {
+            TestKit.check(false, "version batch block threw: " + t);
+        }
+        // --- 8bc. setter twins of the version-guarded getters ---
+        // A scan for "getter guarded, setter not" found five that my annotation sweep had missed
+        // (the setter's javadoc carries no version note). Round-trip each so the guard on this
+        // host must let the call reach native.
+        try {
+            nsui.NSToolbarItem t2 = nsui.NSToolbarItem.create("probe.twin");
+            if (t2.respondsToSelector(ObjC.sel("setNavigational:"))) {
+                t2.setNavigational(true);
+                TestKit.check(t2.isNavigational(), "setNavigational: round-trips (macOS 11+)");
+            } else {
+                TestKit.probe("setNavigational: absent on this host");
+            }
+            if (t2.respondsToSelector(ObjC.sel("setHidden:"))) {
+                t2.setHidden(true);
+                TestKit.check(t2.isHidden(), "setHidden: round-trips (macOS 15+)");
+            } else {
+                TestKit.probe("setHidden: absent on this host");
+            }
+            NSWindow twinWin = TestKit.hiddenWindow(150, 90);
+            if (twinWin.respondsToSelector(ObjC.sel("setTitlebarSeparatorStyle:"))) {
+                twinWin.setTitlebarSeparatorStyle(1);
+                TestKit.check(twinWin.titlebarSeparatorStyle() == 1,
+                        "setTitlebarSeparatorStyle: round-trips (macOS 11+)");
+            } else {
+                TestKit.probe("setTitlebarSeparatorStyle: absent on this host");
+            }
+            nsui.NSWindowController twinWc = nsui.NSWindowController.create();
+            if (twinWc.respondsToSelector(ObjC.sel("setPreviewRepresentableActivityItems:"))) {
+                nsui.NSArray acts = nsui.NSArray.mutableArray();
+                acts.addObject(nsui.NSString.of("x"));
+                twinWc.setPreviewRepresentableActivityItems(acts);
+                nsui.NSArray backActs = twinWc.previewRepresentableActivityItems();
+                TestKit.check(backActs != null && backActs.count() == 1,
+                        "setPreviewRepresentableActivityItems: round-trips (macOS 13.2+)");
+            } else {
+                TestKit.probe("setPreviewRepresentableActivityItems: absent on this host");
+            }
+        } catch (Throwable t) {
+            TestKit.check(false, "setter-twin block threw: " + t);
         }
 
         // --- 8z. type-confusion guards on the raw collection-view setters ---

@@ -177,6 +177,7 @@ public class NSParagraphStyle extends NSObject {
 
     /// [style usesDefaultHyphenation] (macOS 12+).
     public boolean usesDefaultHyphenation() {
+        if (!respondsToSelector(ObjC.sel("usesDefaultHyphenation"))) return false;   // macOS 12+
         return ObjC.msgSendBool(peer, ObjC.sel("usesDefaultHyphenation"));
     }
 

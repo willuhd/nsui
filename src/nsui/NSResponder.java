@@ -217,7 +217,10 @@ public class NSResponder extends NSObject {
     public void mouseExited(NSEvent event) { sendEvent("mouseExited:", event); }
 
     /// mouseCancelled: (macOS 26+).
-    public void mouseCancelled(NSEvent event) { sendEvent("mouseCancelled:", event); }
+    public void mouseCancelled(NSEvent event) {
+        if (!respondsToSelector(ObjC.sel("mouseCancelled:"))) return;   // macOS 26+
+        sendEvent("mouseCancelled:", event);
+    }
 
     /// tabletPoint:.
     public void tabletPoint(NSEvent event) { sendEvent("tabletPoint:", event); }
@@ -271,7 +274,10 @@ public class NSResponder extends NSObject {
     public void helpRequested(NSEvent event) { sendEvent("helpRequested:", event); }
 
     /// contextMenuKeyDown: (macOS 15+).
-    public void contextMenuKeyDown(NSEvent event) { sendEvent("contextMenuKeyDown:", event); }
+    public void contextMenuKeyDown(NSEvent event) {
+        if (!respondsToSelector(ObjC.sel("contextMenuKeyDown:"))) return;   // macOS 15+
+        sendEvent("contextMenuKeyDown:", event);
+    }
 
     /// showContextHelp: — sender is usually null.
     public void showContextHelp(MemorySegment sender) {

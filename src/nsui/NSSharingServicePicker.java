@@ -64,6 +64,7 @@ public final class NSSharingServicePicker extends NSObject {
 
     /// standardShareMenuItem (macOS 13+, nil-safe).
     public NSMenuItem standardShareMenuItem() {
+        if (!respondsToSelector(ObjC.sel("standardShareMenuItem"))) return null;   // macOS 13+
         return NSMenuItem.wrap(ObjC.msgSendId(peer, ObjC.sel("standardShareMenuItem")));
     }
 }

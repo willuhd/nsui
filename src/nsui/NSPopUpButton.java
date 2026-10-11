@@ -82,6 +82,22 @@ public final class NSPopUpButton extends NSControl {
     /// Shape (ID,ID,ID,ID) is in the vocabulary (grep: of(Ret.ID, Arg.ID, Arg.ID, Arg.ID)).
     public static NSPopUpButton popUpButtonWithMenu(NSMenu menu, MemorySegment target, String actionSelector) {
         ensureInit();
+        // macOS 15+ class method: check the CLASS responds before sending, otherwise this aborts
+        // with an unrecognized selector on an older host (the instance guard pattern does not
+        // apply to a class factory).
+        try {
+            boolean responds = (boolean) ObjC.handle(Sig.of(Ret.BOOL, Arg.ID)).invokeExact(
+                    ObjC.cls("NSPopUpButton"), ObjC.sel("respondsToSelector:"),
+                    ObjC.sel("popUpButtonWithMenu:target:action:"));
+            if (!responds) {
+                throw new IllegalStateException("popUpButtonWithMenu:target:action: requires macOS 15+ "
+                        + "(use create(frame) + setMenu: on older systems)");
+            }
+        } catch (IllegalStateException e) {
+            throw e;
+        } catch (Throwable t) {
+            throw new RuntimeException("popUpButtonWithMenu:target:action: presence check failed", t);
+        }
         try {
             MemorySegment m = (menu == null ? MemorySegment.NULL : menu.peer());
             MemorySegment t = (MemorySegment) (target == null ? MemorySegment.NULL : target);
@@ -312,18 +328,22 @@ public final class NSPopUpButton extends NSControl {
     /// [popup usesItemFromMenu] — pull-down uses first-item title (15.0+).
     /// Shapes (BOOL ()) / (VOID,BOOL) are in the vocabulary.
     public boolean usesItemFromMenu() {
+        if (!respondsToSelector(ObjC.sel("usesItemFromMenu"))) return false;   // macOS 15+
         return ObjC.msgSendBool(peer, ObjC.sel("usesItemFromMenu"));
     }
     /// [popup setUsesItemFromMenu:].
     public void setUsesItemFromMenu(boolean flag) {
+        if (!respondsToSelector(ObjC.sel("setUsesItemFromMenu:"))) return;     // macOS 15+
         ObjC.msgSendVoidBool(peer, ObjC.sel("setUsesItemFromMenu:"), flag);
     }
     /// [popup altersStateOfSelectedItem] — selected item gets NSControlStateValueOn (15.0+).
     public boolean altersStateOfSelectedItem() {
+        if (!respondsToSelector(ObjC.sel("altersStateOfSelectedItem"))) return false;   // macOS 15+
         return ObjC.msgSendBool(peer, ObjC.sel("altersStateOfSelectedItem"));
     }
     /// [popup setAltersStateOfSelectedItem:].
     public void setAltersStateOfSelectedItem(boolean flag) {
+        if (!respondsToSelector(ObjC.sel("setAltersStateOfSelectedItem:"))) return;   // macOS 15+
         ObjC.msgSendVoidBool(peer, ObjC.sel("setAltersStateOfSelectedItem:"), flag);
     }
 

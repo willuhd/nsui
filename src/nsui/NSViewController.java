@@ -162,6 +162,7 @@ public class NSViewController extends NSObject {
     /// [vc viewIfLoaded] — the view or nil when not loaded (macOS 14+).
     public NSView viewIfLoaded() {
         ensureInit();
+        if (!respondsToSelector(ObjC.sel("viewIfLoaded"))) return null;   // macOS 14+
         try {
             MemorySegment v = (MemorySegment) handles.hGetView().invokeExact(peer, ObjC.sel("viewIfLoaded"));
             return NSView.wrap(v);
@@ -177,6 +178,7 @@ public class NSViewController extends NSObject {
 
     /// [vc loadViewIfNeeded] (macOS 14+).
     public void loadViewIfNeeded() {
+        if (!respondsToSelector(ObjC.sel("loadViewIfNeeded"))) return;   // macOS 14+
         ObjC.msgSendVoid(peer, ObjC.sel("loadViewIfNeeded"));
     }
 

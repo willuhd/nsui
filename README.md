@@ -14,17 +14,33 @@ NSUI talks directly to the ObjC runtime. Every AppKit call is an `objc_msgSend` 
 
 ```bash
 ./build.sh          # compiles to out/classes
-./tests.sh          # full suite (75 tests), exit 0 iff all pass
+./tests.sh          # full suite (75 tests); exit 0 unless a test FAILS
 ./tests.sh Bench    # run only matching tests (substring filter)
+./tests.sh --strict-skips   # also fail when a test reports itself SKIPPED
 ```
+
+Exit status is honest but not a proof of coverage: a test that exits 0 with skipped
+cases (`TestKit.skipCase`), no-oracle probes (`TestKit.probe`) or a `PARTIAL PASS`
+summary is counted PASSED, and the runner prints a `NOTE:` line with those totals so a
+green result cannot hide them. `TestKit.skip()` (setup impossible) exits 2, which the
+runner reports as SKIPPED and tolerates unless `--strict-skips` is given.
+Run `./tests.sh` from the repository root: two gates locate the sources through
+relative paths (`src/nsui`, `tests`), and although the runner now pins the child
+working directory, a bare `java nsui.tests.<Gate>` from elsewhere will skip rather
+than check anything.
 
 Tests are plain `main()`s sharing `tests/TestKit.java` (reporting, hidden-by-default
 windows, run-loop pump, nanoTime benchmark tripwires) — no JUnit, no JMH, by design.
 Windows stay hidden unless a test proves it needs visibility; only NSEventTest and
 ButtonTest take key status. `tests/BenchTest.java` holds the hot-path benchmarks.
 `tests/SignatureConformanceTest.java` parses the wrapper sources and checks every declared
-`Sig` shape against the real runtime type encoding (`method_getTypeEncoding`);
-`tests/AssertionQualityTest.java` fails if any always-true `check(true, ...)` reappears.
+`Sig` shape against the real runtime type encoding (`method_getTypeEncoding`) — with two
+caveats: 241 selectors it cannot resolve (Metal protocol/descriptor stubs) are a counted
+baseline rather than a check, and unresolved entries are capped by a 15% share, so the
+resolution buckets are aggregate counts, not a per-name audit.
+`tests/AssertionQualityTest.java` fails if any always-true `check(true, ...)` reappears
+(it detects the `x == true || x == false`, `|| true` and `>= 0` shapes; it cannot see
+`X || !X`, so keep an eye out for that form).
 `BenchTest` covers dispatch, marshalling, Foundation, controls/layers, upcall callbacks and Metal.
 
 If running on the JVM, these 2 flags are needed:

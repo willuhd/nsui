@@ -64,10 +64,14 @@ public final class NSTabViewController extends NSViewController {
     public NSArray tabViewItems() { return NSArray.wrap(ObjC.msgSendId(peer, ObjC.sel("tabViewItems"))); }
     /// addTabViewItem:.
     public void addTabViewItem(NSTabViewItem item) {
+        Bounds.nonNull(item, "addTabViewItem:");
         ObjC.msgSendVoidId(peer, ObjC.sel("addTabViewItem:"), ObjC.nullablePeer(item));
     }
     /// insertTabViewItem:atIndex:.
     public void insertTabViewItem(NSTabViewItem item, long index) {
+        Bounds.nonNull(item, "insertTabViewItem:atIndex:");
+        NSArray items = tabViewItems();
+        Bounds.insertIndex(index, items == null ? 0 : items.count(), "insertTabViewItem:atIndex:");
         ensureInit();
         try {
             handles.hInsert().invokeExact(peer, ObjC.sel("insertTabViewItem:atIndex:"), ObjC.nullablePeer(item), index);

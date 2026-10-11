@@ -125,7 +125,8 @@ public class NSText extends NSView {
     /// Character count of the current text — for Java-side range validation. Reuses
     /// the already-wrapped `string()` accessor rather than introducing a new
     /// msgSend call site.
-    private long textLength() {
+    /// Package-visible so subclasses (NSTextView) can validate ranges the same way.
+    protected long textLength() {
         String s = string();
         return s == null ? 0 : s.length();
     }

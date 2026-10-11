@@ -1539,6 +1539,7 @@ public class NSTextView extends NSText {
 
     /// [textView showFindIndicatorForRange:] (macOS 10.5+).
     public void showFindIndicatorForRange(NSRange charRange) {
+        Bounds.range(charRange, textLength(), "showFindIndicatorForRange:");
         ensureInit();
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.RANGE));

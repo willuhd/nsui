@@ -222,8 +222,11 @@ public final class NSSegmentedControl extends NSControl {
 
     /// [control setSelected:forSegment:] — set selected state for segment (trackingMode SelectAny).
     public void setSelectedForSegment(boolean selected, long segment) {
-        // Probed: this is the ONLY per-segment accessor that raises for an
-        // out-of-range segment (setLabel/setTag/labelFor/setWidthForSegment tolerate it).
+        // Probed (2-segment control, segment 9): this raises, and so does the
+        // isSelectedForSegment: GETTER below — the earlier note claimed setSelected: was the
+        // only raiser and missed the getter. Every other per-segment accessor tolerates an
+        // out-of-range segment (re-probed: setEnabled/setWidth/setToolTip/setMenu/setImage/
+        // setLabel/setTag and the width/tag/image/menu/toolTip/label getters all exit 0).
         Bounds.index(segment, segmentCount(), "setSelected:forSegment:");
         try {
             hSetSelectedFor.invokeExact(peer, ObjC.sel("setSelected:forSegment:"), selected, segment);
@@ -233,7 +236,10 @@ public final class NSSegmentedControl extends NSControl {
     }
 
     /// [control isSelectedForSegment:] — selected state for segment.
+    /// Raises NSRangeException out of range ("-[NSSegmentedCell isSelectedForSegment:]:
+    /// index (9) beyond bounds (1)", verified, exit 134), so it is bounded like the setter.
     public boolean isSelectedForSegment(long segment) {
+        Bounds.index(segment, segmentCount(), "isSelectedForSegment:");
         try {
             return (boolean) hIsSelectedFor.invokeExact(peer, ObjC.sel("isSelectedForSegment:"), segment);
         } catch (Throwable t) {

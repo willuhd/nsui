@@ -1033,6 +1033,12 @@ public class NSTableView extends NSView {
     /// "Setting rowActionsVisible=YES is currently not supported and will throw an
     /// exception" (verified: NSTableViewException, exit 134). Reject YES in Java instead
     /// of letting the native raise abort the process.
+    ///
+    /// NO is only meaningful for a VIEW-BASED table: on a cell-based table AppKit raises
+    /// for NO as well ("setRowActionsVisible: is only for view based NSTableView",
+    /// verified). The wrapper cannot tell which kind a table is (a table is view-based when
+    /// its delegate implements `tableView:viewForTableColumn:row:`, which is not queryable),
+    /// so that half is left to AppKit and documented here.
     public void setRowActionsVisible(boolean flag) {
         if (flag) {
             throw new IllegalArgumentException("setRowActionsVisible: YES is not supported "

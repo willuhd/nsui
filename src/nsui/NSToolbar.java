@@ -179,8 +179,19 @@ public final class NSToolbar extends NSObject {
     }
 
     // ---- items ----
-    /// [toolbar insertItemWithItemIdentifier:atIndex:]
+
+    /// Number of items the toolbar currently holds (0 when `items` is nil).
+    /// `insertItemWithItemIdentifier:atIndex:` asserts `0 <= index <= count` and
+    /// `removeItemAtIndex:` asserts `0 <= index < count` natively; violating either raises
+    /// NSInternalInconsistencyException and aborts the JVM (verified, exit 134).
+    private long itemCount() {
+        MemorySegment items = items();
+        return (items == null || items.address() == 0) ? 0 : ObjC.msgSendLong(items, ObjC.sel("count"));
+    }
+
+    /// [toolbar insertItemWithItemIdentifier:atIndex:] — index may equal the item count.
     public void insertItemWithItemIdentifier(String identifier, long index) {
+        Bounds.insertIndex(index, itemCount(), "insertItemWithItemIdentifier:atIndex:");
         try {
             handles.hInsertItem().invokeExact(peer, ObjC.sel("insertItemWithItemIdentifier:atIndex:"), ObjC.nsstring(identifier), index);
         } catch (Throwable t) {
@@ -190,6 +201,7 @@ public final class NSToolbar extends NSObject {
 
     /// Raw peer variant: insertItemWithItemIdentifier:atIndex: with id identifier.
     public void insertItemWithItemIdentifier(MemorySegment identifier, long index) {
+        Bounds.insertIndex(index, itemCount(), "insertItemWithItemIdentifier:atIndex:");
         try {
             MemorySegment arg = (identifier == null || identifier.address() == 0) ? MemorySegment.NULL : identifier;
             handles.hInsertItem().invokeExact(peer, ObjC.sel("insertItemWithItemIdentifier:atIndex:"), (MemorySegment) arg, index);
@@ -198,8 +210,9 @@ public final class NSToolbar extends NSObject {
         }
     }
 
-    /// [toolbar removeItemAtIndex:]
+    /// [toolbar removeItemAtIndex:] — index must be < the item count.
     public void removeItemAtIndex(long index) {
+        Bounds.index(index, itemCount(), "removeItemAtIndex:");
         try {
             handles.hSetDisplayMode().invokeExact(peer, ObjC.sel("removeItemAtIndex:"), index);
         } catch (Throwable t) {

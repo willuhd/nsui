@@ -597,6 +597,30 @@ public final class AuditRegressionTest {
             TestKit.check(false, "smart* range-guard block threw: " + t);
         }
 
+        // --- 8o. NSToolbar item indexes abort natively out of range ---
+        // removeItemAtIndex: asserts 0 <= index < count and insertItemWithItemIdentifier:
+        // atIndex: asserts 0 <= index <= count (verified, exit 134 for the violations).
+        try {
+            nsui.NSToolbar tb = nsui.NSToolbar.create("round4toolbar");
+            MemorySegment tbItems = tb.items();
+            TestKit.check(tbItems == null || tbItems.address() == 0
+                            || nsui.NSArray.wrap(tbItems).count() == 0,
+                    "fresh toolbar reports no items");
+            TestKit.expectThrows("NSToolbar.removeItemAtIndex(0) on an empty toolbar rejects",
+                    IllegalArgumentException.class, () -> tb.removeItemAtIndex(0));
+            TestKit.expectThrows("NSToolbar.insertItemWithItemIdentifier(x, 1) on an empty toolbar rejects",
+                    IllegalArgumentException.class,
+                    () -> tb.insertItemWithItemIdentifier("NSToolbarFlexibleSpaceItem", 1));
+            TestKit.noThrow("NSToolbar.insertItemWithItemIdentifier(…, 0) is legal",
+                    () -> tb.insertItemWithItemIdentifier("NSToolbarFlexibleSpaceItem", 0));
+            TestKit.expectThrows("NSToolbar.removeItemAtIndex(1) with one item rejects",
+                    IllegalArgumentException.class, () -> tb.removeItemAtIndex(1));
+            TestKit.noThrow("NSToolbar.removeItemAtIndex(0) with one item is legal",
+                    () -> tb.removeItemAtIndex(0));
+        } catch (Throwable t) {
+            TestKit.check(false, "NSToolbar index-guard block threw: " + t);
+        }
+
         // --- 9. value and layer struct round-trips ---
         try {
             NSValue v = NSValue.valueWithPoint(new NSPoint(3, 4));

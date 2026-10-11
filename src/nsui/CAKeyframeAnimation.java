@@ -20,7 +20,10 @@ public class CAKeyframeAnimation extends CAPropertyAnimation {
     public static final String CALCULATION_CUBIC = "cubic";
     public static final String CALCULATION_CUBIC_PACED = "cubicPaced";
 
-    /// Rotation modes.
+    /// Rotation modes. `CAAnimation.h` defines only kCAAnimationRotateAuto ("auto")
+    /// and kCAAnimationRotateAutoReverse ("autoReverse"); "linear" is a
+    /// CALCULATION mode, not a rotation mode.
+    @Deprecated
     public static final String ROTATION_LINEAR = "linear";
     public static final String ROTATION_AUTO = "auto";
     public static final String ROTATION_AUTO_REVERSE = "autoReverse";

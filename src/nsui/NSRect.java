@@ -60,6 +60,9 @@ public record NSRect(double x, double y, double width, double height) {
 
     /// Contains rect fully.
     public boolean contains(NSRect other) {
+        // NSContainsRect returns false for an empty rect; the coordinate test alone
+        // reported true.
+        if (other.width <= 0 || other.height <= 0) return false;
         return other.x >= x && other.y >= y && other.maxX() <= maxX() && other.maxY() <= maxY();
     }
 

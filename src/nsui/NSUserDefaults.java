@@ -212,10 +212,12 @@ public final class NSUserDefaults extends NSObject {
         return NSArray.wrap(ObjC.msgSendId(peer, ObjC.sel("volatileDomainNames")));
     }
     public NSDictionary volatileDomainForName(String domain) {
+        Bounds.nonNull(domain, "volatileDomainForName:");
         return NSDictionary.wrap(ObjC.msgSendIdId(peer, ObjC.sel("volatileDomainForName:"),
                 (MemorySegment) (domain == null ? MemorySegment.NULL : ObjC.nsstring(domain))));
     }
     public void setVolatileDomainForName(NSDictionary domain, String name) {
+        Bounds.nonNull(name, "setVolatileDomain:forName:");
         try {
             ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.ID)).invokeExact(peer, ObjC.sel("setVolatileDomain:forName:"),
                     (MemorySegment) (domain == null ? MemorySegment.NULL : domain.peer()),
@@ -223,16 +225,19 @@ public final class NSUserDefaults extends NSObject {
         } catch (Throwable t) { throw new RuntimeException("setVolatileDomain:forName: failed", t); }
     }
     public void removeVolatileDomainForName(String domain) {
+        Bounds.nonNull(domain, "removeVolatileDomainForName:");
         ObjC.msgSendVoidId(peer, ObjC.sel("removeVolatileDomainForName:"),
                 (MemorySegment) (domain == null ? MemorySegment.NULL : ObjC.nsstring(domain)));
     }
 
     /// persistentDomainForName: / setPersistentDomain:forName: / removePersistentDomainForName:.
     public NSDictionary persistentDomainForName(String domain) {
+        Bounds.nonNull(domain, "persistentDomainForName:");
         return NSDictionary.wrap(ObjC.msgSendIdId(peer, ObjC.sel("persistentDomainForName:"),
                 (MemorySegment) (domain == null ? MemorySegment.NULL : ObjC.nsstring(domain))));
     }
     public void setPersistentDomainForName(NSDictionary domain, String name) {
+        Bounds.nonNull(name, "setPersistentDomain:forName:");
         try {
             ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.ID)).invokeExact(peer, ObjC.sel("setPersistentDomain:forName:"),
                     (MemorySegment) (domain == null ? MemorySegment.NULL : domain.peer()),
@@ -240,6 +245,7 @@ public final class NSUserDefaults extends NSObject {
         } catch (Throwable t) { throw new RuntimeException("setPersistentDomain:forName: failed", t); }
     }
     public void removePersistentDomainForName(String domain) {
+        Bounds.nonNull(domain, "removePersistentDomainForName:");
         ObjC.msgSendVoidId(peer, ObjC.sel("removePersistentDomainForName:"),
                 (MemorySegment) (domain == null ? MemorySegment.NULL : ObjC.nsstring(domain)));
     }

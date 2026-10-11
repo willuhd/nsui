@@ -50,7 +50,7 @@ public class NSOrderedSet extends NSObject {
     /// [NSOrderedSet orderedSetWithObject:]
     public static NSOrderedSet orderedSetWithObject(NSObject object) {
         ensureInit();
-        if (object == null) return orderedSet();
+        if (object == null) throw new IllegalArgumentException("orderedSetWithObject: null object");
         MemorySegment s = ObjC.msgSendIdId(ObjC.cls("NSOrderedSet"), ObjC.sel("orderedSetWithObject:"), object.peer());
         return wrap(s);
     }

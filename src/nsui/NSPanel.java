@@ -49,11 +49,23 @@ public class NSPanel extends NSWindow {
 
     /// Full form of `create` with an explicit backing store type — the exact
     /// mirror of `NSWindow.create`.
+    ///
+    /// Two guards its NSWindow siblings have and this one lacked:
+    /// - main-thread only (AppKit window creation is not thread-safe);
+    /// - `releasedWhenClosed` is disabled, because it defaults to YES and a panel the
+    ///   user closes would then be deallocated while this wrapper still holds its
+    ///   peer (use-after-free on the next message).
     public static NSPanel create(NSRect contentRect, long styleMask, long backingStoreType, boolean defer) {
+        ObjC.requireMainThread("NSPanel.create");
         MemorySegment panel = ObjC.msgSendId(ObjC.cls("NSPanel"), ObjC.sel("alloc"));
         panel = ObjC.msgSendIdRectLongLongBool(panel, ObjC.sel("initWithContentRect:styleMask:backing:defer:"),
                 contentRect.toSegment(), styleMask, backingStoreType, defer);
-        return new NSPanel(panel);
+        if (panel == null || panel.address() == 0) {
+            throw new IllegalStateException("NSPanel initWithContentRect: returned nil");
+        }
+        NSPanel p = new NSPanel(panel);
+        p.setReleasedWhenClosed(false);
+        return p;
     }
 
     /// [panel setBecomesKeyOnlyIfNeeded:] — setter named after the property;

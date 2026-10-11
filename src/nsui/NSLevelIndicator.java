@@ -272,6 +272,7 @@ public final class NSLevelIndicator extends NSControl {
 
     /// [indicator tickMarkValueAtIndex:] — value of the tick at index (valid only below the tick count).
     public double tickMarkValueAtIndex(long index) {
+        Bounds.index(index, numberOfTickMarks(), "tickMarkValueAtIndex:");
         ensureInit();
         try {
             return (double) hTickValue.invokeExact(peer, ObjC.sel("tickMarkValueAtIndex:"), index);

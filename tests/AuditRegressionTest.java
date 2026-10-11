@@ -1081,6 +1081,21 @@ public final class AuditRegressionTest {
             TestKit.check(false, "NSView rect block threw: " + t);
         }
 
+        // --- 8ae. two wrappers previously reported as unusable are functional ---
+        // usedRectForTextContainer: and NSFontManager.fontPanel: were documented as throwing
+        // at call time because their shapes were missing; both shapes ARE in Sig (listed by
+        // these very methods), so assert they work — a future shape removal would now fail.
+        try {
+            nsui.NSTextView ltv = nsui.NSTextView.create(new NSRect(0, 0, 200, 100));
+            ltv.setString("abc");
+            NSRect used = ltv.layoutManager().usedRectForTextContainer(ltv.textContainer());
+            TestKit.check(used != null, "usedRectForTextContainer returns an NSRect (no throw)");
+            TestKit.noThrow("NSFontManager.fontPanel(false) does not throw",
+                    () -> nsui.NSFontManager.sharedFontManager().fontPanel(false));
+        } catch (Throwable t) {
+            TestKit.check(false, "previously-dead wrapper block threw: " + t);
+        }
+
         // --- 8z. type-confusion guards on the raw collection-view setters ---
         // AppKit does NOT raise a type error here, it either asserts isKindOfClass: or
         // messages the object: setCollectionViewLayout: with a plain NSView raised

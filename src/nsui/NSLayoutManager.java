@@ -201,8 +201,10 @@ public final class NSLayoutManager extends NSObject {
     }
 
     /// [layoutManager usedRectForTextContainer:] -> NSRect
-    // NOTE: needs of(RECT,ID) — no vocabulary entry (handle() throws at call time).
-    // Pre-existing wrapper kept for API stability; not exercised until Sig grows — reported.
+    // The (RECT,ID) shape is registered in Sig (it is listed there by this very method), so
+    // this wrapper is FUNCTIONAL — measured: it returns an NSRect for a text view's container
+    // (0,0,0,0 before any layout) without raising. The old note here claimed handle() throws
+    // at call time; that went stale when the shape was added.
     public NSRect usedRectForTextContainer(NSTextContainer container) {
         ensureInit();
         try {

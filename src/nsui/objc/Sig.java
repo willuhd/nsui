@@ -302,6 +302,8 @@ public final class Sig {
         of(Ret.VOID, Arg.TRANSFORM3D),                       // setTransform: / setSublayerTransform:
         of(Ret.BOOL, Arg.POINT),                             // containsPoint:
         of(Ret.POINT, Arg.POINT, Arg.ID),                    // convertPoint:fromLayer: / convertPoint:toLayer:
+        of(Ret.SIZE, Arg.SIZE, Arg.ID),                      // NSView convertSize:fromView: / toView:
+        of(Ret.RECT, Arg.RECT, Arg.ID),                      // NSView convertRect:fromView: / toView:
         of(Ret.DOUBLE, Arg.DOUBLE, Arg.ID),                  // convertTime:fromLayer: / convertTime:toLayer:
         // --- Metal depth/stencil + rasterizer state (append-only) ---
         of(Ret.VOID, Arg.FLOAT, Arg.FLOAT, Arg.FLOAT),      // setDepthBias:slopeScale:clamp:

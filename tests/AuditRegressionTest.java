@@ -1118,6 +1118,38 @@ public final class AuditRegressionTest {
             TestKit.check(false, "grid merge block threw: " + t);
         }
 
+        // --- 8ag. NSView view-relative coordinate conversions (of(SIZE/RECT,SIZE/RECT,ID) now registered) ---
+        // Child at (10,20) inside a parent: parent (0,0) is child-local (-10,-20) and vice
+        // versa, so the round-trip is exact for the point family. A nil view (window
+        // coordinates) must not raise either.
+        try {
+            NSView parentV = NSView.create(new NSRect(0, 0, 100, 100), (v, d) -> {});
+            NSView childV = NSView.create(new NSRect(10, 20, 30, 30), (v, d) -> {});
+            parentV.addSubview(childV);
+            NSPoint fromParent = childV.convertPointFromView(new NSPoint(0, 0), parentV);
+            TestKit.check(Math.abs(fromParent.x() + 10.0) < 0.001 && Math.abs(fromParent.y() + 20.0) < 0.001,
+                    "convertPoint:fromView: maps parent (0,0) to child-local (-10,-20) (got "
+                            + fromParent.x() + "," + fromParent.y() + ")");
+            NSPoint backToParent = childV.convertPointToView(new NSPoint(0, 0), parentV);
+            TestKit.check(Math.abs(backToParent.x() - 10.0) < 0.001 && Math.abs(backToParent.y() - 20.0) < 0.001,
+                    "convertPoint:toView: maps child (0,0) to parent-local (10,20) (got "
+                            + backToParent.x() + "," + backToParent.y() + ")");
+            NSRect rf = childV.convertRectFromView(new NSRect(10, 20, 30, 30), parentV);
+            TestKit.check(Math.abs(rf.x()) < 0.001 && Math.abs(rf.y()) < 0.001,
+                    "convertRect:fromView: puts the child's own frame at the child origin (got "
+                            + rf.x() + "," + rf.y() + ")");
+            NSSize sz = childV.convertSizeFromView(new NSSize(30, 30), parentV);
+            TestKit.check(Math.abs(sz.width() - 30.0) < 0.001 && Math.abs(sz.height() - 30.0) < 0.001,
+                    "convertSize:fromView: is identity for an unscaled view (got "
+                            + sz.width() + "," + sz.height() + ")");
+            TestKit.noThrow("convertPoint:fromView: with a nil view (window coords) does not raise",
+                    () -> childV.convertPointFromView(new NSPoint(1, 2), null));
+            TestKit.noThrow("convertRect:toView: with a nil view does not raise",
+                    () -> childV.convertRectToView(new NSRect(0, 0, 5, 5), null));
+        } catch (Throwable t) {
+            TestKit.check(false, "view conversion block threw: " + t);
+        }
+
         // --- 8z. type-confusion guards on the raw collection-view setters ---
         // AppKit does NOT raise a type error here, it either asserts isKindOfClass: or
         // messages the object: setCollectionViewLayout: with a plain NSView raised

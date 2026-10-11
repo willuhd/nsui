@@ -1492,11 +1492,11 @@ public class NSView extends NSResponder {
 
     // - out-params / C pointers: getRectsBeingDrawn:count:, getRectsExposedDuringLiveResize:count:,
     //   knowsPageRange:, adjustPageWidthNew:..., adjustPageHeightNew:....
-    // - inexpressible shapes (absent from Sig vocabulary, requested): convertPoint:fromView:/toView: and
-    //   convertSize:fromView:/toView: and convertRect:fromView:/toView: need of(POINT,POINT,ID)/of(SIZE,SIZE,ID)/of(RECT,RECT,ID);
+    // - inexpressible shapes (absent from Sig vocabulary, requested):
     //   convertPointToBacking:/FromBacking:/ToLayer:/FromLayer: need of(POINT,POINT); backingAlignedRect:options: needs
-    //   of(RECT,RECT,INT); (needsToDrawRect:/scrollRectToVisible: are implemented below —
-    //   of(BOOL,RECT) is now registered); mouse:inRect: needs of(BOOL,POINT,RECT);
+    //   of(RECT,RECT,INT); (needsToDrawRect:/scrollRectToVisible: and the view-relative
+    //   convertPoint/Size/Rect:fromView:/toView: family are implemented below — their shapes
+    //   are registered); mouse:inRect: needs of(BOOL,POINT,RECT);
     //   addToolTipRect:owner:userData: needs of(INT,RECT,ID,ID); stringForToolTip helpers need of(ID,ID,INT,POINT,ID);
     //   scrollClipView:toPoint: (NSClipViewSuperview) needs of(VOID,ID,POINT); rectForPage: needs of(RECT,INT);
     //   locationOfPrintRect: needs of(POINT,RECT); beginPageInRect:atPlacement: needs of(VOID,RECT,POINT);
@@ -1937,6 +1937,78 @@ public class NSView extends NSResponder {
             return NSRect.fromSegment((MemorySegment) H.hConvBacking().invokeExact(ObjC.structSlot(), peer, Sels.adjustScroll, rect.toSegment()));
         } catch (Throwable t) {
             throw new RuntimeException("adjustScroll: failed", t);
+        }
+    }
+
+    /// [view convertPoint:fromView:] — nil view means the window's coordinate system.
+    public NSPoint convertPointFromView(NSPoint point, NSView view) {
+        ensureInit();
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.POINT, Arg.POINT, Arg.ID));
+            return NSPoint.fromSegment((MemorySegment) h.invokeExact(ObjC.structSlot(), peer,
+                    ObjC.sel("convertPoint:fromView:"), point.toSegment(), ObjC.nullablePeer(view)));
+        } catch (Throwable t) {
+            throw new RuntimeException("convertPoint:fromView: failed", t);
+        }
+    }
+
+    /// [view convertPoint:toView:] — nil view means the window's coordinate system.
+    public NSPoint convertPointToView(NSPoint point, NSView view) {
+        ensureInit();
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.POINT, Arg.POINT, Arg.ID));
+            return NSPoint.fromSegment((MemorySegment) h.invokeExact(ObjC.structSlot(), peer,
+                    ObjC.sel("convertPoint:toView:"), point.toSegment(), ObjC.nullablePeer(view)));
+        } catch (Throwable t) {
+            throw new RuntimeException("convertPoint:toView: failed", t);
+        }
+    }
+
+    /// [view convertSize:fromView:] — nil view means the window's coordinate system.
+    public NSSize convertSizeFromView(NSSize size, NSView view) {
+        ensureInit();
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.SIZE, Arg.SIZE, Arg.ID));
+            return NSSize.fromSegment((MemorySegment) h.invokeExact(ObjC.structSlot(), peer,
+                    ObjC.sel("convertSize:fromView:"), size.toSegment(), ObjC.nullablePeer(view)));
+        } catch (Throwable t) {
+            throw new RuntimeException("convertSize:fromView: failed", t);
+        }
+    }
+
+    /// [view convertSize:toView:] — nil view means the window's coordinate system.
+    public NSSize convertSizeToView(NSSize size, NSView view) {
+        ensureInit();
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.SIZE, Arg.SIZE, Arg.ID));
+            return NSSize.fromSegment((MemorySegment) h.invokeExact(ObjC.structSlot(), peer,
+                    ObjC.sel("convertSize:toView:"), size.toSegment(), ObjC.nullablePeer(view)));
+        } catch (Throwable t) {
+            throw new RuntimeException("convertSize:toView: failed", t);
+        }
+    }
+
+    /// [view convertRect:fromView:] — nil view means the window's coordinate system.
+    public NSRect convertRectFromView(NSRect rect, NSView view) {
+        ensureInit();
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.RECT, Arg.RECT, Arg.ID));
+            return NSRect.fromSegment((MemorySegment) h.invokeExact(ObjC.structSlot(), peer,
+                    ObjC.sel("convertRect:fromView:"), rect.toSegment(), ObjC.nullablePeer(view)));
+        } catch (Throwable t) {
+            throw new RuntimeException("convertRect:fromView: failed", t);
+        }
+    }
+
+    /// [view convertRect:toView:] — nil view means the window's coordinate system.
+    public NSRect convertRectToView(NSRect rect, NSView view) {
+        ensureInit();
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.RECT, Arg.RECT, Arg.ID));
+            return NSRect.fromSegment((MemorySegment) h.invokeExact(ObjC.structSlot(), peer,
+                    ObjC.sel("convertRect:toView:"), rect.toSegment(), ObjC.nullablePeer(view)));
+        } catch (Throwable t) {
+            throw new RuntimeException("convertRect:toView: failed", t);
         }
     }
 

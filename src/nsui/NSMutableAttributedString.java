@@ -94,8 +94,7 @@ public class NSMutableAttributedString extends NSAttributedString {
         Bounds.nonNull(str, "replaceCharactersInRange:withString: (string)");
         if (range == null) throw new IllegalArgumentException("replaceCharactersInRange:withString: null range");
         long n = length();
-        if (range.location() < 0 || range.length() < 0 || range.location() > n || range.length() > n - range.location())
-            throw new IllegalArgumentException("replaceCharactersInRange:withString: range " + range + " out of bounds (length " + n + ")");
+                Bounds.range(range, n, "replaceCharactersInRangeWithString:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.RANGE, Arg.ID));
             h.invokeExact(peer, ObjC.sel("replaceCharactersInRange:withString:"),
@@ -111,8 +110,7 @@ public class NSMutableAttributedString extends NSAttributedString {
         Bounds.nonNull(attrStr, "replaceCharactersInRange:withAttributedString: (attributed string)");
         if (range == null) throw new IllegalArgumentException("replaceCharactersInRange:withAttributedString: null range");
         long n = length();
-        if (range.location() < 0 || range.length() < 0 || range.location() > n || range.length() > n - range.location())
-            throw new IllegalArgumentException("replaceCharactersInRange:withAttributedString: range " + range + " out of bounds (length " + n + ")");
+                Bounds.range(range, n, "replaceCharactersInRangeWithAttributedString:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.RANGE, Arg.ID));
             h.invokeExact(peer, ObjC.sel("replaceCharactersInRange:withAttributedString:"),
@@ -145,8 +143,7 @@ public class NSMutableAttributedString extends NSAttributedString {
         ensureMutInit();
         if (range == null) throw new IllegalArgumentException("deleteCharactersInRange: null range");
         long n = length();
-        if (range.location() < 0 || range.length() < 0 || range.location() > n || range.length() > n - range.location())
-            throw new IllegalArgumentException("deleteCharactersInRange: range " + range + " out of bounds (length " + n + ")");
+                Bounds.range(range, n, "deleteCharactersInRange:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.RANGE));
             h.invokeExact(peer, ObjC.sel("deleteCharactersInRange:"), range.toSegment());
@@ -186,8 +183,7 @@ public class NSMutableAttributedString extends NSAttributedString {
         ensureMutInit();
         if (range == null) throw new IllegalArgumentException("fixAttributesInRange: null range");
         long n = length();
-        if (range.location() < 0 || range.length() < 0 || range.location() > n || range.length() > n - range.location())
-            throw new IllegalArgumentException("fixAttributesInRange: range " + range + " out of bounds (length " + n + ")");
+                Bounds.range(range, n, "fixAttributesInRange:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.RANGE));
             h.invokeExact(peer, ObjC.sel("fixAttributesInRange:"), range.toSegment());
@@ -201,8 +197,7 @@ public class NSMutableAttributedString extends NSAttributedString {
         ensureMutInit();
         if (range == null) throw new IllegalArgumentException("fixFontAttributeInRange: null range");
         long n = length();
-        if (range.location() < 0 || range.length() < 0 || range.location() > n || range.length() > n - range.location())
-            throw new IllegalArgumentException("fixFontAttributeInRange: range " + range + " out of bounds (length " + n + ")");
+                Bounds.range(range, n, "fixFontAttributeInRange:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.RANGE));
             h.invokeExact(peer, ObjC.sel("fixFontAttributeInRange:"), range.toSegment());
@@ -216,8 +211,7 @@ public class NSMutableAttributedString extends NSAttributedString {
         ensureMutInit();
         if (range == null) throw new IllegalArgumentException("fixParagraphStyleAttributeInRange: null range");
         long n = length();
-        if (range.location() < 0 || range.length() < 0 || range.location() > n || range.length() > n - range.location())
-            throw new IllegalArgumentException("fixParagraphStyleAttributeInRange: range " + range + " out of bounds (length " + n + ")");
+                Bounds.range(range, n, "fixParagraphStyleAttributeInRange:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.RANGE));
             h.invokeExact(peer, ObjC.sel("fixParagraphStyleAttributeInRange:"), range.toSegment());
@@ -231,8 +225,7 @@ public class NSMutableAttributedString extends NSAttributedString {
         ensureMutInit();
         if (range == null) throw new IllegalArgumentException("fixAttachmentAttributeInRange: null range");
         long n = length();
-        if (range.location() < 0 || range.length() < 0 || range.location() > n || range.length() > n - range.location())
-            throw new IllegalArgumentException("fixAttachmentAttributeInRange: range " + range + " out of bounds (length " + n + ")");
+                Bounds.range(range, n, "fixAttachmentAttributeInRange:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.RANGE));
             h.invokeExact(peer, ObjC.sel("fixAttachmentAttributeInRange:"), range.toSegment());
@@ -248,8 +241,7 @@ public class NSMutableAttributedString extends NSAttributedString {
         ensureMutInit();
         if (range == null) throw new IllegalArgumentException("superscriptRange: null range");
         long n = length();
-        if (range.location() < 0 || range.length() < 0 || range.location() > n || range.length() > n - range.location())
-            throw new IllegalArgumentException("superscriptRange: range " + range + " out of bounds (length " + n + ")");
+                Bounds.range(range, n, "superscriptRange:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.RANGE));
             h.invokeExact(peer, ObjC.sel("superscriptRange:"), range.toSegment());
@@ -263,8 +255,7 @@ public class NSMutableAttributedString extends NSAttributedString {
         ensureMutInit();
         if (range == null) throw new IllegalArgumentException("subscriptRange: null range");
         long n = length();
-        if (range.location() < 0 || range.length() < 0 || range.location() > n || range.length() > n - range.location())
-            throw new IllegalArgumentException("subscriptRange: range " + range + " out of bounds (length " + n + ")");
+                Bounds.range(range, n, "subscriptRange:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.RANGE));
             h.invokeExact(peer, ObjC.sel("subscriptRange:"), range.toSegment());
@@ -278,8 +269,7 @@ public class NSMutableAttributedString extends NSAttributedString {
         ensureMutInit();
         if (range == null) throw new IllegalArgumentException("unscriptRange: null range");
         long n = length();
-        if (range.location() < 0 || range.length() < 0 || range.location() > n || range.length() > n - range.location())
-            throw new IllegalArgumentException("unscriptRange: range " + range + " out of bounds (length " + n + ")");
+                Bounds.range(range, n, "unscriptRange:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.RANGE));
             h.invokeExact(peer, ObjC.sel("unscriptRange:"), range.toSegment());

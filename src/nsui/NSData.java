@@ -137,8 +137,7 @@ public class NSData extends NSObject {
         ensureInit();
         if (range == null) throw new IllegalArgumentException("subdataWithRange: null range");
         long n = length();
-        if (range.location() < 0 || range.length() < 0 || range.location() > n || range.length() > n - range.location())
-            throw new IllegalArgumentException("subdataWithRange: range " + range + " out of bounds (length " + n + ")");
+                Bounds.range(range, n, "subdataWithRange:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Sig.Arg.RANGE));
             MemorySegment s = (MemorySegment) h.invokeExact(peer, ObjC.sel("subdataWithRange:"), range.toSegment());

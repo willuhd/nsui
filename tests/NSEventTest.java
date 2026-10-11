@@ -53,7 +53,7 @@ public final class NSEventTest {
         if (!fullSpec) {
             System.out.println("NOTE: window-server click path needs focus (set NSUI_FOCUS_TESTS=1 to run it); using the queued-event fallback");
         }
-        if (fullSpec) app.setActivationPolicy(0 /* NSApplicationActivationPolicyRegular */);
+        if (fullSpec) app.setActivationPolicy(1 /* NSApplicationActivationPolicyAccessory: Regular can block TestKit.pump indefinitely */);
 
         NSWindow window = NSWindow.create(new NSRect(0, 0, 600, 400), 15L, 2L, false);
         window.setTitle("NSEvent test");

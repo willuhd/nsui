@@ -59,7 +59,7 @@ public final class PrintOperationTest {
         // AppKit shared application — best effort; print operation objects work headless.
         try {
             NSApplication app = NSApplication.shared();
-            app.setActivationPolicy(0);
+            app.setActivationPolicy(1 /* Accessory: Regular can block TestKit.pump indefinitely */);
         } catch (Throwable t) {
             System.out.println("NOTE: NSApplication init failed (may be headless): " + t);
         }

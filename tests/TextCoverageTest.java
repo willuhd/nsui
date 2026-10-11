@@ -48,7 +48,7 @@ public final class TextCoverageTest {
         ObjC.init();
 
         NSApplication app = TestKit.app();
-        app.setActivationPolicy(0 /* regular, no focus steal; windows stay hidden */);
+        app.setActivationPolicy(1 /* Accessory: Regular can block the pump */);
 
         attributedStrings();
         paragraphStyles();

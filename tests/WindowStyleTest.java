@@ -27,7 +27,7 @@ public final class WindowStyleTest {
         ObjC.init(); // FFM bindings (must be first)
 
         NSApplication app = NSApplication.shared();
-        app.setActivationPolicy(0 /* NSApplicationActivationPolicyRegular */);
+        app.setActivationPolicy(1 /* NSApplicationActivationPolicyAccessory: Regular can block TestKit.pump indefinitely */);
 
         System.out.println("---- 1) Normal NSWindow (styleMask 15 = Titled|Closable|Miniaturizable|Resizable) ----");
         NSWindow win = NSWindow.create(new NSRect(0, 0, 400, 250), 15L, 2L, false);

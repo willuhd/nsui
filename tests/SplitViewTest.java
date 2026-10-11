@@ -18,7 +18,7 @@ public final class SplitViewTest {
         ObjC.init();
 
         NSApplication app = NSApplication.shared();
-        app.setActivationPolicy(0);
+        app.setActivationPolicy(1 /* Accessory: Regular can block TestKit.pump indefinitely */);
 
         // create split view
         NSRect frame = new NSRect(0, 0, 400, 300);

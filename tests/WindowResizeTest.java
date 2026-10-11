@@ -100,7 +100,7 @@ public final class WindowResizeTest {
         // Create a window 400x300, attach delegate that caps frameSize to 500x400,
         // then attempt to setFrame to 900x700 and see if delegate clamps.
         NSApplication app = NSApplication.shared();
-        app.setActivationPolicy(0);
+        app.setActivationPolicy(1 /* Accessory: Regular can block TestKit.pump indefinitely */);
         NSRect initial = new NSRect(0, 0, 400, 300);
         nsui.NSWindow window = nsui.NSWindow.create(initial, 15L, 2L, false);
         window.setTitle("resize veto");

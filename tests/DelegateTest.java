@@ -31,7 +31,7 @@ public final class DelegateTest {
         ObjC.init(); // FFM bindings (must be first)
 
         NSApplication app = NSApplication.shared();
-        app.setActivationPolicy(0 /* NSApplicationActivationPolicyRegular */);
+        app.setActivationPolicy(1 /* NSApplicationActivationPolicyAccessory: Regular can block TestKit.pump indefinitely */);
 
         NSWindow window = NSWindow.create(new NSRect(0, 0, 500, 300), 15L, 2L, false);
         window.setTitle("delegate test");

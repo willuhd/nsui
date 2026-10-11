@@ -55,7 +55,7 @@ public final class StackLayoutTest {
         final double INSET = 10.0;
 
         NSApplication app = NSApplication.shared();
-        app.setActivationPolicy(0);
+        app.setActivationPolicy(1 /* Accessory: Regular can block TestKit.pump indefinitely */);
 
         NSWindow window = NSWindow.create(new NSRect(0, 0, W, H), 15L, 2L, false);
         window.setTitle("stack layout test");

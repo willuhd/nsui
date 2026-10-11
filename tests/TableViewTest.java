@@ -100,7 +100,7 @@ public final class TableViewTest {
 
         // ---------------- real window + display pass -----------------
         NSApplication app = NSApplication.shared();
-        app.setActivationPolicy(0);
+        app.setActivationPolicy(1 /* Accessory: Regular can block TestKit.pump indefinitely */);
         app.finishLaunching();
 
         NSWindow window = NSWindow.create(new NSRect(0, 0, 500, 300), 15L, 2L, false);

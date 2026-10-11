@@ -57,7 +57,7 @@ public final class DockSheetTest {
         NSApplication app = null;
         try {
             app = NSApplication.shared();
-            app.setActivationPolicy(0);
+            app.setActivationPolicy(1 /* Accessory: Regular can block TestKit.pump indefinitely */);
         } catch (Throwable t) {
             System.out.println("NOTE: NSApplication init failed (headless): " + t);
             t.printStackTrace(System.out);

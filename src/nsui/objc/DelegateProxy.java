@@ -524,11 +524,12 @@ public final class DelegateProxy {
     /// an unknown or already-disposed instance is a no-op.
     ///
     /// The release must come FIRST: removing the holder first would make the dealloc
-    /// override skip `[super dealloc]`, leaking the object shell (this was an actual bug
-    /// in the first version of dispose). If something else retained the proxy, the release
-    /// is not the last one and the entry simply stays — the object is still alive and
-    /// dispatching, which is correct.
-    public static void dispose(MemorySegment instance) {
+    /// override skip `[super dealloc]` unless the fallback superclass lookup runs.
+    /// Synchronized so two threads cannot both see the entry and release the same +1
+    /// (a double release is an over-release crash); the second caller then finds no entry.
+    /// If something else retained the proxy, the release is not the last one, the entry
+    /// stays and the object remains alive and dispatching — which is the correct outcome.
+    public static synchronized void dispose(MemorySegment instance) {
         if (instance == null || instance.address() == 0) return;
         if (!REGISTRY.containsKey(instance.address())) return;   // not ours / already disposed
         ObjC.msgSendVoid(instance, ObjC.sel("release"));

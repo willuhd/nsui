@@ -191,6 +191,50 @@ public final class AuditRegressionTest {
                 IllegalArgumentException.class, () -> host.addConstraint(null));
         TestKit.close(cw);
 
+        // --- 8c. a zero-address segment is nil, and Bounds.nonNull must reject it ---
+        // The documented nil convention is MemorySegment.NULL (see ObjC.nsstring), so a
+        // guarded raw-id argument could be Java-non-null and still model nil. Testing only
+        // the reference let that value reach a nonnull native parameter: verified aborts
+        // were moveItemAtIndexPath(NULL,·)/(·,NULL), setSelectionIndexPaths(NULL) and
+        // makeItemWithIdentifier(·,NULL) — all NSInternalInconsistencyException.
+        try {
+            nsui.NSCollectionView cv = nsui.NSCollectionView.create(new NSRect(0, 0, 120, 120));
+            TestKit.expectThrows("NSCollectionView.moveItemAtIndexPath(NULL,·) rejects nil",
+                    IllegalArgumentException.class,
+                    () -> cv.moveItemAtIndexPath(MemorySegment.NULL, MemorySegment.NULL));
+            TestKit.expectThrows("NSCollectionView.setSelectionIndexPaths(NULL) rejects nil",
+                    IllegalArgumentException.class, () -> cv.setSelectionIndexPaths(MemorySegment.NULL));
+            TestKit.expectThrows("NSCollectionView.makeItemWithIdentifier(·,NULL) rejects nil index path",
+                    IllegalArgumentException.class, () -> cv.makeItemWithIdentifier("x", MemorySegment.NULL));
+            TestKit.expectThrows("NSCollectionView.selectItemsAtIndexPaths(NULL) rejects nil",
+                    IllegalArgumentException.class, () -> cv.selectItemsAtIndexPaths(MemorySegment.NULL, 0));
+        } catch (Throwable t) {
+            TestKit.check(false, "NSCollectionView nil-guard block threw: " + t);
+        }
+
+        // --- 8d. out-parameters must be NULL or wide enough (Bounds.outBuffer) ---
+        // Foundation writes a full NSDictionary* through an `NSDictionary **` out slot
+        // regardless of the segment's declared size, and FFM forwards a short segment
+        // (verified: a 4-byte slice accepted an 8-byte native write). Without the guard a
+        // caller's short/offset buffer is silently overwritten past its end.
+        try (java.lang.foreign.Arena arena = java.lang.foreign.Arena.ofConfined()) {
+            MemorySegment shortOut = arena.allocate(4);
+            TestKit.expectThrows("NSAttributedString.createWithRTF short documentAttributes rejects",
+                    IllegalArgumentException.class,
+                    () -> nsui.NSAttributedString.createWithRTF(null, shortOut));
+            TestKit.expectThrows("NSAttributedString.createWithHTML short documentAttributes rejects",
+                    IllegalArgumentException.class,
+                    () -> nsui.NSAttributedString.createWithHTML(null, shortOut));
+            TestKit.expectThrows("NSAttributedString.createWithHTMLBaseURL short documentAttributes rejects",
+                    IllegalArgumentException.class,
+                    () -> nsui.NSAttributedString.createWithHTMLBaseURL(null, null, shortOut));
+            TestKit.expectThrows("NSAttributedString.createWithDocFormat short documentAttributes rejects",
+                    IllegalArgumentException.class,
+                    () -> nsui.NSAttributedString.createWithDocFormat(null, shortOut));
+            MemorySegment wideOut = arena.allocate(8);
+            TestKit.check(wideOut.byteSize() == 8, "an 8-byte out slot is the accepted width");
+        }
+
         // --- 9. value and layer struct round-trips ---
         try {
             NSValue v = NSValue.valueWithPoint(new NSPoint(3, 4));

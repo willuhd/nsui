@@ -212,14 +212,18 @@ public class NSAttributedString extends NSObject {
     }
 
     /// `[[NSAttributedString alloc] initWithRTF:documentAttributes:]` — dictOut may be NULL.
+    /// `dictOutOrNull` is an `NSDictionary **`: it must be NULL or at least 8 bytes wide,
+    /// because Foundation writes a full pointer regardless of the segment's declared size.
     public static NSAttributedString createWithRTF(MemorySegment rtfData, MemorySegment dictOutOrNull) {
         ensureInit();
+        MemorySegment dictOut = Bounds.outBuffer(dictOutOrNull, 8,
+                "initWithRTF:documentAttributes: (NSDictionary**)");
         MemorySegment alloc = ObjC.msgSendId(ObjC.cls("NSAttributedString"), ObjC.sel("alloc"));
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.ID, Arg.ID));
             MemorySegment p = (MemorySegment) h.invokeExact(alloc, ObjC.sel("initWithRTF:documentAttributes:"),
                     (MemorySegment) (rtfData == null ? MemorySegment.NULL : rtfData),
-                    (MemorySegment) (dictOutOrNull == null ? MemorySegment.NULL : dictOutOrNull));
+                    dictOut);
             return wrap(p);
         } catch (Throwable t) {
             throw new RuntimeException("initWithRTF:documentAttributes: failed", t);
@@ -227,14 +231,17 @@ public class NSAttributedString extends NSObject {
     }
 
     /// `[[NSAttributedString alloc] initWithHTML:documentAttributes:]` — dictOut may be NULL.
+    /// `dictOutOrNull` must be NULL or at least 8 bytes (an `NSDictionary **` out slot).
     public static NSAttributedString createWithHTML(MemorySegment htmlData, MemorySegment dictOutOrNull) {
         ensureInit();
+        MemorySegment dictOut = Bounds.outBuffer(dictOutOrNull, 8,
+                "initWithHTML:documentAttributes: (NSDictionary**)");
         MemorySegment alloc = ObjC.msgSendId(ObjC.cls("NSAttributedString"), ObjC.sel("alloc"));
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.ID, Arg.ID));
             MemorySegment p = (MemorySegment) h.invokeExact(alloc, ObjC.sel("initWithHTML:documentAttributes:"),
                     (MemorySegment) (htmlData == null ? MemorySegment.NULL : htmlData),
-                    (MemorySegment) (dictOutOrNull == null ? MemorySegment.NULL : dictOutOrNull));
+                    dictOut);
             return wrap(p);
         } catch (Throwable t) {
             throw new RuntimeException("initWithHTML:documentAttributes: failed", t);
@@ -242,15 +249,18 @@ public class NSAttributedString extends NSObject {
     }
 
     /// `[[NSAttributedString alloc] initWithHTML:baseURL:documentAttributes:]`.
+    /// `dictOutOrNull` must be NULL or at least 8 bytes (an `NSDictionary **` out slot).
     public static NSAttributedString createWithHTMLBaseURL(MemorySegment htmlData, MemorySegment baseURL, MemorySegment dictOutOrNull) {
         ensureInit();
+        MemorySegment dictOut = Bounds.outBuffer(dictOutOrNull, 8,
+                "initWithHTML:baseURL:documentAttributes: (NSDictionary**)");
         MemorySegment alloc = ObjC.msgSendId(ObjC.cls("NSAttributedString"), ObjC.sel("alloc"));
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.ID, Arg.ID, Arg.ID));
             MemorySegment p = (MemorySegment) h.invokeExact(alloc, ObjC.sel("initWithHTML:baseURL:documentAttributes:"),
                     (MemorySegment) (htmlData == null ? MemorySegment.NULL : htmlData),
                     (MemorySegment) (baseURL == null ? MemorySegment.NULL : baseURL),
-                    (MemorySegment) (dictOutOrNull == null ? MemorySegment.NULL : dictOutOrNull));
+                    dictOut);
             return wrap(p);
         } catch (Throwable t) {
             throw new RuntimeException("initWithHTML:baseURL:documentAttributes: failed", t);
@@ -258,14 +268,17 @@ public class NSAttributedString extends NSObject {
     }
 
     /// `[[NSAttributedString alloc] initWithDocFormat:documentAttributes:]`.
+    /// `dictOutOrNull` must be NULL or at least 8 bytes (an `NSDictionary **` out slot).
     public static NSAttributedString createWithDocFormat(MemorySegment docData, MemorySegment dictOutOrNull) {
         ensureInit();
+        MemorySegment dictOut = Bounds.outBuffer(dictOutOrNull, 8,
+                "initWithDocFormat:documentAttributes: (NSDictionary**)");
         MemorySegment alloc = ObjC.msgSendId(ObjC.cls("NSAttributedString"), ObjC.sel("alloc"));
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.ID, Arg.ID));
             MemorySegment p = (MemorySegment) h.invokeExact(alloc, ObjC.sel("initWithDocFormat:documentAttributes:"),
                     (MemorySegment) (docData == null ? MemorySegment.NULL : docData),
-                    (MemorySegment) (dictOutOrNull == null ? MemorySegment.NULL : dictOutOrNull));
+                    dictOut);
             return wrap(p);
         } catch (Throwable t) {
             throw new RuntimeException("initWithDocFormat:documentAttributes: failed", t);

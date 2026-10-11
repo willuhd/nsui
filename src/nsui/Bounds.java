@@ -19,9 +19,21 @@ final class Bounds {
     /// A required (non-null) argument. AppKit declares these `nonnull`, so `null`
     /// is a caller error; report it as `IllegalArgumentException` naming the call
     /// instead of a raw NullPointerException at the peer dereference.
+    ///
+    /// A raw-id argument can be non-null and still model nil: the toolkit's
+    /// nullable-argument convention is to pass `MemorySegment.NULL` (see
+    /// `ObjC.nsstring`). Testing only the Java reference let exactly that value
+    /// through, so a caller following the documented convention reached the native
+    /// nonnull parameter and aborted the JVM (verified: `moveItemAtIndexPath(NULL,·)`,
+    /// `setSelectionIndexPaths(NULL)`, `makeItemWithIdentifier(·,NULL)` all raise
+    /// `NSInternalInconsistencyException`). Treat address 0 as absent too.
     static void nonNull(Object value, String what) {
         if (value == null) {
             throw new IllegalArgumentException(what + " requires a non-null argument");
+        }
+        if (value instanceof MemorySegment seg && seg.address() == 0) {
+            throw new IllegalArgumentException(what + " requires a non-null argument"
+                    + " (got MemorySegment.NULL; nil is not accepted here)");
         }
     }
 

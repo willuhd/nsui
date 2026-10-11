@@ -198,8 +198,10 @@ public final class NSFontManager extends NSObject {
     // ---- font panel ----
 
     /// [manager fontPanel:] — create/display font panel.
-    // NOTE: needs of(ID,BOOL) — no vocabulary entry (handle() throws at call time).
-    // Pre-existing wrapper kept for API stability; not exercised until Sig grows — reported.
+    // The (ID,BOOL) shape IS registered in Sig (listed there by this very method), and the
+    // native encoding is @20@0:8B16, matching it exactly — measured: fontPanel(false) returns
+    // nil when no panel exists, without raising. The old note claiming handle() throws at call
+    // time went stale when the shape was added.
     public NSFontPanel fontPanel(boolean create) {
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.BOOL));

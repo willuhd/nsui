@@ -520,18 +520,20 @@ public final class DelegateProxy {
     /// CONTRACT: detach the proxy from AppKit first (`setDelegate(null)`,
     /// `setDataSource(null)`, `setTarget(null)`, `unregisterDraggedTypes`, ...). Delegate,
     /// data-source and target properties are weak, so a late message normally lands on nil;
-    /// any assign/unsafe property would instead be a use-after-free. Idempotent: disposing
-    /// an unknown or already-disposed instance is a no-op.
+    /// any assign/unsafe property would instead be a use-after-free.
     ///
-    /// The release must come FIRST: removing the holder first would make the dealloc
-    /// override skip `[super dealloc]` unless the fallback superclass lookup runs.
-    /// Synchronized so two threads cannot both see the entry and release the same +1
-    /// (a double release is an over-release crash); the second caller then finds no entry.
-    /// If something else retained the proxy, the release is not the last one, the entry
-    /// stays and the object remains alive and dispatching — which is the correct outcome.
+    /// IDEMPOTENT by the atomic claim below: the registry entry is removed first, so a
+    /// repeated dispose — or a concurrent one, or one issued while another owner still holds
+    /// a retain — is a no-op rather than a second release of a +1 this class does not own.
+    /// (The earlier version checked-then-released, which over-released in those cases.)
+    /// Removing the holder first does NOT skip `[super dealloc]`: the dealloc override
+    /// derives the superclass from the instance's own class when the holder is gone.
+    ///
+    /// If an external owner holds a retain, the +1 release does not deallocate and the
+    /// object stops dispatching (its holder is gone) — detach and drop other owners first.
     public static synchronized void dispose(MemorySegment instance) {
         if (instance == null || instance.address() == 0) return;
-        if (!REGISTRY.containsKey(instance.address())) return;   // not ours / already disposed
+        if (REGISTRY.remove(instance.address()) == null) return;   // atomic claim; not ours / already disposed
         ObjC.msgSendVoid(instance, ObjC.sel("release"));
     }
 

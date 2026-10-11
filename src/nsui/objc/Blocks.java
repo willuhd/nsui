@@ -100,10 +100,24 @@ public final class Blocks {
     /// CONTRACT: throwing out of `target` aborts the VM — an exception cannot cross
     /// the FFM upcall stub. Catch errors inside the block body.
     public static MemorySegment block(MethodHandle target, FunctionDescriptor fd) {
-        ensureInit();
+        return blockWithStub(stub(target, fd));
+    }
 
-        // Upcall stub that becomes the block's invoke function pointer.
-        MemorySegment stub = LINKER.upcallStub(target, fd, ARENA);
+    /// The upcall stub that becomes a block's `invoke` function pointer.
+    ///
+    /// The stub is per-TARGET, not per-block: a caller that installs many blocks with
+    /// the same Java target should create it ONCE and reuse it via `blockWithStub`,
+    /// which keeps the per-block cost down to the 64-byte block literal itself.
+    public static MemorySegment stub(MethodHandle target, FunctionDescriptor fd) {
+        ensureInit();
+        return LINKER.upcallStub(target, fd, ARENA);
+    }
+
+    /// A capture-less global block whose `invoke` is an existing stub (see `stub`).
+    /// The BLOCK must stay unique per install whenever the callback routes on the
+    /// block's address.
+    public static MemorySegment blockWithStub(MemorySegment stub) {
+        ensureInit();
 
         // Block struct size = header (32) + descriptor (32) = 64.
         long totalSize = 64;

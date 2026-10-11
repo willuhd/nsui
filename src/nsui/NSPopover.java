@@ -12,7 +12,7 @@ import static nsui.objc.Sig.Ret;
 /// Thin 1:1 wrapper; every method maps to one objc_msgSend selector.
 public final class NSPopover extends NSObject {
 
-            private record Handles(MethodHandle hSetContentSize, MethodHandle hGetContentSize, MethodHandle hShow, MethodHandle hGetBool, MethodHandle hSetBool, MethodHandle hGetInt, MethodHandle hSetInt, MethodHandle hSetId, MethodHandle hGetId, MethodHandle hGetDouble, MethodHandle hSetDouble) {}
+            private record Handles(MethodHandle hSetContentSize, MethodHandle hGetContentSize, MethodHandle hShow, MethodHandle hGetBool, MethodHandle hSetBool, MethodHandle hGetInt, MethodHandle hSetInt, MethodHandle hSetId, MethodHandle hGetId) {} {}
     private static volatile Handles handles;
 
 
@@ -37,10 +37,7 @@ public final class NSPopover extends NSObject {
                 ObjC.handle(Sig.of(Ret.INT)),
                 ObjC.handle(Sig.of(Ret.VOID, Arg.INT)),
                 ObjC.handle(Sig.of(Ret.VOID, Arg.ID)),
-                ObjC.handle(Sig.of(Ret.ID)),
-                ObjC.handle(Sig.of(Ret.DOUBLE)),
-                ObjC.handle(Sig.of(Ret.VOID, Arg.DOUBLE))
-        );
+                ObjC.handle(Sig.of(Ret.ID)));
     }
 
     public static NSPopover wrap(MemorySegment peer) {

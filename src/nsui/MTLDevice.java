@@ -16,9 +16,7 @@ import static nsui.objc.Sig.Ret;
 /// process by convention here: immortal, bounded (one per GPU), documented.
 public final class MTLDevice extends NSObject {
 
-    private record Handles(MethodHandle hLibSource, MethodHandle hQueue,
-            MethodHandle hTexture, MethodHandle hPipeline, MethodHandle hDepthStencil,
-            MethodHandle hBuffer, MethodHandle hSampler) {}
+    private record Handles(MethodHandle hLibSource, MethodHandle hTexture, MethodHandle hPipeline, MethodHandle hDepthStencil, MethodHandle hBuffer, MethodHandle hSampler) {} {}
     private static volatile Handles handles;
     private static volatile MethodHandle hCreate;
     private static volatile boolean ready;
@@ -49,7 +47,6 @@ public final class MTLDevice extends NSObject {
                 nsui.objc.NsuiForeign.mtlCreateSystemDefaultDevice());
         handles = new Handles(
                 ObjC.handle(Sig.of(Ret.ID, Arg.ID, Arg.ID, Arg.ID)),
-                ObjC.handle(Sig.of(Ret.ID)),
                 ObjC.handle(Sig.of(Ret.ID, Arg.ID)),
                 ObjC.handle(Sig.of(Ret.ID, Arg.ID, Arg.ID)),
                 ObjC.handle(Sig.of(Ret.ID, Arg.ID)),

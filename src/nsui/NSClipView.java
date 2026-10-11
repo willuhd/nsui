@@ -12,7 +12,7 @@ import static nsui.objc.Sig.Ret;
 /// The content view of an NSScrollView; clips its document view.
 public class NSClipView extends NSView {
 
-            private record Handles(MethodHandle hVoidId, MethodHandle hId, MethodHandle hVoidPoint, MethodHandle hGetRect, MethodHandle hGetPoint, MethodHandle hBool, MethodHandle hVoidBool) {}
+            private record Handles(MethodHandle hVoidId, MethodHandle hId, MethodHandle hVoidPoint, MethodHandle hGetRect, MethodHandle hBool, MethodHandle hVoidBool) {} {}
     private static volatile Handles handles;
 
     protected NSClipView(MemorySegment peer) {
@@ -36,7 +36,6 @@ public class NSClipView extends NSView {
                 ObjC.handle(Sig.of(Ret.ID)),
                 ObjC.handle(Sig.of(Ret.VOID, Arg.POINT)),
                 ObjC.handle(Sig.of(Ret.RECT)),
-                ObjC.handle(Sig.of(Ret.POINT)),
                 ObjC.handle(Sig.of(Ret.BOOL)),
                 ObjC.handle(Sig.of(Ret.VOID, Arg.BOOL))
         );

@@ -21,7 +21,7 @@ import static nsui.objc.Sig.Ret;
 /// below — of(VOID,RANGE,RANGE) is registered now.
 public final class NSGridView extends NSView {
 
-            private record Handles(MethodHandle hGridInit, MethodHandle hVoidId, MethodHandle hId, MethodHandle hInt, MethodHandle hVoidInt, MethodHandle hGetDouble, MethodHandle hSetDouble) {}
+            private record Handles(MethodHandle hGridInit, MethodHandle hInt, MethodHandle hVoidInt, MethodHandle hGetDouble, MethodHandle hSetDouble) {} {}
     private static volatile Handles handles;
 
     private NSGridView(MemorySegment peer) {
@@ -42,8 +42,6 @@ public final class NSGridView extends NSView {
         if (handles != null) return;
         handles = new Handles(
                 ObjC.handle(Sig.of(Ret.ID, Arg.INT, Arg.INT)),
-                ObjC.handle(Sig.of(Ret.VOID, Arg.ID)),
-                ObjC.handle(Sig.of(Ret.ID)),
                 ObjC.handle(Sig.of(Ret.INT)),
                 ObjC.handle(Sig.of(Ret.VOID, Arg.INT)),
                 ObjC.handle(Sig.of(Ret.DOUBLE)),

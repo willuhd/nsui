@@ -991,6 +991,34 @@ public final class AuditRegressionTest {
             }
         }
 
+        // --- 8z. type-confusion guards on the raw collection-view setters ---
+        // AppKit does NOT raise a type error here, it either asserts isKindOfClass: or
+        // messages the object: setCollectionViewLayout: with a plain NSView raised
+        // "Invalid parameter not satisfying: newCollectionViewLayout == nil ||
+        // [newCollectionViewLayout isKindOfClass:[NSCollectionViewLayout class]]", and
+        // setItemPrototype: with a plain NSView raised "-[NSView _setCollectionView:]:
+        // unrecognized selector" — both uncatchable aborts.
+        try {
+            nsui.NSCollectionView tcv = nsui.NSCollectionView.create(new NSRect(0, 0, 200, 100));
+            MemorySegment plainView = NSView.create(new NSRect(0, 0, 10, 10), (v, d) -> {}).peer();
+            TestKit.expectThrows("setCollectionViewLayout(NSView peer) rejects",
+                    IllegalArgumentException.class, () -> tcv.setCollectionViewLayout(plainView));
+            MemorySegment flow = ObjC.msgSendId(
+                    ObjC.msgSendId(ObjC.cls("NSCollectionViewFlowLayout"), ObjC.sel("alloc")), ObjC.sel("init"));
+            TestKit.noThrow("setCollectionViewLayout(NSCollectionViewFlowLayout) is accepted",
+                    () -> tcv.setCollectionViewLayout(flow));
+            TestKit.noThrow("setCollectionViewLayout(null) is accepted (AppKit allows nil)",
+                    () -> tcv.setCollectionViewLayout((MemorySegment) null));
+            TestKit.expectThrows("setItemPrototype(NSView peer) rejects",
+                    IllegalArgumentException.class, () -> tcv.setItemPrototype(plainView));
+            TestKit.noThrow("setItemPrototype(NSCollectionViewItem) is accepted",
+                    () -> tcv.setItemPrototype(nsui.NSCollectionViewItem.create()));
+            TestKit.noThrow("setItemPrototype(null) is accepted",
+                    () -> tcv.setItemPrototype((MemorySegment) null));
+        } catch (Throwable t) {
+            TestKit.check(false, "collection-view type-guard block threw: " + t);
+        }
+
         // --- 8y. tab view CONTROLLER index: -1 allowed, count and above fatal ---
         // Measured: 0 and 1 accepted on a 2-item controller; 2 and 5 raise
         // NSInternalInconsistencyException and abort; -1 is accepted and is the only value a

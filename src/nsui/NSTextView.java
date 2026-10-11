@@ -505,7 +505,13 @@ public class NSTextView extends NSText {
     public NSAttributedString attributedString() {
         ensureInit();
         MemorySegment p = ObjC.msgSendId(peer, Sels.textStorage);
-        if (p != null && p.address() != 0) return NSAttributedString.wrap(p);
+        if (p != null && p.address() != 0) {
+            // NSText declares this property `copy`, so return a SNAPSHOT. Returning the
+            // live textStorage (an NSMutableAttributedString) let a caller mutate the
+            // view's contents through what looks like a getter.
+            MemorySegment snapshot = ObjC.msgSendId(p, ObjC.sel("copy"));
+            return NSAttributedString.wrap(snapshot != null && snapshot.address() != 0 ? snapshot : p);
+        }
         return super.attributedString();
     }
     @Override

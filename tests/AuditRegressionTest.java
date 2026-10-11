@@ -382,6 +382,21 @@ public final class AuditRegressionTest {
             TestKit.expectThrows("unhideRowsAtIndexes(row 3 == count) rejects",
                     IllegalArgumentException.class, () -> tvRows.unhideRowsAtIndexes(set3, 0));
 
+            // moveRowAtIndex:toIndex: — only oldIndex is bounded. Measured raw (guard
+            // bypassed) on this 3-row view-based table: newIndex 0, 2, 3, 4, 5, 50 and -1 all
+            // return; oldIndex 3, 5 and -1 abort. The old insertIndex(newIndex) guard rejected
+            // count+1 and negatives, which native accepts.
+            TestKit.noThrow("moveRowAtIndex(0, 4) is tolerated (newIndex == count+1)",
+                    () -> tvRows.moveRowAtIndex(0, 4));
+            TestKit.noThrow("moveRowAtIndex(0, -1) is tolerated (newIndex is unvalidated)",
+                    () -> tvRows.moveRowAtIndex(0, -1));
+            TestKit.noThrow("moveRowAtIndex(0, 3) is tolerated (newIndex == count)",
+                    () -> tvRows.moveRowAtIndex(0, 3));
+            TestKit.expectThrows("moveRowAtIndex(3, 0) rejects (oldIndex == count)",
+                    IllegalArgumentException.class, () -> tvRows.moveRowAtIndex(3, 0));
+            TestKit.expectThrows("moveRowAtIndex(-1, 0) rejects",
+                    IllegalArgumentException.class, () -> tvRows.moveRowAtIndex(-1, 0));
+
             // NSScrollView.h:49 types contentView as NSClipView; a plain NSView aborted
             // ("-[NSView documentView]: unrecognized selector"). Enforcement is the Java
             // signature, so assert the signature itself: with the old NSView parameter

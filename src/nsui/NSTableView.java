@@ -1086,15 +1086,16 @@ public class NSTableView extends NSView {
         try { H.hVoidIdInt().invokeExact(peer, Sels.removeRowsAtIndexes_withAnimation, (MemorySegment) (indexes == null ? MemorySegment.NULL : indexes), animation); } catch (Throwable t) { throw new RuntimeException("removeRowsAtIndexes:withAnimation: failed", t); }
     }
 
-    /// [table moveRowAtIndex:toIndex:]
-    /// [table moveRowAtIndex:toIndex:] — unlike moveColumn:, the native side does not raise
-    /// for an out-of-range destination (measured on a 3-row view-based table: toIndex 3 and 4
-    /// both survive), so this guard is deliberately NOT tightened to index(). It is
-    /// nonetheless slightly stricter than native: `insertIndex` allows `count` but rejects
-    /// `count+1`, which the native side tolerates — a nonsense destination either way.
+    /// [table moveRowAtIndex:toIndex:] — ONLY `oldIndex` is validated.
+    ///
+    /// Measured natively on a 3-row view-based table inside begin/endUpdates: `newIndex` is
+    /// not validated at all — 0, 2, 3 (== count), 4, 5, 50 and even -1 all return without
+    /// raising — while `oldIndex` aborts for 3 (== count), 5 and -1. The previous
+    /// `Bounds.insertIndex(newIndex, numberOfRows())` therefore rejected legal calls on BOTH
+    /// ends (count+1 and negatives); an earlier commit documented that asymmetry instead of
+    /// fixing it, and this replaces the note with the fix.
     public void moveRowAtIndex(long oldIndex, long newIndex) {
-        Bounds.index(oldIndex, numberOfRows(), "moveRowAtIndex:toIndex:");
-        Bounds.insertIndex(newIndex, numberOfRows(), "moveRowAtIndex:toIndex:");
+        Bounds.index(oldIndex, numberOfRows(), "moveRowAtIndex:toIndex: (oldIndex)");
         ensureInit();
         try { H.hVoidIntInt().invokeExact(peer, Sels.moveRowAtIndex_toIndex, oldIndex, newIndex); } catch (Throwable t) { throw new RuntimeException("moveRowAtIndex:toIndex: failed", t); }
     }

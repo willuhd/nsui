@@ -178,7 +178,13 @@ public class NSTextStorage extends NSMutableAttributedString {
     // ---- editing hooks (passthrough) ----
 
     /// [storage edited:range:changeInLength:] — notify of edit.
+    /// An out-of-range `range` raises NSRangeException natively
+    /// ("-[NSConcreteTextStorage attribute:atIndex:longestEffectiveRange:inRange:]:
+    /// Range or index out of bounds", verified, exit 134) and aborts the JVM.
+    /// (invalidateAttributesInRange:/ensureAttributesAreFixedInRange: tolerate an
+    /// out-of-range value natively, so they deliberately have no guard.)
     public void edited(long editedMask, NSRange range, long delta) {
+        Bounds.range(range, length(), "edited:range:changeInLength:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.INT, Arg.RANGE, Arg.INT));
             h.invokeExact(peer, ObjC.sel("edited:range:changeInLength:"), editedMask, range.toSegment(), delta);

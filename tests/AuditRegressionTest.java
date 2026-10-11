@@ -354,6 +354,33 @@ public final class AuditRegressionTest {
             TestKit.check(false, "view index-guard block threw: " + t);
         }
 
+        // --- 8h. remaining measured aborts: NSTextStorage.edited:, window border edge ---
+        // Both re-probed this round. Deliberately NOT fixed (verified harmless natively):
+        // invalidateAttributesInRange:/ensureAttributesAreFixedInRange: with an
+        // out-of-range value, NSMutableIndexSet.addIndex(-1)/addIndexesInRange({100,5}),
+        // NSCollectionView.registerClass(nil), NSTableView.deselectRow(50)/
+        // selectRowIndexes({50}) on an empty table, NSSplitView.setPosition:ofDividerAtIndex:
+        // with a bad divider index, NSTextField.setAttributedStringValue(null), and
+        // NSWindow.setAspectRatio(0,0) followed by setFrame:display: (no trap observed).
+        try {
+            nsui.NSTextStorage st = nsui.NSTextStorage.create("abc");
+            TestKit.expectThrows("NSTextStorage.edited out-of-range range rejects",
+                    IllegalArgumentException.class, () -> st.edited(0, new nsui.NSRange(100, 1), 0));
+            TestKit.noThrow("NSTextStorage.edited in-range still works",
+                    () -> st.edited(0, new nsui.NSRange(0, 3), 0));
+
+            NSWindow bw = TestKit.hiddenWindow(160, 120);
+            TestKit.expectThrows("NSWindow.setContentBorderThicknessForEdge(NSMinXEdge) rejects",
+                    IllegalArgumentException.class, () -> bw.setContentBorderThicknessForEdge(24, 0));
+            TestKit.expectThrows("NSWindow.setContentBorderThicknessForEdge(NSMaxXEdge) rejects",
+                    IllegalArgumentException.class, () -> bw.setContentBorderThicknessForEdge(24, 2));
+            TestKit.noThrow("NSWindow.setContentBorderThicknessForEdge(NSMinYEdge) still works",
+                    () -> bw.setContentBorderThicknessForEdge(24, 1));
+            TestKit.close(bw);
+        } catch (Throwable t) {
+            TestKit.check(false, "storage/window guard block threw: " + t);
+        }
+
         // --- 9. value and layer struct round-trips ---
         try {
             NSValue v = NSValue.valueWithPoint(new NSPoint(3, 4));

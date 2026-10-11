@@ -84,8 +84,19 @@ public final class NSTabView extends NSView {
 
     // ---------------------------------------------------------------- completeness
 
-    /// [tabView selectTabViewItem:] — select the given item.
+    /// [tabView selectTabViewItem:] — select the given item, which must belong to this tab view.
+    ///
+    /// A foreign (never-added) item aborts with NSInternalInconsistencyException (verified,
+    /// exit 134); indexOfTabViewItem: returns NSNotFound for one, so that is the guard — the
+    /// same membership rule the other tab mutators rely on. nil is rejected too (it is not a
+    /// "deselect" operation; use selectTabViewItemAtIndex: with a valid index).
     public void selectTabViewItem(NSTabViewItem item) {
+        Bounds.nonNull(item, "selectTabViewItem:");
+        ensureInit();
+        if (indexOfTabViewItem(item) == NSRange.NOT_FOUND) {
+            throw new IllegalArgumentException("selectTabViewItem: the item is not in this tab view "
+                    + "(AppKit raises NSInternalInconsistencyException for a foreign item)");
+        }
         try {
             hVoidId.invokeExact(peer, ObjC.sel("selectTabViewItem:"), (MemorySegment) ((MemorySegment) (item == null ? MemorySegment.NULL : item.peer())));
         } catch (Throwable t) {

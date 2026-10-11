@@ -418,6 +418,10 @@ public class NSResponder extends NSObject {
     public void performAction(String selector, MemorySegment sender) {
         if (selector == null) throw new IllegalArgumentException("selector is null");
         ensureInit();
+        if (!respondsToSelector(ObjC.sel(selector))) {
+            throw new IllegalStateException("performAction: this responder does not implement "
+                    + selector + " (sending it would abort with an unrecognized selector)");
+        }
         try {
             H.hVoidId().invokeExact(peer, ObjC.sel(selector),
                     (MemorySegment) (sender == null ? MemorySegment.NULL : sender));
@@ -428,6 +432,9 @@ public class NSResponder extends NSObject {
     /// AppKit provides no default (plain NSView does not respond — sending
     /// there raises); implemented by text views. Send only where implemented.
     public void performTextFinderAction(MemorySegment sender) {
+        if (!respondsToSelector(ObjC.sel("performTextFinderAction:"))) {
+            throw new IllegalStateException("performTextFinderAction: is not implemented by this responder; sending it would abort with an unrecognized selector");
+        }
         ensureInit();
         try {
             H.hVoidId().invokeExact(peer, ObjC.sel("performTextFinderAction:"),
@@ -436,8 +443,13 @@ public class NSResponder extends NSObject {
     }
 
     /// newWindowForTab: — automatic window-tabbing hook (plus button).
-    /// An override hook: no stock class implements it. Send only where implemented.
+    /// An override hook: NSDocumentController is the stock implementor, a plain view/window is
+    /// not (verified with respondsToSelector:), so the call is guarded rather than documented
+    /// as a footgun.
     public void newWindowForTab(MemorySegment sender) {
+        if (!respondsToSelector(ObjC.sel("newWindowForTab:"))) {
+            throw new IllegalStateException("newWindowForTab: is not implemented by this responder; sending it would abort with an unrecognized selector");
+        }
         ensureInit();
         try {
             H.hVoidId().invokeExact(peer, ObjC.sel("newWindowForTab:"),
@@ -449,6 +461,9 @@ public class NSResponder extends NSObject {
     /// AppKit provides no default (plain NSView does not respond — sending
     /// there raises); implemented by text views. Send only where implemented.
     public void showWritingTools(MemorySegment sender) {
+        if (!respondsToSelector(ObjC.sel("showWritingTools:"))) {
+            throw new IllegalStateException("showWritingTools: is not implemented by this responder; sending it would abort with an unrecognized selector");
+        }
         ensureInit();
         try {
             H.hVoidId().invokeExact(peer, ObjC.sel("showWritingTools:"),

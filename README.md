@@ -35,7 +35,8 @@ Windows stay hidden unless a test proves it needs visibility; only NSEventTest a
 ButtonTest take key status. `tests/BenchTest.java` holds the hot-path benchmarks.
 `tests/SignatureConformanceTest.java` parses the wrapper sources and checks every declared
 `Sig` shape against the real runtime type encoding (`method_getTypeEncoding`) — with two
-caveats: 241 selectors it cannot resolve (Metal protocol/descriptor stubs) are a counted
+caveats: 243 selectors it cannot resolve (Metal protocol/descriptor stubs, plus the two
+NSIndexPath accessors NSCollectionView's move guard reads) are a counted
 baseline rather than a check, and unresolved entries are capped by a 15% share, so the
 resolution buckets are aggregate counts, not a per-name audit.
 `tests/AssertionQualityTest.java` fails if any always-true `check(true, ...)` reappears
@@ -76,6 +77,6 @@ If a signature is missing, the build succeeds but the binary fails at runtime wi
 
 ### Project status
 
-Library package is `nsui`: AppKit, Core Animation, and Metal bindings over FFM. In development (currently at 153 NS classes, 25 Core Animation classes, 18 Metal classes).
+Library package is `nsui`: AppKit, Core Animation, and Metal bindings over FFM. In development (currently 153 AppKit/Foundation wrapper files, 27 Core Animation files and 25 Metal files, one public class each).
 
 More support expected in the near future, with the goal of full `NS.*` coverage.

@@ -16,11 +16,12 @@ import java.util.List;
 /// invariant that keeps the default build free of tracing agents and JSON
 /// metadata (no reflection, no drift).
 ///
-/// Descriptors are keyed by *signature, not selector*: every AppKit method
-/// with the same shape (return class + argument classes) shares one descriptor and
-/// one native stub. Measured against the macOS 15 SDK headers, AppKit's ~4,500
-/// methods collapse to 438 distinct shapes and the top ~40 cover ~78% of all calls;
-/// the entries below are the curated core and grow one line at a time.
+/// Descriptors are keyed by *signature, not selector*: every method with the same
+/// shape (return class + argument classes) shares one descriptor and one native stub.
+/// The vocabulary below lists 134 shapes today and grows one line at a time; an earlier
+/// version of this comment claimed "438 distinct shapes, top ~40 cover ~78% of all calls",
+/// which was not reproducible from anything in the repository (there is no call corpus here),
+/// so it was replaced with the countable number.
 ///
 /// ABI notes:
 /// - `id`/`SEL`/Class/pointers are one argument class (`ID`)

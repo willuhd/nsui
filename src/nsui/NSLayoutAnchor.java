@@ -122,11 +122,28 @@ public class NSLayoutAnchor extends NSObject {
         }
     }
 
+    /// Reject a call to a selector only NSLayoutDimension implements.
+    ///
+    /// Measured: an NSLayoutXAxisAnchor (leadingAnchor) answers NO to
+    /// constraintEqualToConstant:, constraintEqualToAnchor:multiplier:,
+    /// ...multiplier:constant: and the greater/less Constant variants, so sending them aborts
+    /// with an unrecognized selector; an NSLayoutDimension (widthAnchor) answers YES to all.
+    /// The plain constraintEqualToAnchor(:constant:) family IS on the base class and is not
+    /// guarded.
+    private void requireDimension(String what) {
+        ensureInit();
+        if (!isKindOfClass("NSLayoutDimension")) {
+            throw new IllegalStateException(what + " is only available on an NSLayoutDimension "
+                    + "anchor (NSView.widthAnchor/heightAnchor); this anchor is an x/y axis anchor");
+        }
+    }
+
     // ---- dimension anchor constraints ----
 
     /// For NSLayoutDimension: constraintEqualToConstant:
     public NSLayoutConstraint constraintEqualToConstant(double constant) {
         ensureInit();
+        requireDimension("constraintEqualToConstant");
         try {
             MemorySegment c = (MemorySegment) hEqualToConstant.invokeExact(peer, ObjC.sel("constraintEqualToConstant:"), constant);
             return NSLayoutConstraint.wrap(c);
@@ -137,6 +154,7 @@ public class NSLayoutAnchor extends NSObject {
 
     public NSLayoutConstraint constraintGreaterThanOrEqualToConstant(double constant) {
         ensureInit();
+        requireDimension("constraintGreaterThanOrEqualToConstant");
         try {
             MemorySegment c = (MemorySegment) hEqualToConstant.invokeExact(peer, ObjC.sel("constraintGreaterThanOrEqualToConstant:"), constant);
             return NSLayoutConstraint.wrap(c);
@@ -147,6 +165,7 @@ public class NSLayoutAnchor extends NSObject {
 
     public NSLayoutConstraint constraintLessThanOrEqualToConstant(double constant) {
         ensureInit();
+        requireDimension("constraintLessThanOrEqualToConstant");
         try {
             MemorySegment c = (MemorySegment) hEqualToConstant.invokeExact(peer, ObjC.sel("constraintLessThanOrEqualToConstant:"), constant);
             return NSLayoutConstraint.wrap(c);
@@ -158,6 +177,7 @@ public class NSLayoutAnchor extends NSObject {
     /// Dimension: constraintEqualToAnchor:multiplier:constant: (3-arg) — now uses vocabulary directly, no silent fallback
     public NSLayoutConstraint constraintEqualToAnchorWithMultiplier(NSLayoutAnchor anchor, double multiplier, double constant) {
         ensureInit();
+        requireDimension("constraintEqualToAnchorWithMultiplier");
         Bounds.nonNull(anchor, "constraintEqualToAnchor:multiplier:constant:");
         try {
             MemorySegment c = (MemorySegment) hEqualToAnchorMultiplierConstant.invokeExact(peer, ObjC.sel("constraintEqualToAnchor:multiplier:constant:"), anchor.peer(), multiplier, constant);
@@ -170,6 +190,7 @@ public class NSLayoutAnchor extends NSObject {
     /// Dimension: constraintEqualToAnchor:multiplier: (single multiplier)
     public NSLayoutConstraint constraintEqualToAnchorWithMultiplier(NSLayoutAnchor anchor, double multiplier) {
         ensureInit();
+        requireDimension("constraintEqualToAnchorWithMultiplier");
         Bounds.nonNull(anchor, "constraintEqualToAnchor:multiplier:");
         try {
             MemorySegment c = (MemorySegment) hEqualToAnchorMultiplier.invokeExact(peer, ObjC.sel("constraintEqualToAnchor:multiplier:"), anchor.peer(), multiplier);

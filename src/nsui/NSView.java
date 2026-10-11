@@ -1202,15 +1202,15 @@ public class NSView extends NSResponder {
     }
 
     /// widthAnchor — NSLayoutDimension.
-    public NSLayoutAnchor widthAnchor() {
+    public NSLayoutAnchor.Dimension widthAnchor() {
         ensureInit();
-        return NSLayoutAnchor.wrap(ObjC.msgSendId(peer, Sels.widthAnchor));
+        return NSLayoutAnchor.Dimension.wrapD(ObjC.msgSendId(peer, Sels.widthAnchor));
     }
 
     /// heightAnchor — NSLayoutDimension.
-    public NSLayoutAnchor heightAnchor() {
+    public NSLayoutAnchor.Dimension heightAnchor() {
         ensureInit();
-        return NSLayoutAnchor.wrap(ObjC.msgSendId(peer, Sels.heightAnchor));
+        return NSLayoutAnchor.Dimension.wrapD(ObjC.msgSendId(peer, Sels.heightAnchor));
     }
 
     /// centerXAnchor — NSLayoutXAxisAnchor.

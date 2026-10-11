@@ -1322,6 +1322,164 @@ public final class AuditRegressionTest {
             TestKit.check(false, "unimplemented-selector block threw: " + t);
         }
 
+        // --- 8am. foreign tab item + Metal set*Bytes cap (both measured aborts) ---
+        // selectTabViewItem: with an item that is not in the tab view -> 134 natively;
+        // setVertexBytes(8192) with MTL_DEBUG_LAYER=1 -> "must be <= 4096" assertion, 134.
+        try {
+            nsui.NSTabView tabV = nsui.NSTabView.create(new NSRect(0, 0, 200, 120));
+            nsui.NSTabViewItem inItem = nsui.NSTabViewItem.create("in");
+            nsui.NSTabViewItem foreign = nsui.NSTabViewItem.create("out");
+            tabV.addTabViewItem(inItem);
+            TestKit.noThrow("selectTabViewItem(added item) is legal", () -> tabV.selectTabViewItem(inItem));
+            TestKit.expectThrows("selectTabViewItem(foreign item) rejects (native abort)",
+                    IllegalArgumentException.class, () -> tabV.selectTabViewItem(foreign));
+            TestKit.expectThrows("selectTabViewItem(null) rejects",
+                    IllegalArgumentException.class, () -> tabV.selectTabViewItem(null));
+
+            TestKit.check(nsui.MTLRenderCommandEncoder.MAX_SET_BYTES == 4096L,
+                    "Metal set*Bytes cap is documented as 4096");
+            if (nsui.MTLDevice.systemDefault() != null) {
+                nsui.MTLCommandQueue q = MTLDevice.systemDefault().newCommandQueue();
+                nsui.MTLTextureDescriptor td = nsui.MTLTextureDescriptor.texture2D(80L, 8, 8, false);
+                td.setUsage(4L);
+                nsui.MTLTexture tex = MTLDevice.systemDefault().newTexture(td);
+                nsui.MTLRenderPassDescriptor pass = nsui.MTLRenderPassDescriptor.create();
+                pass.colorAttachment(0).setTexture(tex);
+                nsui.MTLRenderCommandEncoder enc = q.commandBuffer().renderEncoder(pass);
+                TestKit.noThrow("setVertexBytes(4096) is accepted",
+                        () -> enc.setVertexBytes(new byte[4096], 0));
+                TestKit.expectThrows("setVertexBytes(8192) rejects (native assertion with validation)",
+                        IllegalArgumentException.class, () -> enc.setVertexBytes(new byte[8192], 0));
+                TestKit.expectThrows("setFragmentBytes(8192) rejects",
+                        IllegalArgumentException.class, () -> enc.setFragmentBytes(new byte[8192], 0));
+                enc.endEncoding();
+            } else {
+                TestKit.probe("no Metal device; set*Bytes cap checked by constant only");
+            }
+        } catch (Throwable t) {
+            TestKit.check(false, "tab-item/Metal-cap block threw: " + t);
+        }
+
+        // --- 8an. subclass-only selectors on base-class peers (CAAnimation, NSLayoutAnchor) ---
+        // Measured: a plain CAAnimation answers NO to setFromValue:/setKeyPath:/fromValue; an
+        // NSLayoutXAxisAnchor (leadingAnchor) answers NO to the dimension-only constraint
+        // methods while widthAnchor (an NSLayoutDimension) answers YES to all of them.
+        try {
+            nsui.CAAnimation plain = nsui.CAAnimation.wrap(
+                    ObjC.msgSendId(ObjC.cls("CAAnimation"), ObjC.sel("animation")));
+            TestKit.expectThrows("CAAnimation.setFromValue on a base peer rejects",
+                    IllegalStateException.class, () -> plain.setFromValue(null));
+            TestKit.expectThrows("CAAnimation.setKeyPath on a base peer rejects",
+                    IllegalStateException.class, () -> plain.setKeyPath("opacity"));
+            TestKit.expectThrows("CAAnimation.fromValue on a base peer rejects",
+                    IllegalStateException.class, () -> plain.fromValue());
+            nsui.CABasicAnimation basic = nsui.CABasicAnimation.wrap(
+                    nsui.CAAnimation.animationWithKeyPath("opacity").peer());
+            TestKit.noThrow("CABasicAnimation.setFromValue still works", () -> basic.setFromValue(null));
+            TestKit.noThrow("CABasicAnimation.setKeyPath still works", () -> basic.setKeyPath("opacity"));
+
+            NSView av = NSView.create(new NSRect(0, 0, 100, 100), (v, d) -> {});
+            nsui.NSLayoutAnchor xAxis = av.leadingAnchor();
+            TestKit.expectThrows("constraintEqualToConstant on an x-axis anchor rejects",
+                    IllegalStateException.class, () -> xAxis.constraintEqualToConstant(10));
+            TestKit.expectThrows("constraintEqualToAnchor:multiplier: on an x-axis anchor rejects",
+                    IllegalStateException.class,
+                    () -> xAxis.constraintEqualToAnchorWithMultiplier(av.trailingAnchor(), 2.0));
+            TestKit.noThrow("the base constraintEqualToAnchor family still works on an x-axis anchor",
+                    () -> xAxis.constraintEqualToAnchor(av.trailingAnchor()));
+            nsui.NSLayoutAnchor.Dimension dim = av.widthAnchor();
+            TestKit.noThrow("constraintEqualToConstant works on the typed width anchor",
+                    () -> dim.constraintEqualToConstant(10));
+        } catch (Throwable t) {
+            TestKit.check(false, "subclass-only selector block threw: " + t);
+        }
+
+        // --- 8ao. selector/class names must not contain a NUL (silent truncation) ---
+        try {
+            TestKit.expectThrows("ObjC.sel with an embedded NUL rejects instead of truncating",
+                    IllegalArgumentException.class, () -> ObjC.sel("addSubview:\u0000junk"));
+            TestKit.expectThrows("ObjC.cls with an embedded NUL rejects",
+                    IllegalArgumentException.class, () -> ObjC.cls("NSView\u0000junk"));
+            TestKit.noThrow("ObjC.sel of a normal name still works",
+                    () -> ObjC.sel("addSubview:"));
+        } catch (Throwable t) {
+            TestKit.check(false, "NUL-name block threw: " + t);
+        }
+
+        // --- 8ap. NSResponder action footguns are guarded, not documented ---
+        // Measured intent: a plain NSView does not implement performTextFinderAction:,
+        // showWritingTools: or newWindowForTab:, and performAction: forwards an arbitrary
+        // selector, so any of them could abort with an unrecognized selector.
+        try {
+            NSView plainResponder = NSView.create(new NSRect(0, 0, 50, 50), (v, d) -> {});
+            TestKit.expectThrows("performTextFinderAction on a plain view reports unimplemented",
+                    IllegalStateException.class,
+                    () -> plainResponder.performTextFinderAction(null));
+            TestKit.expectThrows("showWritingTools on a plain view reports unimplemented",
+                    IllegalStateException.class, () -> plainResponder.showWritingTools(null));
+            TestKit.expectThrows("newWindowForTab on a plain view reports unimplemented",
+                    IllegalStateException.class, () -> plainResponder.newWindowForTab(null));
+            TestKit.expectThrows("performAction with an unimplemented selector rejects",
+                    IllegalStateException.class,
+                    () -> plainResponder.performAction("noSuchAction:", null));
+            // insertText: is a selector a plain NSView really implements (verified: both
+            // respondsToSelector: and a nil-sender call with exit 0), so the guard must let it
+            // through — this is the over-tightening half of the check.
+            TestKit.check(plainResponder.respondsToSelector(ObjC.sel("insertText:")),
+                    "a plain NSView implements insertText: (guard precondition)");
+            TestKit.noThrow("performAction with an implemented selector still works",
+                    () -> plainResponder.performAction("insertText:", null));
+        } catch (Throwable t) {
+            TestKit.check(false, "responder action-guard block threw: " + t);
+        }
+
+        // --- 8aq. NSTableRowView.viewAtColumn: is guardable after all ---
+        // A standalone row view reports 0 columns and aborts for every index (including 0), so
+        // Bounds.index(column, numberOfColumns()) rejects them all; a table-owned row view
+        // reports N and accepts 0..N-1. Both halves are pinned here.
+        try {
+            nsui.NSTableRowView lone = nsui.NSTableRowView.create(new NSRect(0, 0, 50, 50));
+            TestKit.check(lone == null || lone.numberOfColumns() == 0,
+                    "a standalone row view reports 0 columns");
+            TestKit.expectThrows("viewAtColumn(0) on a standalone row view rejects (native abort)",
+                    IllegalArgumentException.class, () -> lone.viewAtColumn(0));
+        } catch (Throwable t) {
+            TestKit.check(false, "standalone row-view block threw: " + t);
+        }
+        try {
+            // A fresh populated 3-row/1-column view-based table (tvRows lives in another block).
+            MemorySegment rowDs2 = DelegateProxy.delegate("NSObject", "NSUIRowViewDS2",
+                    java.util.Map.of(), java.util.Map.of(),
+                    java.util.Map.of("numberOfRowsInTableView:", sender -> 3L),
+                    java.util.Map.of("tableView:viewForTableColumn:row:",
+                            (t, c, r) -> NSView.create(new NSRect(0, 0, 10, 10), (v, d) -> {}).peer()),
+                    java.util.Map.of(), java.util.Map.of(), java.util.Map.of());
+            nsui.NSTableView ownedTable = nsui.NSTableView.create(new NSRect(0, 0, 200, 100));
+            ownedTable.addTableColumn(nsui.NSTableColumn.create("c"));
+            ownedTable.setDataSource(rowDs2);
+            ownedTable.setDelegate(rowDs2);
+            ownedTable.reloadData();
+            nsui.NSTableRowView owned = nsui.NSTableRowView.wrap(ownedTable.rowViewAtRow(0, true).peer());
+            TestKit.check(owned.numberOfColumns() == 1,
+                    "a row view owned by the 1-column table reports 1 column (got "
+                            + owned.numberOfColumns() + ")");
+            TestKit.noThrow("viewAtColumn(0) on an owned row view is legal", () -> owned.viewAtColumn(0));
+            TestKit.expectThrows("viewAtColumn(1) on a 1-column owned row view rejects",
+                    IllegalArgumentException.class, () -> owned.viewAtColumn(1));
+        } catch (Throwable t) {
+            TestKit.check(false, "owned row-view block threw: " + t);
+        }
+
+        // --- 8ar. NSFindPanel.sharedFindPanel actually returns the panel (doc said always nil) ---
+        try {
+            nsui.NSFindPanel fp = nsui.NSFindPanel.sharedFindPanel();
+            TestKit.check(fp != null, "NSFindPanel.sharedFindPanel() returns the process find panel");
+            TestKit.check(fp.isKindOfClass("NSFindPanel"),
+                    "the returned object is an NSFindPanel");
+        } catch (Throwable t) {
+            TestKit.check(false, "NSFindPanel block threw: " + t);
+        }
+
         // --- 8z. type-confusion guards on the raw collection-view setters ---
         // AppKit does NOT raise a type error here, it either asserts isKindOfClass: or
         // messages the object: setCollectionViewLayout: with a plain NSView raised

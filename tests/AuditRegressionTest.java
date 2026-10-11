@@ -801,14 +801,23 @@ public final class AuditRegressionTest {
             MemorySegment p20 = path.apply(2L, 0L);
             MemorySegment p50 = path.apply(5L, 0L);
             MemorySegment p01 = path.apply(0L, 1L);
+            MemorySegment pNeg = path.apply(-1L, 0L);
             TestKit.noThrow("moveItemAtIndexPath (0,0)->(1,0) is legal",
                     () -> mcv.moveItemAtIndexPath(p00, p10));
             TestKit.expectThrows("moveItemAtIndexPath (0,0)->(2,0) rejects (destination == count)",
                     IllegalArgumentException.class, () -> mcv.moveItemAtIndexPath(p00, p20));
+            TestKit.expectThrows("moveItemAtIndexPath (2,0)->(0,0) rejects (source == count)",
+                    IllegalArgumentException.class, () -> mcv.moveItemAtIndexPath(p20, p00));
             TestKit.expectThrows("moveItemAtIndexPath (5,0)->(0,0) rejects (no such source)",
                     IllegalArgumentException.class, () -> mcv.moveItemAtIndexPath(p50, p00));
             TestKit.expectThrows("moveItemAtIndexPath (0,0)->(0,1) rejects (no such section)",
                     IllegalArgumentException.class, () -> mcv.moveItemAtIndexPath(p00, p01));
+            // Asymmetry pinned: AppKit bounds `item` only ABOVE, so a negative item is
+            // accepted (a 144-pair matrix found both directions return without raising),
+            // while a negative SECTION does abort. Rejecting the negative item would be a
+            // false rejection.
+            TestKit.noThrow("moveItemAtIndexPath (0,0)->(-1,0) is tolerated natively",
+                    () -> mcv.moveItemAtIndexPath(p00, pNeg));
         } catch (Throwable t) {
             TestKit.check(false, "collection-view move-guard block threw: " + t);
         }

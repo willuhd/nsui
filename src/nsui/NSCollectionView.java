@@ -659,6 +659,11 @@ public final class NSCollectionView extends NSView {
     /// NSInternalInconsistencyException and aborts the JVM, while (0,0)->(1,0), (1,0)->(0,0)
     /// and (0,0)->(0,0) are accepted. Note the DESTINATION is not allowed to be
     /// item == count either (a move-to-end is not expressible).
+    ///
+    /// The bounds are deliberately asymmetric because AppKit's are: `item` is checked only
+    /// ABOVE (a 144-pair matrix found (-1,0)->(0,0) and (0,0)->(-1,0) both return without
+    /// raising, while item == count aborts), whereas `section` aborts at both ends
+    /// (section -1 does raise). Rejecting a negative item would reject a call AppKit accepts.
     private void requireExistingItem(MemorySegment indexPath, String what) {
         long section = ObjC.msgSendLong(indexPath, ObjC.sel("section"));
         long item = ObjC.msgSendLong(indexPath, ObjC.sel("item"));
@@ -668,7 +673,7 @@ public final class NSCollectionView extends NSView {
                     + " out of bounds (sections " + sections + ")");
         }
         long items = numberOfItemsInSection(section);
-        if (item < 0 || item >= items) {
+        if (item >= items) {
             throw new IllegalArgumentException(what + ": item " + item
                     + " out of bounds (section " + section + " has " + items + " items)");
         }

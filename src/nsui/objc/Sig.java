@@ -309,9 +309,12 @@ public final class Sig {
         of(Ret.ID, Arg.EDGEINSETS),                         // NSValue valueWithEdgeInsets:
         // --- narrow scalars (append-only) ---
         // Ret.INT stays the C-long class: NSInteger/NSUInteger and the long/long-long
-        // families are genuinely 64-bit, and the remaining 32-bit `i` returns read the
-        // full register, which is benign on LE like the rest of the tree. Only the
-        // genuinely narrow shapes below get exact descriptors.
+        // families are genuinely 64-bit. A genuine 32-bit `i` return must NOT use
+        // Ret.INT: the callee writes only the low 32 bits of the return register, so a
+        // 64-bit read yields zero-extended garbage for negative or high-bit values
+        // (e.g. -1 as 4294967295) — "benign on LE" was wrong; endianness is not the
+        // axis. Those shapes get exact INT32 descriptors below, and the width gate
+        // (SignatureConformanceTest WIDTH_MISMATCH_BASELINE = 0) enforces it.
         of(Ret.ID, Arg.BYTE),                               // numberWithChar:/numberWithUnsignedChar: (real `c`/`C`)
         of(Ret.ID, Arg.SHORT),                              // numberWithShort:/numberWithUnsignedShort: (real `s`/`S`)
         of(Ret.SHORT),                                      // shortValue/unsignedShortValue (real `s`/`S`)

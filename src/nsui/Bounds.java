@@ -27,6 +27,12 @@ final class Bounds {
     /// nonnull parameter and aborted the JVM (verified: `moveItemAtIndexPath(NULL,·)`,
     /// `setSelectionIndexPaths(NULL)`, `makeItemWithIdentifier(·,NULL)` all raise
     /// `NSInternalInconsistencyException`). Treat address 0 as absent too.
+    ///
+    /// All 152 `Bounds.nonNull` call sites were swept against the SDK headers and each one
+    /// guards a header-nonnull parameter. The single exception found — `NSControl.sendAction`,
+    /// whose SEL is explicitly `nullable` and whose NULL is a harmless NO — was removed
+    /// rather than kept. Raw-id (MemorySegment) sites were additionally nil-probed; see the
+    /// 8c/8l sections of AuditRegressionTest for the ones with a native abort behind them.
     static void nonNull(Object value, String what) {
         if (value == null) {
             throw new IllegalArgumentException(what + " requires a non-null argument");

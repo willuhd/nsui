@@ -54,10 +54,11 @@ public final class DelegateProxy {
     private DelegateProxy() {}
 
     /// Java-side `-(BOOL)method:(id)sender` — return the "should" verdict.
-    /// CONTRACT: throwing out of any callback below aborts the VM (an exception
-    /// cannot cross the FFM upcall stub — fail-fast, like AppKit terminate on
-    /// uncaught exceptions). Never let user code throw through here; there are
-    /// no safe defaults for a broken verdict, by design.
+    /// CONTRACT: throwing out of any callback below cannot cross the FFM upcall stub —
+    /// the JDK catches it at the boundary and calls `System.exit(1)` after printing it
+    /// (`SharedUtils.handleUncaughtException`), i.e. process death, not a catchable
+    /// exception. Never let user code throw through here; there are no safe defaults
+    /// for a broken verdict, by design.
     public interface BoolArg { boolean call(MemorySegment sender); }
 
     /// Java-side `-(void)method:(id)sender` — a side-effecting notification.
@@ -93,6 +94,13 @@ public final class DelegateProxy {
 
     // A registry keyed by the native instance address -> its dispatch holder.
     private static final ConcurrentMap<Long, Holder> REGISTRY = new ConcurrentHashMap<>();
+
+    // Diagnostics: how many times the `dealloc` override actually chained `[super dealloc]`.
+    // That chain is what frees the ObjC object shell, so a dispose path that skipped it
+    // would leave the instance allocated while the Java Holder was reclaimed. Tests assert
+    // this counter advances across a dispose, which is the only observable oracle for it.
+    private static final java.util.concurrent.atomic.AtomicLong DEALLOC_CHAINED =
+            new java.util.concurrent.atomic.AtomicLong();
 
     // A registry of created class pairs, keyed by "super\0className" for delegates and
     // a fixed key for action targets — lazily populated in ensureInit()/on first use.
@@ -227,12 +235,22 @@ public final class DelegateProxy {
     }
 
     /// FFM upcall target: `-(void)dealloc` — unregister the instance, then chain `[super dealloc]`.
+    ///
+    /// Chaining is not optional: NSObject's `-dealloc` (`objc_destructInstance`) is what
+    /// actually frees the instance, so an early return here leaks the object shell even
+    /// though the Java Holder was reclaimed. The superclass normally comes from the holder,
+    /// but when the holder is already gone (e.g. an explicit dispose removed it first) it is
+    /// derived from the instance's own class, so `[super dealloc]` always runs.
     static void dispatchDealloc(MemorySegment self, MemorySegment sel) {
         Holder h = REGISTRY.remove(self.address());
-        // The superclass is resolved once at pair creation and carried on the holder;
-        // it is the ObjC class the instance's runtime class subclasses. If we no longer
-        // know it (defensive: an instance we never created), there is nothing to chain.
         MemorySegment superClass = (h == null) ? null : h.superClass();
+        if (superClass == null || superClass.address() == 0) {
+            try {
+                superClass = ObjC.classGetSuperclass(ObjC.msgSendId(self, ObjC.sel("class")));
+            } catch (Throwable ignored) {
+                superClass = null;
+            }
+        }
         if (superClass == null || superClass.address() == 0) {
             return;
         }
@@ -240,6 +258,7 @@ public final class DelegateProxy {
         try {
             MemorySegment superStruct = ObjC.superStruct(self, superClass);
             ObjC.msgSendSuperVoid(superStruct, sel);
+            DEALLOC_CHAINED.incrementAndGet();   // diagnostics/tests: the chain actually ran
         } finally {
             Scratch.endTurn();
         }
@@ -259,8 +278,17 @@ public final class DelegateProxy {
     /// selector gets a lie about its real shape. Documented, not fixed: the alternative requires
     /// per-selector signature tables.
     static MemorySegment dispatchSignature(MemorySegment self, MemorySegment selCmd, MemorySegment aSelector) {
-        return ObjC.msgSendIdId(ObjC.cls("NSMethodSignature"), ObjC.sel("signatureWithObjCTypes:"),
-                ObjC.cstring("v@:@"));
+        // ObjC.cstring allocates from the thread-local scratch tier (Scratch.allocInput);
+        // without a turn on a thread that never pumps events the allocation eventually
+        // spills into the immortal global arena. Every other dispatcher opens a turn —
+        // this one and NSSwitch.deallocImpl were the two the previous sweep missed.
+        Scratch.beginTurn();
+        try {
+            return ObjC.msgSendIdId(ObjC.cls("NSMethodSignature"), ObjC.sel("signatureWithObjCTypes:"),
+                    ObjC.cstring("v@:@"));
+        } finally {
+            Scratch.endTurn();
+        }
     }
 
     /// FFM upcall target: `-(void)forwardInvocation:(NSInvocation *)anInvocation` — swallow it.
@@ -479,6 +507,36 @@ public final class DelegateProxy {
     /// Number of live delegate/action instances (diagnostics/tests).
     public static int registrySize() {
         return REGISTRY.size();
+    }
+
+    /// Release a proxy built by `delegate(...)`/`actionTarget(...)`: balance the
+    /// `alloc/init` +1 so the ObjC object deallocates. The `dealloc` override then drops
+    /// the dispatch holder and chains `[super dealloc]`, which frees the instance and
+    /// reclaims the Holder's maps and every captured closure.
+    ///
+    /// Without this the entry (and the object) live for the life of the process: the
+    /// dealloc hook is the only other removal and nothing else ever releases the +1.
+    ///
+    /// CONTRACT: detach the proxy from AppKit first (`setDelegate(null)`,
+    /// `setDataSource(null)`, `setTarget(null)`, `unregisterDraggedTypes`, ...). Delegate,
+    /// data-source and target properties are weak, so a late message normally lands on nil;
+    /// any assign/unsafe property would instead be a use-after-free. Idempotent: disposing
+    /// an unknown or already-disposed instance is a no-op.
+    ///
+    /// The release must come FIRST: removing the holder first would make the dealloc
+    /// override skip `[super dealloc]`, leaking the object shell (this was an actual bug
+    /// in the first version of dispose). If something else retained the proxy, the release
+    /// is not the last one and the entry simply stays — the object is still alive and
+    /// dispatching, which is correct.
+    public static void dispose(MemorySegment instance) {
+        if (instance == null || instance.address() == 0) return;
+        if (!REGISTRY.containsKey(instance.address())) return;   // not ours / already disposed
+        ObjC.msgSendVoid(instance, ObjC.sel("release"));
+    }
+
+    /// Number of `dealloc` overrides that chained `[super dealloc]` so far (diagnostics/tests).
+    public static long deallocChainedCount() {
+        return DEALLOC_CHAINED.get();
     }
 
     /// Number of runtime ObjC class pairs created so far (diagnostics/tests). One per

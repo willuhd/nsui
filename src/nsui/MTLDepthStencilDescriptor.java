@@ -105,9 +105,14 @@ public final class MTLDepthStencilDescriptor extends NSObject {
         return ObjC.toString(ObjC.msgSendId(peer, ObjC.sel("label")));
     }
 
-    /// setLabel:.
+    /// setLabel: — MTLDepthStencil.h:71 marks `label` nullable, but the implementation
+    /// asserts on nil ("label must not be nil", verified, exit 134), so nil does not clear
+    /// the label. It used to be a silent no-op; report the caller's mistake instead.
     public void setLabel(String label) {
-        if (label == null) return;
+        if (label == null) {
+            throw new IllegalArgumentException("setLabel: nil is rejected by Metal "
+                    + "(it asserts \"label must not be nil\"); pass a string");
+        }
         ObjC.msgSendVoidId(peer, ObjC.sel("setLabel:"), ObjC.nsstring(label));
     }
 }

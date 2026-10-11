@@ -97,8 +97,10 @@ public final class Blocks {
     /// safely outlives any frame; the arena itself roots the block and its stub, so
     /// GC cannot collect them — there is deliberately no Java field for them).
     ///
-    /// CONTRACT: throwing out of `target` aborts the VM — an exception cannot cross
-    /// the FFM upcall stub. Catch errors inside the block body.
+    /// CONTRACT: throwing out of `target` cannot cross the FFM upcall stub. The JDK
+    /// catches it at the boundary, prints it and calls `System.exit(1)`
+    /// (`SharedUtils.handleUncaughtException`) — process death, not a catchable
+    /// exception. Catch errors inside the block body.
     public static MemorySegment block(MethodHandle target, FunctionDescriptor fd) {
         return blockWithStub(stub(target, fd));
     }

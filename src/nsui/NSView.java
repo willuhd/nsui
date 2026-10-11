@@ -610,6 +610,12 @@ public class NSView extends NSResponder {
                 || !ObjC.addMethod(drawableClass, "flagsChanged:", s.flagsChanged(), "v@:@")) {
             throw new RuntimeException("class_addMethod event override failed");
         }
+        // These two override real NSView methods, and on this platform AppKit's own
+        // published encodings are "B16@0:8" / "B24@0:8@16" (measured with
+        // method_getTypeEncoding): on arm64 macOS BOOL is `bool`, not the `signed char`
+        // that objc.h's TARGET_OS_OSX fallback describes. "B" therefore matches the
+        // superclass we override. (An earlier note here claimed "B" was C++ _Bool and
+        // wrong — that was backwards.)
         if (!ObjC.addMethod(drawableClass, "performKeyEquivalent:", s.performKeyEquivalent(), "B@:@")) {
             throw new RuntimeException("class_addMethod performKeyEquivalent: failed");
         }
@@ -2550,8 +2556,13 @@ public class NSView extends NSResponder {
     }
 
     /// [view displayLinkWithTarget:selector:] — display link driving the target (shape shares the (ID,ID,ID) descriptor).
+    /// The link is a `+0` (autoreleased) factory result: add it to a run loop before the
+    /// current autorelease pool drains — the run loop retains it — or `keepAlive()` it.
+    /// `selector` is required (a NULL SEL is rejected here rather than deferred to the
+    /// runtime).
     public CADisplayLink displayLink(MemorySegment target, MemorySegment selector) {
         ensureInit();
+        Bounds.nonNull(selector, "displayLinkWithTarget:selector: (selector)");
         try {
             MemorySegment d = (MemorySegment) H.hIdIdId().invokeExact(peer, Sels.displayLinkWithTarget_selector, target, selector);
             return CADisplayLink.wrap(d);

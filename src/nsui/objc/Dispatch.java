@@ -91,7 +91,8 @@ public final class Dispatch {
     /// The body is enqueued and the shared `void(^)(void)` block is dispatched;
     /// when the main run loop drains the queue, `runBody` pops the body and runs it.
     /// The test's main thread must pump the run loop for the block to be drained.
-    /// CONTRACT: a throwing body aborts the VM at the upcall stub (fail-fast).
+    /// CONTRACT: a throwing body cannot cross the upcall stub — the JDK catches it,
+    /// prints it and calls `System.exit(1)` (process death, not catchable).
     public static void onMain(Runnable body) {
         ensureInit();
         // Enqueue BEFORE submitting, so the block can never fire with no body

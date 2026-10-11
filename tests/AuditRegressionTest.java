@@ -342,9 +342,28 @@ public final class AuditRegressionTest {
             // No positive setRowActionsVisible(false) here on purpose: on a cell-based
             // table AppKit raises for NO as well ("setRowActionsVisible: is only for view
             // based NSTableView"), so asserting it would abort this test JVM.
-            // NSTableView.h:467: a row outside numberOfRows raises (verified view-based).
-            TestKit.expectThrows("NSTableView.rowViewAtRow(numberOfRows) rejects",
-                    IllegalArgumentException.class, () -> tv.rowViewAtRow(tv.numberOfRows(), false));
+            //
+            // NSTableView.h:467: a row outside numberOfRows raises — but only on a
+            // VIEW-BASED table with rows. Populate it: on the empty table this assertion
+            // would pass on the pre-existing Bounds.index(0,0) rather than the row bound
+            // this fix added, i.e. it would not be evidence for the fix.
+            MemorySegment rowDs = DelegateProxy.delegate("NSObject", "NSUITableRowsDS",
+                    java.util.Map.of(), java.util.Map.of(),
+                    java.util.Map.of("numberOfRowsInTableView:", sender -> 3L),
+                    java.util.Map.of("tableView:viewForTableColumn:row:",
+                            (tableView, column, row) -> nsui.NSView.create(new NSRect(0, 0, 10, 10), (c, d) -> {}).peer()),
+                    java.util.Map.of(), java.util.Map.of(), java.util.Map.of());
+            NSTableView tvRows = NSTableView.create(new NSRect(0, 0, 200, 100));
+            tvRows.addTableColumn(nsui.NSTableColumn.create("r"));
+            tvRows.setDataSource(rowDs);
+            tvRows.setDelegate(rowDs);       // view-based needs the delegate method, not just the count
+            tvRows.reloadData();
+            TestKit.check(tvRows.numberOfRows() == 3,
+                    "3-row view-based table reports 3 rows (got " + tvRows.numberOfRows() + ")");
+            TestKit.expectThrows("NSTableView.rowViewAtRow(numberOfRows) rejects on a populated table",
+                    IllegalArgumentException.class, () -> tvRows.rowViewAtRow(3, false));
+            TestKit.noThrow("NSTableView.rowViewAtRow(0) still works",
+                    () -> tvRows.rowViewAtRow(0, false));
 
             // NSScrollView.h:49 types contentView as NSClipView; a plain NSView aborted
             // ("-[NSView documentView]: unrecognized selector"). Enforcement is the Java
@@ -362,12 +381,24 @@ public final class AuditRegressionTest {
             TestKit.noThrow("NSScrollView.setContentView(NSClipView) works",
                     () -> sv2.setContentView(nsui.NSClipView.create(new NSRect(0, 0, 100, 100))));
 
-            // moveSection:toSection: raised NSInternalInconsistencyException with one
-            // section (verified); it is only a no-op when there is no data source at all.
-            nsui.NSCollectionView cv2 = nsui.NSCollectionView.create(new NSRect(0, 0, 200, 100));
-            TestKit.expectThrows("NSCollectionView.moveSection(0, sections) rejects",
-                    IllegalArgumentException.class, () -> cv2.moveSection(0, cv2.numberOfSections()));
-            TestKit.noThrow("NSCollectionView.moveSection(0,0) still works", () -> cv2.moveSection(0, 0));
+            // moveSection:toSection: raised NSInternalInconsistencyException on a laid-out
+            // 2-section view (verified: (0,1) legal, (1,2) raises). Use a real 2-section
+            // view so the rejection cannot come from the empty-view item-count path.
+            MemorySegment sectionsDs = DelegateProxy.delegate("NSObject", "NSUISectionsOnlyDS2",
+                    java.util.Map.of(), java.util.Map.of(),
+                    java.util.Map.of("numberOfSectionsInCollectionView:", sender -> 2L),
+                    java.util.Map.of(), java.util.Map.of(), java.util.Map.of(), java.util.Map.of());
+            nsui.NSCollectionView cvSs = nsui.NSCollectionView.create(new NSRect(0, 0, 200, 100));
+            cvSs.setDataSource(sectionsDs);
+            cvSs.setCollectionViewLayout(ObjC.msgSendId(
+                    ObjC.msgSendId(ObjC.cls("NSCollectionViewFlowLayout"), ObjC.sel("alloc")), ObjC.sel("init")));
+            cvSs.reloadData();
+            TestKit.check(cvSs.numberOfSections() == 2,
+                    "2-section collection view reports 2 sections (got " + cvSs.numberOfSections() + ")");
+            TestKit.expectThrows("NSCollectionView.moveSection(1, 2) rejects on a 2-section view",
+                    IllegalArgumentException.class, () -> cvSs.moveSection(1, 2));
+            TestKit.noThrow("NSCollectionView.moveSection(0,1) is legal with 2 sections",
+                    () -> cvSs.moveSection(0, 1));
         } catch (Throwable t) {
             TestKit.check(false, "view index-guard block threw: " + t);
         }
@@ -484,6 +515,62 @@ public final class AuditRegressionTest {
                     () -> tv2.setAttributedStringValue((nsui.NSAttributedString) null));
         } catch (Throwable t) {
             TestKit.check(false, "correction/guard block threw: " + t);
+        }
+
+        // --- 8l. DelegateProxy.dispose actually frees the proxy ---
+        // Before dispose existed, the only removal was the ObjC dealloc hook, which can
+        // never run because nothing releases the alloc/init +1 and every delegate/target
+        // property is weak — so each proxy leaked for the life of the process.
+        // registrySize() alone is NOT enough: the first dispose removed the entry before
+        // releasing, so the dealloc override could not find its holder and skipped
+        // [super dealloc], leaving the object shell allocated. deallocChainedCount() is the
+        // oracle for that half.
+        try {
+            int regBefore = DelegateProxy.registrySize();
+            long chainedBefore = DelegateProxy.deallocChainedCount();
+            MemorySegment disposable = DelegateProxy.actionTarget("disposeProbe:", sender -> {});
+            TestKit.check(DelegateProxy.registrySize() == regBefore + 1,
+                    "actionTarget registers one entry (before=" + regBefore
+                            + ", after=" + DelegateProxy.registrySize() + ")");
+            DelegateProxy.dispose(disposable);
+            TestKit.check(DelegateProxy.registrySize() == regBefore,
+                    "dispose reclaims the registry entry (got " + DelegateProxy.registrySize() + ")");
+            TestKit.check(DelegateProxy.deallocChainedCount() == chainedBefore + 1,
+                    "dispose drives dealloc through [super dealloc] (chained="
+                            + DelegateProxy.deallocChainedCount() + ")");
+            DelegateProxy.dispose(disposable);
+            TestKit.check(DelegateProxy.registrySize() == regBefore, "dispose is idempotent");
+            DelegateProxy.dispose(MemorySegment.NULL);
+            TestKit.check(DelegateProxy.registrySize() == regBefore, "dispose(NULL) is a no-op");
+        } catch (Throwable t) {
+            TestKit.check(false, "DelegateProxy.dispose block threw: " + t);
+        }
+
+        // --- 8m. nil-legality corrections verified by probing ---
+        try {
+            // CAAnimation.h:96 marks the key path nullable, and nil is accepted natively
+            // (returns a valid animation), so rejecting it was a false rejection.
+            TestKit.check(nsui.CAAnimation.animationWithKeyPath(null) != null,
+                    "animationWithKeyPath(null) returns an animation");
+
+            // MTLDepthStencil.h / MTLSampler.h mark `label` nullable, but Metal asserts on
+            // nil ("label must not be nil"); a silent no-op hid that, so it is now an IAE.
+            nsui.MTLDepthStencilDescriptor ds = nsui.MTLDepthStencilDescriptor.create();
+            TestKit.expectThrows("MTLDepthStencilDescriptor.setLabel(null) reports the Metal assertion",
+                    IllegalArgumentException.class, () -> ds.setLabel(null));
+            TestKit.noThrow("MTLDepthStencilDescriptor.setLabel(\"x\") works", () -> ds.setLabel("x"));
+            nsui.MTLSamplerDescriptor sd = nsui.MTLSamplerDescriptor.create();
+            TestKit.expectThrows("MTLSamplerDescriptor.setLabel(null) reports the Metal assertion",
+                    IllegalArgumentException.class, () -> sd.setLabel(null));
+
+            // The display-link factories take a required selector; a NULL SEL used to be
+            // handed to the runtime (or NPE'd in ObjC.sel) instead of being reported.
+            NSView dlView = NSView.create(new NSRect(0, 0, 20, 20), (c, d) -> {});
+            TestKit.expectThrows("NSView.displayLink(NULL selector) rejects",
+                    IllegalArgumentException.class,
+                    () -> dlView.displayLink(MemorySegment.NULL, MemorySegment.NULL));
+        } catch (Throwable t) {
+            TestKit.check(false, "nil-legality correction block threw: " + t);
         }
 
         // --- 9. value and layer struct round-trips ---

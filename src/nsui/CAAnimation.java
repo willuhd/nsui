@@ -36,10 +36,14 @@ public class CAAnimation extends NSObject {
     }
 
     /// +[CABasicAnimation animationWithKeyPath:]
+    /// CAAnimation.h:96 declares the parameter `nullable`, and nil is accepted natively
+    /// (verified: it returns a valid animation rather than raising), so a null key path
+    /// passes NULL instead of being rejected by ObjC.nsstring.
     public static CAAnimation animationWithKeyPath(String keyPath) {
         ensureInit();
+        MemorySegment key = keyPath == null ? MemorySegment.NULL : ObjC.nsstring(keyPath);
         try {
-            MemorySegment p = (MemorySegment) handles.hWithKeyPath().invokeExact(ObjC.cls("CABasicAnimation"), ObjC.sel("animationWithKeyPath:"), ObjC.nsstring(keyPath));
+            MemorySegment p = (MemorySegment) handles.hWithKeyPath().invokeExact(ObjC.cls("CABasicAnimation"), ObjC.sel("animationWithKeyPath:"), key);
             return wrap(p);
         } catch (Throwable t) { throw new RuntimeException("animationWithKeyPath: failed", t); }
     }

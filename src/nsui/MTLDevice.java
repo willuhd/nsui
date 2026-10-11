@@ -126,12 +126,23 @@ public final class MTLDevice extends NSObject {
         }
     }
 
-    /// newTextureWithDescriptor:.
+    /// newTextureWithDescriptor: — throws on a nil result like newBuffer, instead of
+    /// returning a Java null that only fails later (an invalid descriptor/size is a
+    /// documented failure of this call). Also initialises the class handles, which this
+    /// method used to skip.
     public MTLTexture newTexture(MTLTextureDescriptor descriptor) {
+        ensureInit();
         if (descriptor == null) throw new IllegalArgumentException("descriptor is null");
         try {
-            return MTLTexture.wrap((MemorySegment) handles.hTexture().invokeExact(peer,
-                    ObjC.sel("newTextureWithDescriptor:"), descriptor.peer()));
+            MemorySegment texture = (MemorySegment) handles.hTexture().invokeExact(peer,
+                    ObjC.sel("newTextureWithDescriptor:"), descriptor.peer());
+            if (texture.address() == 0) {
+                throw new IllegalStateException("newTextureWithDescriptor: returned nil "
+                        + "(unsupported pixel format or size?)");
+            }
+            return MTLTexture.wrap(texture);
+        } catch (RuntimeException t) {
+            throw t;
         } catch (Throwable t) {
             throw new RuntimeException("newTextureWithDescriptor: failed", t);
         }

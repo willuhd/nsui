@@ -1310,6 +1310,15 @@ public class NSWindow extends NSResponder {
     public void beginSheet(NSWindow sheet, java.util.function.IntConsumer completionHandler) {
         ensureInit();
         if (sheet == null) return;
+        // A window cannot be attached to itself ("sheet ... cannot be attached to itself",
+        // verified exit 134) and attaching an ANCESTOR sheet hangs (>12 s, verified with a
+        // watchdog), so the sheetParent chain is walked like the other cycle guards.
+        for (NSWindow p = this; p != null; p = p.sheetParent()) {
+            if (p.peer() != null && p.peer().address() == sheet.peer().address()) {
+                throw new IllegalArgumentException("beginSheet:completionHandler: the sheet is this "
+                        + "window or one of its sheet ancestors; AppKit aborts or hangs on that cycle");
+            }
+        }
         MemorySegment block = MemorySegment.NULL;
         long blockKey = 0L;
         boolean registered = false;
@@ -1339,6 +1348,12 @@ public class NSWindow extends NSResponder {
     public void beginSheet(NSWindow sheet, MemorySegment completionHandlerBlock) {
         ensureInit();
         if (sheet == null) return;
+        for (NSWindow p = this; p != null; p = p.sheetParent()) {
+            if (p.peer() != null && p.peer().address() == sheet.peer().address()) {
+                throw new IllegalArgumentException("beginSheet:completionHandler: the sheet is this "
+                        + "window or one of its sheet ancestors; AppKit aborts or hangs on that cycle");
+            }
+        }
         try {
             java.lang.invoke.MethodHandle h = ObjC.handle(nsui.objc.Sig.of(nsui.objc.Sig.Ret.VOID, nsui.objc.Sig.Arg.ID, nsui.objc.Sig.Arg.ID));
             MemorySegment blk2 = (completionHandlerBlock == null || completionHandlerBlock.address() == 0) ? MemorySegment.NULL : completionHandlerBlock;

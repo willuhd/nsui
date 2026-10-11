@@ -330,6 +330,15 @@ public class NSViewController extends NSObject {
     public void presentViewControllerAsSheet(NSViewController controller) {
         ensureInit();
         Bounds.nonNull(controller, "presentViewControllerAsSheet:");
+        // Presenting itself (or an ancestor presenter) aborts/hangs with the same sheet-attach
+        // failure the NSWindow.beginSheet guard covers; presentAsModalWindow is NOT guarded
+        // because AppKit tolerates a self-modal presentation (measured exit 0).
+        for (NSViewController p = this; p != null; p = p.presentingViewController()) {
+            if (p.peer() != null && p.peer().address() == controller.peer().address()) {
+                throw new IllegalArgumentException("presentViewControllerAsSheet: the controller is "
+                        + "this one or one of its presenters; AppKit aborts or hangs on that cycle");
+            }
+        }
         try {
             handles.hSetView().invokeExact(peer, ObjC.sel("presentViewControllerAsSheet:"), controller.peer());
         } catch (Throwable t) {

@@ -1568,6 +1568,31 @@ public final class AuditRegressionTest {
             TestKit.check(false, "hang-cycle block threw: " + t);
         }
 
+        // --- 8av. sheet/presenter cycles (self aborts, ancestor HANGS) ---
+        // Verified: `[w beginSheet:w]` -> 134 "cannot be attached to itself"; attaching an
+        // ancestor sheet -> HANG (>12 s, watchdog); `[vc presentViewControllerAsSheet:vc]` ->
+        // 134, while presentViewControllerAsModalWindow:self is tolerated (exit 0) and is NOT
+        // guarded.
+        try {
+            NSWindow hostW = TestKit.hiddenWindow(300, 200);
+            TestKit.expectThrows("beginSheet(self) rejects (native 'cannot be attached to itself')",
+                    IllegalArgumentException.class, () -> hostW.beginSheet(hostW, (MemorySegment) null));
+            NSWindow sheet2 = TestKit.hiddenWindow(200, 100);
+            TestKit.noThrow("attaching a distinct sheet is legal",
+                    () -> hostW.beginSheet(sheet2, (MemorySegment) null));
+            TestKit.expectThrows("beginSheet(ancestor sheet) rejects instead of hanging",
+                    IllegalArgumentException.class,
+                    () -> sheet2.beginSheet(hostW, (MemorySegment) null));
+            hostW.endSheet(sheet2);
+
+            nsui.NSViewController vc1 = nsui.NSViewController.create();
+            vc1.setView(NSView.create(new NSRect(0, 0, 50, 50), (v, d) -> {}));
+            TestKit.expectThrows("presentViewControllerAsSheet(self) rejects",
+                    IllegalArgumentException.class, () -> vc1.presentViewControllerAsSheet(vc1));
+        } catch (Throwable t) {
+            TestKit.check(false, "sheet-cycle block threw: " + t);
+        }
+
         // --- 8z. type-confusion guards on the raw collection-view setters ---
         // AppKit does NOT raise a type error here, it either asserts isKindOfClass: or
         // messages the object: setCollectionViewLayout: with a plain NSView raised

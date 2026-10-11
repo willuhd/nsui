@@ -284,7 +284,7 @@ public final class NSString extends NSObject {
         ensureInit();
         if (range == null) throw new IllegalArgumentException("substringWithRange: null range");
         long n = length();
-                Bounds.range(range, n, "substringWithRange:");
+        Bounds.range(range, n, "substringWithRange:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.RANGE));
             MemorySegment r = (MemorySegment) h.invokeExact(peer, Sels.substringWithRange, range.toSegment());
@@ -964,7 +964,7 @@ public final class NSString extends NSObject {
         if (replacement == null) throw new IllegalArgumentException("stringByReplacingCharactersInRange: null");
         if (range == null) throw new IllegalArgumentException("stringByReplacingCharactersInRange: null range");
         long n = length();
-                Bounds.range(range, n, "stringByReplacingCharactersInRange:");
+        Bounds.range(range, n, "stringByReplacingCharactersInRange:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.RANGE, Arg.ID));
             MemorySegment r = (MemorySegment) h.invokeExact(

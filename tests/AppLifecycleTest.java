@@ -51,7 +51,7 @@ public final class AppLifecycleTest {
         final AtomicBoolean shouldTerm = new AtomicBoolean(false); // applicationShouldTerminate: consulted?
 
         NSApplication app = NSApplication.shared();
-        app.setActivationPolicy(0 /* NSApplicationActivationPolicyRegular */);
+        app.setActivationPolicy(1 /* NSApplicationActivationPolicyAccessory: Regular can block TestKit.pump indefinitely */);
 
         // ---- Phase 1a: app delegate (veto) + window delegate; close the last window ----
         Map<String, DelegateProxy.BoolArg> appBools = new LinkedHashMap<>();

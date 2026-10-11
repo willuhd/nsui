@@ -257,7 +257,7 @@ public final class DataSourceProxyTest {
 
         // Make the window actually visible FIRST, so isVisible is meaningful: a veto must leave a
         // previously-visible window visible.
-        ObjC.msgSendVoidLong(app, ObjC.sel("setActivationPolicy:"), 0L /* NSApplicationActivationPolicyRegular */);
+        ObjC.msgSendVoidLong(app, ObjC.sel("setActivationPolicy:"), 1L /* Accessory: Regular can block the pump */);
         // Visible-but-not-key: veto assertions need isVisible true; key status is irrelevant.
         ObjC.msgSendVoidId(window, ObjC.sel("orderFront:"), MemorySegment.NULL);
         boolean wasVisible = ObjC.msgSendBool(window, ObjC.sel("isVisible"));

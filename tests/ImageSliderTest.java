@@ -52,7 +52,7 @@ public final class ImageSliderTest {
 
         // ---- draw it through a Java drawRect: and verify the composited pixel is red ----
         NSApplication app = NSApplication.shared();
-        app.setActivationPolicy(0 /* NSApplicationActivationPolicyRegular */);
+        app.setActivationPolicy(1 /* NSApplicationActivationPolicyAccessory: Regular can block TestKit.pump indefinitely */);
 
         NSWindow window = NSWindow.create(new NSRect(0, 0, 300, 200), 15L, 2L, false);
         window.setTitle("ImageSliderTest");

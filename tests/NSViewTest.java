@@ -30,7 +30,13 @@ public final class NSViewTest {
         CG.ensureInit();       // CoreGraphics 2D downcalls
 
         NSApplication app = NSApplication.shared();
-        app.setActivationPolicy(0 /* NSApplicationActivationPolicyRegular */);
+        // Accessory, NOT Regular (0). With the Regular policy this test can HANG forever:
+        // nextEventMatchingMask:untilDate: ignores its until-date while the WindowServer has
+        // not granted activation, so the whole suite blocks instead of failing (reproduced
+        // with a minimal probe: policy 0 -> blocked past the 0.05 s date; policies 1 and 2 ->
+        // returned in ~51 ms). The test only draws and reads back pixels, so it needs no
+        // foreground activation, and the window is never ordered front.
+        app.setActivationPolicy(1 /* NSApplicationActivationPolicyAccessory */);
 
         NSWindow window = NSWindow.create(new NSRect(0, 0, 600, 400), 15L, 2L, false);
         window.setTitle("NSView test");

@@ -39,7 +39,7 @@ public final class TextViewTest {
         ObjC.init();
 
         NSApplication app = NSApplication.shared();
-        app.setActivationPolicy(0 /* NSApplicationActivationPolicyRegular */);
+        app.setActivationPolicy(1 /* NSApplicationActivationPolicyAccessory: Regular can block TestKit.pump indefinitely */);
 
         // ---- raw NSTextView ----
         NSTextView tv = NSTextView.create(new NSRect(0, 0, 300, 200));

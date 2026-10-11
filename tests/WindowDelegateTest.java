@@ -57,7 +57,7 @@ public final class WindowDelegateTest {
         final AtomicBoolean moved   = new AtomicBoolean(false); // windowDidMove:
 
         NSApplication app = NSApplication.shared();
-        app.setActivationPolicy(0 /* NSApplicationActivationPolicyRegular */);
+        app.setActivationPolicy(1 /* NSApplicationActivationPolicyAccessory: Regular can block TestKit.pump indefinitely */);
 
         // ---- ONE delegate with THREE selectors ----
         Map<String, DelegateProxy.BoolArg> bools = new LinkedHashMap<>();

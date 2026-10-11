@@ -51,7 +51,7 @@ public final class MenuBarStatusTest {
         // NSStatusBar requires AppKit connection; ensure NSApplication is initialized
         try {
             NSApplication app = NSApplication.shared();
-            app.setActivationPolicy(0);
+            app.setActivationPolicy(1 /* Accessory: Regular can block TestKit.pump indefinitely */);
         } catch (Throwable t) {
             System.out.println("NOTE: NSApplication init failed (may be headless): " + t);
         }

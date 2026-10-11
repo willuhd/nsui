@@ -23,7 +23,7 @@ public final class TextFieldTest {
         ObjC.init(); // FFM bindings first
 
         NSApplication app = NSApplication.shared();
-        app.setActivationPolicy(0 /* NSApplicationActivationPolicyRegular */);
+        app.setActivationPolicy(1 /* NSApplicationActivationPolicyAccessory: Regular can block TestKit.pump indefinitely */);
 
         NSWindow window = NSWindow.create(new NSRect(0, 0, 500, 320), 15L, 2L, false);
         window.setTitle("text field test");

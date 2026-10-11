@@ -53,7 +53,7 @@ public final class ThemeObserverTest {
         boolean hasWindow = false;
         try {
             app = NSApplication.shared();
-            app.setActivationPolicy(0);
+            app.setActivationPolicy(1 /* Accessory: Regular can block TestKit.pump indefinitely */);
             win = NSWindow.create(new NSRect(0, 0, 400, 300), 15L, 2L, false);
             win.setTitle("ThemeObserverTest");
             win.center();

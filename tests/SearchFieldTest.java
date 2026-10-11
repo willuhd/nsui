@@ -40,7 +40,7 @@ public final class SearchFieldTest {
         ObjC.init();
 
         NSApplication app = NSApplication.shared();
-        app.setActivationPolicy(0 /* NSApplicationActivationPolicyRegular */);
+        app.setActivationPolicy(1 /* NSApplicationActivationPolicyAccessory: Regular can block TestKit.pump indefinitely */);
 
         NSWindow window = NSWindow.create(new NSRect(0, 0, 560, 360), 15L, 2L, false);
         window.setTitle("search field test");

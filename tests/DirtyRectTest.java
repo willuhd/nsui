@@ -26,7 +26,7 @@ public final class DirtyRectTest {
         CG.ensureInit();       // CoreGraphics 2D downcalls
 
         NSApplication app = NSApplication.shared();
-        app.setActivationPolicy(0 /* NSApplicationActivationPolicyRegular */);
+        app.setActivationPolicy(1 /* NSApplicationActivationPolicyAccessory: Regular can block TestKit.pump indefinitely */);
 
         NSWindow window = NSWindow.create(new NSRect(0, 0, 500, 400), 15L, 2L, false);
         window.setTitle("DirtyRect test");

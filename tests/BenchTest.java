@@ -50,8 +50,9 @@ import nsui.objc.Sig;
 /// shapes, NSString conversion, Scratch by-value inputs, Foundation object
 /// round-trips, collections, view/control/layer property access, the CALayer
 /// tree, attributed text, autorelease pools, the data-source/boolean upcall
-/// callback path, and Metal encode+commit. Every section asserts correctness
-/// each iteration and a wall-clock budget at the end.
+/// callback path, and Metal encode+commit. Each section verifies its own result
+/// once, outside the timed loop, and asserts a wall-clock budget at the end; the
+/// timed loop itself measures the call rather than re-asserting it every iteration.
 public final class BenchTest {
 
     private BenchTest() {}
@@ -121,16 +122,29 @@ public final class BenchTest {
         NSString s = NSString.of("benchmark-string");
         NSString yes = NSString.of("YES");
         MemorySegment peer = s.peer();
+        // One-shot correctness oracle per shape (outside the timed loop, so it does
+        // not distort the measurement): the benchmarks below time the call, they do
+        // not re-assert it every iteration.
+        TestKit.check(ObjC.msgSendLong(peer, ObjC.sel("length")) == 16, "msgSendLong returns the length");
+        TestKit.check(ObjC.msgSendBool(yes.peer(), ObjC.sel("boolValue")), "msgSendBool returns YES");
+        TestKit.check(ObjC.msgSendId(peer, ObjC.sel("description")).address() != 0, "msgSendId returns a peer");
         bench("msgSendLong length", 1000, 500000, 20000, () -> ObjC.msgSendLong(peer, ObjC.sel("length")));
         bench("msgSendBool boolValue", 1000, 500000, 20000,
                 () -> ObjC.msgSendBool(yes.peer(), ObjC.sel("boolValue")));
         MethodHandle hBoolId = ObjC.handle(Sig.of(Sig.Ret.BOOL, Sig.Arg.ID));
+        TestKit.check((boolean) hBoolId.invokeExact(peer, ObjC.sel("isEqual:"), (MemorySegment) s.peer()),
+                "handle BOOL+ID isEqual: is true for the same string");
         bench("handle BOOL+ID isEqual:", 1000, 500000, 20000,
                 () -> { boolean b = (boolean) hBoolId.invokeExact(peer, ObjC.sel("isEqual:"), (MemorySegment) s.peer()); });
         bench("msgSendId description", 1000, 500000, 20000, () -> ObjC.msgSendId(peer, ObjC.sel("description")));
 
         NSWindow win = TestKit.hiddenWindow(200, 200);
         try {
+            NSRect f = NSRect.fromSegment(ObjC.msgSendRect(win.peer(), ObjC.sel("frame")));
+            // Frame width is exact; height also carries the title bar, so it is >=
+            // the requested content height rather than equal to it.
+            TestKit.check(f.width() == 200 && f.height() >= 200,
+                    "msgSendRect frame covers the created content size (" + f.width() + "x" + f.height() + ")");
             bench("msgSendRect frame", 1000, 200000, 30000, () -> ObjC.msgSendRect(win.peer(), ObjC.sel("frame")));
         } finally {
             TestKit.close(win);
@@ -141,16 +155,22 @@ public final class BenchTest {
     private static void handleShapes() throws Throwable {
         NSNumber num = NSNumber.numberWithDouble(3.5);
         MethodHandle hDouble = ObjC.handle(Sig.of(Sig.Ret.DOUBLE));
+        TestKit.check((double) hDouble.invokeExact(num.peer(), ObjC.sel("doubleValue")) == 3.5,
+                "handle DOUBLE reads the stored double");
         bench("handle DOUBLE", 1000, 500000, 20000,
                 () -> { double d = (double) hDouble.invokeExact(num.peer(), ObjC.sel("doubleValue")); });
 
         NSValue vp = NSValue.valueWithPoint(new NSPoint(1, 2));
         MethodHandle hPoint = ObjC.handle(Sig.of(Sig.Ret.POINT));
+        NSPoint p = NSPoint.fromSegment((MemorySegment) hPoint.invokeExact(ObjC.structSlot(), vp.peer(), ObjC.sel("pointValue")));
+        TestKit.check(p.x() == 1 && p.y() == 2, "handle POINT round-trips the stored point");
         bench("handle POINT (struct return)", 1000, 500000, 20000,
                 () -> { MemorySegment m = (MemorySegment) hPoint.invokeExact(ObjC.structSlot(), vp.peer(), ObjC.sel("pointValue")); });
 
         NSValue vs = NSValue.valueWithSize(new NSSize(3, 4));
         MethodHandle hSize = ObjC.handle(Sig.of(Sig.Ret.SIZE));
+        NSSize z = NSSize.fromSegment((MemorySegment) hSize.invokeExact(ObjC.structSlot(), vs.peer(), ObjC.sel("sizeValue")));
+        TestKit.check(z.width() == 3 && z.height() == 4, "handle SIZE round-trips the stored size");
         bench("handle SIZE (struct return)", 1000, 500000, 20000,
                 () -> { MemorySegment m = (MemorySegment) hSize.invokeExact(ObjC.structSlot(), vs.peer(), ObjC.sel("sizeValue")); });
     }

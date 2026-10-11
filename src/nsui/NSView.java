@@ -610,13 +610,16 @@ public class NSView extends NSResponder {
                 || !ObjC.addMethod(drawableClass, "flagsChanged:", s.flagsChanged(), "v@:@")) {
             throw new RuntimeException("class_addMethod event override failed");
         }
-        // BOOL is `signed char` on macOS (objc.h: OBJC_BOOL_IS_BOOL is 0 for TARGET_OS_OSX,
-        // "BOOL is explicitly signed so @encode(BOOL) == \"c\""), and the rest of the tree
-        // (DelegateProxy) publishes "c". "B" is C++ _Bool and is the wrong encoding here.
-        if (!ObjC.addMethod(drawableClass, "performKeyEquivalent:", s.performKeyEquivalent(), "c@:@")) {
+        // These two override real NSView methods, and on this platform AppKit's own
+        // published encodings are "B16@0:8" / "B24@0:8@16" (measured with
+        // method_getTypeEncoding): on arm64 macOS BOOL is `bool`, not the `signed char`
+        // that objc.h's TARGET_OS_OSX fallback describes. "B" therefore matches the
+        // superclass we override. (An earlier note here claimed "B" was C++ _Bool and
+        // wrong — that was backwards.)
+        if (!ObjC.addMethod(drawableClass, "performKeyEquivalent:", s.performKeyEquivalent(), "B@:@")) {
             throw new RuntimeException("class_addMethod performKeyEquivalent: failed");
         }
-        if (!ObjC.addMethod(drawableClass, "acceptsFirstResponder", s.acceptsFirstResponder(), "c@:")) {
+        if (!ObjC.addMethod(drawableClass, "acceptsFirstResponder", s.acceptsFirstResponder(), "B@:")) {
             throw new RuntimeException("class_addMethod acceptsFirstResponder failed");
         }
         Handles h = new Handles(

@@ -517,12 +517,17 @@ public final class AuditRegressionTest {
             TestKit.check(false, "correction/guard block threw: " + t);
         }
 
-        // --- 8l. DelegateProxy.dispose reclaims a registered instance ---
+        // --- 8l. DelegateProxy.dispose actually frees the proxy ---
         // Before dispose existed, the only removal was the ObjC dealloc hook, which can
         // never run because nothing releases the alloc/init +1 and every delegate/target
         // property is weak — so each proxy leaked for the life of the process.
+        // registrySize() alone is NOT enough: the first dispose removed the entry before
+        // releasing, so the dealloc override could not find its holder and skipped
+        // [super dealloc], leaving the object shell allocated. deallocChainedCount() is the
+        // oracle for that half.
         try {
             int regBefore = DelegateProxy.registrySize();
+            long chainedBefore = DelegateProxy.deallocChainedCount();
             MemorySegment disposable = DelegateProxy.actionTarget("disposeProbe:", sender -> {});
             TestKit.check(DelegateProxy.registrySize() == regBefore + 1,
                     "actionTarget registers one entry (before=" + regBefore
@@ -530,6 +535,9 @@ public final class AuditRegressionTest {
             DelegateProxy.dispose(disposable);
             TestKit.check(DelegateProxy.registrySize() == regBefore,
                     "dispose reclaims the registry entry (got " + DelegateProxy.registrySize() + ")");
+            TestKit.check(DelegateProxy.deallocChainedCount() == chainedBefore + 1,
+                    "dispose drives dealloc through [super dealloc] (chained="
+                            + DelegateProxy.deallocChainedCount() + ")");
             DelegateProxy.dispose(disposable);
             TestKit.check(DelegateProxy.registrySize() == regBefore, "dispose is idempotent");
             DelegateProxy.dispose(MemorySegment.NULL);

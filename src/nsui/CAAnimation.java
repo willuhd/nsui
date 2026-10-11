@@ -48,16 +48,34 @@ public class CAAnimation extends NSObject {
         } catch (Throwable t) { throw new RuntimeException("animationWithKeyPath: failed", t); }
     }
 
+    /// Reject a call to a selector that only a SUBCLASS implements.
+    ///
+    /// Measured with a plain CAAnimation peer: respondsToSelector: is false for
+    /// setFromValue:, setToValue:, setByValue:, fromValue, toValue, byValue and setKeyPath:,
+    /// so sending any of them aborts with an unrecognized selector. The value methods live on
+    /// CABasicAnimation (CASpringAnimation inherits them) and keyPath on CAPropertyAnimation,
+    /// which is why this checks isKindOfClass: rather than the concrete class.
+    private void requireClass(String className, String what) {
+        ensureInit();
+        if (!isKindOfClass(className)) {
+            throw new IllegalStateException(what + " is only implemented by " + className
+                    + " (this object is a base-class peer); use the matching factory");
+        }
+    }
+
     public void setFromValue(MemorySegment value) {
+        requireClass("CABasicAnimation", "setFromValue:");
         // NOTE: the (MemorySegment) cast matters — without it, JDK 21+ javac types the
         // ternary argument of the signature-polymorphic invokeExact as Object, producing
         // a WrongMethodTypeException at runtime (invokeExact never converts).
         try { handles.hSetFrom().invokeExact(peer, ObjC.sel("setFromValue:"), (MemorySegment) (value == null ? MemorySegment.NULL : value)); } catch (Throwable t) { throw new RuntimeException("setFromValue: failed", t); }
     }
     public void setToValue(MemorySegment value) {
+        requireClass("CABasicAnimation", "setToValue:");
         try { handles.hSetFrom().invokeExact(peer, ObjC.sel("setToValue:"), (MemorySegment) (value == null ? MemorySegment.NULL : value)); } catch (Throwable t) { throw new RuntimeException("setToValue: failed", t); }
     }
     public void setKeyPath(String kp) {
+        requireClass("CAPropertyAnimation", "setKeyPath:");
         try { handles.hSetFrom().invokeExact(peer, ObjC.sel("setKeyPath:"), (MemorySegment) (kp == null ? MemorySegment.NULL : ObjC.nsstring(kp))); } catch (Throwable t) { throw new RuntimeException("setKeyPath: failed", t); }
     }
     public void setDuration(double d) {
@@ -125,23 +143,27 @@ public class CAAnimation extends NSObject {
 
     /// [animation setByValue:] — same shape as setFromValue:; identical cast discipline.
     public void setByValue(MemorySegment value) {
+        requireClass("CABasicAnimation", "setByValue:");
         try { handles.hSetFrom().invokeExact(peer, ObjC.sel("setByValue:"), (MemorySegment) (value == null ? MemorySegment.NULL : value)); } catch (Throwable t) { throw new RuntimeException("setByValue: failed", t); }
     }
 
     /// [animation fromValue] — raw value object or null.
     public MemorySegment fromValue() {
+        requireClass("CABasicAnimation", "fromValue");
         ensureInit();
         try { return (MemorySegment) handles.hGetId().invokeExact(peer, ObjC.sel("fromValue")); } catch (Throwable t) { throw new RuntimeException("fromValue failed", t); }
     }
 
     /// [animation toValue] — raw value object or null.
     public MemorySegment toValue() {
+        requireClass("CABasicAnimation", "toValue");
         ensureInit();
         try { return (MemorySegment) handles.hGetId().invokeExact(peer, ObjC.sel("toValue")); } catch (Throwable t) { throw new RuntimeException("toValue failed", t); }
     }
 
     /// [animation byValue] — raw value object or null.
     public MemorySegment byValue() {
+        requireClass("CABasicAnimation", "byValue");
         ensureInit();
         try { return (MemorySegment) handles.hGetId().invokeExact(peer, ObjC.sel("byValue")); } catch (Throwable t) { throw new RuntimeException("byValue failed", t); }
     }

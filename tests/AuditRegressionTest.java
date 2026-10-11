@@ -1360,6 +1360,40 @@ public final class AuditRegressionTest {
             TestKit.check(false, "tab-item/Metal-cap block threw: " + t);
         }
 
+        // --- 8an. subclass-only selectors on base-class peers (CAAnimation, NSLayoutAnchor) ---
+        // Measured: a plain CAAnimation answers NO to setFromValue:/setKeyPath:/fromValue; an
+        // NSLayoutXAxisAnchor (leadingAnchor) answers NO to the dimension-only constraint
+        // methods while widthAnchor (an NSLayoutDimension) answers YES to all of them.
+        try {
+            nsui.CAAnimation plain = nsui.CAAnimation.wrap(
+                    ObjC.msgSendId(ObjC.cls("CAAnimation"), ObjC.sel("animation")));
+            TestKit.expectThrows("CAAnimation.setFromValue on a base peer rejects",
+                    IllegalStateException.class, () -> plain.setFromValue(null));
+            TestKit.expectThrows("CAAnimation.setKeyPath on a base peer rejects",
+                    IllegalStateException.class, () -> plain.setKeyPath("opacity"));
+            TestKit.expectThrows("CAAnimation.fromValue on a base peer rejects",
+                    IllegalStateException.class, () -> plain.fromValue());
+            nsui.CABasicAnimation basic = nsui.CABasicAnimation.wrap(
+                    nsui.CAAnimation.animationWithKeyPath("opacity").peer());
+            TestKit.noThrow("CABasicAnimation.setFromValue still works", () -> basic.setFromValue(null));
+            TestKit.noThrow("CABasicAnimation.setKeyPath still works", () -> basic.setKeyPath("opacity"));
+
+            NSView av = NSView.create(new NSRect(0, 0, 100, 100), (v, d) -> {});
+            nsui.NSLayoutAnchor xAxis = av.leadingAnchor();
+            TestKit.expectThrows("constraintEqualToConstant on an x-axis anchor rejects",
+                    IllegalStateException.class, () -> xAxis.constraintEqualToConstant(10));
+            TestKit.expectThrows("constraintEqualToAnchor:multiplier: on an x-axis anchor rejects",
+                    IllegalStateException.class,
+                    () -> xAxis.constraintEqualToAnchorWithMultiplier(av.trailingAnchor(), 2.0));
+            TestKit.noThrow("the base constraintEqualToAnchor family still works on an x-axis anchor",
+                    () -> xAxis.constraintEqualToAnchor(av.trailingAnchor()));
+            nsui.NSLayoutAnchor.Dimension dim = av.widthAnchor();
+            TestKit.noThrow("constraintEqualToConstant works on the typed width anchor",
+                    () -> dim.constraintEqualToConstant(10));
+        } catch (Throwable t) {
+            TestKit.check(false, "subclass-only selector block threw: " + t);
+        }
+
         // --- 8z. type-confusion guards on the raw collection-view setters ---
         // AppKit does NOT raise a type error here, it either asserts isKindOfClass: or
         // messages the object: setCollectionViewLayout: with a plain NSView raised

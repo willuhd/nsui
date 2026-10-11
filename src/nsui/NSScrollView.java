@@ -56,7 +56,12 @@ public final class NSScrollView extends NSView {
     /// [scroll setDocumentView:] — the scrollable document (the table).
     /// `documentView` is nullable in AppKit (nil detaches the document), so a null
     /// view passes nil (matching setContentView: below); previously it threw a raw NPE.
+    /// A document view that is the scroll view itself or one of its ancestors HANGS AppKit
+    /// (>15 s, verified) rather than raising, so the same ancestry check the view hierarchy
+    /// uses is applied here — the doc view becomes a subview of the clip view, and a cycle
+    /// there wedges the display path.
     public void setDocumentView(NSView documentView) {
+        if (documentView != null) requireNotSelfOrAncestor(documentView, "setDocumentView:");
         try {
             hVoidId.invokeExact(peer, ObjC.sel("setDocumentView:"),
                     (MemorySegment) (documentView == null ? MemorySegment.NULL : documentView.peer()));

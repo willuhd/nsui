@@ -1540,6 +1540,34 @@ public final class AuditRegressionTest {
             TestKit.check(false, "version-gated accessor block threw: " + t);
         }
 
+        // --- 8au. two more self-cycles that HANG (worse than aborting) ---
+        // Verified with a watchdog: [scrollView setDocumentView:self] and a menu set as its own
+        // submenu both never return (>15 s). The guards walk the superview / supermenu chains.
+        try {
+            nsui.NSScrollView scv = nsui.NSScrollView.create(new NSRect(0, 0, 200, 100));
+            TestKit.expectThrows("setDocumentView(self) rejects instead of hanging",
+                    IllegalArgumentException.class, () -> scv.setDocumentView(scv));
+            NSView outer = NSView.create(new NSRect(0, 0, 400, 300), (v, d) -> {});
+            outer.addSubview(scv);
+            TestKit.expectThrows("setDocumentView(ancestor-of-self) rejects",
+                    IllegalArgumentException.class, () -> scv.setDocumentView(outer));
+            NSView docView = NSView.create(new NSRect(0, 0, 50, 50), (v, d) -> {});
+            TestKit.noThrow("a normal document view is still accepted",
+                    () -> scv.setDocumentView(docView));
+
+            NSMenu selfMenu = NSMenu.createWithTitle("selfmenu");
+            nsui.NSMenuItem selfItem = selfMenu.addItemWithTitle("i", "", "");
+            TestKit.check(selfItem != null, "the menu item was created");
+            TestKit.expectThrows("menu as its own submenu rejects instead of hanging",
+                    IllegalArgumentException.class,
+                    () -> selfMenu.setSubmenu(selfItem, selfMenu));
+            NSMenu childMenu = NSMenu.createWithTitle("child");
+            TestKit.noThrow("a distinct submenu is still accepted",
+                    () -> selfMenu.setSubmenu(selfItem, childMenu));
+        } catch (Throwable t) {
+            TestKit.check(false, "hang-cycle block threw: " + t);
+        }
+
         // --- 8z. type-confusion guards on the raw collection-view setters ---
         // AppKit does NOT raise a type error here, it either asserts isKindOfClass: or
         // messages the object: setCollectionViewLayout: with a plain NSView raised

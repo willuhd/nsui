@@ -315,6 +315,16 @@ public final class NSMenu extends NSObject {
     public void setSubmenu(NSMenuItem item, NSMenu submenu) {
         ensureInit();
         Bounds.nonNull(item, "setSubmenu:forItem: (item)");
+        // A menu that becomes its own submenu (directly or through the supermenu chain) HANGS
+        // AppKit (>15 s, verified) instead of raising, so the chain is walked like the
+        // view/layer guards.
+        for (NSMenu m = this; m != null; m = m.supermenu()) {
+            if (submenu != null && m.peer() != null && submenu.peer() != null
+                    && m.peer().address() == submenu.peer().address()) {
+                throw new IllegalArgumentException("setSubmenu:forItem: the menu is already this "
+                        + "menu or one of its ancestors; AppKit hangs on that cycle");
+            }
+        }
         ObjC.msgSendVoidId(item.peer(), Sels.setSubmenu, (MemorySegment) (submenu == null ? MemorySegment.NULL : submenu.peer()));
     }
     /// [self setSubmenu:submenu forItem:item] — the NSMenu variant (both peers as ID).

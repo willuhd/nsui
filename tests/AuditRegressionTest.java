@@ -663,6 +663,32 @@ public final class AuditRegressionTest {
             TestKit.check(false, "probe-found guard block threw: " + t);
         }
 
+        // --- 8r. NSMutableOrderedSet.moveObjectsAtIndexes:toIndex: bound is count - k ---
+        // The destination indexes the array AFTER the moved objects are removed (verified on
+        // a 3-element set: moving {0,1} accepts toIndex 1, raises for 2; moving {0} accepts 2,
+        // raises for 3). The old bound (insertIndex against count()) accepted count, which
+        // aborts natively — an under-tight guard rather than an over-tight one.
+        try {
+            nsui.NSMutableOrderedSet os = nsui.NSMutableOrderedSet.orderedSetWithCapacity(3);
+            for (int i = 0; i < 3; i++) os.addObject(nsui.NSString.of("v" + i));
+            TestKit.check(os.count() == 3, "ordered set has 3 elements (got " + os.count() + ")");
+            nsui.NSMutableIndexSet both = nsui.NSMutableIndexSet.indexSet();
+            both.addIndex(0);
+            both.addIndex(1);
+            TestKit.noThrow("moveObjectsAtIndexes({0,1}, 1) is legal (== count-k)",
+                    () -> os.moveObjectsAtIndexesToIndex(both, 1));
+            TestKit.expectThrows("moveObjectsAtIndexes({0,1}, 2) rejects (> count-k)",
+                    IllegalArgumentException.class, () -> os.moveObjectsAtIndexesToIndex(both, 2));
+            nsui.NSMutableIndexSet one = nsui.NSMutableIndexSet.indexSet();
+            one.addIndex(0);
+            TestKit.expectThrows("moveObjectsAtIndexes({0}, 3) rejects (> count-k)",
+                    IllegalArgumentException.class, () -> os.moveObjectsAtIndexesToIndex(one, 3));
+            TestKit.noThrow("moveObjectsAtIndexes({0}, 2) is legal (== count-k)",
+                    () -> os.moveObjectsAtIndexesToIndex(one, 2));
+        } catch (Throwable t) {
+            TestKit.check(false, "ordered-set move-guard block threw: " + t);
+        }
+
         // --- 8p. range boundaries the first sweep got wrong ---
         // An adversarial review re-probed these. smartInsert* abort only on an out-of-range
         // LOCATION ({3,1} and {2,5} on a 3-char view are accepted natively, so the earlier

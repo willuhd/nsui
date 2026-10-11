@@ -144,11 +144,17 @@ public final class NSMutableOrderedSet extends NSOrderedSet {
     }
 
     /// moveObjectsAtIndexes:toIndex:.
+    ///
+    /// The destination is an index in the array AFTER the moved objects are removed, so the
+    /// largest legal value is `count - indexes.count()`. Verified on a 3-element set:
+    /// moving {0,1} accepts toIndex 1 and raises "index 2 beyond bounds [0 .. 0]" for 2;
+    /// moving {0} accepts 2 and raises "index 3 beyond bounds [0 .. 1]" for 3. The previous
+    /// Bounds.insertIndex against count() allowed `count`, which aborts natively.
     public void moveObjectsAtIndexesToIndex(NSIndexSet indexes, long index) {
         ensureMutInit();
         if (indexes == null) throw new IllegalArgumentException("moveObjectsAtIndexes: null");
         Bounds.indexSet(indexes, count(), "moveObjectsAtIndexes:toIndex: (indexes)");
-        Bounds.insertIndex(index, count(), "moveObjectsAtIndexes:toIndex:");
+        Bounds.insertIndex(index, count() - indexes.count(), "moveObjectsAtIndexes:toIndex:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.INT));
             h.invokeExact(peer, ObjC.sel("moveObjectsAtIndexes:toIndex:"), indexes.peer(), index);

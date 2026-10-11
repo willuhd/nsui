@@ -1067,11 +1067,11 @@ public class NSTableView extends NSView {
     /// (it keeps no update-block state and cannot query view-basedness), so wrap them in
     /// beginUpdates()/endUpdates().
     ///
-    /// The RANGE half IS checked here: even with the precondition satisfied, an index out of
-    /// range raises NSTableViewException "NSTableView error inserting/removing/moving row N
-    /// (numberOfRows: 3)" and aborts (verified on a 3-row view-based table inside
-    /// begin/endUpdates). `insertRowsAtIndexes:` accepts up to numberOfRows() (appending),
-    /// while remove/hide/unhide require an index below numberOfRows().
+    /// The RANGE half IS checked here, but the four methods do not share one bound:
+    /// `insertRowsAtIndexes:` accepts up to numberOfRows() (appending) and raises
+    /// "NSTableView error inserting/removing/moving row N (numberOfRows: <count>)" above it;
+    /// remove/hide/unhide require an index below numberOfRows(); and moveRowAtIndex: bounds
+    /// BOTH its indexes differently — see that method.
     /// [table insertRowsAtIndexes:withAnimation:]
     public void insertRowsAtIndexes(MemorySegment indexes, long animation) {
         ensureInit();
@@ -1086,16 +1086,26 @@ public class NSTableView extends NSView {
         try { H.hVoidIdInt().invokeExact(peer, Sels.removeRowsAtIndexes_withAnimation, (MemorySegment) (indexes == null ? MemorySegment.NULL : indexes), animation); } catch (Throwable t) { throw new RuntimeException("removeRowsAtIndexes:withAnimation: failed", t); }
     }
 
-    /// [table moveRowAtIndex:toIndex:] — ONLY `oldIndex` is validated.
+    /// [table moveRowAtIndex:toIndex:] — BOTH indexes are bounded, for a measured reason that
+    /// is about STATE, not about raising.
     ///
-    /// Measured natively on a 3-row view-based table inside begin/endUpdates: `newIndex` is
-    /// not validated at all — 0, 2, 3 (== count), 4, 5, 50 and even -1 all return without
-    /// raising — while `oldIndex` aborts for 3 (== count), 5 and -1. The previous
-    /// `Bounds.insertIndex(newIndex, numberOfRows())` therefore rejected legal calls on BOTH
-    /// ends (count+1 and negatives); an earlier commit documented that asymmetry instead of
-    /// fixing it, and this replaces the note with the fix.
+    /// AppKit does not raise for an out-of-range destination (measured raw, guard bypassed, on
+    /// a 3-row view-based table: newIndex -1, 0, 3, 4, 50 all return), but it silently leaves
+    /// an extra NSTableRowView behind: three repetitions of a VALID move (0,1) keep the table
+    /// at 3 subviews for 3 rows, while three repetitions of (0,4), (0,-1) or even (0,3)
+    /// (= count) grow it 3 -> 4 -> 5 while numberOfRows() stays 3. `oldIndex` outside
+    /// [0, count) raises instead ("error inserting/removing/moving row 3 (numberOfRows: 2)",
+    /// or NSInternalInconsistencyException "a positive row should have been computed!" for -1).
+    ///
+    /// So the safe set is exactly 0..count-1 for both indexes, which is what this validates.
+    /// An earlier version passed `newIndex` through on the grounds that native tolerates it;
+    /// that made the row-view accumulation reachable from Java (verified by replaying this
+    /// change's own test sequence, which left 5 row views for 3 rows). Note count+1 and
+    /// negatives are rejected here too, and count == numberOfRows() is rejected as well
+    /// because it accumulates the same way.
     public void moveRowAtIndex(long oldIndex, long newIndex) {
         Bounds.index(oldIndex, numberOfRows(), "moveRowAtIndex:toIndex: (oldIndex)");
+        Bounds.index(newIndex, numberOfRows(), "moveRowAtIndex:toIndex: (newIndex)");
         ensureInit();
         try { H.hVoidIntInt().invokeExact(peer, Sels.moveRowAtIndex_toIndex, oldIndex, newIndex); } catch (Throwable t) { throw new RuntimeException("moveRowAtIndex:toIndex: failed", t); }
     }

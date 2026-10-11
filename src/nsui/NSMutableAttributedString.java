@@ -305,6 +305,7 @@ public class NSMutableAttributedString extends NSAttributedString {
     /// @param range range to apply
     public void addAttribute(String name, MemorySegment value, NSRange range) {
         ensureMutInit();
+        Bounds.range(range, length(), "addAttribute:value:range:");
         try {
             MemorySegment v = (MemorySegment) (value == null ? MemorySegment.NULL : value);
             handles.hAddAttr().invokeExact(peer, ObjC.sel("addAttribute:value:range:"), ObjC.nsstring(name), v, range.toSegment());
@@ -321,6 +322,7 @@ public class NSMutableAttributedString extends NSAttributedString {
     /// [mutable addAttributes:range:] — dict is NSDictionary*
     public void addAttributes(MemorySegment attrsDict, NSRange range) {
         ensureMutInit();
+        Bounds.range(range, length(), "addAttributes:range:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.RANGE));
             MemorySegment arg = (attrsDict == null || attrsDict.address() == 0) ? MemorySegment.NULL : attrsDict;
@@ -333,6 +335,7 @@ public class NSMutableAttributedString extends NSAttributedString {
     /// [mutable removeAttribute:name range:range]
     public void removeAttribute(String name, NSRange range) {
         ensureMutInit();
+        Bounds.range(range, length(), "removeAttribute:range:");
         try {
             handles.hSetAttr().invokeExact(peer, ObjC.sel("removeAttribute:range:"), ObjC.nsstring(name), range.toSegment());
         } catch (Throwable t) {
@@ -343,6 +346,7 @@ public class NSMutableAttributedString extends NSAttributedString {
     /// [mutable setAttributes:range:]
     public void setAttributes(MemorySegment attrsDict, NSRange range) {
         ensureMutInit();
+        Bounds.range(range, length(), "setAttributes:range:");
         try {
             MemorySegment arg = (attrsDict == null || attrsDict.address() == 0) ? MemorySegment.NULL : attrsDict;
             handles.hSetAttr().invokeExact(peer, ObjC.sel("setAttributes:range:"), (MemorySegment) arg, range.toSegment());

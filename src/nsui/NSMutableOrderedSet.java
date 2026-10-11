@@ -82,6 +82,7 @@ public final class NSMutableOrderedSet extends NSOrderedSet {
     public void insertObjectAtIndex(NSObject object, long index) {
         ensureMutInit();
         if (object == null) throw new IllegalArgumentException("insertObject: null");
+        Bounds.insertIndex(index, count(), "insertObject:atIndex:");
         try { hInsertAt.invokeExact(peer, ObjC.sel("insertObject:atIndex:"), object.peer(), index); }
         catch (Throwable t) { throw new RuntimeException("insertObject:atIndex: failed", t); }
     }
@@ -89,6 +90,7 @@ public final class NSMutableOrderedSet extends NSOrderedSet {
     /// removeObjectAtIndex:
     public void removeObjectAtIndex(long index) {
         ensureMutInit();
+        Bounds.index(index, count(), "removeObjectAtIndex:");
         try { hRemoveAt.invokeExact(peer, ObjC.sel("removeObjectAtIndex:"), index); }
         catch (Throwable t) { throw new RuntimeException("removeObjectAtIndex: failed", t); }
     }
@@ -122,6 +124,7 @@ public final class NSMutableOrderedSet extends NSOrderedSet {
     public void replaceObjectAtIndex(long index, NSObject object) {
         ensureMutInit();
         if (object == null) throw new IllegalArgumentException("replaceObjectAtIndex: null");
+        Bounds.index(index, count(), "replaceObjectAtIndex:withObject:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.INT, Arg.ID));
             h.invokeExact(peer, ObjC.sel("replaceObjectAtIndex:withObject:"), index, object.peer());
@@ -131,6 +134,9 @@ public final class NSMutableOrderedSet extends NSOrderedSet {
     /// exchangeObjectAtIndex:withObjectAtIndex:.
     public void exchangeObjectAtIndex(long i, long j) {
         ensureMutInit();
+        long n = count();
+        Bounds.index(i, n, "exchangeObjectAtIndex:withObjectAtIndex: (first)");
+        Bounds.index(j, n, "exchangeObjectAtIndex:withObjectAtIndex: (second)");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.INT, Arg.INT));
             h.invokeExact(peer, ObjC.sel("exchangeObjectAtIndex:withObjectAtIndex:"), i, j);
@@ -141,6 +147,8 @@ public final class NSMutableOrderedSet extends NSOrderedSet {
     public void moveObjectsAtIndexesToIndex(NSIndexSet indexes, long index) {
         ensureMutInit();
         if (indexes == null) throw new IllegalArgumentException("moveObjectsAtIndexes: null");
+        Bounds.indexSet(indexes, count(), "moveObjectsAtIndexes:toIndex: (indexes)");
+        Bounds.insertIndex(index, count(), "moveObjectsAtIndexes:toIndex:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.INT));
             h.invokeExact(peer, ObjC.sel("moveObjectsAtIndexes:toIndex:"), indexes.peer(), index);
@@ -151,6 +159,7 @@ public final class NSMutableOrderedSet extends NSOrderedSet {
     public void insertObjectsAtIndexes(NSArray objects, NSIndexSet indexes) {
         ensureMutInit();
         if (objects == null || indexes == null) throw new IllegalArgumentException("insertObjects:atIndexes: null");
+        Bounds.indexSet(indexes, count() + 1, "insertObjects:atIndexes:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.ID));
             h.invokeExact(peer, ObjC.sel("insertObjects:atIndexes:"), objects.peer(), indexes.peer());
@@ -161,6 +170,7 @@ public final class NSMutableOrderedSet extends NSOrderedSet {
     public void setObjectAtIndex(NSObject object, long index) {
         ensureMutInit();
         if (object == null) throw new IllegalArgumentException("setObject:atIndex: null");
+        Bounds.index(index, count(), "setObject:atIndex:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.INT));
             h.invokeExact(peer, ObjC.sel("setObject:atIndex:"), object.peer(), index);
@@ -171,6 +181,7 @@ public final class NSMutableOrderedSet extends NSOrderedSet {
     public void setObjectAtIndexedSubscript(NSObject object, long index) {
         ensureMutInit();
         if (object == null) throw new IllegalArgumentException("setObject:atIndexedSubscript: null");
+        Bounds.index(index, count(), "setObject:atIndexedSubscript:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.INT));
             h.invokeExact(peer, ObjC.sel("setObject:atIndexedSubscript:"), object.peer(), index);
@@ -181,6 +192,7 @@ public final class NSMutableOrderedSet extends NSOrderedSet {
     public void replaceObjectsAtIndexes(NSIndexSet indexes, NSArray objects) {
         ensureMutInit();
         if (indexes == null || objects == null) throw new IllegalArgumentException("replaceObjectsAtIndexes: null");
+        Bounds.indexSet(indexes, count(), "replaceObjectsAtIndexes:withObjects:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.ID));
             h.invokeExact(peer, ObjC.sel("replaceObjectsAtIndexes:withObjects:"), indexes.peer(), objects.peer());
@@ -190,6 +202,7 @@ public final class NSMutableOrderedSet extends NSOrderedSet {
     /// removeObjectsInRange:.
     public void removeObjectsInRange(NSRange range) {
         ensureMutInit();
+        Bounds.range(range, count(), "removeObjectsInRange:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.RANGE));
             h.invokeExact(peer, ObjC.sel("removeObjectsInRange:"), range.toSegment());
@@ -200,6 +213,7 @@ public final class NSMutableOrderedSet extends NSOrderedSet {
     public void removeObjectsAtIndexes(NSIndexSet indexes) {
         ensureMutInit();
         if (indexes == null) return;
+        Bounds.indexSet(indexes, count(), "removeObjectsAtIndexes:");
         ObjC.msgSendVoidId(peer, ObjC.sel("removeObjectsAtIndexes:"), indexes.peer());
     }
 

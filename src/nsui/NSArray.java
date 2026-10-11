@@ -302,6 +302,7 @@ public final class NSArray extends NSObject {
     /// subarrayWithRange:.
     public NSArray subarrayWithRange(NSRange range) {
         ensureInit();
+        Bounds.range(range, count(), "subarrayWithRange:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.RANGE));
             MemorySegment r = (MemorySegment) h.invokeExact(peer, ObjC.sel("subarrayWithRange:"), range.toSegment());
@@ -374,6 +375,7 @@ public final class NSArray extends NSObject {
     public void insertObjectAtIndex(NSObject object, long index) {
         ensureInit();
         if (object == null) throw new IllegalArgumentException("insertObject: null");
+        Bounds.insertIndex(index, count(), "insertObject:atIndex:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.INT));
             h.invokeExact(peer, ObjC.sel("insertObject:atIndex:"), object.peer(), index);
@@ -391,6 +393,7 @@ public final class NSArray extends NSObject {
     /// removeObjectAtIndex: — mutating.
     public void removeObjectAtIndex(long index) {
         ensureInit();
+        Bounds.index(index, count(), "removeObjectAtIndex:");
         ObjC.msgSendVoidLong(peer, ObjC.sel("removeObjectAtIndex:"), index);
     }
 
@@ -398,6 +401,7 @@ public final class NSArray extends NSObject {
     public void replaceObjectAtIndex(long index, NSObject object) {
         ensureInit();
         if (object == null) throw new IllegalArgumentException("replaceObjectAtIndex: null");
+        Bounds.index(index, count(), "replaceObjectAtIndex:withObject:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.INT, Arg.ID));
             h.invokeExact(peer, ObjC.sel("replaceObjectAtIndex:withObject:"), index, object.peer());
@@ -416,6 +420,9 @@ public final class NSArray extends NSObject {
     /// exchangeObjectAtIndex:withObjectAtIndex: — mutating.
     public void exchangeObjectAtIndex(long i, long j) {
         ensureInit();
+        long n = count();
+        Bounds.index(i, n, "exchangeObjectAtIndex:withObjectAtIndex: (first)");
+        Bounds.index(j, n, "exchangeObjectAtIndex:withObjectAtIndex: (second)");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.INT, Arg.INT));
             h.invokeExact(peer, ObjC.sel("exchangeObjectAtIndex:withObjectAtIndex:"), i, j);
@@ -441,6 +448,7 @@ public final class NSArray extends NSObject {
     public void removeObjectInRange(NSObject object, NSRange range) {
         ensureInit();
         if (object == null) return;
+        Bounds.range(range, count(), "removeObject:inRange:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.RANGE));
             h.invokeExact(peer, ObjC.sel("removeObject:inRange:"), object.peer(), range.toSegment());
@@ -460,6 +468,7 @@ public final class NSArray extends NSObject {
     public void removeObjectIdenticalToInRange(NSObject object, NSRange range) {
         ensureInit();
         if (object == null) return;
+        Bounds.range(range, count(), "removeObjectIdenticalTo:inRange:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.RANGE));
             h.invokeExact(peer, ObjC.sel("removeObjectIdenticalTo:inRange:"), object.peer(), range.toSegment());
@@ -478,6 +487,7 @@ public final class NSArray extends NSObject {
     /// removeObjectsInRange: — mutating.
     public void removeObjectsInRange(NSRange range) {
         ensureInit();
+        Bounds.range(range, count(), "removeObjectsInRange:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.RANGE));
             h.invokeExact(peer, ObjC.sel("removeObjectsInRange:"), range.toSegment());
@@ -497,6 +507,7 @@ public final class NSArray extends NSObject {
     public void insertObjectsAtIndexes(NSArray objects, NSIndexSet indexes) {
         ensureInit();
         if (objects == null || indexes == null) throw new IllegalArgumentException("insertObjects:atIndexes: null");
+        Bounds.indexSet(indexes, count() + 1, "insertObjects:atIndexes:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.ID));
             h.invokeExact(peer, ObjC.sel("insertObjects:atIndexes:"), objects.peer(), indexes.peer());
@@ -509,6 +520,7 @@ public final class NSArray extends NSObject {
     public void removeObjectsAtIndexes(NSIndexSet indexes) {
         ensureInit();
         if (indexes == null) return;
+        Bounds.indexSet(indexes, count(), "removeObjectsAtIndexes:");
         ObjC.msgSendVoidId(peer, ObjC.sel("removeObjectsAtIndexes:"), indexes.peer());
     }
 
@@ -516,6 +528,7 @@ public final class NSArray extends NSObject {
     public void replaceObjectsAtIndexes(NSIndexSet indexes, NSArray objects) {
         ensureInit();
         if (indexes == null || objects == null) throw new IllegalArgumentException("replaceObjectsAtIndexes: null");
+        Bounds.indexSet(indexes, count(), "replaceObjectsAtIndexes:withObjects:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.ID));
             h.invokeExact(peer, ObjC.sel("replaceObjectsAtIndexes:withObjects:"), indexes.peer(), objects.peer());
@@ -528,6 +541,7 @@ public final class NSArray extends NSObject {
     public void replaceObjectsInRange(NSRange range, NSArray other) {
         ensureInit();
         if (other == null) throw new IllegalArgumentException("replaceObjectsInRange: null");
+        Bounds.range(range, count(), "replaceObjectsInRange:withObjectsFromArray:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.RANGE, Arg.ID));
             h.invokeExact(peer, ObjC.sel("replaceObjectsInRange:withObjectsFromArray:"), range.toSegment(), other.peer());
@@ -540,6 +554,7 @@ public final class NSArray extends NSObject {
     public void setObjectAtIndexedSubscript(NSObject object, long index) {
         ensureInit();
         if (object == null) throw new IllegalArgumentException("setObject:atIndexedSubscript: null");
+        Bounds.index(index, count(), "setObject:atIndexedSubscript:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.INT));
             h.invokeExact(peer, ObjC.sel("setObject:atIndexedSubscript:"), object.peer(), index);

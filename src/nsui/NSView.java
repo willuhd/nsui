@@ -936,9 +936,10 @@ public class NSView extends NSResponder {
 
     // ---------------------------------------------------------------- instance API
 
-    /// addSubview: — attach a child view.
+    /// addSubview: — attach a child view (non-null; null is a caller error).
     public void addSubview(NSView subview) {
         ensureInit();
+        Bounds.nonNull(subview, "addSubview:");
         ObjC.msgSendVoidId(peer, Sels.addSubview, subview.peer());
     }
 
@@ -1158,9 +1159,10 @@ public class NSView extends NSResponder {
         return NSLayoutAnchor.wrap(ObjC.msgSendId(peer, Sels.centerYAnchor));
     }
 
-    /// addConstraint: — install a single layout constraint on this view.
+    /// addConstraint: — install a single layout constraint on this view (non-null).
     public void addConstraint(NSLayoutConstraint constraint) {
         ensureInit();
+        Bounds.nonNull(constraint, "addConstraint:");
         ObjC.msgSendVoidId(peer, Sels.addConstraint, constraint.peer());
     }
 
@@ -1169,9 +1171,10 @@ public class NSView extends NSResponder {
         for (NSLayoutConstraint c : constraints) addConstraint(c);
     }
 
-    /// removeConstraint: — remove a previously-added constraint.
+    /// removeConstraint: — remove a previously-added constraint (non-null).
     public void removeConstraint(NSLayoutConstraint constraint) {
         ensureInit();
+        Bounds.nonNull(constraint, "removeConstraint:");
         ObjC.msgSendVoidId(peer, Sels.removeConstraint, constraint.peer());
     }
 

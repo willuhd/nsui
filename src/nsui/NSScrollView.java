@@ -56,9 +56,12 @@ public final class NSScrollView extends NSView {
     // ---------------------------------------------------------------- instance API
 
     /// [scroll setDocumentView:] — the scrollable document (the table).
+    /// `documentView` is nullable in AppKit (nil detaches the document), so a null
+    /// view passes nil (matching setContentView: below); previously it threw a raw NPE.
     public void setDocumentView(NSView documentView) {
         try {
-            hVoidId.invokeExact(peer, ObjC.sel("setDocumentView:"), documentView.peer());
+            hVoidId.invokeExact(peer, ObjC.sel("setDocumentView:"),
+                    (MemorySegment) (documentView == null ? MemorySegment.NULL : documentView.peer()));
         } catch (Throwable t) {
             throw new RuntimeException("setDocumentView: failed", t);
         }

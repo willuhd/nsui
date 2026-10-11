@@ -1030,6 +1030,54 @@ public final class FoundationCoverageTest {
                 () -> mut.insertAttributedString(NSAttributedString.create("x"), 99));
         TestKit.expectThrows("NSMutableAttributedString delete past end rejected", IllegalArgumentException.class,
                 () -> mut.deleteCharactersInRange(new NSRange(0, 99)));
+        // --- the mutator/reader remainder the reader-only sweep left unguarded ---
+        NSArray seed = strArray("a", "b");
+        TestKit.expectThrows("NSArray subarrayWithRange past end rejected", IllegalArgumentException.class,
+                () -> seed.subarrayWithRange(new NSRange(1, 5)));
+        TestKit.expectThrows("NSArray insertObject:atIndex past end rejected", IllegalArgumentException.class,
+                () -> seed.insertObjectAtIndex(seed.objectAt(0), 3));
+        TestKit.expectThrows("NSArray removeObjectAtIndex(count) rejected", IllegalArgumentException.class,
+                () -> seed.removeObjectAtIndex(2));
+        TestKit.expectThrows("NSArray replaceObjectAtIndex(count) rejected", IllegalArgumentException.class,
+                () -> seed.replaceObjectAtIndex(2, seed.objectAt(0)));
+        TestKit.expectThrows("NSArray exchangeObjectAtIndex(count) rejected", IllegalArgumentException.class,
+                () -> seed.exchangeObjectAtIndex(0, 2));
+        TestKit.expectThrows("NSArray removeObjectsInRange past end rejected", IllegalArgumentException.class,
+                () -> seed.removeObjectsInRange(new NSRange(1, 5)));
+        TestKit.expectThrows("NSArray replaceObjectsInRange past end rejected", IllegalArgumentException.class,
+                () -> seed.replaceObjectsInRange(new NSRange(1, 5), strArray("z")));
+        TestKit.expectThrows("NSArray setObject:atIndexedSubscript(count) rejected", IllegalArgumentException.class,
+                () -> seed.setObjectAtIndexedSubscript(seed.objectAt(0), 2));
+        TestKit.expectThrows("NSMutableOrderedSet removeObjectAtIndex(count) rejected", IllegalArgumentException.class,
+                () -> NSMutableOrderedSet.orderedSet().removeObjectAtIndex(0));
+        NSMutableOrderedSet mos = NSMutableOrderedSet.orderedSet();
+        mos.addObject(seed.objectAt(0));
+        TestKit.expectThrows("NSMutableOrderedSet replaceObjectAtIndex past end rejected", IllegalArgumentException.class,
+                () -> mos.replaceObjectAtIndex(5, seed.objectAt(0)));
+        TestKit.expectThrows("NSMutableOrderedSet setObject:atIndex past end rejected", IllegalArgumentException.class,
+                () -> mos.setObjectAtIndex(seed.objectAt(0), 5));
+        TestKit.expectThrows("NSMutableOrderedSet removeObjectsInRange past end rejected", IllegalArgumentException.class,
+                () -> mos.removeObjectsInRange(new NSRange(0, 9)));
+        TestKit.expectThrows("NSAttributedString attribute:atIndex past end rejected", IllegalArgumentException.class,
+                () -> attr.attribute("NSForegroundColorAttributeName", 99, null));
+        TestKit.expectThrows("NSAttributedString attributesAtIndex past end rejected", IllegalArgumentException.class,
+                () -> attr.attributesAtIndexEffectiveRange(99, null));
+        TestKit.expectThrows("NSMutableAttributedString addAttribute range past end rejected",
+                IllegalArgumentException.class,
+                () -> mut.addAttribute("NSForegroundColorAttributeName", null, new NSRange(0, 99)));
+        TestKit.expectThrows("NSMutableAttributedString removeAttribute range past end rejected",
+                IllegalArgumentException.class,
+                () -> mut.removeAttribute("NSForegroundColorAttributeName", new NSRange(0, 99)));
+        TestKit.expectThrows("NSMutableAttributedString setAttributes range past end rejected",
+                IllegalArgumentException.class,
+                () -> mut.setAttributes(null, new NSRange(0, 99)));
+        TestKit.expectThrows("NSMutableAttributedString addAttributes range past end rejected",
+                IllegalArgumentException.class,
+                () -> mut.addAttributes(null, new NSRange(0, 99)));
+        TestKit.expectThrows("NSMutableData resetBytesInRange past end rejected", IllegalArgumentException.class,
+                () -> md.resetBytesInRange(new NSRange(2, 9)));
+        TestKit.expectThrows("NSMutableData replaceBytesInRange past end rejected", IllegalArgumentException.class,
+                () -> md.replaceBytesInRange(new NSRange(2, 9), new byte[9]));
         // NSDictionary dictionaryWithObjects:forKeys:count: has no wrapper in-file
         // (document-only, no guard) — no negative test. MTL colorAttachment
         // negatives live in MetalDepthStencilTest (owning suite).

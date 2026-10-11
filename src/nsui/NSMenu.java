@@ -262,10 +262,13 @@ public final class NSMenu extends NSObject {
     // ---- items ----
     public void addItem(NSMenuItem item) {
         ensureInit();
+        Bounds.nonNull(item, "addItem:");
         ObjC.msgSendVoidId(peer, Sels.addItem, item.peer());
     }
     public void insertItem(NSMenuItem item, long index) {
         ensureInit();
+        Bounds.nonNull(item, "insertItem:atIndex:");
+        Bounds.insertIndex(index, numberOfItems(), "insertItem:atIndex:");
         try { H.hVoidIdInt().invokeExact(peer, Sels.insertItem_atIndex, item.peer(), index); } catch (Throwable t) { throw new RuntimeException("insertItem:atIndex: failed", t); }
     }
     public NSMenuItem insertItemWithTitle(String title, String action, String keyEquivalent, long index) {
@@ -295,10 +298,12 @@ public final class NSMenu extends NSObject {
 
     public void removeItemAtIndex(long index) {
         ensureInit();
+        Bounds.index(index, numberOfItems(), "removeItemAtIndex:");
         ObjC.msgSendVoidLong(peer, Sels.removeItemAtIndex, index);
     }
     public void removeItem(NSMenuItem item) {
         ensureInit();
+        Bounds.nonNull(item, "removeItem:");
         ObjC.msgSendVoidId(peer, Sels.removeItem, item.peer());
     }
     public void removeAllItems() {
@@ -307,8 +312,10 @@ public final class NSMenu extends NSObject {
     }
 
     /// Attach a submenu to a menu item (the item lives in this menu) — [item setSubmenu:submenu].
+    /// `item` is required; `submenu` is nullable (nil detaches).
     public void setSubmenu(NSMenuItem item, NSMenu submenu) {
         ensureInit();
+        Bounds.nonNull(item, "setSubmenu:forItem: (item)");
         ObjC.msgSendVoidId(item.peer(), Sels.setSubmenu, (MemorySegment) (submenu == null ? MemorySegment.NULL : submenu.peer()));
     }
     /// [self setSubmenu:submenu forItem:item] — the NSMenu variant (both peers as ID).
@@ -355,6 +362,7 @@ public final class NSMenu extends NSObject {
     }
     public NSMenuItem itemAtIndex(long index) {
         ensureInit();
+        Bounds.index(index, numberOfItems(), "itemAtIndex:");
         try {
             MemorySegment p = (MemorySegment) H.hIdInt().invokeExact(peer, Sels.itemAtIndex, index);
             return NSMenuItem.wrap(p);
@@ -362,6 +370,7 @@ public final class NSMenu extends NSObject {
     }
     public long indexOfItem(NSMenuItem item) {
         ensureInit();
+        Bounds.nonNull(item, "indexOfItem:");
         try { return (long) H.hIntId().invokeExact(peer, Sels.indexOfItem, item.peer()); } catch (Throwable t) { throw new RuntimeException("indexOfItem: failed", t); }
     }
     public long indexOfItemWithTitle(String title) {
@@ -409,6 +418,7 @@ public final class NSMenu extends NSObject {
     }
     public void itemChanged(NSMenuItem item) {
         ensureInit();
+        Bounds.nonNull(item, "itemChanged:");
         ObjC.msgSendVoidId(peer, Sels.itemChanged, item.peer());
     }
 

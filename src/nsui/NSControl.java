@@ -225,9 +225,12 @@ public class NSControl extends NSView {
     }
 
     /// setAction: — the selector sent to the target on activation.
+    /// AppKit declares `action` nullable (nil clears it), so a null selector string
+    /// passes a NULL SEL; previously it threw a raw NPE from the selector lookup.
     public void setAction(String actionSelector) {
         ensureInit();
-        ObjC.msgSendVoidId(peer, Sels.setAction, ObjC.sel(actionSelector));
+        ObjC.msgSendVoidId(peer, Sels.setAction,
+                actionSelector == null ? MemorySegment.NULL : ObjC.sel(actionSelector));
     }
 
     /// [control action] — the action selector (SEL).
@@ -407,9 +410,15 @@ public class NSControl extends NSView {
         ensureInit();
         try { return (long) H.hSendActionOn().invokeExact(peer, Sels.sendActionOn, mask); } catch (Throwable t) { throw new RuntimeException("sendActionOn: failed", t); }
     }
+    /// sendAction:to: — `action` is a required SEL; `target` is nullable (nil means
+    /// the standard nil-target search), so a null target passes NULL.
     public boolean sendAction(MemorySegment action, MemorySegment target) {
         ensureInit();
-        try { return (boolean) H.hSendActionTo().invokeExact(peer, Sels.sendAction_to, action, target); } catch (Throwable t) { throw new RuntimeException("sendAction:to: failed", t); }
+        Bounds.nonNull(action, "sendAction:to: (action selector)");
+        try {
+            return (boolean) H.hSendActionTo().invokeExact(peer, Sels.sendAction_to, action,
+                    (MemorySegment) (target == null ? MemorySegment.NULL : target));
+        } catch (Throwable t) { throw new RuntimeException("sendAction:to: failed", t); }
     }
 
     // ---- take*ValueFrom: ----
@@ -548,19 +557,19 @@ ensureInit(); ObjC.msgSendVoidId(peer, Sels.performClick, (MemorySegment) (sende
         ensureInit();
         return ObjC.msgSendLong(peer, Sels.selectedTag);
     }
-    /// [control updateCell:] — mark the cell dirty (pass `MemorySegment.NULL` for nil).
+    /// [control updateCell:] — mark the cell dirty. `cell` is non-null in AppKit.
     public void updateCell(MemorySegment cell) {
-    ensureInit(); ObjC.msgSendVoidId(peer, Sels.updateCell, cell); }
-    /// [control updateCellInside:] — mark the cell's interior dirty.
+    ensureInit(); Bounds.nonNull(cell, "updateCell:"); ObjC.msgSendVoidId(peer, Sels.updateCell, cell); }
+    /// [control updateCellInside:] — mark the cell's interior dirty (non-null cell).
     public void updateCellInside(MemorySegment cell) {
-    ensureInit(); ObjC.msgSendVoidId(peer, Sels.updateCellInside, cell); }
-    /// [control drawCellInside:] — draw the cell's interior immediately.
+    ensureInit(); Bounds.nonNull(cell, "updateCellInside:"); ObjC.msgSendVoidId(peer, Sels.updateCellInside, cell); }
+    /// [control drawCellInside:] — draw the cell's interior immediately (non-null cell).
     public void drawCellInside(MemorySegment cell) {
-    ensureInit(); ObjC.msgSendVoidId(peer, Sels.drawCellInside, cell); }
-    /// [control drawCell:] — draw the cell immediately.
+    ensureInit(); Bounds.nonNull(cell, "drawCellInside:"); ObjC.msgSendVoidId(peer, Sels.drawCellInside, cell); }
+    /// [control drawCell:] — draw the cell immediately (non-null cell).
     public void drawCell(MemorySegment cell) {
-    ensureInit(); ObjC.msgSendVoidId(peer, Sels.drawCell, cell); }
-    /// [control selectCell:] — select the cell.
+    ensureInit(); Bounds.nonNull(cell, "drawCell:"); ObjC.msgSendVoidId(peer, Sels.drawCell, cell); }
+    /// [control selectCell:] — select the cell (non-null cell).
     public void selectCell(MemorySegment cell) {
-ensureInit(); ObjC.msgSendVoidId(peer, Sels.selectCell, cell); }
+ensureInit(); Bounds.nonNull(cell, "selectCell:"); ObjC.msgSendVoidId(peer, Sels.selectCell, cell); }
 }

@@ -44,9 +44,15 @@ public final class RunSuite {
         String logsDir = "out/logs";
         int jobs = Runtime.getRuntime().availableProcessors();
         long timeoutSecs = -1;
+        boolean strictSkips = false;
         for (int i = 0; i < args.length; i++) {
             String a = args[i];
-            if (a.equals("-j") || a.equals("--jobs")) {
+            if (a.equals("--strict-skips")) {
+                // CI opt-in: a skipped case makes the run fail, so "green" always
+                // means every test really ran. Default stays tolerant because many
+                // skips are environment-dependent (no GPU, headless session, focus).
+                strictSkips = true;
+            } else if (a.equals("-j") || a.equals("--jobs")) {
                 if (i + 1 >= args.length) {
                     System.out.println("missing count after " + a);
                     System.exit(1);
@@ -238,6 +244,13 @@ public final class RunSuite {
         }
         if (skipped != 0) {
             System.out.println("ALL RAN TESTS PASSED (" + skipped + " SKIPPED, UNPROVEN)");
+            if (strictSkips) {
+                System.out.println("TESTS FAILED (--strict-skips: " + skipped + " skipped case(s) not proven)");
+                System.exit(1);
+                return;
+            }
+            System.out.println("(exit 0: skipped cases are environment-dependent, not failures;"
+                    + " use --strict-skips to require all of them)");
             System.exit(0);
             return;
         }

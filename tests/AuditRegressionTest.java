@@ -25,7 +25,9 @@ import nsui.NSTableView;
 import nsui.NSValue;
 import nsui.NSView;
 import nsui.NSWindow;
+import nsui.objc.DelegateProxy;
 import nsui.objc.ObjC;
+import nsui.objc.Scratch;
 
 /// Regression guards for the bugs the audit found:
 /// - three public methods that sent selectors no class implements, aborting the JVM
@@ -236,6 +238,30 @@ public final class AuditRegressionTest {
                 TestKit.check(false, "Metal texture guard setup threw: " + t);
             }
         }
+
+        // --- 11. lifetime / leak oracles ---
+        // A runtime ObjC class pair is created once per (super, className) and never
+        // disposed, so creating the same delegate shape repeatedly must NOT grow the
+        // class-pair count (a caller-supplied dynamic className would leak one pair
+        // per call). Warm the shape first: the very first call necessarily creates
+        // its class pair, so the delta must be measured after that.
+        DelegateProxy.actionTarget("regressAction:", sender -> {});
+        int pairsBefore = DelegateProxy.classPairCount();
+        MemorySegment targetA = DelegateProxy.actionTarget("regressAction:", sender -> {});
+        MemorySegment targetB = DelegateProxy.actionTarget("regressAction:", sender -> {});
+        TestKit.check(DelegateProxy.classPairCount() == pairsBefore,
+                "same delegate shape reuses one class pair (before=" + pairsBefore
+                        + ", after=" + DelegateProxy.classPairCount() + ")");
+        TestKit.check(targetA != null && targetB != null && targetA.address() != targetB.address(),
+                "action targets are distinct instances sharing that class pair");
+        // The per-thread bump buffer must not spill to the immortal global arena for a
+        // turn that fits inside it (spilledBytes is the un-reclaimable part).
+        long spilledBefore = Scratch.spilledBytes();
+        Scratch.beginTurn();
+        for (int i = 0; i < 100; i++) ObjC.rect(i, i, 1, 1);
+        Scratch.endTurn();
+        TestKit.check(Scratch.spilledBytes() == spilledBefore,
+                "a small turn does not spill to the global arena (spilled=" + Scratch.spilledBytes() + ")");
 
         TestKit.end();
     }

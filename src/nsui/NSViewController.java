@@ -273,6 +273,8 @@ public class NSViewController extends NSObject {
     /// [vc presentViewController:animator:].
     public void presentViewController(NSViewController controller, NSObject animator) {
         ensureInit();
+        Bounds.nonNull(controller, "presentViewController:animator:");
+        Bounds.nonNull(animator, "presentViewController:animator:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.ID));
             h.invokeExact(peer, ObjC.sel("presentViewController:animator:"), controller.peer(), animator.peer());
@@ -284,6 +286,7 @@ public class NSViewController extends NSObject {
     /// [vc dismissViewController:].
     public void dismissViewController(NSViewController controller) {
         ensureInit();
+        Bounds.nonNull(controller, "dismissViewController:");
         try {
             handles.hSetView().invokeExact(peer, ObjC.sel("dismissViewController:"), controller.peer());
         } catch (Throwable t) {
@@ -326,6 +329,7 @@ public class NSViewController extends NSObject {
     /// [vc presentViewControllerAsSheet:].
     public void presentViewControllerAsSheet(NSViewController controller) {
         ensureInit();
+        Bounds.nonNull(controller, "presentViewControllerAsSheet:");
         try {
             handles.hSetView().invokeExact(peer, ObjC.sel("presentViewControllerAsSheet:"), controller.peer());
         } catch (Throwable t) {
@@ -336,6 +340,7 @@ public class NSViewController extends NSObject {
     /// [vc presentViewControllerAsModalWindow:].
     public void presentViewControllerAsModalWindow(NSViewController controller) {
         ensureInit();
+        Bounds.nonNull(controller, "presentViewControllerAsModalWindow:");
         try {
             handles.hSetView().invokeExact(peer, ObjC.sel("presentViewControllerAsModalWindow:"), controller.peer());
         } catch (Throwable t) {
@@ -365,11 +370,13 @@ public class NSViewController extends NSObject {
         }
     }
 
-    /// [vc setChildViewControllers:].
+    /// [vc setChildViewControllers:]. AppKit tolerates nil here (it empties the
+    /// child list), so a null Java array passes nil rather than throwing.
     public void setChildViewControllers(NSArray children) {
         ensureInit();
         try {
-            handles.hSetView().invokeExact(peer, ObjC.sel("setChildViewControllers:"), children.peer());
+            handles.hSetView().invokeExact(peer, ObjC.sel("setChildViewControllers:"),
+                    (MemorySegment) (children == null ? MemorySegment.NULL : children.peer()));
         } catch (Throwable t) {
             throw new RuntimeException("setChildViewControllers: failed", t);
         }
@@ -378,6 +385,7 @@ public class NSViewController extends NSObject {
     /// [vc addChildViewController:].
     public void addChildViewController(NSViewController child) {
         ensureInit();
+        Bounds.nonNull(child, "addChildViewController:");
         try {
             handles.hSetView().invokeExact(peer, ObjC.sel("addChildViewController:"), child.peer());
         } catch (Throwable t) {
@@ -393,6 +401,11 @@ public class NSViewController extends NSObject {
     /// [vc insertChildViewController:atIndex:].
     public void insertChildViewController(NSViewController child, long index) {
         ensureInit();
+        Bounds.nonNull(child, "insertChildViewController:atIndex:");
+        NSArray existing = childViewControllers();
+        if (existing != null) {
+            Bounds.insertIndex(index, existing.count(), "insertChildViewController:atIndex:");
+        }
         try {
             handles.hVoidIdInt().invokeExact(peer, ObjC.sel("insertChildViewController:atIndex:"), child.peer(), index);
         } catch (Throwable t) {
@@ -408,6 +421,7 @@ public class NSViewController extends NSObject {
     /// [vc preferredContentSizeDidChangeForViewController:].
     public void preferredContentSizeDidChangeForViewController(NSViewController controller) {
         ensureInit();
+        Bounds.nonNull(controller, "preferredContentSizeDidChangeForViewController:");
         try {
             handles.hSetView().invokeExact(peer, ObjC.sel("preferredContentSizeDidChangeForViewController:"), controller.peer());
         } catch (Throwable t) {

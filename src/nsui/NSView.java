@@ -542,7 +542,7 @@ public class NSView extends NSResponder {
     public static final long trackingEnabledDuringMouseDrag = 1L << 10;
 
     // ---- resolved once per process (rule: resolve-once, invokeExact on hot paths) ----
-    private record Handles(MethodHandle hInitFrame, MethodHandle hSetFrame, MethodHandle hNeedsRect, MethodHandle hAutoMask, MethodHandle hBacking, MethodHandle hConvBacking, MethodHandle hGetDouble, MethodHandle hSetDouble, MethodHandle hGetSize, MethodHandle hSetSize, MethodHandle hObjectAtIndex, MethodHandle hSetBounds, MethodHandle hRegisterForDraggedTypes, MethodHandle hBeginDraggingSession, MethodHandle hRepForCache, MethodHandle hCacheDisplay, MethodHandle hVoidId, MethodHandle hGetPoint, MethodHandle hSetPoint, MethodHandle hBoolId, MethodHandle hIntId, MethodHandle hVoidIdId, MethodHandle hIdRect, MethodHandle hIdPoint, MethodHandle hRectBool, MethodHandle hVoidPointId, MethodHandle hBoolIdId, MethodHandle hSizeSize, MethodHandle hIdIdId) {}
+    private record Handles(MethodHandle hInitFrame, MethodHandle hSetFrame, MethodHandle hNeedsRect, MethodHandle hAutoMask, MethodHandle hBacking, MethodHandle hConvBacking, MethodHandle hGetDouble, MethodHandle hSetDouble, MethodHandle hGetSize, MethodHandle hSetSize, MethodHandle hObjectAtIndex, MethodHandle hSetBounds, MethodHandle hRegisterForDraggedTypes, MethodHandle hBeginDraggingSession, MethodHandle hRepForCache, MethodHandle hCacheDisplay, MethodHandle hVoidId, MethodHandle hSetPoint, MethodHandle hBoolId, MethodHandle hVoidIdId, MethodHandle hIdRect, MethodHandle hIdPoint, MethodHandle hBoolIdId, MethodHandle hSizeSize, MethodHandle hIdIdId) {}
     private static volatile Handles H;
 
     /// Wrap a native NSView id (e.g. a box's contentView) as an NSView.
@@ -617,35 +617,31 @@ public class NSView extends NSResponder {
             throw new RuntimeException("class_addMethod acceptsFirstResponder failed");
         }
         Handles h = new Handles(
-                ObjC.handle(Sig.of(Ret.ID, Arg.RECT)),
-                ObjC.handle(Sig.of(Ret.VOID, Arg.RECT)),
-                ObjC.handle(Sig.of(Ret.VOID, Arg.RECT)),
-                ObjC.handle(Sig.of(Ret.VOID, Arg.INT)),
-                ObjC.handle(Sig.of(Ret.DOUBLE)),
-                ObjC.handle(Sig.of(Ret.RECT, Arg.RECT)),
-                ObjC.handle(Sig.of(Ret.DOUBLE)),
-                ObjC.handle(Sig.of(Ret.VOID, Arg.DOUBLE)),
-                ObjC.handle(Sig.of(Ret.SIZE)),
-                ObjC.handle(Sig.of(Ret.VOID, Arg.SIZE)),
-                ObjC.handle(Sig.of(Ret.ID, Arg.INT)),
-                ObjC.handle(Sig.of(Ret.VOID, Arg.RECT)),
-                ObjC.handle(Sig.of(Ret.VOID, Arg.ID)),
-                ObjC.handle(Sig.of(Ret.ID, Arg.ID, Arg.ID, Arg.ID)),
-                ObjC.handle(Sig.of(Ret.ID, Arg.RECT)),
-                ObjC.handle(Sig.of(Ret.VOID, Arg.RECT, Arg.ID)),
-                ObjC.handle(Sig.of(Ret.VOID, Arg.ID)),
-                ObjC.handle(Sig.of(Ret.POINT)),
-                ObjC.handle(Sig.of(Ret.VOID, Arg.POINT)),
-                ObjC.handle(Sig.of(Ret.BOOL, Arg.ID)),
-                ObjC.handle(Sig.of(Ret.INT, Arg.ID)),
-                ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.ID)),
-                ObjC.handle(Sig.of(Ret.ID, Arg.RECT)),
-                ObjC.handle(Sig.of(Ret.ID, Arg.POINT)),
-                ObjC.handle(Sig.of(Ret.VOID, Arg.RECT, Arg.BOOL)),
-                ObjC.handle(Sig.of(Ret.VOID, Arg.POINT, Arg.ID)),
-                ObjC.handle(Sig.of(Ret.BOOL, Arg.ID, Arg.ID)),
-                ObjC.handle(Sig.of(Ret.SIZE, Arg.SIZE)),
-                ObjC.handle(Sig.of(Ret.ID, Arg.ID, Arg.ID)));
+                ObjC.handle(Sig.of(Ret.ID, Arg.RECT)),   // hInitFrame
+                ObjC.handle(Sig.of(Ret.VOID, Arg.RECT)),   // hSetFrame
+                ObjC.handle(Sig.of(Ret.VOID, Arg.RECT)),   // hNeedsRect
+                ObjC.handle(Sig.of(Ret.VOID, Arg.INT)),   // hAutoMask
+                ObjC.handle(Sig.of(Ret.DOUBLE)),   // hBacking
+                ObjC.handle(Sig.of(Ret.RECT, Arg.RECT)),   // hConvBacking
+                ObjC.handle(Sig.of(Ret.DOUBLE)),   // hGetDouble
+                ObjC.handle(Sig.of(Ret.VOID, Arg.DOUBLE)),   // hSetDouble
+                ObjC.handle(Sig.of(Ret.SIZE)),   // hGetSize
+                ObjC.handle(Sig.of(Ret.VOID, Arg.SIZE)),   // hSetSize
+                ObjC.handle(Sig.of(Ret.ID, Arg.INT)),   // hObjectAtIndex
+                ObjC.handle(Sig.of(Ret.VOID, Arg.RECT)),   // hSetBounds
+                ObjC.handle(Sig.of(Ret.VOID, Arg.ID)),   // hRegisterForDraggedTypes
+                ObjC.handle(Sig.of(Ret.ID, Arg.ID, Arg.ID, Arg.ID)),   // hBeginDraggingSession
+                ObjC.handle(Sig.of(Ret.ID, Arg.RECT)),   // hRepForCache
+                ObjC.handle(Sig.of(Ret.VOID, Arg.RECT, Arg.ID)),   // hCacheDisplay
+                ObjC.handle(Sig.of(Ret.VOID, Arg.ID)),   // hVoidId
+                ObjC.handle(Sig.of(Ret.VOID, Arg.POINT)),   // hSetPoint
+                ObjC.handle(Sig.of(Ret.BOOL, Arg.ID)),   // hBoolId
+                ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.ID)),   // hVoidIdId
+                ObjC.handle(Sig.of(Ret.ID, Arg.RECT)),   // hIdRect
+                ObjC.handle(Sig.of(Ret.ID, Arg.POINT)),   // hIdPoint
+                ObjC.handle(Sig.of(Ret.BOOL, Arg.ID, Arg.ID)),   // hBoolIdId
+                ObjC.handle(Sig.of(Ret.SIZE, Arg.SIZE)),   // hSizeSize
+                ObjC.handle(Sig.of(Ret.ID, Arg.ID, Arg.ID)));   // hIdIdId
             Sels.populate();
         H = h;
 }
@@ -714,6 +710,10 @@ public class NSView extends NSResponder {
     /// requires `enableMouseTracking` on the view AND
     /// `NSWindow.setAcceptsMouseMovedEvents(true)` on its window;
     /// `onMouseEntered`/`onMouseExited` need only `enableMouseTracking`.
+    ///
+    /// CONTRACT: throwing out of any of these aborts the VM — an exception cannot
+    /// cross the FFM upcall stub, exactly as with `Drawable.draw` and
+    /// `DelegateProxy`'s callbacks. Catch mouse-event errors inside the callback.
     public interface MouseListener {
         /// Mouse button went down inside the view.
         default void onMouseDown(NSView v, NSEvent e) {}
@@ -735,6 +735,10 @@ public class NSView extends NSResponder {
     /// continuing the responder chain toward the window. A key listener also
     /// flips the view's `acceptsFirstResponder` to true so it can actually
     /// receive keys.
+    ///
+    /// CONTRACT: throwing out of any of these aborts the VM — an exception cannot
+    /// cross the FFM upcall stub, exactly as with `Drawable.draw` and
+    /// `DelegateProxy`'s callbacks. Catch key-event errors inside the callback.
     public interface KeyListener {
         /// Key pressed. Return true if handled (stops the chain).
         default boolean onKeyDown(NSView v, NSEvent e) { return false; }
@@ -746,20 +750,38 @@ public class NSView extends NSResponder {
 
     /// Register the mouse callback surface for this view (null unregisters).
     /// Only views created via `NSView.create` carry the Java-implemented event
-    /// overrides — native controls (NSButton etc.) dispatch their own events.
+    /// overrides — native controls (NSButton etc.) dispatch their own events — so
+    /// registering a listener on any other view is rejected. Storing one there
+    /// could never be delivered (no override consults the map) and could outlive
+    /// the view, letting a recycled native address misdeliver events to it.
     public void setMouseListener(MouseListener listener) {
         ensureInit();
-        if (listener == null) MOUSE_LISTENERS.remove(peer.address());
-        else MOUSE_LISTENERS.put(peer.address(), listener);
+        if (listener == null) {
+            MOUSE_LISTENERS.remove(peer.address());
+            return;
+        }
+        if (!isKindOfClass(drawableClass)) {
+            throw new IllegalArgumentException(
+                    "setMouseListener: only NSView.create views carry the Java event overrides");
+        }
+        MOUSE_LISTENERS.put(peer.address(), listener);
     }
 
     /// Register the keyboard callback surface for this view (null unregisters).
     /// While a key listener is registered the view reports
-    /// `acceptsFirstResponder == true`, letting it take key focus.
+    /// `acceptsFirstResponder == true`, letting it take key focus. Same
+    /// `NSView.create`-only restriction as `setMouseListener`.
     public void setKeyListener(KeyListener listener) {
         ensureInit();
-        if (listener == null) KEY_LISTENERS.remove(peer.address());
-        else KEY_LISTENERS.put(peer.address(), listener);
+        if (listener == null) {
+            KEY_LISTENERS.remove(peer.address());
+            return;
+        }
+        if (!isKindOfClass(drawableClass)) {
+            throw new IllegalArgumentException(
+                    "setKeyListener: only NSView.create views carry the Java event overrides");
+        }
+        KEY_LISTENERS.put(peer.address(), listener);
     }
 
     /// Total live mouse + key listeners across all views (diagnostics/tests:
@@ -1436,6 +1458,7 @@ public class NSView extends NSResponder {
     /// [view isDescendantOf:] — YES when the receiver is inside view's subtree.
     public boolean isDescendantOf(NSView view) {
         ensureInit();
+        Bounds.nonNull(view, "isDescendantOf:");
         try {
             return (boolean) H.hBoolId().invokeExact(peer, Sels.isDescendantOf, view.peer());
         } catch (Throwable t) {
@@ -1446,6 +1469,7 @@ public class NSView extends NSResponder {
     /// [view ancestorSharedWithView:] — nearest common ancestor (nil-safe).
     public NSView ancestorSharedWithView(NSView view) {
         ensureInit();
+        Bounds.nonNull(view, "ancestorSharedWithView:");
         return NSView.wrap(ObjC.msgSendIdId(peer, Sels.ancestorSharedWithView, view.peer()));
     }
 
@@ -1455,9 +1479,12 @@ public class NSView extends NSResponder {
         return NSArray.wrap(ObjC.msgSendId(peer, Sels.subviews));
     }
 
-    /// [view setSubviews:].
+    /// [view setSubviews:]. AppKit requires a non-nil array here ("invalid
+    /// parameter not satisfying: newSubviews != nil"), so a null argument fails
+    /// fast as an IAE.
     public void setSubviews(NSArray views) {
         ensureInit();
+        Bounds.nonNull(views, "setSubviews:");
         try {
             H.hVoidId().invokeExact(peer, Sels.setSubviews, views.peer());
         } catch (Throwable t) {
@@ -1480,6 +1507,8 @@ public class NSView extends NSResponder {
     /// [view replaceSubview:with:].
     public void replaceSubview(NSView oldView, NSView newView) {
         ensureInit();
+        Bounds.nonNull(oldView, "replaceSubview:with:");
+        Bounds.nonNull(newView, "replaceSubview:with:");
         try {
             H.hVoidIdId().invokeExact(peer, Sels.replaceSubview_with, oldView.peer(), newView.peer());
         } catch (Throwable t) {
@@ -1528,12 +1557,14 @@ public class NSView extends NSResponder {
     /// [view didAddSubview:].
     public void didAddSubview(NSView subview) {
         ensureInit();
+        Bounds.nonNull(subview, "didAddSubview:");
         ObjC.msgSendVoidId(peer, Sels.didAddSubview, subview.peer());
     }
 
     /// [view willRemoveSubview:].
     public void willRemoveSubview(NSView subview) {
         ensureInit();
+        Bounds.nonNull(subview, "willRemoveSubview:");
         ObjC.msgSendVoidId(peer, Sels.willRemoveSubview, subview.peer());
     }
 
@@ -1774,6 +1805,7 @@ public class NSView extends NSResponder {
     /// [view displayRectIgnoringOpacity:inContext:].
     public void displayRectIgnoringOpacityInContext(NSRect rect, NSGraphicsContext context) {
         ensureInit();
+        Bounds.nonNull(context, "displayRectIgnoringOpacity:inContext:");
         try {
             H.hCacheDisplay().invokeExact(peer, Sels.displayRectIgnoringOpacity_inContext, rect.toSegment(), context.peer());
         } catch (Throwable t) {
@@ -1922,6 +1954,7 @@ public class NSView extends NSResponder {
     /// [view autoscroll:] — auto-scroll during a drag given an event.
     public boolean autoscroll(NSEvent event) {
         ensureInit();
+        Bounds.nonNull(event, "autoscroll:");
         try {
             return (boolean) H.hBoolId().invokeExact(peer, Sels.autoscroll, event.peer());
         } catch (Throwable t) {
@@ -1972,12 +2005,15 @@ public class NSView extends NSResponder {
     /// [view menuForEvent:] — context menu for an event (may be nil).
     public NSMenu menuForEvent(NSEvent event) {
         ensureInit();
+        Bounds.nonNull(event, "menuForEvent:");
         return NSMenu.wrap(ObjC.msgSendIdId(peer, Sels.menuForEvent, event.peer()));
     }
 
     /// [view willOpenMenu:withEvent:].
     public void willOpenMenu(NSMenu menu, NSEvent event) {
         ensureInit();
+        Bounds.nonNull(menu, "willOpenMenu:withEvent:");
+        Bounds.nonNull(event, "willOpenMenu:withEvent:");
         try {
             H.hVoidIdId().invokeExact(peer, Sels.willOpenMenu_withEvent, menu.peer(), event.peer());
         } catch (Throwable t) {
@@ -1988,6 +2024,7 @@ public class NSView extends NSResponder {
     /// [view didCloseMenu:withEvent:] (event may be nil).
     public void didCloseMenu(NSMenu menu, NSEvent event) {
         ensureInit();
+        Bounds.nonNull(menu, "didCloseMenu:withEvent:");
         try {
             H.hVoidIdId().invokeExact(peer, Sels.didCloseMenu_withEvent, menu.peer(), (MemorySegment) (event == null ? MemorySegment.NULL : event.peer()));
         } catch (Throwable t) {
@@ -2310,6 +2347,7 @@ public class NSView extends NSResponder {
     /// [view writeEPSInsideRect:toPasteboard:].
     public void writeEPSInsideRectToPasteboard(NSRect rect, NSPasteboard pasteboard) {
         ensureInit();
+        Bounds.nonNull(pasteboard, "writeEPSInsideRect:toPasteboard:");
         try {
             H.hCacheDisplay().invokeExact(peer, Sels.writeEPSInsideRect_toPasteboard, rect.toSegment(), pasteboard.peer());
         } catch (Throwable t) {
@@ -2320,6 +2358,7 @@ public class NSView extends NSResponder {
     /// [view writePDFInsideRect:toPasteboard:].
     public void writePDFInsideRectToPasteboard(NSRect rect, NSPasteboard pasteboard) {
         ensureInit();
+        Bounds.nonNull(pasteboard, "writePDFInsideRect:toPasteboard:");
         try {
             H.hCacheDisplay().invokeExact(peer, Sels.writePDFInsideRect_toPasteboard, rect.toSegment(), pasteboard.peer());
         } catch (Throwable t) {
@@ -2384,6 +2423,7 @@ public class NSView extends NSResponder {
     /// [view enterFullScreenMode:withOptions:] (options may be nil).
     public boolean enterFullScreenMode(NSScreen screen, NSDictionary options) {
         ensureInit();
+        Bounds.nonNull(screen, "enterFullScreenMode:withOptions:");
         try {
             return (boolean) H.hBoolIdId().invokeExact(peer, Sels.enterFullScreenMode_withOptions,
                     screen.peer(), (MemorySegment) (options == null ? MemorySegment.NULL : options.peer()));
@@ -2411,12 +2451,14 @@ public class NSView extends NSResponder {
     /// [view addGestureRecognizer:].
     public void addGestureRecognizer(NSGestureRecognizer recognizer) {
         ensureInit();
+        Bounds.nonNull(recognizer, "addGestureRecognizer:");
         ObjC.msgSendVoidId(peer, Sels.addGestureRecognizer, recognizer.peer());
     }
 
     /// [view removeGestureRecognizer:].
     public void removeGestureRecognizer(NSGestureRecognizer recognizer) {
         ensureInit();
+        Bounds.nonNull(recognizer, "removeGestureRecognizer:");
         ObjC.msgSendVoidId(peer, Sels.removeGestureRecognizer, recognizer.peer());
     }
 
@@ -2429,12 +2471,14 @@ public class NSView extends NSResponder {
     /// [view addTrackingArea:].
     public void addTrackingArea(NSTrackingArea area) {
         ensureInit();
+        Bounds.nonNull(area, "addTrackingArea:");
         ObjC.msgSendVoidId(peer, Sels.addTrackingArea, area.peer());
     }
 
     /// [view removeTrackingArea:].
     public void removeTrackingArea(NSTrackingArea area) {
         ensureInit();
+        Bounds.nonNull(area, "removeTrackingArea:");
         ObjC.msgSendVoidId(peer, Sels.removeTrackingArea, area.peer());
     }
 
@@ -2453,6 +2497,7 @@ public class NSView extends NSResponder {
     /// [view addCursorRect:cursor:].
     public void addCursorRect(NSRect rect, NSCursor cursor) {
         ensureInit();
+        Bounds.nonNull(cursor, "addCursorRect:cursor:");
         try {
             H.hCacheDisplay().invokeExact(peer, Sels.addCursorRect_cursor, rect.toSegment(), cursor.peer());
         } catch (Throwable t) {
@@ -2463,6 +2508,7 @@ public class NSView extends NSResponder {
     /// [view removeCursorRect:cursor:].
     public void removeCursorRect(NSRect rect, NSCursor cursor) {
         ensureInit();
+        Bounds.nonNull(cursor, "removeCursorRect:cursor:");
         try {
             H.hCacheDisplay().invokeExact(peer, Sels.removeCursorRect_cursor, rect.toSegment(), cursor.peer());
         } catch (Throwable t) {

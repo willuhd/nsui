@@ -68,7 +68,10 @@ public final class NSColorWell extends NSControl {
     // ---------------------------------------------------------------- instance API
 
     /// [well setColor:] — the well's current color (accepts a live NSColor).
+    /// AppKit requires a non-nil color here ("Invalid parameter not satisfying:
+    /// aColor != nil"), so a null argument fails fast as an IAE.
     public void setColor(NSColor color) {
+        Bounds.nonNull(color, "setColor:");
         try {
             hSetColor.invokeExact(peer, ObjC.sel("setColor:"), color.peer());
         } catch (Throwable t) {

@@ -194,6 +194,7 @@ public class NSClipView extends NSView {
     /// [clip viewFrameChanged:] — notification that the frame changed.
     public void viewFrameChanged(NSObject notification) {
         ensureInit();
+        Bounds.nonNull(notification, "viewFrameChanged:");
         try {
             handles.hVoidId().invokeExact(peer, ObjC.sel("viewFrameChanged:"), notification.peer());
         } catch (Throwable t) {
@@ -204,6 +205,7 @@ public class NSClipView extends NSView {
     /// [clip viewBoundsChanged:] — notification that the bounds changed.
     public void viewBoundsChanged(NSObject notification) {
         ensureInit();
+        Bounds.nonNull(notification, "viewBoundsChanged:");
         try {
             handles.hVoidId().invokeExact(peer, ObjC.sel("viewBoundsChanged:"), notification.peer());
         } catch (Throwable t) {
@@ -214,6 +216,7 @@ public class NSClipView extends NSView {
     /// [clip autoscroll:] — auto-scroll given an event.
     public boolean autoscroll(NSEvent event) {
         ensureInit();
+        Bounds.nonNull(event, "autoscroll:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.BOOL, Arg.ID));
             return (boolean) h.invokeExact(peer, ObjC.sel("autoscroll:"), event.peer());

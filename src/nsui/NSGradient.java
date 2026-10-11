@@ -67,6 +67,7 @@ public final class NSGradient extends NSObject {
     /// [[NSGradient alloc] initWithColors:] with NSArray of NSColor
     public static NSGradient initWithColors(NSArray colors) {
         ensureInit();
+        Bounds.nonNull(colors, "initWithColors:");
         MemorySegment alloc = ObjC.msgSendId(ObjC.cls("NSGradient"), ObjC.sel("alloc"));
         try {
             MemorySegment p = (MemorySegment) handles.hInitColors().invokeExact(alloc, ObjC.sel("initWithColors:"), colors.peer());

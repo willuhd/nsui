@@ -65,7 +65,10 @@ public class NSData extends NSObject {
     }
 
     /// dataWithBytesNoCopy variant — same as dataWithBytes for minimal.
+    /// A negative `length` is a caller error (it used to surface as a
+    /// `NegativeArraySizeException` from the slice allocation).
     public static NSData dataWithBytes(byte[] bytes, long length) {
+        if (length < 0) throw new IllegalArgumentException("dataWithBytes:length: negative length " + length);
         if (bytes == null) bytes = new byte[0];
         long len = Math.min(length, bytes.length);
         byte[] slice = new byte[(int) len];

@@ -310,6 +310,7 @@ public class NSTableView extends NSView {
     /// [table addTableColumn:] — append a column.
     public void addTableColumn(NSTableColumn column) {
         ensureInit();
+        Bounds.nonNull(column, "addTableColumn:");
         try {
             H.hVoidId().invokeExact(peer, Sels.addTableColumn, column.peer());
         } catch (Throwable t) {
@@ -320,6 +321,7 @@ public class NSTableView extends NSView {
     /// [table removeTableColumn:] — remove a column.
     public void removeTableColumn(NSTableColumn column) {
         ensureInit();
+        Bounds.nonNull(column, "removeTableColumn:");
         try {
             H.hVoidId().invokeExact(peer, Sels.removeTableColumn, column.peer());
         } catch (Throwable t) {

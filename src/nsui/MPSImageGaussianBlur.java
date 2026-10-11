@@ -41,6 +41,7 @@ public final class MPSImageGaussianBlur extends NSObject {
     /// initWithDevice:sigma:.
     public static MPSImageGaussianBlur create(MTLDevice device, float sigma) {
         ensureInit();
+        Bounds.nonNull(device, "initWithDevice:sigma:");
         try {
             MemorySegment p = ObjC.msgSendId(ObjC.cls("MPSImageGaussianBlur"), ObjC.sel("alloc"));
             p = (MemorySegment) handles.hInit().invokeExact(p, ObjC.sel("initWithDevice:sigma:"),
@@ -54,6 +55,9 @@ public final class MPSImageGaussianBlur extends NSObject {
 
     /// encodeToCommandBuffer:sourceTexture:destinationTexture:.
     public void encode(MTLCommandBuffer buffer, MTLTexture source, MTLTexture destination) {
+        Bounds.nonNull(buffer, "encodeToCommandBuffer:sourceTexture:destinationTexture:");
+        Bounds.nonNull(source, "encodeToCommandBuffer:sourceTexture:destinationTexture:");
+        Bounds.nonNull(destination, "encodeToCommandBuffer:sourceTexture:destinationTexture:");
         try {
             handles.hEncode().invokeExact(peer, ObjC.sel("encodeToCommandBuffer:sourceTexture:destinationTexture:"),
                     buffer.peer(), source.peer(), destination.peer());

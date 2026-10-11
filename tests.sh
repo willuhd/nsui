@@ -4,7 +4,9 @@
 # Compiles the toolkit + tests from scratch and runs the full suite.
 #
 # Usage:
-#   ./tests.sh                 # all tests, parallel jobs, honest exit code (0 iff all pass)
+#   ./tests.sh                 # all tests, parallel jobs; exit 0 iff no test FAILED
+#                              #   (environment-dependent skips are reported, not fatal;
+#                              #    pass --strict-skips to require every test to run)
 #   ./tests.sh Bench           # only tests whose name contains "Bench"
 #   ./tests.sh -j 4            # all tests on 4 jobs
 #   ./tests.sh Bench -j 1      # filtered tests, one job (sequential)

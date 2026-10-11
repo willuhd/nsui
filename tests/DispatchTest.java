@@ -49,6 +49,7 @@ public class DispatchTest {
         test1_backgroundToMain();
         test2_ordering();
         test3_mainToMain();
+        test4_concurrentStress();
 
         TestKit.end();
     }
@@ -136,5 +137,40 @@ public class DispatchTest {
 
         boolean ok = latch.getCount() == 0 && ran.get() == 1;
         TestKit.check(ok, "test3: latchFired=" + (latch.getCount() == 0) + " ran=" + ran.get());
+    }
+
+    /// Many threads enqueue concurrently while the main thread drains. Every block
+    /// must run exactly once, on the main thread: this exercises the shared block +
+    /// PENDING queue under real cross-thread contention, which the three sequential
+    /// cases above never do.
+    private static void test4_concurrentStress() throws InterruptedException {
+        final int threads = 4;
+        final int perThread = 50;
+        final int total = threads * perThread;
+        System.out.println("[test4] concurrent stress: " + threads + " threads x " + perThread + " blocks");
+        AtomicInteger ran = new AtomicInteger(0);
+        AtomicInteger offMain = new AtomicInteger(0);
+        CountDownLatch latch = new CountDownLatch(total);
+
+        Thread[] pool = new Thread[threads];
+        for (int t = 0; t < threads; t++) {
+            pool[t] = new Thread(() -> {
+                for (int i = 0; i < perThread; i++) {
+                    Dispatch.onMain(() -> {
+                        ran.incrementAndGet();
+                        if (Thread.currentThread().threadId() != mainThreadId) offMain.incrementAndGet();
+                        latch.countDown();
+                    });
+                }
+            }, "dispatch-stress-" + t);
+            pool[t].start();
+        }
+        for (Thread t : pool) t.join(5000);
+
+        waitFor(latch, 15);
+
+        TestKit.check(latch.getCount() == 0 && ran.get() == total && offMain.get() == 0,
+                "test4: every concurrent block ran exactly once on main (ran=" + ran.get()
+                        + "/" + total + ", offMain=" + offMain.get() + ", still-pending=" + latch.getCount() + ")");
     }
 }

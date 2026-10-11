@@ -116,6 +116,7 @@ public final class NSGridView extends NSView {
     /// [grid addRowWithViews:]
     public NSObject addRowWithViews(NSArray views) {
         ensureInit();
+        Bounds.nonNull(views, "addRowWithViews:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.ID));
             MemorySegment r = (MemorySegment) h.invokeExact(peer, ObjC.sel("addRowWithViews:"), views.peer());
@@ -128,6 +129,7 @@ public final class NSGridView extends NSView {
     /// [grid addColumnWithViews:]
     public NSObject addColumnWithViews(NSArray views) {
         ensureInit();
+        Bounds.nonNull(views, "addColumnWithViews:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.ID));
             MemorySegment c = (MemorySegment) h.invokeExact(peer, ObjC.sel("addColumnWithViews:"), views.peer());
@@ -182,6 +184,7 @@ public final class NSGridView extends NSView {
     /// +[NSGridView gridViewWithViews:] — grid sized to hold the given rows of views.
     public static NSGridView gridViewWithViews(NSArray rows) {
         ensureInit();
+        Bounds.nonNull(rows, "gridViewWithViews:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.ID));
             MemorySegment p = (MemorySegment) h.invokeExact(ObjC.cls("NSGridView"), ObjC.sel("gridViewWithViews:"), rows.peer());
@@ -195,6 +198,7 @@ public final class NSGridView extends NSView {
     /// [grid indexOfRow:] — index of the row (O(numberOfRows)).
     public long indexOfRow(NSObject row) {
         ensureInit();
+        Bounds.nonNull(row, "indexOfRow:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.INT, Arg.ID));
             return (long) h.invokeExact(peer, ObjC.sel("indexOfRow:"), row.peer());
@@ -206,6 +210,7 @@ public final class NSGridView extends NSView {
     /// [grid indexOfColumn:] — index of the column (O(numberOfColumns)).
     public long indexOfColumn(NSObject column) {
         ensureInit();
+        Bounds.nonNull(column, "indexOfColumn:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.INT, Arg.ID));
             return (long) h.invokeExact(peer, ObjC.sel("indexOfColumn:"), column.peer());
@@ -229,6 +234,7 @@ public final class NSGridView extends NSView {
     /// [grid cellForView:] — the cell containing the view or its ancestor (may be nil).
     public NSObject cellForView(NSView view) {
         ensureInit();
+        Bounds.nonNull(view, "cellForView:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.ID));
             MemorySegment c = (MemorySegment) h.invokeExact(peer, ObjC.sel("cellForView:"), view.peer());
@@ -241,6 +247,8 @@ public final class NSGridView extends NSView {
     /// [grid insertRowAtIndex:withViews:].
     public NSObject insertRowAtIndexWithViews(long index, NSArray views) {
         ensureInit();
+        Bounds.nonNull(views, "insertRowAtIndex:withViews:");
+        Bounds.insertIndex(index, numberOfRows(), "insertRowAtIndex:withViews:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.INT, Arg.ID));
             MemorySegment r = (MemorySegment) h.invokeExact(peer, ObjC.sel("insertRowAtIndex:withViews:"), index, views.peer());
@@ -274,6 +282,8 @@ public final class NSGridView extends NSView {
     /// [grid insertColumnAtIndex:withViews:].
     public NSObject insertColumnAtIndexWithViews(long index, NSArray views) {
         ensureInit();
+        Bounds.nonNull(views, "insertColumnAtIndex:withViews:");
+        Bounds.insertIndex(index, numberOfColumns(), "insertColumnAtIndex:withViews:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.INT, Arg.ID));
             MemorySegment c = (MemorySegment) h.invokeExact(peer, ObjC.sel("insertColumnAtIndex:withViews:"), index, views.peer());

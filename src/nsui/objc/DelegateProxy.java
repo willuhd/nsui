@@ -96,6 +96,13 @@ public final class DelegateProxy {
 
     // A registry of created class pairs, keyed by "super\0className" for delegates and
     // a fixed key for action targets — lazily populated in ensureInit()/on first use.
+    //
+    // IMPORTANT: a class pair is created once per distinct key and NEVER disposed
+    // (there is no objc_disposeClassPair). Callers must therefore pass a
+    // compile-time-constant `className`: a name that varies per call (e.g.
+    // "Delegate_" + nanoTime()) leaks a whole ObjC class pair — method lists and
+    // all — on every call, which dwarfs the per-instance leak. `classPairCount()`
+    // exposes the size for tests and diagnostics.
     private static final ConcurrentMap<String, RuntimeClass> CLASSES = new ConcurrentHashMap<>();
 
     // ------------------------------------------------------------------ runtime state
@@ -467,6 +474,14 @@ public final class DelegateProxy {
     /// Number of live delegate/action instances (diagnostics/tests).
     public static int registrySize() {
         return REGISTRY.size();
+    }
+
+    /// Number of runtime ObjC class pairs created so far (diagnostics/tests). One per
+    /// distinct `(superClassName, className)`; it must not grow when the same
+    /// delegate shape is created repeatedly. See `CLASSES` for why `className` must
+    /// be a constant.
+    public static int classPairCount() {
+        return CLASSES.size();
     }
 
     // ------------------------------------------------------------------ internals

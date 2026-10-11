@@ -20,6 +20,16 @@ import java.util.function.Consumer;
 /// Ported from NSUI2 MacTheme.java to nsui3 idioms: no static initializer,
 /// lazy ensureInit() synchronized, handles from NsuiForeign.THEME descriptors.
 /// Observes CFPreferences AppleInterfaceStyle via Distributed + Darwin notify centers.
+///
+/// **Exception policy — a deliberate third rule.** Every other Java-callback
+/// boundary in this toolkit is fail-fast: an exception crossing an FFM upcall stub
+/// aborts the VM (see `DelegateProxy`, `NSView.Drawable`, `Dispatch.onMain`,
+/// `CATransaction.setCompletionBlock`). This boundary is the exception, and it is
+/// intentional: it fires from a CoreFoundation notification on a worker thread, so
+/// a throwing theme listener would kill the process asynchronously, far from the
+/// code that caused it. Listener exceptions are therefore SWALLOWED here — the
+/// observer keeps running and the failure is not reported. Do not rely on this
+/// boundary to surface listener bugs; keep theme listeners defensive.
 public final class ThemeObserver {
 
     private static final String PREFERENCE_KEY = "AppleInterfaceStyle";

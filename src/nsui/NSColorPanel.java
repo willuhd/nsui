@@ -225,7 +225,11 @@ public final class NSColorPanel extends NSObject {
     /// maximumLinearExposure.
     public double maximumLinearExposure() {
         ensureInit();
-        if (!respondsToSelector(ObjC.sel("maximumLinearExposure"))) return 0.0;   // version-gated
+        // Absent default 1.0: NSColorPanel.h documents the property as defaulting to 1 (the
+        // neutral exposure multiplier). Measured note: on macOS 26 a fresh sharedColorPanel
+        // reports 0.0 live, so this default only applies on hosts where the selector is absent —
+        // it now matches NSColorWell.maximumLinearExposure, which had 1.0.
+        if (!respondsToSelector(ObjC.sel("maximumLinearExposure"))) return 1.0;   // version-gated
         try { return (double) ObjC.handle(Sig.of(Ret.DOUBLE)).invokeExact(peer, ObjC.sel("maximumLinearExposure")); }
         catch (Throwable t) { throw new RuntimeException("maximumLinearExposure failed", t); }
     }

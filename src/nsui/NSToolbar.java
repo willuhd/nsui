@@ -285,6 +285,7 @@ public final class NSToolbar extends NSObject {
     }
     /// removeItemWithItemIdentifier: with raw id.
     public void removeItemWithItemIdentifier(MemorySegment identifier) {
+        if (!respondsToSelector(ObjC.sel("removeItemWithItemIdentifier:"))) return;   // macOS 15+
         ObjC.msgSendVoidId(peer, ObjC.sel("removeItemWithItemIdentifier:"),
                 (MemorySegment) (identifier == null ? MemorySegment.NULL : identifier));
     }
@@ -341,6 +342,7 @@ public final class NSToolbar extends NSObject {
     /// list is a caller error rather than "clear" — pass an empty list to clear.
     public void setItemIdentifiers(java.util.List<String> identifiers) {
         Bounds.nonNull(identifiers, "setItemIdentifiers:");
+        if (!respondsToSelector(ObjC.sel("setItemIdentifiers:"))) return;   // macOS 15+
         MemorySegment arr = ObjC.msgSendId(ObjC.cls("NSMutableArray"), ObjC.sel("array"));
         for (String s : identifiers) if (s != null) ObjC.msgSendVoidId(arr, ObjC.sel("addObject:"), ObjC.nsstring(s));
         ObjC.msgSendVoidId(peer, ObjC.sel("setItemIdentifiers:"), arr);
@@ -354,6 +356,7 @@ public final class NSToolbar extends NSObject {
     }
     /// setCenteredItemIdentifiers: with NSSet id.
     public void setCenteredItemIdentifiers(MemorySegment identifiers) {
+        if (!respondsToSelector(ObjC.sel("setCenteredItemIdentifiers:"))) return;   // macOS 13+
         ObjC.msgSendVoidId(peer, ObjC.sel("setCenteredItemIdentifiers:"), (MemorySegment) (identifiers == null ? MemorySegment.NULL : identifiers));
     }
 

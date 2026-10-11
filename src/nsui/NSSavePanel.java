@@ -259,6 +259,7 @@ public class NSSavePanel extends NSObject {
     }
     /// setCurrentContentType: with raw UTType id (nil resets to first allowed type).
     public void setCurrentContentType(MemorySegment type) {
+        if (!respondsToSelector(ObjC.sel("setCurrentContentType:"))) return;   // macOS 15+
         ObjC.msgSendVoidId(peer, ObjC.sel("setCurrentContentType:"), (MemorySegment) (type == null ? MemorySegment.NULL : type));
     }
 

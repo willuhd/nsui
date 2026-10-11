@@ -381,6 +381,7 @@ public final class NSPopover extends NSObject {
     /// showRelativeToToolbarItem: with raw id.
     public void showRelativeToToolbarItem(MemorySegment item) {
         ensureInit();
+        if (!respondsToSelector(ObjC.sel("showRelativeToToolbarItem:"))) return;   // macOS 14+
         try {
             handles.hSetId().invokeExact(peer, ObjC.sel("showRelativeToToolbarItem:"),
                     (MemorySegment) (item == null ? MemorySegment.NULL : item));

@@ -251,7 +251,9 @@ public class NSTextField extends NSControl {
     // ---- allowsWritingTools / allowsWritingToolsAffordance (BOOL shapes in vocabulary) ----
     /// [field allowsWritingTools] — field editor works with Writing Tools (15.2+).
     public boolean allowsWritingTools() {
-        if (!respondsToSelector(ObjC.sel("allowsWritingTools"))) return false;   // macOS 15.2+
+        // Absent default is TRUE: NSTextField.h says "Default is YES" and a live field returns
+        // true. Returning false here would be the opposite of the API's documented default.
+        if (!respondsToSelector(ObjC.sel("allowsWritingTools"))) return true;   // macOS 15.2+
         return ObjC.msgSendBool(peer, ObjC.sel("allowsWritingTools"));
     }
     /// [field setAllowsWritingTools:].

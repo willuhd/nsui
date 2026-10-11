@@ -1895,6 +1895,47 @@ public final class AuditRegressionTest {
             TestKit.check(false, "NaN geometry block threw: " + t);
         }
 
+        // --- 8be. overload twins of guarded methods + the two absent-default corrections ---
+        // The twin scan keys on names, so a *Peer() getter's setter and a same-name overload of a
+        // guarded method slipped through; the verifier listed seven. On this host every selector
+        // exists, so each call must reach native.
+        try {
+            nsui.NSToolbar otb = nsui.NSToolbar.create("probe.otb");
+            TestKit.noThrow("NSToolbar.setItemIdentifiers(List) is guarded but live (macOS 15+)",
+                    () -> otb.setItemIdentifiers(java.util.List.of("a", "b")));
+            TestKit.noThrow("NSToolbar.setCenteredItemIdentifiers(peer) is guarded but live (13+)",
+                    () -> otb.setCenteredItemIdentifiers(nsui.NSSet.set().peer()));
+            TestKit.noThrow("NSToolbar.removeItemWithItemIdentifier(peer) is guarded but live (15+)",
+                    () -> otb.removeItemWithItemIdentifier(ObjC.nsstring("a")));
+            nsui.NSToolbarItem oti = nsui.NSToolbarItem.create("probe.oti");
+            TestKit.noThrow("NSToolbarItem.setPossibleLabels(peer) is guarded but live (13+)",
+                    () -> oti.setPossibleLabels(MemorySegment.NULL));
+            TestKit.noThrow("NSToolbarItem.setBadge(peer) is guarded but live (26+)",
+                    () -> oti.setBadge(MemorySegment.NULL));
+            nsui.NSSavePanel osp = nsui.NSSavePanel.savePanel();
+            TestKit.noThrow("NSSavePanel.setCurrentContentType(peer) is guarded but live (15+)",
+                    () -> osp.setCurrentContentType(MemorySegment.NULL));
+            // showRelativeToToolbarItem(peer) is deliberately NOT called: it shows UI (its own doc
+            // says so). Its selector presence is what the guard reads, so pin that instead.
+            nsui.NSPopover opop = nsui.NSPopover.create();
+            TestKit.check(opop.respondsToSelector(ObjC.sel("showRelativeToToolbarItem:")),
+                    "the popover implements showRelativeToToolbarItem: on this host (guard passes)");
+        } catch (Throwable t) {
+            TestKit.check(false, "overload-twin block threw: " + t);
+        }
+        try {
+            // Absent-default corrections: the header defaults are observable live on this host, so
+            // assert them rather than the guard's own value.
+            nsui.NSTextField wf = nsui.NSTextField.create(new NSRect(0, 0, 100, 24));
+            TestKit.check(wf.allowsWritingTools(),
+                    "a fresh field allows Writing Tools (header: default YES)");
+            TestKit.check(nsui.NSColor.redColor().linearExposure() == 1.0,
+                    "a non-HDR color's linearExposure is 1.0 (got "
+                            + nsui.NSColor.redColor().linearExposure() + ")");
+        } catch (Throwable t) {
+            TestKit.check(false, "default-correction block threw: " + t);
+        }
+
         // --- 8z. type-confusion guards on the raw collection-view setters ---
         // AppKit does NOT raise a type error here, it either asserts isKindOfClass: or
         // messages the object: setCollectionViewLayout: with a plain NSView raised

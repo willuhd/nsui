@@ -492,10 +492,12 @@ public final class NSSegmentedControl extends NSControl {
     /// [control borderShape] — NSControlBorderShape (26.0+; Automatic 0, Capsule 1, RoundedRectangle 2, Circle 3).
     /// Shapes (INT ()) / (VOID,INT) are in the vocabulary.
     public long borderShape() {
+        if (!respondsToSelector(ObjC.sel("borderShape"))) return 0L;   // macOS 26+
         return ObjC.msgSendLong(peer, ObjC.sel("borderShape"));
     }
     /// [control setBorderShape:].
     public void setBorderShape(long shape) {
+        if (!respondsToSelector(ObjC.sel("setBorderShape:"))) return;   // macOS 26+
         ObjC.msgSendVoidLong(peer, ObjC.sel("setBorderShape:"), shape);
     }
 

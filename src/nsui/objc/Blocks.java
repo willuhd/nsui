@@ -118,6 +118,9 @@ public final class Blocks {
     /// block's address.
     public static MemorySegment blockWithStub(MemorySegment stub) {
         ensureInit();
+        if (stub == null || stub.address() == 0) {
+            throw new IllegalArgumentException("blockWithStub: stub must be a non-null upcall stub");
+        }
 
         // Block struct size = header (32) + descriptor (32) = 64.
         long totalSize = 64;

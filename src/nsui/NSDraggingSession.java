@@ -40,7 +40,10 @@ public final class NSDraggingSession extends NSObject {
         if (handles != null) return;
         // point/size handles may not exist but we try to cache point getter
         MethodHandle tmp_hDraggingLocation = null;
-        try { tmp_hDraggingLocation = ObjC.handle(Sig.of(Ret.POINT)); } catch (Exception ignored) { tmp_hDraggingLocation = null; }
+        // Do NOT swallow the vocabulary-miss: ObjC.handle is the toolkit's single
+        // source of truth for "add this Sig entry to the vocabulary"; hiding it turned
+        // a clear diagnostic into a puzzling "draggingLocation handle is null" later.
+        tmp_hDraggingLocation = ObjC.handle(Sig.of(Ret.POINT));
         handles = new Handles(ObjC.handle(Sig.of(Ret.ID)), ObjC.handle(Sig.of(Ret.INT)), tmp_hDraggingLocation);
     }
 

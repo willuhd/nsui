@@ -351,7 +351,11 @@ public final class ObjC {
     /// a per-class handle, minus ~8 lines per call site. Throws when native
     /// construction fails or returns nil (never returns a null peer).
     public static MemorySegment newView(String className, nsui.NSRect frame) {
-        MemorySegment p = msgSendId(cls(className), sel("alloc"));
+        MemorySegment clsSeg = cls(className);
+        if (clsSeg == null || clsSeg.address() == 0) {
+            throw new IllegalStateException("class not found: " + className);
+        }
+        MemorySegment p = msgSendId(clsSeg, sel("alloc"));
         try {
             p = (MemorySegment) handle(Sig.of(Ret.ID, Arg.RECT))
                     .invokeExact(p, sel("initWithFrame:"), frame.toSegment());

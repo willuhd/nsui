@@ -77,6 +77,16 @@ public final class Scratch {
         }
     }
 
+    /// Count of `endTurn()` calls with no matching `beginTurn()` (diagnostics/tests).
+    /// Underflow is a caller bug: it rewinds the buffer and re-hands out slices that
+    /// earlier callers may still hold, so it must be detectable rather than only
+    /// documented.
+    private static final java.util.concurrent.atomic.AtomicLong UNDERFLOWS =
+            new java.util.concurrent.atomic.AtomicLong();
+
+    /// Number of underflowing `endTurn()` calls seen so far on all threads.
+    public static long underflowCount() { return UNDERFLOWS.get(); }
+
     /// Start a turn. May nest; only the outermost matching `endTurn` resets the buffer.
     public static void beginTurn() {
         DEPTH.set(DEPTH.get() + 1);
@@ -93,6 +103,7 @@ public final class Scratch {
     /// are only valid until the next rewind in any case (see ALLOCATION TIERS).
     public static void endTurn() {
         int d = DEPTH.get();
+        if (d <= 0) UNDERFLOWS.incrementAndGet();   // no matching beginTurn: a caller bug
         if (d <= 1) {
             DEPTH.set(0);
             BUFFERS.get().offset = 0;

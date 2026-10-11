@@ -236,8 +236,13 @@ public final class DelegateProxy {
         if (superClass == null || superClass.address() == 0) {
             return;
         }
-        MemorySegment superStruct = ObjC.superStruct(self, superClass);
-        ObjC.msgSendSuperVoid(superStruct, sel);
+        Scratch.beginTurn();
+        try {
+            MemorySegment superStruct = ObjC.superStruct(self, superClass);
+            ObjC.msgSendSuperVoid(superStruct, sel);
+        } finally {
+            Scratch.endTurn();
+        }
     }
 
     /// FFM upcall target: `-(NSMethodSignature *)methodSignatureForSelector:(SEL)aSelector`.

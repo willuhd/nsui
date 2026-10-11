@@ -266,6 +266,7 @@ public final class Sig {
         of(Ret.BOOL, Arg.RANGE),                            // contains / isEqual with range
         of(Ret.INT, Arg.RANGE),                             // length/count helpers with range
         of(Ret.RANGE, Arg.ID),                              // rangeOfString: (id) -> range
+        of(Ret.RANGE, Arg.INT),                             // rangeOfComposedCharacterSequenceAtIndex: (int) -> range
         of(Ret.RANGE, Arg.ID, Arg.INT),                     // rangeOfString:options: (id,int)->range
         of(Ret.ID, Arg.RANGE, Arg.ID),                      // replaceCharactersInRange:withString: (range,id)->void/id variant
         of(Ret.VOID, Arg.RANGE, Arg.ID),                     // replaceCharactersInRange:withString: void variant

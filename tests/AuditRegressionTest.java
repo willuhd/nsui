@@ -1052,6 +1052,25 @@ public final class AuditRegressionTest {
             TestKit.check(false, "stack-view priority block threw: " + t);
         }
 
+        // --- 8ac. NSString.rangeOfComposedCharacterSequenceAtIndex: (newly implementable) ---
+        // Was omitted for a missing of(RANGE,INT) shape. Measured on "abc": index 2 returns
+        // {2,1}; index 3 (== length) and 5 abort with NSInvalidArgumentException.
+        try {
+            nsui.NSString s3 = nsui.NSString.of("abc");
+            nsui.NSRange r0 = s3.rangeOfComposedCharacterSequenceAtIndex(0);
+            TestKit.check(r0.location() == 0 && r0.length() == 1,
+                    "composed range at 0 is {0,1} (got {" + r0.location() + "," + r0.length() + "})");
+            nsui.NSRange r2 = s3.rangeOfComposedCharacterSequenceAtIndex(2);
+            TestKit.check(r2.location() == 2 && r2.length() == 1,
+                    "composed range at 2 is {2,1} (got {" + r2.location() + "," + r2.length() + "})");
+            TestKit.expectThrows("rangeOfComposedCharacterSequenceAtIndex(length) rejects",
+                    IllegalArgumentException.class, () -> s3.rangeOfComposedCharacterSequenceAtIndex(3));
+            TestKit.expectThrows("rangeOfComposedCharacterSequenceAtIndex(-1) rejects",
+                    IllegalArgumentException.class, () -> s3.rangeOfComposedCharacterSequenceAtIndex(-1));
+        } catch (Throwable t) {
+            TestKit.check(false, "composed-character-range block threw: " + t);
+        }
+
         // --- 8z. type-confusion guards on the raw collection-view setters ---
         // AppKit does NOT raise a type error here, it either asserts isKindOfClass: or
         // messages the object: setCollectionViewLayout: with a plain NSView raised

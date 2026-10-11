@@ -15,7 +15,8 @@ import static nsui.objc.Sig.Ret;
 /// vocabulary is wrapped below. OMITTED — compare:options:(:range::locale:) (needs
 /// of(INT,ID,INT), not in Sig); rangeOfString:options:range:(:locale:) (needs
 /// of(RANGE,ID,INT,RANGE), not in Sig); rangeOfCharacterFromSet:options:range: (same);
-/// rangeOfComposedCharacterSequenceAtIndex: (needs of(RANGE,INT), not in Sig);
+/// (rangeOfComposedCharacterSequenceAtIndex: is implemented below — of(RANGE,INT) is now
+/// registered);
 /// commonPrefixWithString:options: and descriptionWithLocale:indent: (need of(ID,ID,INT),
 /// not in Sig); stringByPaddingToLength:withString:startingAtIndex: (needs
 /// of(ID,INT,ID,INT), not in Sig); stringByReplacingOccurrencesOfString:...options:range:
@@ -304,6 +305,26 @@ public final class NSString extends NSObject {
             return NSRange.fromSegment(seg);
         } catch (Throwable t) {
             throw new RuntimeException("rangeOfString: failed", t);
+        }
+    }
+
+    /// [string rangeOfComposedCharacterSequenceAtIndex:] — the composed-character range
+    /// containing that index.
+    ///
+    /// AppKit raises NSInvalidArgumentException for an index >= length (verified on a
+    /// 3-character string: index 2 returns {2,1} while 3 and 5 abort, exit 134), so the index
+    /// is bounded here. Needed of(RANGE,INT), which was absent from the Sig vocabulary.
+    public NSRange rangeOfComposedCharacterSequenceAtIndex(long index) {
+        ensureInit();
+        Bounds.index(index, length(), "rangeOfComposedCharacterSequenceAtIndex:");
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.RANGE, Arg.INT));
+            MemorySegment seg = (MemorySegment) h.invokeExact(
+                    ObjC.structSlot(),
+                    peer, ObjC.sel("rangeOfComposedCharacterSequenceAtIndex:"), index);
+            return NSRange.fromSegment(seg);
+        } catch (Throwable t) {
+            throw new RuntimeException("rangeOfComposedCharacterSequenceAtIndex: failed", t);
         }
     }
 

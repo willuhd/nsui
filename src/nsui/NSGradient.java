@@ -13,9 +13,10 @@ import static nsui.objc.Sig.Ret;
 /// NSGradient — a color transition (linear or radial) drawn in the current context.
 /// Thin stateless wrapper: each method maps to one objc_msgSend selector.
 /// OMITTED: initWithColorsAndLocations: (C varargs need manual va_list
-/// marshalling); drawFromPoint:toPoint:options: + drawFromCenter:radius:toCenter:
-/// radius:options: (multi-struct shapes NOT in the Sig vocabulary — verified by
-/// grep, use drawInRect:angle:); drawInRect:relativeCenterPosition: +
+/// marshalling); drawFromPoint:toPoint:options: IS implemented below (its
+/// (VOID,POINT,POINT,INT) shape is now registered) while drawFromCenter:radius:toCenter:
+/// radius:options: still is not (multi-struct shape absent from the Sig vocabulary —
+/// verified by grep, use drawInRect:angle:); drawInRect:relativeCenterPosition: +
 /// drawInBezierPath:relativeCenterPosition: (shapes (VOID,RECT,POINT) and
 /// (VOID,ID,POINT) likewise unregistered); getColor:location:atIndex:
 /// (raw CGFloat/NSInteger out-params).

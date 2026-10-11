@@ -63,7 +63,7 @@ public final class NSTabViewController extends NSViewController {
     /// [tabViewController setSelectedTabViewItemIndex:] — -1 clears the selection.
     ///
     /// Measured on a 2-item controller: 0 and 1 are accepted, while 2 and 5 raise
-    /// NSInternalInconsistencyException ("Selected index (5) is outside of the valid range")
+    /// NSInternalInconsistencyException ("Selected index (5) is outside of the valid bounds (0 - 2)")
     /// and abort the JVM. -1 is accepted and is the ONLY value a 0-item controller accepts
     /// (index 0 aborts there). Valid range: -1 .. count-1 — like
     /// NSSegmentedControl.setSelectedSegment:, and unlike NSTabView.selectTabViewItemAtIndex:,

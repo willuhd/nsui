@@ -78,14 +78,22 @@ If a signature is missing, the build succeeds but the binary fails at runtime wi
 ### Platform baseline
 
 The suite is developed and run on **macOS 26.x on arm64**. No minimum deployment target is
-declared, and there is no `operatingSystemVersion` runtime check anywhere: APIs that arrived in
-a later release are either guarded per method with `respondsToSelector:` (the getter returns a
-default and the setter is a no-op when the selector is absent) or, for a handful of families,
-sent unconditionally and therefore expected to abort on a host that predates them.
+declared, and there is no `operatingSystemVersion` runtime check anywhere: the guard is
+per-method `respondsToSelector:`.
 
-So on an older macOS the guarded accessors degrade silently while the unguarded ones can fault.
-If you need to support an older release, the guard pattern to copy is
-`NSButton.setTintProminence:`/`borderShape` (macOS 26 selectors, no-op / 0 when absent).
+Every accessor whose documentation names a macOS version newer than 11 is guarded — the getter
+returns that API's "absent" default and the setter is a no-op. The guard pattern to copy is
+`NSButton.setTintProminence:`/`borderShape` (macOS 26 selectors, no-op / 0 when absent). This is
+enforced by inspection rather than by the runtime: an automated scan of the version annotations
+in `src/nsui` is part of the audit tooling and currently reports no unguarded site (only prose
+false positives such as a style-mask value that happens to read like a version).
+
+A `try`/`catch` around the send is NOT a guard, and was the source of a real bug here: an
+unrecognized selector raises an ObjC exception that terminates the process (measured, exit 134)
+before any Java `catch` can run.
+
+APIs older than macOS 11 are sent unconditionally, so on a host that predates them they still
+fault — the guards exist to keep later-release additions from doing so.
 
 ### Project status
 

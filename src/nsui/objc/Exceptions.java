@@ -61,7 +61,10 @@ public final class Exceptions {
 
     private Exceptions() {}
 
-    /// Install the preprocessor stub once; build supporting handles. Must run at runtime.
+    /// Install the preprocessor stub once and build the supporting handles. Must run
+    /// at runtime, and AFTER `ObjC.init()`: it builds a downcall handle through
+    /// `ObjC.handle`, so calling it first throws and leaves this class un-initialized
+    /// (correct fail-fast, but the requirement has to be stated).
     public static void ensureInit() {
         if (INIT) return;
         ensureInitLocked();

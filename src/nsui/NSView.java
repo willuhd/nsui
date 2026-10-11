@@ -693,8 +693,15 @@ public class NSView extends NSResponder {
         MOUSE_LISTENERS.remove(addr);
         KEY_LISTENERS.remove(addr);
         TRACKING_VIEWS.remove(addr);
-        MemorySegment superStruct = ObjC.superStruct(self, ObjC.classGetSuperclass(drawableClass));
-        ObjC.msgSendSuperVoid(superStruct, sel);
+        // `superStruct` allocates from the turn-scoped scratch tier; open a turn so a
+        // thread that never pumps events does not spill this into the immortal arena.
+        Scratch.beginTurn();
+        try {
+            MemorySegment superStruct = ObjC.superStruct(self, ObjC.classGetSuperclass(drawableClass));
+            ObjC.msgSendSuperVoid(superStruct, sel);
+        } finally {
+            Scratch.endTurn();
+        }
     }
 
     /// Number of live drawables (diagnostics/tests: must return to 0 after views are released).
@@ -803,6 +810,15 @@ public class NSView extends NSResponder {
     /// `setAcceptsMouseMovedEvents(true)`.
     public void enableMouseTracking() {
         ensureInit();
+        // Same NSView.create-only restriction as setMouseListener/setKeyListener: the
+        // tracking area's callbacks reach Java through the NSUIViewImpl overrides, and
+        // TRACKING_VIEWS is only cleaned by that subclass's dealloc — so an entry for a
+        // wrapped stock view would leak and could make a later view at a recycled
+        // address silently skip installing its tracking area.
+        if (!isKindOfClass(drawableClass)) {
+            throw new IllegalArgumentException(
+                    "enableMouseTracking: only NSView.create views carry the Java event overrides");
+        }
         // Mark the view as tracked only AFTER the area is really installed: marking
         // first meant a throw from NSTrackingArea.create/addTrackingArea left the
         // address in the set forever, and every retry was then a silent no-op, so

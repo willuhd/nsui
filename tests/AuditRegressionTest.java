@@ -738,6 +738,53 @@ public final class AuditRegressionTest {
             TestKit.check(false, "nonnull-object guard block threw: " + t);
         }
 
+        // --- 8v. NSCollectionView.moveItemAtIndexPath: needs EXISTING items ---
+        // Verified natively on a POPULATED 2-item view: moving from (5,0) or to (2,0) / (0,1)
+        // raises NSInternalInconsistencyException and aborts, while (0,0)->(1,0) and
+        // (1,0)->(0,0) are accepted. The insert/delete/reload siblings tolerate an
+        // out-of-range path (also verified on the populated view), so only move is guarded.
+        try {
+            nsui.NSCollectionView mcv = nsui.NSCollectionView.create(new NSRect(0, 0, 200, 100));
+            // The layout is required before setContent: without it AppKit aborts with
+            // "NSCollectionView item prototype must not be nil" (measured while writing this).
+            mcv.setCollectionViewLayout(ObjC.msgSendId(ObjC.cls("NSCollectionViewFlowLayout"), ObjC.sel("new")));
+            MemorySegment arr = ObjC.msgSendId(ObjC.cls("NSMutableArray"), ObjC.sel("array"));
+            for (int i = 0; i < 2; i++) {
+                MemorySegment item = ObjC.msgSendId(
+                        ObjC.msgSendId(ObjC.cls("NSCollectionViewItem"), ObjC.sel("alloc")),
+                        ObjC.sel("init"));
+                ObjC.msgSendVoidId(arr, ObjC.sel("addObject:"), item);
+            }
+            mcv.setContent(arr);
+            TestKit.check(mcv.numberOfItemsInSection(0) == 2,
+                    "populated collection view reports 2 items (got " + mcv.numberOfItemsInSection(0) + ")");
+            var pathHandle = ObjC.handle(nsui.objc.Sig.of(nsui.objc.Sig.Ret.ID,
+                    nsui.objc.Sig.Arg.INT, nsui.objc.Sig.Arg.INT));
+            java.util.function.BiFunction<Long, Long, MemorySegment> path = (it, sec) -> {
+                try {
+                    return (MemorySegment) pathHandle.invokeExact(ObjC.cls("NSIndexPath"),
+                            ObjC.sel("indexPathForItem:inSection:"), it.longValue(), sec.longValue());
+                } catch (Throwable t) {
+                    throw new RuntimeException(t);
+                }
+            };
+            MemorySegment p00 = path.apply(0L, 0L);
+            MemorySegment p10 = path.apply(1L, 0L);
+            MemorySegment p20 = path.apply(2L, 0L);
+            MemorySegment p50 = path.apply(5L, 0L);
+            MemorySegment p01 = path.apply(0L, 1L);
+            TestKit.noThrow("moveItemAtIndexPath (0,0)->(1,0) is legal",
+                    () -> mcv.moveItemAtIndexPath(p00, p10));
+            TestKit.expectThrows("moveItemAtIndexPath (0,0)->(2,0) rejects (destination == count)",
+                    IllegalArgumentException.class, () -> mcv.moveItemAtIndexPath(p00, p20));
+            TestKit.expectThrows("moveItemAtIndexPath (5,0)->(0,0) rejects (no such source)",
+                    IllegalArgumentException.class, () -> mcv.moveItemAtIndexPath(p50, p00));
+            TestKit.expectThrows("moveItemAtIndexPath (0,0)->(0,1) rejects (no such section)",
+                    IllegalArgumentException.class, () -> mcv.moveItemAtIndexPath(p00, p01));
+        } catch (Throwable t) {
+            TestKit.check(false, "collection-view move-guard block threw: " + t);
+        }
+
         // --- 8p. range boundaries the first sweep got wrong ---
         // An adversarial review re-probed these. smartInsert* abort only on an out-of-range
         // LOCATION ({3,1} and {2,5} on a 3-char view are accepted natively, so the earlier

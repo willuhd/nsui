@@ -611,12 +611,14 @@ public class NSWindow extends NSResponder {
     /// Wrap an existing window peer.
     ///
     /// LIFETIME WARNING: this wrapper does not own the window. Windows created by this
-    /// toolkit set `releasedWhenClosed = false` (see `create`), but a window you get from
-    /// AppKit (a sheet, a panel returned by an API) keeps the AppKit default of
-    /// `releasedWhenClosed = true`, so closing it can deallocate the native object while
-    /// this wrapper still holds the peer — a use-after-free on the next message. The
-    /// per-wrapper `closed` flag only covers `close()` on this same wrapper (and five
-    /// accessors check it); `retain()` the peer before wrapping something you did not
+    /// toolkit set `releasedWhenClosed = false` (see `create`/`createPanel`). A plain
+    /// NSWindow you get from AppKit still defaults to `releasedWhenClosed = true`
+    /// (measured: NSWindow true; NSPanel, NSColorPanel, NSFontPanel, NSOpenPanel and
+    /// NSSavePanel all default to false), so closing such a window can deallocate the
+    /// native object while this wrapper still holds the peer — a use-after-free on the next
+    /// message. The per-wrapper `closed` flag only covers `close()` on this same wrapper
+    /// (five accessors check it; `close()` sets it even when a delegate vetoes
+    /// `windowShouldClose:`). Call `keepAlive()` before wrapping a plain window you did not
     /// create.
     public static NSWindow wrap(MemorySegment peer) {
         return (peer == null || peer.address() == 0) ? null : new NSWindow(peer);

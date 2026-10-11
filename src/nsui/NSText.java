@@ -280,8 +280,15 @@ public class NSText extends NSView {
         }
     }
 
-    /// [text scrollRangeToVisible:]
+    /// [text scrollRangeToVisible:] — only a negative LOCATION is fatal.
+    /// Measured: {100,1} and {0,-1} are tolerated (it clamps), while {-1,5} / {-1,0} raise
+    /// NSInvalidArgumentException ("-[NSCountableTextRange initWithRange:] initialized with
+    /// invalid range {18446744073709551615, …}", exit 134). Guard that half only.
     public void scrollRangeToVisible(NSRange range) {
+        if (range == null) {
+            throw new IllegalArgumentException("scrollRangeToVisible: null range");
+        }
+        Bounds.nonNegative(range.location(), "scrollRangeToVisible: (location)");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.RANGE));
             h.invokeExact(peer, ObjC.sel("scrollRangeToVisible:"), range.toSegment());

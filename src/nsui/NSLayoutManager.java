@@ -521,7 +521,23 @@ public final class NSLayoutManager extends NSObject {
     }
 
     /// [layoutManager setTextContainer:forGlyphRange:]
+    /// Guarded against the measured abort: the native `_replaceElements` measures the
+    /// NON-EMPTY part against the run storage, so an out-of-range pair raises
+    /// NSRangeException ("replaced range {2, 5} extends beyond current run storage size 3";
+    /// negative locations too, exit 134). An empty range is accepted at any location —
+    /// {4,0} on a 3-glyph manager is fine — which is why Bounds.range (loc + len <= count)
+    /// is the wrong helper here: it would reject {4,0}.
     public void setTextContainerForGlyphRange(NSTextContainer container, NSRange glyphRange) {
+        if (glyphRange == null) {
+            throw new IllegalArgumentException("setTextContainer:forGlyphRange: null range");
+        }
+        long glyphs = numberOfGlyphs();
+        long loc = glyphRange.location();
+        long len = glyphRange.length();
+        if (loc < 0 || len < 0 || (len > 0 && len > glyphs - loc)) {
+            throw new IllegalArgumentException("setTextContainer:forGlyphRange: range {"
+                    + loc + ", " + len + "} out of bounds (glyphs " + glyphs + ")");
+        }
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.RANGE));
             h.invokeExact(peer, ObjC.sel("setTextContainer:forGlyphRange:"),

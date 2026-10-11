@@ -48,9 +48,10 @@ public final class RunSuite {
         for (int i = 0; i < args.length; i++) {
             String a = args[i];
             if (a.equals("--strict-skips")) {
-                // CI opt-in: a skipped case makes the run fail, so "green" always
-                // means every test really ran. Default stays tolerant because many
-                // skips are environment-dependent (no GPU, headless session, focus).
+                // CI opt-in: turns a whole-test TestKit.skip() (exit 2) into a failure, so
+                // "green" cannot hide a test that could not set up. It does NOT cover
+                // skipCase()/probe()/PARTIAL PASS: those never change a test's exit code,
+                // so they are reported (NOTE, below) rather than made fatal.
                 strictSkips = true;
             } else if (a.equals("-j") || a.equals("--jobs")) {
                 if (i + 1 >= args.length) {

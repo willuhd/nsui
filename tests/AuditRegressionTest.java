@@ -524,7 +524,8 @@ public final class AuditRegressionTest {
         // registrySize() alone is NOT enough: the first dispose removed the entry before
         // releasing, so the dealloc override could not find its holder and skipped
         // [super dealloc], leaving the object shell allocated. deallocChainedCount() is the
-        // oracle for that half.
+        // oracle for that half. (It pins that the chain RAN, not which superclass source was
+        // used: with the dispatchDealloc fallback in place, remove-first would chain too.)
         try {
             int regBefore = DelegateProxy.registrySize();
             long chainedBefore = DelegateProxy.deallocChainedCount();
@@ -616,6 +617,51 @@ public final class AuditRegressionTest {
                     () -> tb.removeItemAtIndex(0));
         } catch (Throwable t) {
             TestKit.check(false, "NSToolbar index-guard block threw: " + t);
+        }
+
+        // --- 8p. range boundaries the first sweep got wrong ---
+        // An adversarial review re-probed these. smartInsert* abort only on an out-of-range
+        // LOCATION ({3,1} and {2,5} on a 3-char view are accepted natively, so the earlier
+        // Bounds.range was a false rejection); NSLayoutManager setTextContainer:forGlyphRange:
+        // aborts on a non-empty range past the glyph count but accepts {4,0} (empty);
+        // NSText.scrollRangeToVisible: only aborts for a negative location.
+        try {
+            nsui.NSTextView rv = nsui.NSTextView.create(new NSRect(0, 0, 200, 100));
+            rv.setString("abc");
+            TestKit.noThrow("smartInsertBefore(3,1) accepted (location == textLength)",
+                    () -> rv.smartInsertBeforeStringForStringReplacingRange("x", new nsui.NSRange(3, 1)));
+            TestKit.noThrow("smartInsertBefore(2,5) accepted (length runs past the end)",
+                    () -> rv.smartInsertBeforeStringForStringReplacingRange("x", new nsui.NSRange(2, 5)));
+            TestKit.expectThrows("smartInsertBefore(4,0) rejects (location > textLength)",
+                    IllegalArgumentException.class,
+                    () -> rv.smartInsertBeforeStringForStringReplacingRange("x", new nsui.NSRange(4, 0)));
+            TestKit.expectThrows("smartInsertAfter(-1,5) rejects",
+                    IllegalArgumentException.class,
+                    () -> rv.smartInsertAfterStringForStringReplacingRange("x", new nsui.NSRange(-1, 5)));
+            TestKit.expectThrows("smartDeleteRangeForProposedRange(3,1) rejects",
+                    IllegalArgumentException.class,
+                    () -> rv.smartDeleteRangeForProposedRange(new nsui.NSRange(3, 1)));
+
+            TestKit.expectThrows("NSText.scrollRangeToVisible(-1,5) rejects",
+                    IllegalArgumentException.class, () -> rv.scrollRangeToVisible(new nsui.NSRange(-1, 5)));
+            TestKit.noThrow("NSText.scrollRangeToVisible(100,1) is tolerated",
+                    () -> rv.scrollRangeToVisible(new nsui.NSRange(100, 1)));
+
+            nsui.NSLayoutManager lm = rv.layoutManager();
+            nsui.NSTextContainer tc = rv.textContainer();
+            if (lm != null && tc != null) {
+                TestKit.check(lm.numberOfGlyphs() == 3,
+                        "layout manager reports 3 glyphs (got " + lm.numberOfGlyphs() + ")");
+                TestKit.expectThrows("NSLayoutManager.setTextContainerForGlyphRange(2,5) rejects",
+                        IllegalArgumentException.class,
+                        () -> lm.setTextContainerForGlyphRange(tc, new nsui.NSRange(2, 5)));
+                TestKit.noThrow("NSLayoutManager.setTextContainerForGlyphRange(4,0) is accepted (empty)",
+                        () -> lm.setTextContainerForGlyphRange(tc, new nsui.NSRange(4, 0)));
+            } else {
+                TestKit.probe("layout manager / text container unavailable");
+            }
+        } catch (Throwable t) {
+            TestKit.check(false, "range-boundary block threw: " + t);
         }
 
         // --- 9. value and layer struct round-trips ---

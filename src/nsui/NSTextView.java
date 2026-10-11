@@ -1633,12 +1633,30 @@ public class NSTextView extends NSText {
 
     // -smartInsertForString:... (out-pointers) omitted — reported.
 
+    /// Reject a character range whose LOCATION is outside `[0, textLength()]`.
+    ///
+    /// The smartInsert* pair only reads the location: on a 3-character view a length that
+    /// runs past the end is tolerated natively ({3,1} and {2,5} both succeed), so a full
+    /// Bounds.range here rejected legal calls (caught by an adversarial review). Only the
+    /// fatal half — location < 0 or location > textLength — is pre-validated.
+    private void requireLocation(NSRange range, String what) {
+        if (range == null) {
+            throw new IllegalArgumentException(what + ": null range");
+        }
+        long n = textLength();
+        if (range.location() < 0 || range.location() > n) {
+            throw new IllegalArgumentException(what + ": location " + range.location()
+                    + " out of bounds (text length " + n + ")");
+        }
+    }
+
     /// [textView smartInsertBeforeStringForString:replacingRange:] — may return nil.
-    /// An out-of-range replacement range raises NSRangeException natively (verified,
-    /// exit 134: "Index 99 out of bounds; string length 3"); nil pasteString is fine.
+    /// Natively this raises NSRangeException only when the LOCATION is outside
+    /// `[0, textLength]` (verified: {100,1} and {4,0} on a 3-char view abort, while {3,1}
+    /// and {2,5} succeed); nil pasteString is fine.
     public String smartInsertBeforeStringForStringReplacingRange(String pasteString, NSRange charRangeToReplace) {
         ensureInit();
-        Bounds.range(charRangeToReplace, textLength(), "smartInsertBeforeStringForString:replacingRange:");
+        requireLocation(charRangeToReplace, "smartInsertBeforeStringForString:replacingRange:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.ID, Arg.RANGE));
             MemorySegment s = (MemorySegment) h.invokeExact(peer,
@@ -1651,11 +1669,11 @@ public class NSTextView extends NSText {
     }
 
     /// [textView smartInsertAfterStringForString:replacingRange:] — may return nil.
-    /// An out-of-range replacement range raises NSRangeException natively (verified,
-    /// exit 134); nil pasteString is fine.
+    /// Raises natively only for a LOCATION outside `[0, textLength]` (same measured
+    /// boundary as smartInsertBefore, via requireLocation); nil pasteString is fine.
     public String smartInsertAfterStringForStringReplacingRange(String pasteString, NSRange charRangeToReplace) {
         ensureInit();
-        Bounds.range(charRangeToReplace, textLength(), "smartInsertAfterStringForString:replacingRange:");
+        requireLocation(charRangeToReplace, "smartInsertAfterStringForString:replacingRange:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.ID, Arg.RANGE));
             MemorySegment s = (MemorySegment) h.invokeExact(peer,

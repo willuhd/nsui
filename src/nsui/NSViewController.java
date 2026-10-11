@@ -413,8 +413,10 @@ public class NSViewController extends NSObject {
         }
     }
 
-    /// [vc removeChildViewControllerAtIndex:].
+    /// [vc removeChildViewControllerAtIndex:] — index must be in range.
     public void removeChildViewControllerAtIndex(long index) {
+        NSArray children = childViewControllers();
+        Bounds.index(index, children == null ? 0 : children.count(), "removeChildViewControllerAtIndex:");
         ObjC.msgSendVoidLong(peer, ObjC.sel("removeChildViewControllerAtIndex:"), index);
     }
 

@@ -303,10 +303,12 @@ public final class NSToolbar extends NSObject {
         } catch (Throwable t) { throw new RuntimeException("itemIdentifiers failed", t); }
         return java.util.Collections.unmodifiableList(out);
     }
-    /// setItemIdentifiers: with strings.
+    /// setItemIdentifiers: with strings. The property is `copy` (nonnull), so a null
+    /// list is a caller error rather than "clear" — pass an empty list to clear.
     public void setItemIdentifiers(java.util.List<String> identifiers) {
-        MemorySegment arr = (identifiers == null) ? MemorySegment.NULL : ObjC.msgSendId(ObjC.cls("NSMutableArray"), ObjC.sel("array"));
-        if (identifiers != null) for (String s : identifiers) if (s != null) ObjC.msgSendVoidId(arr, ObjC.sel("addObject:"), ObjC.nsstring(s));
+        Bounds.nonNull(identifiers, "setItemIdentifiers:");
+        MemorySegment arr = ObjC.msgSendId(ObjC.cls("NSMutableArray"), ObjC.sel("array"));
+        for (String s : identifiers) if (s != null) ObjC.msgSendVoidId(arr, ObjC.sel("addObject:"), ObjC.nsstring(s));
         ObjC.msgSendVoidId(peer, ObjC.sel("setItemIdentifiers:"), arr);
     }
 

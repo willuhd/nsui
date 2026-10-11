@@ -57,6 +57,7 @@ public class NSPanel extends NSWindow {
     ///   peer (use-after-free on the next message).
     public static NSPanel create(NSRect contentRect, long styleMask, long backingStoreType, boolean defer) {
         ObjC.requireMainThread("NSPanel.create");
+        Bounds.nonNull(contentRect, "NSPanel.create (contentRect)");   // named IAE, not a bare NPE
         MemorySegment panel = ObjC.msgSendId(ObjC.cls("NSPanel"), ObjC.sel("alloc"));
         panel = ObjC.msgSendIdRectLongLongBool(panel, ObjC.sel("initWithContentRect:styleMask:backing:defer:"),
                 contentRect.toSegment(), styleMask, backingStoreType, defer);

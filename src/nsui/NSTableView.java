@@ -1060,13 +1060,19 @@ public class NSTableView extends NSView {
         try { H.hVoid().invokeExact(peer, Sels.endUpdates); } catch (Throwable t) { throw new RuntimeException("endUpdates failed", t); }
     }
 
+    /// PRECONDITION (all four row-mutation methods below): AppKit raises
+    /// NSInternalInconsistencyException "Insert/remove/move only works within a
+    /// -beginUpdates/-endUpdates block or a View Based TableView" (verified, exit 134) when
+    /// called on a cell-based table outside an update block. The wrapper cannot detect
+    /// either condition (it keeps no update-block state and cannot query view-basedness), so
+    /// wrap them in beginUpdates()/endUpdates() — the documented usage.
     /// [table insertRowsAtIndexes:withAnimation:]
     public void insertRowsAtIndexes(MemorySegment indexes, long animation) {
         ensureInit();
         try { H.hVoidIdInt().invokeExact(peer, Sels.insertRowsAtIndexes_withAnimation, (MemorySegment) (indexes == null ? MemorySegment.NULL : indexes), animation); } catch (Throwable t) { throw new RuntimeException("insertRowsAtIndexes:withAnimation: failed", t); }
     }
 
-    /// [table removeRowsAtIndexes:withAnimation:]
+    /// [table removeRowsAtIndexes:withAnimation:] — see the update-block precondition above.
     public void removeRowsAtIndexes(MemorySegment indexes, long animation) {
         ensureInit();
         try { H.hVoidIdInt().invokeExact(peer, Sels.removeRowsAtIndexes_withAnimation, (MemorySegment) (indexes == null ? MemorySegment.NULL : indexes), animation); } catch (Throwable t) { throw new RuntimeException("removeRowsAtIndexes:withAnimation: failed", t); }
@@ -1080,13 +1086,13 @@ public class NSTableView extends NSView {
         try { H.hVoidIntInt().invokeExact(peer, Sels.moveRowAtIndex_toIndex, oldIndex, newIndex); } catch (Throwable t) { throw new RuntimeException("moveRowAtIndex:toIndex: failed", t); }
     }
 
-    /// [table hideRowsAtIndexes:withAnimation:]
+    /// [table hideRowsAtIndexes:withAnimation:] — see the update-block precondition above.
     public void hideRowsAtIndexes(MemorySegment indexes, long animation) {
         ensureInit();
         try { H.hVoidIdInt().invokeExact(peer, Sels.hideRowsAtIndexes_withAnimation, (MemorySegment) (indexes == null ? MemorySegment.NULL : indexes), animation); } catch (Throwable t) { throw new RuntimeException("hideRowsAtIndexes:withAnimation: failed", t); }
     }
 
-    /// [table unhideRowsAtIndexes:withAnimation:]
+    /// [table unhideRowsAtIndexes:withAnimation:] — see the update-block precondition above.
     public void unhideRowsAtIndexes(MemorySegment indexes, long animation) {
         ensureInit();
         try { H.hVoidIdInt().invokeExact(peer, Sels.unhideRowsAtIndexes_withAnimation, (MemorySegment) (indexes == null ? MemorySegment.NULL : indexes), animation); } catch (Throwable t) { throw new RuntimeException("unhideRowsAtIndexes:withAnimation: failed", t); }

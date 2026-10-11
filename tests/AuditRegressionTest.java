@@ -581,7 +581,10 @@ public final class AuditRegressionTest {
         // --- 8n. NSTextView smart* methods abort on an out-of-range replacement range ---
         // Found by sweeping every NSRange-parameter method for missing validation: the
         // invalidate/ensure/temp-attribute families are all tolerant natively, but these
-        // three index into the string and raise NSRangeException (verified, exit 134).
+        // three raise NSRangeException (verified, exit 134). The boundary differs per method
+        // and is pinned in 8p: smartDeleteRangeForProposedRange uses the full range check
+        // (loc + len within the text), while the two smartInsert* methods only read the
+        // LOCATION — a length that runs past the end is tolerated.
         try {
             nsui.NSTextView stv = nsui.NSTextView.create(new NSRect(0, 0, 200, 100));
             stv.setString("abc");
@@ -603,11 +606,13 @@ public final class AuditRegressionTest {
         }
 
         // --- 8o. NSToolbar item indexes: only the negative half is validated ---
-        // Native assertions are 0 <= index < count (remove) and 0 <= index <= count
-        // (insert), but -items does not reliably report that count on a windowless toolbar
-        // (it stays empty after a successful insert), so an upper-bound check here rejected
-        // a legal call and PanelMenuToolbarTest caught it. A negative index raises natively
-        // (verified, exit 134).
+        // The native assertion for remove is 0 <= index < _currentItems count. A count-based
+        // Java guard was tried and had to be reverted: an item inserted with an identifier
+        // AppKit does not realize leaves -items empty, and whether removeItemAtIndex(0) then
+        // succeeds or aborts depends on that unrealized state (it succeeds when nothing
+        // queried the toolbar in between, aborts after an items()/itemIdentifiers() query) —
+        // two states Java cannot tell apart. So only a negative index is checked; it raises
+        // natively ("index != -1" / "index>=0 && …", verified, exit 134).
         try {
             nsui.NSToolbar tb = nsui.NSToolbar.create("round4toolbar");
             TestKit.expectThrows("NSToolbar.removeItemAtIndex(-1) rejects",
@@ -615,12 +620,47 @@ public final class AuditRegressionTest {
             TestKit.expectThrows("NSToolbar.insertItemWithItemIdentifier(x, -1) rejects",
                     IllegalArgumentException.class,
                     () -> tb.insertItemWithItemIdentifier("NSToolbarFlexibleSpaceItem", -1));
-            TestKit.noThrow("NSToolbar.insertItemWithItemIdentifier(…, 0) is legal",
-                    () -> tb.insertItemWithItemIdentifier("NSToolbarFlexibleSpaceItem", 0));
-            TestKit.noThrow("NSToolbar.removeItemAtIndex(0) after an insert is legal",
+            // "item1" is an identifier AppKit does NOT realize — the exact state in which a
+            // count-based guard (items().count() == 0) wrongly rejected the removal. Using a
+            // system identifier here would pass under both guards and pin nothing.
+            TestKit.noThrow("NSToolbar.insertItemWithItemIdentifier(item1, 0) is legal",
+                    () -> tb.insertItemWithItemIdentifier("item1", 0));
+            TestKit.noThrow("NSToolbar.removeItemAtIndex(0) after an unrealized insert is legal",
                     () -> tb.removeItemAtIndex(0));
+            // Deliberately NOT asserted: querying items()/itemIdentifiers() between those two
+            // calls flips the toolbar into the state where removeItemAtIndex(0) aborts the
+            // JVM uncatchably. See the NSToolbar block comment.
         } catch (Throwable t) {
             TestKit.check(false, "NSToolbar index-guard block threw: " + t);
+        }
+
+        // --- 8q. guards found by the third probe pass ---
+        try {
+            nsui.NSSegmentedControl seg = nsui.NSSegmentedControl.create(new NSRect(0, 0, 200, 30));
+            seg.setSegmentCount(2);
+            TestKit.check(seg.segmentCount() == 2, "segmented control has 2 segments");
+            // Measured: -1, 0..count-1 accepted; count and above raise NSRangeException.
+            TestKit.noThrow("setSelectedSegment(-1) clears the selection (accepted natively)",
+                    () -> seg.setSelectedSegment(-1));
+            TestKit.noThrow("setSelectedSegment(1) is legal", () -> seg.setSelectedSegment(1));
+            TestKit.expectThrows("setSelectedSegment(2) rejects (== segmentCount)",
+                    IllegalArgumentException.class, () -> seg.setSelectedSegment(2));
+            TestKit.expectThrows("setSelectedSegment(5) rejects",
+                    IllegalArgumentException.class, () -> seg.setSelectedSegment(5));
+
+            // The native factory asserts "attributedStringValue != nil".
+            TestKit.expectThrows("NSTextField.labelWithAttributedString(null) rejects",
+                    IllegalArgumentException.class, () -> nsui.NSTextField.labelWithAttributedString(null));
+            TestKit.noThrow("NSTextField.labelWithAttributedString(attr) still works",
+                    () -> nsui.NSTextField.labelWithAttributedString(nsui.NSAttributedString.create("x")));
+
+            // Null NSRect used to be a bare NPE from toSegment(); now a named IAE.
+            TestKit.expectThrows("NSWindow.create(null rect) reports a named IAE",
+                    IllegalArgumentException.class, () -> NSWindow.create(null, 0, 2, false));
+            TestKit.expectThrows("NSPanel.create(null rect) reports a named IAE",
+                    IllegalArgumentException.class, () -> nsui.NSPanel.create(null, 0, 2, false));
+        } catch (Throwable t) {
+            TestKit.check(false, "probe-found guard block threw: " + t);
         }
 
         // --- 8p. range boundaries the first sweep got wrong ---

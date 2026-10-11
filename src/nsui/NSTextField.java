@@ -64,10 +64,12 @@ public class NSTextField extends NSControl {
     }
     /// +labelWithAttributedString: — non-editable field showing attributed text.
     /// Shape (ID,ID) is in the Sig vocabulary (grep Sig.java: of(Ret.ID, Arg.ID)).
+    /// `attr` is required: the native factory asserts "attributedStringValue != nil" and
+    /// aborts the JVM (verified, exit 134), so it is rejected here.
     public static NSTextField labelWithAttributedString(NSAttributedString attr) {
         ensureInit();
-        MemorySegment p = ObjC.msgSendIdId(ObjC.cls("NSTextField"), ObjC.sel("labelWithAttributedString:"),
-                (MemorySegment) (attr == null ? MemorySegment.NULL : attr.peer()));
+        Bounds.nonNull(attr, "labelWithAttributedString:");
+        MemorySegment p = ObjC.msgSendIdId(ObjC.cls("NSTextField"), ObjC.sel("labelWithAttributedString:"), attr.peer());
         return new NSTextField(p);
     }
 

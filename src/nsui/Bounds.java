@@ -84,6 +84,14 @@ final class Bounds {
     }
 
     /// `range` must be non-null and lie inside `[0, count]`.
+    ///
+    /// A negative `length` is rejected even though AppKit's own check sometimes tolerates it:
+    /// `smartDeleteRangeForProposedRange:` measures the wrapped `NSMaxRange(loc + len)`, so
+    /// `{2, -1}` happens to be accepted (2 + (-1) = 1, in bounds) while `{0, -1}` aborts.
+    /// Mirroring that wraparound would accept nonsense like `{4, -1}` in other methods, and a
+    /// negative length is never a legitimate argument, so it is treated as a caller error.
+    /// Everything the callers of this helper actually accept (an overflowing positive length)
+    /// still aborts natively, which is why the strict bound is correct for them.
     static void range(NSRange range, long count, String what) {
         if (range == null) {
             throw new IllegalArgumentException(what + ": null range");

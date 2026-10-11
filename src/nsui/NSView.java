@@ -1493,8 +1493,9 @@ public class NSView extends NSResponder {
     // - out-params / C pointers: getRectsBeingDrawn:count:, getRectsExposedDuringLiveResize:count:,
     //   knowsPageRange:, adjustPageWidthNew:..., adjustPageHeightNew:....
     // - inexpressible shapes (absent from Sig vocabulary, requested):
-    //   convertPointToBacking:/FromBacking:/ToLayer:/FromLayer: need of(POINT,POINT); backingAlignedRect:options: needs
-    //   of(RECT,RECT,INT); (needsToDrawRect:/scrollRectToVisible: and the view-relative
+    //   (convertPointToBacking:/FromBacking: and backingAlignedRect:options: are implemented below —
+    //   of(POINT,POINT) and of(RECT,RECT,INT) are registered); convertPoint:toLayer:/FromLayer: still need
+    //   an id-bearing shape; (needsToDrawRect:/scrollRectToVisible: and the view-relative
     //   convertPoint/Size/Rect:fromView:/toView: family are implemented below — their shapes
     //   are registered); mouse:inRect: needs of(BOOL,POINT,RECT);
     //   addToolTipRect:owner:userData: needs of(INT,RECT,ID,ID); stringForToolTip helpers need of(ID,ID,INT,POINT,ID);
@@ -2009,6 +2010,88 @@ public class NSView extends NSResponder {
                     ObjC.sel("convertRect:toView:"), rect.toSegment(), ObjC.nullablePeer(view)));
         } catch (Throwable t) {
             throw new RuntimeException("convertRect:toView: failed", t);
+        }
+    }
+
+    /// [view convertPointToBacking:] — view coordinates to backing-store pixels.
+    public NSPoint convertPointToBacking(NSPoint point) {
+        ensureInit();
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.POINT, Arg.POINT));
+            return NSPoint.fromSegment((MemorySegment) h.invokeExact(ObjC.structSlot(), peer,
+                    ObjC.sel("convertPointToBacking:"), point.toSegment()));
+        } catch (Throwable t) {
+            throw new RuntimeException("convertPointToBacking: failed", t);
+        }
+    }
+
+    /// [view convertPointFromBacking:] — backing-store pixels back to view coordinates.
+    public NSPoint convertPointFromBacking(NSPoint point) {
+        ensureInit();
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.POINT, Arg.POINT));
+            return NSPoint.fromSegment((MemorySegment) h.invokeExact(ObjC.structSlot(), peer,
+                    ObjC.sel("convertPointFromBacking:"), point.toSegment()));
+        } catch (Throwable t) {
+            throw new RuntimeException("convertPointFromBacking: failed", t);
+        }
+    }
+
+    /// NSAlignmentOptions: all four edges, one mode each. See validateAlignmentOptions.
+    public static final long ALIGN_ALL_EDGES_INWARD = 15L;
+    public static final long ALIGN_ALL_EDGES_OUTWARD = 3840L;
+    public static final long ALIGN_ALL_EDGES_NEAREST = 983040L;
+
+    /// Reject an NSAlignmentOptions mask AppKit would abort on.
+    ///
+    /// Measured rule (probing a 24-mask matrix): every attribute may carry exactly ONE of the
+    /// three modes {inward (bits 0-5), outward (8-13), nearest (16-21)}; each AXIS (x = minX,
+    /// maxX, width; y = minY, maxY, height) must specify exactly TWO of its three attributes;
+    /// and both axes must be specified. Valid: 15, 51, 60, 3840, 983040. Invalid (all abort
+    /// with "The options parameter is invalid. Only one of {in, out, nearest} may be set for a
+    /// given rect attribute." plus an over/under-specification rule): 0, 1, 5, 10, 16, 17, 21,
+    /// 40, 48, 63, 4080, 65535 and any mask mixing two modes for one attribute.
+    private static void validateAlignmentOptions(long options) {
+        long known = 0x3FL | (0x3FL << 8) | (0x3FL << 16);
+        if ((options & ~known) != 0) {
+            throw new IllegalArgumentException("backingAlignedRect:options: unknown option bits 0x"
+                    + Long.toHexString(options & ~known));
+        }
+        if (!alignmentAxisOk(options, 0, 2, 4) || !alignmentAxisOk(options, 1, 3, 5)) {
+            throw new IllegalArgumentException("backingAlignedRect:options: 0x"
+                    + Long.toHexString(options) + " is invalid — each axis needs exactly two of "
+                    + "{min, max, size} and one mode per attribute (see ALIGN_ALL_EDGES_*)");
+        }
+    }
+
+    private static boolean alignmentAxisOk(long options, int inBit, int outBit, int sizeBit) {
+        int specified = 0;
+        for (int base : new int[] {inBit, outBit, sizeBit}) {
+            // the three modes for this attribute are (base, base+8, base+16)
+            int modes = 0;
+            for (int shift : new int[] {0, 8, 16}) {
+                if ((options & (1L << (base + shift))) != 0) modes++;
+            }
+            if (modes > 1) return false;
+            if (modes == 1) specified++;
+        }
+        return specified == 2;
+    }
+
+    /// [view backingAlignedRect:options:] — snap a rect to the backing-store pixel grid.
+    /// `options` is NSAlignmentOptions; the mask is pre-validated because AppKit aborts on an
+    /// over- or under-specified one (see validateAlignmentOptions). Use ALIGN_ALL_EDGES_* for
+    /// the common cases. A view with no window has a backing scale of 1, so the rect is
+    /// returned unchanged.
+    public NSRect backingAlignedRect(NSRect rect, long options) {
+        validateAlignmentOptions(options);
+        ensureInit();
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.RECT, Arg.RECT, Arg.INT));
+            return NSRect.fromSegment((MemorySegment) h.invokeExact(ObjC.structSlot(), peer,
+                    ObjC.sel("backingAlignedRect:options:"), rect.toSegment(), options));
+        } catch (Throwable t) {
+            throw new RuntimeException("backingAlignedRect:options: failed", t);
         }
     }
 

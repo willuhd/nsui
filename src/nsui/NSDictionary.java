@@ -38,6 +38,20 @@ public final class NSDictionary extends NSObject {
     }
 
     /// Create an empty dictionary via `[NSDictionary dictionary]`.
+    /// Reject a mutating call on an IMMUTABLE peer.
+    ///
+    /// This class serves both roles (there is no separate mutable wrapper), and its factories
+    /// return either flavor: `dictionary()` hands back an immutable one, while `mutableDictionary()` is the
+    /// mutable peer. Sending a mutator to the immutable one aborts with an
+    /// unrecognized-selector NSInvalidArgumentException (verified), so each mutator goes
+    /// through this check and reports a named error instead.
+    private void requireMutable(String what) {
+        if (!isKindOfClass("NSMutableDictionary")) {
+            throw new IllegalStateException(what + " requires a mutable dictionary "
+                    + "(use mutableDictionary()(); dictionary()() is immutable)");
+        }
+    }
+
     public static NSDictionary dictionary() {
         ensureInit();
         MemorySegment d = ObjC.msgSendId(ObjC.cls("NSDictionary"), ObjC.sel("dictionary"));
@@ -104,6 +118,7 @@ public final class NSDictionary extends NSObject {
 
     /// setObject:forKey: — mutating (NSMutableDictionary).
     public void setObjectForKey(MemorySegment object, MemorySegment key) {
+        requireMutable("setObjectForKey:");
         ensureInit();
         if (object == null || object.address() == 0) throw new IllegalArgumentException("setObject: null");
         if (key == null || key.address() == 0) throw new IllegalArgumentException("forKey: null");
@@ -116,12 +131,14 @@ public final class NSDictionary extends NSObject {
 
     /// setObject:forKey: with NSObject args.
     public void setObjectForKey(NSObject object, NSObject key) {
+        requireMutable("setObjectForKey:");
         setObjectForKey((MemorySegment) (object == null ? MemorySegment.NULL : object.peer()),
                 (MemorySegment) (key == null ? MemorySegment.NULL : key.peer()));
     }
 
     /// removeObjectForKey: — mutating.
     public void removeObjectForKey(MemorySegment key) {
+        requireMutable("removeObjectForKey:");
         ensureInit();
         if (key == null || key.address() == 0) return;
         try {
@@ -295,6 +312,7 @@ public final class NSDictionary extends NSObject {
 
     /// addEntriesFromDictionary: — mutating.
     public void addEntriesFromDictionary(NSDictionary other) {
+        requireMutable("addEntriesFromDictionary:");
         ensureInit();
         if (other == null) return;
         ObjC.msgSendVoidId(peer, ObjC.sel("addEntriesFromDictionary:"), other.peer());
@@ -302,12 +320,14 @@ public final class NSDictionary extends NSObject {
 
     /// removeAllObjects — mutating.
     public void removeAllObjects() {
+        requireMutable("removeAllObjects:");
         ensureInit();
         ObjC.msgSendVoid(peer, ObjC.sel("removeAllObjects"));
     }
 
     /// removeObjectsForKeys: — mutating.
     public void removeObjectsForKeys(NSArray keys) {
+        requireMutable("removeObjectsForKeys:");
         ensureInit();
         if (keys == null) return;
         ObjC.msgSendVoidId(peer, ObjC.sel("removeObjectsForKeys:"), keys.peer());
@@ -315,11 +335,13 @@ public final class NSDictionary extends NSObject {
 
     /// removeObjectForKey: with an NSObject key — mutating.
     public void removeObjectForKey(NSObject key) {
+        requireMutable("removeObjectForKey:");
         removeObjectForKey(key == null ? null : key.peer());
     }
 
     /// setDictionary: — mutating (replace contents).
     public void setDictionary(NSDictionary other) {
+        requireMutable("setDictionary:");
         ensureInit();
         if (other == null) { removeAllObjects(); return; }
         ObjC.msgSendVoidId(peer, ObjC.sel("setDictionary:"), other.peer());
@@ -327,6 +349,7 @@ public final class NSDictionary extends NSObject {
 
     /// setObject:forKeyedSubscript: — mutating subscript write.
     public void setObjectForKeyedSubscript(NSObject object, NSObject key) {
+        requireMutable("setObjectForKeyedSubscript:");
         ensureInit();
         if (key == null) throw new IllegalArgumentException("setObject:forKeyedSubscript: null key");
         if (object == null) { removeObjectForKey(key.peer()); return; }

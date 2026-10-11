@@ -1480,6 +1480,31 @@ public final class AuditRegressionTest {
             TestKit.check(false, "NSFindPanel block threw: " + t);
         }
 
+        // --- 8as. array/dictionary mutators require a MUTABLE peer ---
+        // NSArray.array() returns an immutable array and sending addObject: to it aborts
+        // ("-[__NSArray0 addObject:]: unrecognized selector", verified exit 134); the same
+        // class's mutableArray() is the mutable peer. Both halves are pinned.
+        try {
+            nsui.NSArray imm = nsui.NSArray.array();
+            TestKit.expectThrows("addObject on an immutable NSArray rejects",
+                    IllegalStateException.class, () -> imm.addObject(nsui.NSString.of("x")));
+            TestKit.expectThrows("removeAllObjects on an immutable NSArray rejects",
+                    IllegalStateException.class, () -> imm.removeAllObjects());
+            nsui.NSArray mut = nsui.NSArray.mutableArray();
+            TestKit.noThrow("addObject on mutableArray() works",
+                    () -> mut.addObject(nsui.NSString.of("x")));
+            TestKit.check(mut.count() == 1, "the mutable array holds one object");
+            nsui.NSDictionary immD = nsui.NSDictionary.dictionary();
+            TestKit.expectThrows("setObjectForKey on an immutable NSDictionary rejects",
+                    IllegalStateException.class,
+                    () -> immD.setObjectForKey(nsui.NSString.of("v"), nsui.NSString.of("k")));
+            nsui.NSDictionary mutD = nsui.NSDictionary.mutableDictionary();
+            TestKit.noThrow("setObjectForKey on mutableDictionary() works",
+                    () -> mutD.setObjectForKey(nsui.NSString.of("v"), nsui.NSString.of("k")));
+        } catch (Throwable t) {
+            TestKit.check(false, "mutable-peer block threw: " + t);
+        }
+
         // --- 8z. type-confusion guards on the raw collection-view setters ---
         // AppKit does NOT raise a type error here, it either asserts isKindOfClass: or
         // messages the object: setCollectionViewLayout: with a plain NSView raised

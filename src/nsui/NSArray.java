@@ -45,6 +45,20 @@ public final class NSArray extends NSObject {
     /// Create an empty IMMUTABLE array via `[NSArray array]`. Use `mutableArray()`
     /// when you intend to add or remove elements — the returned array rejects
     /// mutation with a native exception.
+    /// Reject a mutating call on an IMMUTABLE peer.
+    ///
+    /// This class serves both roles (there is no separate mutable wrapper), and its factories
+    /// return either flavor: `array()` hands back an immutable one, while `mutableArray()` is the
+    /// mutable peer. Sending a mutator to the immutable one aborts with an
+    /// unrecognized-selector NSInvalidArgumentException (verified), so each mutator goes
+    /// through this check and reports a named error instead.
+    private void requireMutable(String what) {
+        if (!isKindOfClass("NSMutableArray")) {
+            throw new IllegalStateException(what + " requires a mutable array "
+                    + "(use mutableArray()(); array()() is immutable)");
+        }
+    }
+
     public static NSArray array() {
         ensureInit();
         MemorySegment arr = ObjC.msgSendId(ObjC.cls("NSArray"), ObjC.sel("array"));
@@ -125,6 +139,7 @@ public final class NSArray extends NSObject {
 
     /// addObject: — mutating (for NSMutableArray).
     public void addObject(NSObject object) {
+        requireMutable("addObject:");
         ensureInit();
         if (object == null) throw new IllegalArgumentException("addObject: null");
         try {
@@ -136,6 +151,7 @@ public final class NSArray extends NSObject {
 
     /// addObject: with raw segment.
     public void addObject(MemorySegment object) {
+        requireMutable("addObject:");
         ensureInit();
         if (object == null || object.address() == 0) throw new IllegalArgumentException("addObject: null");
         try {
@@ -378,6 +394,7 @@ public final class NSArray extends NSObject {
 
     /// insertObject:atIndex: — mutating (NSMutableArray peers only).
     public void insertObjectAtIndex(NSObject object, long index) {
+        requireMutable("insertObjectAtIndex:");
         ensureInit();
         if (object == null) throw new IllegalArgumentException("insertObject: null");
         Bounds.insertIndex(index, count(), "insertObject:atIndex:");
@@ -391,12 +408,14 @@ public final class NSArray extends NSObject {
 
     /// removeLastObject — mutating.
     public void removeLastObject() {
+        requireMutable("removeLastObject:");
         ensureInit();
         ObjC.msgSendVoid(peer, ObjC.sel("removeLastObject"));
     }
 
     /// removeObjectAtIndex: — mutating.
     public void removeObjectAtIndex(long index) {
+        requireMutable("removeObjectAtIndex:");
         ensureInit();
         Bounds.index(index, count(), "removeObjectAtIndex:");
         ObjC.msgSendVoidLong(peer, ObjC.sel("removeObjectAtIndex:"), index);
@@ -404,6 +423,7 @@ public final class NSArray extends NSObject {
 
     /// replaceObjectAtIndex:withObject: — mutating.
     public void replaceObjectAtIndex(long index, NSObject object) {
+        requireMutable("replaceObjectAtIndex:");
         ensureInit();
         if (object == null) throw new IllegalArgumentException("replaceObjectAtIndex: null");
         Bounds.index(index, count(), "replaceObjectAtIndex:withObject:");
@@ -417,6 +437,7 @@ public final class NSArray extends NSObject {
 
     /// addObjectsFromArray: — mutating.
     public void addObjectsFromArray(NSArray other) {
+        requireMutable("addObjectsFromArray:");
         ensureInit();
         if (other == null) return;
         ObjC.msgSendVoidId(peer, ObjC.sel("addObjectsFromArray:"), other.peer());
@@ -424,6 +445,7 @@ public final class NSArray extends NSObject {
 
     /// exchangeObjectAtIndex:withObjectAtIndex: — mutating.
     public void exchangeObjectAtIndex(long i, long j) {
+        requireMutable("exchangeObjectAtIndex:");
         ensureInit();
         long n = count();
         Bounds.index(i, n, "exchangeObjectAtIndex:withObjectAtIndex: (first)");
@@ -438,12 +460,14 @@ public final class NSArray extends NSObject {
 
     /// removeAllObjects — mutating.
     public void removeAllObjects() {
+        requireMutable("removeAllObjects:");
         ensureInit();
         ObjC.msgSendVoid(peer, ObjC.sel("removeAllObjects"));
     }
 
     /// removeObject: — mutating (all equal occurrences).
     public void removeObject(NSObject object) {
+        requireMutable("removeObject:");
         ensureInit();
         if (object == null) return;
         ObjC.msgSendVoidId(peer, ObjC.sel("removeObject:"), object.peer());
@@ -451,6 +475,7 @@ public final class NSArray extends NSObject {
 
     /// removeObject:inRange: — mutating.
     public void removeObjectInRange(NSObject object, NSRange range) {
+        requireMutable("removeObjectInRange:");
         ensureInit();
         if (object == null) return;
         Bounds.range(range, count(), "removeObject:inRange:");
@@ -464,6 +489,7 @@ public final class NSArray extends NSObject {
 
     /// removeObjectIdenticalTo: — mutating (identity-based).
     public void removeObjectIdenticalTo(NSObject object) {
+        requireMutable("removeObjectIdenticalTo:");
         ensureInit();
         if (object == null) return;
         ObjC.msgSendVoidId(peer, ObjC.sel("removeObjectIdenticalTo:"), object.peer());
@@ -471,6 +497,7 @@ public final class NSArray extends NSObject {
 
     /// removeObjectIdenticalTo:inRange: — mutating.
     public void removeObjectIdenticalToInRange(NSObject object, NSRange range) {
+        requireMutable("removeObjectIdenticalToInRange:");
         ensureInit();
         if (object == null) return;
         Bounds.range(range, count(), "removeObjectIdenticalTo:inRange:");
@@ -484,6 +511,7 @@ public final class NSArray extends NSObject {
 
     /// removeObjectsInArray: — mutating.
     public void removeObjectsInArray(NSArray other) {
+        requireMutable("removeObjectsInArray:");
         ensureInit();
         if (other == null) return;
         ObjC.msgSendVoidId(peer, ObjC.sel("removeObjectsInArray:"), other.peer());
@@ -491,6 +519,7 @@ public final class NSArray extends NSObject {
 
     /// removeObjectsInRange: — mutating.
     public void removeObjectsInRange(NSRange range) {
+        requireMutable("removeObjectsInRange:");
         ensureInit();
         Bounds.range(range, count(), "removeObjectsInRange:");
         try {
@@ -503,6 +532,7 @@ public final class NSArray extends NSObject {
 
     /// setArray: — mutating (replace contents).
     public void setArray(NSArray other) {
+        requireMutable("setArray:");
         ensureInit();
         if (other == null) { removeAllObjects(); return; }
         ObjC.msgSendVoidId(peer, ObjC.sel("setArray:"), other.peer());
@@ -510,6 +540,7 @@ public final class NSArray extends NSObject {
 
     /// insertObjects:atIndexes: — mutating.
     public void insertObjectsAtIndexes(NSArray objects, NSIndexSet indexes) {
+        requireMutable("insertObjectsAtIndexes:");
         ensureInit();
         if (objects == null || indexes == null) throw new IllegalArgumentException("insertObjects:atIndexes: null");
         long k = indexes.count();
@@ -528,6 +559,7 @@ public final class NSArray extends NSObject {
 
     /// removeObjectsAtIndexes: — mutating.
     public void removeObjectsAtIndexes(NSIndexSet indexes) {
+        requireMutable("removeObjectsAtIndexes:");
         ensureInit();
         if (indexes == null) return;
         Bounds.indexSet(indexes, count(), "removeObjectsAtIndexes:");
@@ -536,6 +568,7 @@ public final class NSArray extends NSObject {
 
     /// replaceObjectsAtIndexes:withObjects: — mutating.
     public void replaceObjectsAtIndexes(NSIndexSet indexes, NSArray objects) {
+        requireMutable("replaceObjectsAtIndexes:");
         ensureInit();
         if (indexes == null || objects == null) throw new IllegalArgumentException("replaceObjectsAtIndexes: null");
         // Replacement cannot grow the array, so the receiver's count() is the right bound
@@ -555,6 +588,7 @@ public final class NSArray extends NSObject {
 
     /// replaceObjectsInRange:withObjectsFromArray: — mutating.
     public void replaceObjectsInRange(NSRange range, NSArray other) {
+        requireMutable("replaceObjectsInRange:");
         ensureInit();
         if (other == null) throw new IllegalArgumentException("replaceObjectsInRange: null");
         Bounds.range(range, count(), "replaceObjectsInRange:withObjectsFromArray:");
@@ -568,6 +602,7 @@ public final class NSArray extends NSObject {
 
     /// setObject:atIndexedSubscript: — mutating subscript write.
     public void setObjectAtIndexedSubscript(NSObject object, long index) {
+        requireMutable("setObjectAtIndexedSubscript:");
         ensureInit();
         if (object == null) throw new IllegalArgumentException("setObject:atIndexedSubscript: null");
         Bounds.index(index, count(), "setObject:atIndexedSubscript:");
@@ -581,6 +616,7 @@ public final class NSArray extends NSObject {
 
     /// sortUsingSelector: — mutating SEL sort (e.g. ObjC.sel("compare:")); see sortedArrayUsingSelector:.
     public void sortUsingSelector(MemorySegment comparator) {
+        requireMutable("sortUsingSelector:");
         ensureInit();
         if (comparator == null || comparator.address() == 0)
             throw new IllegalArgumentException("sortUsingSelector: null");

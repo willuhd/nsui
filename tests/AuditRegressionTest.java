@@ -1150,6 +1150,27 @@ public final class AuditRegressionTest {
             TestKit.check(false, "view conversion block threw: " + t);
         }
 
+        // --- 8ah. NSString.rangeOfString:options:range: (newly implementable shape) ---
+        // Measured on "abc" searching "b": {0,3} -> {1,1}; {3,0} (empty, at the end) is legal
+        // and returns NSNotFound; {0,5}, {2,2} and {5,1} abort with NSRangeException.
+        try {
+            nsui.NSString hay = nsui.NSString.of("abc");
+            nsui.NSRange found = hay.rangeOfString("b", 0L, new nsui.NSRange(0, 3));
+            TestKit.check(found.location() == 1 && found.length() == 1,
+                    "rangeOfString within {0,3} finds b at 1 (got {" + found.location() + "," + found.length() + "})");
+            nsui.NSRange notFound = hay.rangeOfString("c", 0L, new nsui.NSRange(0, 2));
+            TestKit.check(notFound.location() == nsui.NSRange.NOT_FOUND,
+                    "rangeOfString within {0,2} does not find c (got loc " + notFound.location() + ")");
+            TestKit.noThrow("rangeOfString with an empty range at the end is legal",
+                    () -> hay.rangeOfString("b", 0L, new nsui.NSRange(3, 0)));
+            TestKit.expectThrows("rangeOfString with an overflowing length rejects",
+                    IllegalArgumentException.class, () -> hay.rangeOfString("b", 0L, new nsui.NSRange(0, 5)));
+            TestKit.expectThrows("rangeOfString with loc+len past the end rejects",
+                    IllegalArgumentException.class, () -> hay.rangeOfString("b", 0L, new nsui.NSRange(2, 2)));
+        } catch (Throwable t) {
+            TestKit.check(false, "rangeOfString range block threw: " + t);
+        }
+
         // --- 8z. type-confusion guards on the raw collection-view setters ---
         // AppKit does NOT raise a type error here, it either asserts isKindOfClass: or
         // messages the object: setCollectionViewLayout: with a plain NSView raised

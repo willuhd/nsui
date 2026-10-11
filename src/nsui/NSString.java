@@ -14,7 +14,9 @@ import static nsui.objc.Sig.Ret;
 /// Header-completeness (`NSString.h`): every safe method whose shape is in the Sig
 /// vocabulary is wrapped below. OMITTED — compare:options:(:range::locale:) (needs
 /// of(INT,ID,INT), not in Sig); rangeOfString:options:range:(:locale:) (needs
-/// of(RANGE,ID,INT,RANGE), not in Sig); rangeOfCharacterFromSet:options:range: (same);
+/// of(RANGE,ID,INT,RANGE), not in Sig); (rangeOfString:options:range: is implemented below —
+/// of(RANGE,ID,INT,RANGE) is now registered; rangeOfCharacterFromSet:options:range: uses the
+/// same shape but has no NSCharacterSet wrapper yet);
 /// (rangeOfComposedCharacterSequenceAtIndex: is implemented below — of(RANGE,INT) is now
 /// registered);
 /// commonPrefixWithString:options: and descriptionWithLocale:indent: (need of(ID,ID,INT),
@@ -573,6 +575,31 @@ public final class NSString extends NSObject {
         } catch (Throwable t) {
             throw new RuntimeException("rangeOfString:options: failed", t);
         }
+    }
+
+    /// [string rangeOfString:options:range:] — search within a subrange.
+    ///
+    /// The range must satisfy loc + len <= length: measured on "abc", {0,3} searches and
+    /// {3,0} (empty range at the end) returns NSNotFound, while {0,5}, {2,2} and {5,1} abort
+    /// with NSRangeException — exactly Bounds.range's rule.
+    public NSRange rangeOfString(NSString searchString, long options, NSRange range) {
+        ensureInit();
+        if (searchString == null) return new NSRange(NSRange.NOT_FOUND, 0);
+        Bounds.range(range, length(), "rangeOfString:options:range:");
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.RANGE, Arg.ID, Arg.INT, Arg.RANGE));
+            MemorySegment seg = (MemorySegment) h.invokeExact(ObjC.structSlot(), peer,
+                    ObjC.sel("rangeOfString:options:range:"), searchString.peer(), options, range.toSegment());
+            return NSRange.fromSegment(seg);
+        } catch (Throwable t) {
+            throw new RuntimeException("rangeOfString:options:range: failed", t);
+        }
+    }
+
+    /// rangeOfString:options:range: with a Java search string.
+    public NSRange rangeOfString(String searchString, long options, NSRange range) {
+        if (searchString == null) return new NSRange(NSRange.NOT_FOUND, 0);
+        return rangeOfString(of(searchString), options, range);
     }
 
     /// rangeOfString:options: with a Java search string.

@@ -1507,6 +1507,7 @@ public class NSView extends NSResponder {
     /// no raise). Same of(BOOL,RECT) shape as needsToDrawRect:.
     public boolean scrollRectToVisible(NSRect rect) {
         ensureInit();
+        Bounds.notNaN(rect, "scrollRectToVisible:");   // NaN here TRAPS (measured exit 133)
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.BOOL, Arg.RECT));
             return (boolean) h.invokeExact(peer, ObjC.sel("scrollRectToVisible:"), rect.toSegment());

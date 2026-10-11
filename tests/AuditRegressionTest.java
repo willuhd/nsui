@@ -1936,6 +1936,33 @@ public final class AuditRegressionTest {
             TestKit.check(false, "default-correction block threw: " + t);
         }
 
+        // --- 8bf. two more NaN trap paths found by extending the probe surface ---
+        // Raw probe: scrollRectToVisible:(NaN) and NSClipView.scrollToPoint:(NaN) BOTH trap
+        // (exit 133), while displayRect:, setKeyboardFocusRingNeedsDisplayInRect:, hitTest:,
+        // NSScrollView.setContentInsets: and backingAlignedRect:options: tolerate NaN (exit 0).
+        try {
+            double nan = Double.NaN;
+            NSView snv = NSView.create(new NSRect(0, 0, 100, 100), (v, d) -> {});
+            TestKit.expectThrows("scrollRectToVisible(NaN) rejects instead of trapping",
+                    IllegalArgumentException.class,
+                    () -> snv.scrollRectToVisible(new NSRect(nan, nan, nan, nan)));
+            TestKit.noThrow("scrollRectToVisible(valid) still works",
+                    () -> snv.scrollRectToVisible(new NSRect(0, 0, 10, 10)));
+            nsui.NSClipView clip = nsui.NSClipView.create(new NSRect(0, 0, 100, 100));
+            TestKit.expectThrows("NSClipView.scrollToPoint(NaN) rejects instead of trapping",
+                    IllegalArgumentException.class,
+                    () -> clip.scrollToPoint(new NSPoint(nan, nan)));
+            TestKit.noThrow("NSClipView.scrollToPoint(valid) still works",
+                    () -> clip.scrollToPoint(new NSPoint(0, 0)));
+            // Tolerated natively: must NOT be rejected (over-tightening protection).
+            TestKit.noThrow("setNeedsDisplayInRect(NaN) is still accepted (native exit 0)",
+                    () -> snv.setNeedsDisplayInRect(new NSRect(nan, nan, nan, nan)));
+            TestKit.noThrow("hitTest(NaN point) is still accepted (native exit 0)",
+                    () -> snv.hitTest(new NSPoint(nan, nan)));
+        } catch (Throwable t) {
+            TestKit.check(false, "extra NaN path block threw: " + t);
+        }
+
         // --- 8z. type-confusion guards on the raw collection-view setters ---
         // AppKit does NOT raise a type error here, it either asserts isKindOfClass: or
         // messages the object: setCollectionViewLayout: with a plain NSView raised

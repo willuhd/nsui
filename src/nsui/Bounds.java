@@ -19,15 +19,21 @@ final class Bounds {
     /// Reject NaN geometry, which AppKit TRAPS on (SIGTRAP, exit 133) in the layout setters.
     ///
     /// Measured with standalone receivers: a NaN in any component of
-    /// NSView setFrame:/setFrameOrigin:/setFrameSize:/setBounds:/setBoundsSize:/scrollPoint:,
-    /// NSWindow setFrame:display:/setContentSize: and initWithFrame: (every view factory) traps
-    /// the process; NSWindow setFrameOrigin:/setFrameTopLeftPoint:, CALayer
-    /// setFrame:/setPosition:/setBounds: and NSSplitView setPosition: raise
-    /// NSInvalidArgumentException instead. INFINITY is TOLERATED by the view/window geometry
-    /// setters (measured exit 0), so only NaN is rejected here — over-rejecting INF would refuse
-    /// a value AppKit accepts. Deliberately NOT guarded, because AppKit tolerates NaN there:
-    /// setMinSize:/setMaxSize:/setAspectRatio:, setNeedsDisplayInRect:, the convert* family,
-    /// alpha and magnification.
+    /// NSView setFrame:/setFrameOrigin:/setFrameSize:/setBounds:/setBoundsSize:/scrollPoint:/
+    /// scrollRectToVisible:, NSClipView scrollToPoint:, NSWindow setFrame:display:/
+    /// setContentSize: and initWithFrame: (every view factory) traps the process (SIGTRAP, 133);
+    /// NSWindow setFrameOrigin:/setFrameTopLeftPoint:, CALayer setFrame:/setPosition:/setBounds:
+    /// and NSSplitView setPosition:ofDividerAtIndex: raise NSInvalidArgumentException instead.
+    /// INFINITY is TOLERATED by the view/window geometry setters (measured exit 0), so only NaN
+    /// is rejected here — over-rejecting INF would refuse a value AppKit accepts. Deliberately
+    /// NOT guarded, because AppKit tolerates NaN there (all measured exit 0): setMinSize:/
+    /// setMaxSize:/setAspectRatio:/setContentMinSize:/setResizeIncrements:,
+    /// setNeedsDisplayInRect:, displayRect:, setKeyboardFocusRingNeedsDisplayInRect:, hitTest:,
+    /// NSScrollView setContentInsets:, backingAlignedRect:options:, the convert* family, alpha
+    /// and magnification, NSTableColumn.setWidth:, NSSlider/NSProgressIndicator setMinValue:.
+    /// (NSSplitView's single-argument setPosition:, which DOES abort without a divider, is not
+    /// reachable: this toolkit only ever sends setPosition:ofDividerAtIndex:, which is tolerant
+    /// for any index, measured.)
     public static void notNaN(NSRect r, String what) {
         if (r == null) throw new IllegalArgumentException(what + ": null rect");
         if (Double.isNaN(r.x()) || Double.isNaN(r.y())

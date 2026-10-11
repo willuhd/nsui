@@ -2558,11 +2558,12 @@ public class NSView extends NSResponder {
     /// [view displayLinkWithTarget:selector:] — display link driving the target (shape shares the (ID,ID,ID) descriptor).
     /// The link is a `+0` (autoreleased) factory result: add it to a run loop before the
     /// current autorelease pool drains — the run loop retains it — or `keepAlive()` it.
-    /// `selector` is required (a NULL SEL is rejected here rather than deferred to the
-    /// runtime).
+    /// A NULL selector is NOT rejected: the native side accepts it and returns a link that
+    /// never calls back (measured: creation succeeds and a 0.3 s run-loop pump does not
+    /// crash). Pass a real selector name to get callbacks; an earlier guard here rejected
+    /// the harmless call.
     public CADisplayLink displayLink(MemorySegment target, MemorySegment selector) {
         ensureInit();
-        Bounds.nonNull(selector, "displayLinkWithTarget:selector: (selector)");
         try {
             MemorySegment d = (MemorySegment) H.hIdIdId().invokeExact(peer, Sels.displayLinkWithTarget_selector, target, selector);
             return CADisplayLink.wrap(d);

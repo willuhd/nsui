@@ -41,8 +41,10 @@ public final class CADisplayLink extends NSObject {
     }
 
     /// displayLinkWithTarget:selector:.
-    /// The selector is required: a null one was passed as SEL 0, an
-    /// unrecognized-selector crash natively rather than a Java error.
+    /// The selector NAME is required by this wrapper — it is resolved with `ObjC.sel`,
+    /// which would NPE on null. A *NULL SEL* is not a native error: the underlying factory
+    /// accepts it and returns a link that never calls back (measured), so this check is
+    /// about the String argument, not about AppKit.
     public static CADisplayLink create(MemorySegment target, String selector) {
         ensureInit();
         if (selector == null || selector.isEmpty()) {

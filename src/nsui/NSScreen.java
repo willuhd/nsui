@@ -302,12 +302,14 @@ public final class NSScreen extends NSObject {
     }
 
     /// [screen displayLinkWithTarget:selector:] (macOS 14.0+) — display-synced
-    /// callback source. `selector` is required; invalidate the link when done.
+    /// callback source. `selector` is a selector NAME that the wrapper resolves to a SEL,
+    /// so this String overload rejects null (`ObjC.sel(null)` would NPE); the selector
+    /// value itself is not validated. Invalidate the link when done.
     /// The link is a `+0` (autoreleased) factory result: add it to a run loop before the
     /// current autorelease pool drains — the run loop retains it — or `keepAlive()` it.
     public CADisplayLink displayLinkWithTarget(NSObject target, String selector) {
         ensureInit();
-        Bounds.nonNull(selector, "displayLinkWithTarget:selector: (selector)");
+        Bounds.nonNull(selector, "displayLinkWithTarget:selector: (selector name)");
         try {
             MemorySegment link = (MemorySegment) H.hIdIdId().invokeExact(peer,
                     ObjC.sel("displayLinkWithTarget:selector:"),

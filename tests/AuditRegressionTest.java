@@ -566,10 +566,14 @@ public final class AuditRegressionTest {
 
             // The display-link factories take a required selector; a NULL SEL used to be
             // handed to the runtime (or NPE'd in ObjC.sel) instead of being reported.
+            // The display-link SELECTOR VALUE is not validated: a NULL SEL is accepted
+            // natively and yields a link that never calls back (verified), so the earlier
+            // "reject a NULL selector" guard here was over-tight. The String overloads
+            // still reject a null NAME because the wrapper must resolve it (ObjC.sel(null)
+            // would NPE).
             NSView dlView = NSView.create(new NSRect(0, 0, 20, 20), (c, d) -> {});
-            TestKit.expectThrows("NSView.displayLink(NULL selector) rejects",
-                    IllegalArgumentException.class,
-                    () -> dlView.displayLink(MemorySegment.NULL, MemorySegment.NULL));
+            TestKit.check(dlView.displayLink(MemorySegment.NULL, MemorySegment.NULL) != null,
+                    "NSView.displayLink(NULL selector) is accepted natively (link never fires)");
         } catch (Throwable t) {
             TestKit.check(false, "nil-legality correction block threw: " + t);
         }

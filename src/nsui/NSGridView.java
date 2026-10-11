@@ -262,10 +262,12 @@ public final class NSGridView extends NSView {
         }
     }
 
-    /// [grid moveRowAtIndex:toIndex:].
+    /// [grid moveRowAtIndex:toIndex:] — `toIndex` must be < numberOfRows, not <=:
+    /// NSGridView raises NSInternalInconsistencyException ("toIndex out of range",
+    /// verified, exit 134) for toIndex == numberOfRows, unlike NSTableView.moveRowAtIndex.
     public void moveRowAtIndexToIndex(long fromIndex, long toIndex) {
         Bounds.index(fromIndex, numberOfRows(), "moveRowAtIndex:toIndex:");
-        Bounds.insertIndex(toIndex, numberOfRows(), "moveRowAtIndex:toIndex:");
+        Bounds.index(toIndex, numberOfRows(), "moveRowAtIndex:toIndex:");
         ensureInit();
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.INT, Arg.INT));
@@ -300,10 +302,11 @@ public final class NSGridView extends NSView {
         }
     }
 
-    /// [grid moveColumnAtIndex:toIndex:].
+    /// [grid moveColumnAtIndex:toIndex:] — `toIndex` must be < numberOfColumns
+    /// (verified: toIndex == numberOfColumns raises "toIndex out of range", exit 134).
     public void moveColumnAtIndexToIndex(long fromIndex, long toIndex) {
         Bounds.index(fromIndex, numberOfColumns(), "moveColumnAtIndex:toIndex:");
-        Bounds.insertIndex(toIndex, numberOfColumns(), "moveColumnAtIndex:toIndex:");
+        Bounds.index(toIndex, numberOfColumns(), "moveColumnAtIndex:toIndex:");
         ensureInit();
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.INT, Arg.INT));

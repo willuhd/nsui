@@ -434,6 +434,25 @@ public final class AuditRegressionTest {
             TestKit.check(false, "itemAtIndex multi-section block threw: " + t);
         }
 
+        // --- 8j. NSGridView move* rejects toIndex == count (found by auditing the
+        // Bounds.insertIndex call sites after the NSTableView.moveColumn fix) ---
+        // Unlike NSTableView.moveRowAtIndex:toIndex: (which tolerates == count), the grid
+        // raises NSInternalInconsistencyException "toIndex out of range" for it (verified).
+        try {
+            nsui.NSGridView grid = nsui.NSGridView.gridViewWithNumberOfColumnsRows(2, 2);
+            TestKit.check(grid.numberOfRows() == 2 && grid.numberOfColumns() == 2,
+                    "gridViewWithNumberOfColumnsRows(2,2) reports 2x2 (got "
+                            + grid.numberOfRows() + "x" + grid.numberOfColumns() + ")");
+            TestKit.expectThrows("NSGridView.moveRowAtIndexToIndex(0, rows) rejects",
+                    IllegalArgumentException.class, () -> grid.moveRowAtIndexToIndex(0, 2));
+            TestKit.expectThrows("NSGridView.moveColumnAtIndexToIndex(0, cols) rejects",
+                    IllegalArgumentException.class, () -> grid.moveColumnAtIndexToIndex(0, 2));
+            TestKit.noThrow("NSGridView.moveRowAtIndexToIndex(0,1) still works",
+                    () -> grid.moveRowAtIndexToIndex(0, 1));
+        } catch (Throwable t) {
+            TestKit.check(false, "NSGridView move-guard block threw: " + t);
+        }
+
         // --- 9. value and layer struct round-trips ---
         try {
             NSValue v = NSValue.valueWithPoint(new NSPoint(3, 4));

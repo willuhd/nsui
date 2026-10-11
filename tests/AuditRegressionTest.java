@@ -1470,6 +1470,16 @@ public final class AuditRegressionTest {
             TestKit.check(false, "owned row-view block threw: " + t);
         }
 
+        // --- 8ar. NSFindPanel.sharedFindPanel actually returns the panel (doc said always nil) ---
+        try {
+            nsui.NSFindPanel fp = nsui.NSFindPanel.sharedFindPanel();
+            TestKit.check(fp != null, "NSFindPanel.sharedFindPanel() returns the process find panel");
+            TestKit.check(fp.isKindOfClass("NSFindPanel"),
+                    "the returned object is an NSFindPanel");
+        } catch (Throwable t) {
+            TestKit.check(false, "NSFindPanel block threw: " + t);
+        }
+
         // --- 8z. type-confusion guards on the raw collection-view setters ---
         // AppKit does NOT raise a type error here, it either asserts isKindOfClass: or
         // messages the object: setCollectionViewLayout: with a plain NSView raised

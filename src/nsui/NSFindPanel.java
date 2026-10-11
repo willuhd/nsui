@@ -45,11 +45,16 @@ public final class NSFindPanel extends NSObject {
         initialized = true;
     }
 
-    // ---- shared accessor (no native NSFindPanel class exists) ----
+    // ---- shared accessor ----
 
-    /// `+[NSFindPanel sharedFindPanel]` — always nil: there is no native `NSFindPanel`
-    /// class in the macOS SDK, so this returns null rather than fabricating an
-    /// uninitialized `NSPanel`. Use `NSTextFinder` for find UI.
+    /// `+[NSFindPanel sharedFindPanel]` — the process-wide find panel, or null if the class
+    /// has none.
+    ///
+    /// CORRECTED: this used to be documented as "no native NSFindPanel class exists — always
+    /// nil". Both halves are false on this host: objc_getClass("NSFindPanel") is non-null,
+    /// `+sharedFindPanel` is implemented, and calling it returns a live NSFindPanel
+    /// (isKindOfClass: verified). The code already probed for it and returned the panel when
+    /// present — only the comments were wrong, which is exactly why the probe stays.
     public static NSFindPanel sharedFindPanel() {
         ensureInit();
         // NSFindPanel is private/absent on every SDK; probe once in case a future

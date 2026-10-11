@@ -41,12 +41,17 @@ public final class CADisplayLink extends NSObject {
     }
 
     /// displayLinkWithTarget:selector:.
+    /// The selector is required: a null one was passed as SEL 0, an
+    /// unrecognized-selector crash natively rather than a Java error.
     public static CADisplayLink create(MemorySegment target, String selector) {
         ensureInit();
+        if (selector == null || selector.isEmpty()) {
+            throw new IllegalArgumentException("displayLinkWithTarget:selector: requires a selector");
+        }
         // Locals (not inline ternaries): invokeExact is signature-polymorphic and
         // would otherwise infer Object for a conditional argument.
         MemorySegment t = target == null ? MemorySegment.NULL : target;
-        MemorySegment s = selector == null ? MemorySegment.NULL : ObjC.sel(selector);
+        MemorySegment s = ObjC.sel(selector);
         try {
             return wrap((MemorySegment) handles.hFactory().invokeExact(ObjC.cls("CADisplayLink"),
                     ObjC.sel("displayLinkWithTarget:selector:"), t, s));

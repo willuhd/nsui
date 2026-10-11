@@ -47,6 +47,11 @@ public final class CATransaction {
     /// The static upcall target shared by every completion block, resolved once.
     private static volatile MethodHandle hThunk;
 
+    /// The upcall STUB for that target, created once and reused by every completion
+    /// block. The stub is per-target; only the 64-byte block literal has to be unique,
+    /// because the block's address is the identity the thunk routes on.
+    private static volatile MemorySegment thunkStub;
+
     private CATransaction() {}
 
         private static void ensureInit() {
@@ -124,13 +129,19 @@ public final class CATransaction {
     /// still-pending body.)
     ///
     /// The callback fires on the main thread once the runloop drains the commit.
+    ///
+    /// COST: each call installs its own 64-byte global-arena block (its address is how
+    /// the callback is routed back to this body), so the block is never freed. The
+    /// upcall stub and the Java target are shared, so this is one small immortal
+    /// allocation per call — do not drive it from a per-frame loop if that matters;
+    /// set one completion per animation batch instead.
     public static void setCompletionBlock(Runnable action) {
         ensureInit();
         MemorySegment block = MemorySegment.NULL;
         long key = 0L;
         try {
             if (action != null) {
-                block = Blocks.block(thunkHandle(), NsuiForeign.blockVoidUpcall());
+                block = Blocks.blockWithStub(stubHandle());
                 key = block.address();
                 BODIES.put(key, action);
             }
@@ -181,6 +192,18 @@ public final class CATransaction {
     /// superseded within its own transaction is never delivered and stays counted.
     public static int pendingCompletionCount() {
         return BODIES.size();
+    }
+
+    /// The shared upcall stub, built once from the shared target.
+    private static MemorySegment stubHandle() {
+        MemorySegment st = thunkStub;
+        if (st != null) return st;
+        synchronized (CATransaction.class) {
+            if (thunkStub == null) {
+                thunkStub = Blocks.stub(thunkHandle(), NsuiForeign.blockVoidUpcall());
+            }
+            return thunkStub;
+        }
     }
 
     /// Lazily resolve the static upcall target (runtime only — never a static

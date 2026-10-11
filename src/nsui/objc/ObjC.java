@@ -304,8 +304,15 @@ public final class ObjC {
 
     /// NSString from a Java string ([NSString stringWithUTF8String:]). Typed
     /// invokeExact (not boxed invokeX): this sits on every setter hot path.
+    ///
+    /// A null Java string is a caller error, reported as a named
+    /// IllegalArgumentException. (It used to surface as a raw NPE from
+    /// `cstring`'s NUL scan, which dozens of setters forwarded unfiltered.) Callers
+    /// that want to send nil must pass `MemorySegment.NULL` explicitly — that is the
+    /// toolkit's nullable-argument convention.
     public static MemorySegment nsstring(String s) {
         if (!INIT && !INITIALIZING) throw new IllegalStateException("ObjC.init() must run first (from main, at runtime)");
+        if (s == null) throw new IllegalArgumentException("nsstring: null String (pass MemorySegment.NULL for nil)");
         try {
             return (MemorySegment) hIdId.invokeExact(STRING_CLS, STRING_WITH_UTF8_SEL, cstring(s));
         } catch (Throwable t) {

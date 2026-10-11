@@ -485,8 +485,17 @@ public final class NSCollectionView extends NSView {
         }
     }
 
-    /// [view itemAtIndex:] — item at a section-0 index, or nil (soft-deprecated, single section only).
+    /// [view itemAtIndex:] — item at a section-0 index, or nil (soft-deprecated, single
+    /// section only). On a view with more than one section AppKit raises
+    /// NSInternalInconsistencyException ("Use -indexPathForItem:, when the CollectionView
+    /// may contain more than one section", verified, exit 134); the section-0 item count
+    /// alone does not catch that.
     public NSCollectionViewItem itemAtIndex(long index) {
+        long sections = numberOfSections();
+        if (sections > 1) {
+            throw new IllegalArgumentException("itemAtIndex: is only valid for a single-section "
+                    + "collection view (this one has " + sections + " sections); use itemAtIndexPath:");
+        }
         Bounds.index(index, numberOfItemsInSection(0), "itemAtIndex:");
         try {
             return NSCollectionViewItem.wrap((MemorySegment) handles.hIdInt().invokeExact(peer, ObjC.sel("itemAtIndex:"), index));
@@ -599,8 +608,17 @@ public final class NSCollectionView extends NSView {
         }
     }
 
-    /// [view moveSection:toSection:]
+    /// [view moveSection:toSection:] — both indexes are validated against
+    /// numberOfSections(). AppKit raises NSInternalInconsistencyException for an
+    /// out-of-range section ("attempt to to move section 0 to section 1, but there are
+    /// only 1 sections after the update"; "Invalid parameter not satisfying:
+    /// fromSection < _sectionCount"), which aborts the JVM. With no data source the
+    /// call is a silent no-op, which is why this looked harmless before.
     public void moveSection(long section, long newSection) {
+        ensureInit();
+        long sections = numberOfSections();
+        Bounds.index(section, sections, "moveSection:toSection: (section)");
+        Bounds.index(newSection, sections, "moveSection:toSection: (newSection)");
         try {
             handles.hVoidIntInt().invokeExact(peer, ObjC.sel("moveSection:toSection:"), section, newSection);
         } catch (Throwable t) {

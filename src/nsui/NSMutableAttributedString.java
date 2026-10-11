@@ -70,6 +70,8 @@ public class NSMutableAttributedString extends NSAttributedString {
     }
 
     /// `[[NSMutableAttributedString alloc] initWithAttributedString:attrStr]`
+    /// `attrStr` is nonnull in the header, but nil does NOT raise: verified to return a
+    /// valid empty string (length 0), so it is deliberately accepted here.
     public static NSMutableAttributedString create(NSAttributedString attrStr) {
         ensureMutInit();
         MemorySegment alloc = ObjC.msgSendId(ObjC.cls("NSMutableAttributedString"), ObjC.sel("alloc"));
@@ -84,9 +86,12 @@ public class NSMutableAttributedString extends NSAttributedString {
         }
     }
 
-    /// [mutable replaceCharactersInRange:withString:]
+    /// [mutable replaceCharactersInRange:withString:] — a nil string is rejected.
+    /// It used to be silently replaced by "" (deleting the range); the NSMutableAttributedString
+    /// and NSText siblings named the same way now agree, and nil does not mean "clear".
     public void replaceCharactersInRangeWithString(NSRange range, String str) {
         ensureMutInit();
+        Bounds.nonNull(str, "replaceCharactersInRange:withString: (string)");
         if (range == null) throw new IllegalArgumentException("replaceCharactersInRange:withString: null range");
         long n = length();
         if (range.location() < 0 || range.length() < 0 || range.location() > n || range.length() > n - range.location())
@@ -94,7 +99,7 @@ public class NSMutableAttributedString extends NSAttributedString {
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.RANGE, Arg.ID));
             h.invokeExact(peer, ObjC.sel("replaceCharactersInRange:withString:"),
-                    range.toSegment(), ObjC.nsstring(str == null ? "" : str));
+                    range.toSegment(), ObjC.nsstring(str));
         } catch (Throwable t) {
             throw new RuntimeException("replaceCharactersInRange:withString: failed", t);
         }
@@ -103,6 +108,7 @@ public class NSMutableAttributedString extends NSAttributedString {
     /// [mutable replaceCharactersInRange:withAttributedString:]
     public void replaceCharactersInRangeWithAttributedString(NSRange range, NSAttributedString attrStr) {
         ensureMutInit();
+        Bounds.nonNull(attrStr, "replaceCharactersInRange:withAttributedString: (attributed string)");
         if (range == null) throw new IllegalArgumentException("replaceCharactersInRange:withAttributedString: null range");
         long n = length();
         if (range.location() < 0 || range.length() < 0 || range.location() > n || range.length() > n - range.location())
@@ -117,8 +123,11 @@ public class NSMutableAttributedString extends NSAttributedString {
     }
 
     /// [mutable insertAttributedString:atIndex:]
+    /// `attrStr` is nonnull in the header; nil raises NSInvalidArgumentException
+    /// ("nil argument", verified) and aborts the JVM.
     public void insertAttributedString(NSAttributedString attrStr, long index) {
         ensureMutInit();
+        Bounds.nonNull(attrStr, "insertAttributedString:atIndex: (attributed string)");
         long n = length();
         if (index < 0 || index > n)
             throw new IllegalArgumentException("insertAttributedString:atIndex: index " + index + " out of bounds (length " + n + ")");
@@ -147,7 +156,10 @@ public class NSMutableAttributedString extends NSAttributedString {
     }
 
     /// [mutable setAttributedString:] — replace the whole contents.
+    /// `attrStr` is nonnull in the header; `setAttributedString:NULL` raises
+    /// NSInvalidArgumentException ("nil argument", verified) and aborts the JVM.
     public void setAttributedString(NSAttributedString attrStr) {
+        Bounds.nonNull(attrStr, "setAttributedString:");
         ObjC.msgSendVoidId(peer, ObjC.sel("setAttributedString:"),
                 (MemorySegment) (attrStr == null ? MemorySegment.NULL : attrStr.peer()));
     }
@@ -282,8 +294,11 @@ public class NSMutableAttributedString extends NSAttributedString {
     // multi-id BOOL returns); variadic -appendLocalizedFormat:.
 
     /// [mutable appendAttributedString:other] — also satisfies task's "append" requirement
+    /// `other` is nonnull in the header; nil raises NSInvalidArgumentException
+    /// ("nil argument", verified) and aborts the JVM.
     public void append(NSAttributedString other) {
         ensureMutInit();
+        Bounds.nonNull(other, "appendAttributedString: (attributed string)");
         try {
             handles.hAppend().invokeExact(peer, ObjC.sel("appendAttributedString:"), (MemorySegment) ((MemorySegment) (other == null ? MemorySegment.NULL : other.peer())));
         } catch (Throwable t) {
@@ -303,9 +318,13 @@ public class NSMutableAttributedString extends NSAttributedString {
     /// @param name attribute name (e.g. NSFontAttributeName)
     /// @param value attribute value as id (MemorySegment) — pass NSFont.peer(), NSColor.peer(), etc.
     /// @param range range to apply
+    /// `value` is nonnull in the header; a nil value raises NSInvalidArgumentException
+    /// ("NSConcreteMutableAttributedString addAttribute:value:range:: nil value",
+    /// verified) and aborts the JVM. Unlike `setAttributes:`, nil does not clear.
     public void addAttribute(String name, MemorySegment value, NSRange range) {
         ensureMutInit();
         Bounds.range(range, length(), "addAttribute:value:range:");
+        Bounds.nonNull(value, "addAttribute:value:range: (value)");
         try {
             MemorySegment v = (MemorySegment) (value == null ? MemorySegment.NULL : value);
             handles.hAddAttr().invokeExact(peer, ObjC.sel("addAttribute:value:range:"), ObjC.nsstring(name), v, range.toSegment());
@@ -320,9 +339,13 @@ public class NSMutableAttributedString extends NSAttributedString {
     }
 
     /// [mutable addAttributes:range:] — dict is NSDictionary*
+    /// `attrs` is nonnull in the header; nil raises NSInvalidArgumentException
+    /// ("NSConcreteMutableAttributedString addAttributes:range:: nil value", verified)
+    /// and aborts the JVM. `setAttributes:range:` is the nullable one.
     public void addAttributes(MemorySegment attrsDict, NSRange range) {
         ensureMutInit();
         Bounds.range(range, length(), "addAttributes:range:");
+        Bounds.nonNull(attrsDict, "addAttributes:range: (attributes dictionary)");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.RANGE));
             MemorySegment arg = (attrsDict == null || attrsDict.address() == 0) ? MemorySegment.NULL : attrsDict;

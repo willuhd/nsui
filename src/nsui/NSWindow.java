@@ -2000,11 +2000,17 @@ ensureInit(); return ObjC.msgSendBool(peer, Sels.hasDynamicDepthLimit); }
     // ---- content borders ----
 
     /// [window setContentBorderThickness:forEdge:] — `edge`: 1=minY (bottom).
-    /// AppKit honesty: 0/2/3 (left/right/top) RAISE (`NSInvalidArgumentException`,
-    /// aborts the JVM) on a standard window — measured: only the bottom edge
-    /// accepts a thickness (top was for textured windows, deprecated since 10.2).
+    /// Only NSMinYEdge(1) and NSMaxYEdge(3) are accepted natively: edges 0 and 2 always
+    /// raise `NSInvalidArgumentException` ("setContentBorderThickness:forEdge: may not be
+    /// called with NSMinXEdge"/"NSMaxXEdge", verified, exit 134). Reject those two in
+    /// Java. Edge 3 (top) additionally requires a textured window — deprecated and not
+    /// detectable from the wrapper, so it is left to AppKit rather than falsely rejected.
     public void setContentBorderThicknessForEdge(double thickness, long edge) {
         ensureInit();
+        if (edge != 1 && edge != 3) {
+            throw new IllegalArgumentException("setContentBorderThickness:forEdge: edge must be "
+                    + "NSMinYEdge(1) or NSMaxYEdge(3); AppKit raises for edge " + edge);
+        }
         try {
             H.hVoidDoubleInt().invokeExact(peer, Sels.setContentBorderThickness_forEdge, thickness, edge);
         } catch (Throwable t) {

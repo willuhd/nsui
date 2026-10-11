@@ -165,12 +165,14 @@ public final class NSDictionary extends NSObject {
 
     /// +dictionaryWithObjects:forKeys: (parallel NSArrays).
     /// Note: no dictionaryWithObjects:forKeys:count: wrapper exists in this file
-    /// (the Sig vocabulary lists the shape, but no Java method takes a count);
-    /// document-only — no new guard. Mismatched NSArray counts raise natively
-    /// (caller error; no live bad callers), so behavior is unchanged.
+    /// (the Sig vocabulary lists the shape, but no Java method takes a count).
+    /// Mismatched counts raise natively ("count of objects (2) differs from count of
+    /// keys (1)", verified) and abort the JVM, so they are pre-validated here.
     public static NSDictionary dictionaryWithObjectsForKeys(NSArray objects, NSArray keys) {
         ensureInit();
         if (objects == null || keys == null) throw new IllegalArgumentException("dictionaryWithObjects:forKeys: null");
+        Bounds.equalCounts(objects.count(), keys.count(),
+                "dictionaryWithObjects:forKeys: (objects vs keys)");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.ID, Arg.ID));
             MemorySegment d = (MemorySegment) h.invokeExact(

@@ -55,8 +55,11 @@ public class NSText extends NSView {
     }
 
     /// [text setString:] — replace the plain string contents.
+    /// A nil string raises NSInvalidArgumentException natively ("nil NSString given",
+    /// verified, exit 134); it is not a "clear" (pass "" for that).
     public void setString(String s) {
-        ObjC.msgSendVoidId(peer, ObjC.sel("setString:"), s == null ? MemorySegment.NULL : ObjC.nsstring(s));
+        Bounds.nonNull(s, "setString:");
+        ObjC.msgSendVoidId(peer, ObjC.sel("setString:"), ObjC.nsstring(s));
     }
 
     // ---- rich text / graphics ----
@@ -131,13 +134,16 @@ public class NSText extends NSView {
         return s == null ? 0 : s.length();
     }
 
-    /// [text replaceCharactersInRange:withString:]
+    /// [text replaceCharactersInRange:withString:] — a nil string raises
+    /// NSInvalidArgumentException natively ("nil NSString given", verified), so it is
+    /// rejected here rather than forwarded.
     public void replaceCharactersInRangeWithString(NSRange range, String string) {
         Bounds.range(range, textLength(), "replaceCharactersInRange:withString:");
+        Bounds.nonNull(string, "replaceCharactersInRange:withString: (string)");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.RANGE, Arg.ID));
             h.invokeExact(peer, ObjC.sel("replaceCharactersInRange:withString:"),
-                    range.toSegment(), (MemorySegment) (string == null ? MemorySegment.NULL : ObjC.nsstring(string)));
+                    range.toSegment(), ObjC.nsstring(string));
         } catch (Throwable t) {
             throw new RuntimeException("replaceCharactersInRange:withString: failed", t);
         }
@@ -310,8 +316,13 @@ public class NSText extends NSView {
         }
     }
 
-    /// [text setFont:range:]
+    /// [text setFont:range:] — an out-of-bounds range raises NSRangeException natively
+    /// ("NSMutableRLEArray objectAtIndex:effectiveRange:: Out of bounds") and a nil font
+    /// raises NSInvalidArgumentException ("nil NSFont given"); both abort the JVM.
+    /// setTextColor:range: is the nullable one above (nil removes the colour).
     public void setFontRange(NSFont font, NSRange range) {
+        Bounds.range(range, textLength(), "setFont:range:");
+        Bounds.nonNull(font, "setFont:range: (font)");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.RANGE));
             h.invokeExact(peer, ObjC.sel("setFont:range:"),

@@ -773,10 +773,13 @@ public class NSTableView extends NSView {
         try { return (MemorySegment) H.hId().invokeExact(peer, Sels.tableColumns); } catch (Throwable t) { throw new RuntimeException("tableColumns failed", t); }
     }
 
-    /// [table moveColumn:toColumn:]
+    /// [table moveColumn:toColumn:] — NSTableView.h:232 requires BOTH indexes in
+    /// `0 .. numberOfColumns-1`; a `newIndex == numberOfColumns` aborts natively
+    /// ("-[__NSArrayM insertObject:atIndex:]: index 1 beyond bounds for empty array",
+    /// verified). Bounds.insertIndex here was the wrong helper (it allows == count).
     public void moveColumn(long oldIndex, long newIndex) {
         Bounds.index(oldIndex, numberOfColumns(), "moveColumn:toColumn:");
-        Bounds.insertIndex(newIndex, numberOfColumns(), "moveColumn:toColumn:");
+        Bounds.index(newIndex, numberOfColumns(), "moveColumn:toColumn:");
         ensureInit();
         try { H.hVoidIntInt().invokeExact(peer, Sels.moveColumn_toColumn, oldIndex, newIndex); } catch (Throwable t) { throw new RuntimeException("moveColumn:toColumn: failed", t); }
     }
@@ -977,8 +980,12 @@ public class NSTableView extends NSView {
     }
 
     /// [table rowViewAtRow:makeIfNecessary:] — NSTableRowView or nil.
+    /// NSTableView.h:467: "An exception will be thrown if 'row' is not within the
+    /// numberOfRows" (verified on a view-based table: row == numberOfRows raises
+    /// "Row index 5 out of row range", exit 134).
     public NSTableRowView rowViewAtRow(long row, boolean makeIfNecessary) {
         ensureInit();
+        Bounds.index(row, numberOfRows(), "rowViewAtRow:makeIfNecessary:");
         try { return NSTableRowView.wrap((MemorySegment) H.hIdIntBool().invokeExact(peer, Sels.rowViewAtRow_makeIfNecessary, row, makeIfNecessary)); } catch (Throwable t) { throw new RuntimeException("rowViewAtRow:makeIfNecessary: failed", t); }
     }
 
@@ -1022,8 +1029,15 @@ public class NSTableView extends NSView {
         return ObjC.msgSendBool(peer, Sels.rowActionsVisible);
     }
 
-    /// [table setRowActionsVisible:] — only NO is supported (YES throws).
+    /// [table setRowActionsVisible:] — only NO is supported: NSTableView.h:492 says
+    /// "Setting rowActionsVisible=YES is currently not supported and will throw an
+    /// exception" (verified: NSTableViewException, exit 134). Reject YES in Java instead
+    /// of letting the native raise abort the process.
     public void setRowActionsVisible(boolean flag) {
+        if (flag) {
+            throw new IllegalArgumentException("setRowActionsVisible: YES is not supported "
+                    + "by AppKit and raises natively; pass false");
+        }
         ensureInit();
         try { H.hVoidBool().invokeExact(peer, Sels.setRowActionsVisible, flag); } catch (Throwable t) { throw new RuntimeException("setRowActionsVisible: failed", t); }
     }

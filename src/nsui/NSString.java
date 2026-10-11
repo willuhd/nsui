@@ -591,8 +591,12 @@ public final class NSString extends NSObject {
     }
 
     /// rangeOfComposedCharacterSequencesForRange: — grapheme-safe range expansion.
+    /// An out-of-bounds range raises NSRangeException natively ("The index 99 is
+    /// invalid", verified) and aborts the JVM; the sibling substringWithRange:
+    /// already checks the same shape.
     public NSRange rangeOfComposedCharacterSequencesForRange(NSRange range) {
         ensureInit();
+        Bounds.range(range, length(), "rangeOfComposedCharacterSequencesForRange:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.RANGE, Arg.RANGE));
             MemorySegment seg = (MemorySegment) h.invokeExact(
@@ -603,9 +607,11 @@ public final class NSString extends NSObject {
         }
     }
 
-    /// lineRangeForRange:.
+    /// lineRangeForRange: — an invalid range raises NSRangeException natively
+    /// ("Range {10, 0} out of bounds; string length 7", verified) and aborts the JVM.
     public NSRange lineRangeForRange(NSRange range) {
         ensureInit();
+        Bounds.range(range, length(), "lineRangeForRange:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.RANGE, Arg.RANGE));
             MemorySegment seg = (MemorySegment) h.invokeExact(
@@ -616,9 +622,11 @@ public final class NSString extends NSObject {
         }
     }
 
-    /// paragraphRangeForRange:.
+    /// paragraphRangeForRange: — an invalid range raises NSRangeException natively
+    /// (verified) and aborts the JVM.
     public NSRange paragraphRangeForRange(NSRange range) {
         ensureInit();
+        Bounds.range(range, length(), "paragraphRangeForRange:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.RANGE, Arg.RANGE));
             MemorySegment seg = (MemorySegment) h.invokeExact(

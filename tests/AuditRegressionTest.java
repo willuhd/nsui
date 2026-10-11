@@ -231,8 +231,259 @@ public final class AuditRegressionTest {
             TestKit.expectThrows("NSAttributedString.createWithDocFormat short documentAttributes rejects",
                     IllegalArgumentException.class,
                     () -> nsui.NSAttributedString.createWithDocFormat(null, shortOut));
+            // A 4-byte slot must be rejected; a valid 8-byte one must still be accepted
+            // and populated (this positive is what fails if outBuffer is over-tightened).
+            byte[] rtf = "{\\rtf1\\ansi hello}".getBytes(java.nio.charset.StandardCharsets.US_ASCII);
             MemorySegment wideOut = arena.allocate(8);
-            TestKit.check(wideOut.byteSize() == 8, "an 8-byte out slot is the accepted width");
+            nsui.NSAttributedString parsed = nsui.NSAttributedString.createWithRTF(
+                    nsui.NSData.dataWithBytes(rtf).peer(), wideOut);
+            TestKit.check(parsed != null && "hello".equals(parsed.string()),
+                    "an 8-byte out slot is accepted and the RTF parses (got " + parsed + ")");
+        }
+
+        // --- 8e. parallel-collection counts and the insert bound ---
+        // Mismatched counts are not range errors: AppKit raises NSInvalidArgumentException
+        // ("count of array (1) differs from count of index set (2)", verified) and the
+        // JVM aborts before the Java guard can report anything.
+        try {
+            nsui.NSArray one = nsui.NSArray.arrayWithObject(nsui.NSString.of("x"));
+            nsui.NSArray two = nsui.NSArray.mutableArray();
+            two.addObject(nsui.NSString.of("x"));
+            two.addObject(nsui.NSString.of("y"));
+            nsui.NSIndexSet twoIndexes = nsui.NSIndexSet.indexSetWithIndexesInRange(new nsui.NSRange(0, 2));
+            TestKit.expectThrows("insertObjectsAtIndexes rejects mismatched counts",
+                    IllegalArgumentException.class, () -> two.insertObjectsAtIndexes(one, twoIndexes));
+            TestKit.expectThrows("replaceObjectsAtIndexes rejects mismatched counts",
+                    IllegalArgumentException.class, () -> two.replaceObjectsAtIndexes(twoIndexes, one));
+            TestKit.expectThrows("dictionaryWithObjectsForKeys rejects mismatched counts",
+                    IllegalArgumentException.class, () -> nsui.NSDictionary.dictionaryWithObjectsForKeys(one, two));
+            // The insert indexes are positions in the RESULT array, so the contiguous tail
+            // {n, n+1} is legal natively (verified: {2,3} into a 2-element array yields 4).
+            // The old count()+1 bound rejected it; it must stay accepted.
+            nsui.NSArray tail = nsui.NSArray.mutableArray();
+            tail.addObject(nsui.NSString.of("p"));
+            tail.addObject(nsui.NSString.of("q"));
+            nsui.NSArray rs = nsui.NSArray.mutableArray();
+            rs.addObject(nsui.NSString.of("r"));
+            rs.addObject(nsui.NSString.of("s"));
+            tail.insertObjectsAtIndexes(rs, nsui.NSIndexSet.indexSetWithIndexesInRange(new nsui.NSRange(2, 2)));
+            TestKit.check(tail.count() == 4 && "s".equals(ObjC.toString(tail.objectAtIndex(3))),
+                    "insertObjectsAtIndexes accepts the legal tail {2,3} (count=" + tail.count() + ")");
+        } catch (Throwable t) {
+            TestKit.check(false, "collection count-guard block threw: " + t);
+        }
+
+        // --- 8f. text: nil arguments and out-of-range NSRange ---
+        // Each of these aborts the JVM natively (verified) instead of raising, so the
+        // guard is the only thing standing between a caller mistake and a dead process.
+        try {
+            nsui.NSTextStorage storage = nsui.NSTextStorage.create("abc");
+            TestKit.expectThrows("NSTextStorage.addLayoutManager(null) rejects nil",
+                    IllegalArgumentException.class, () -> storage.addLayoutManager(null));
+            TestKit.noThrow("NSTextStorage.removeLayoutManager(null) stays a no-op",
+                    () -> storage.removeLayoutManager(null));
+
+            nsui.NSText text = nsui.NSText.create(new NSRect(0, 0, 200, 100));
+            text.setString("abc");
+            TestKit.expectThrows("NSText.setFontRange out-of-range rejects",
+                    IllegalArgumentException.class, () -> text.setFontRange(null, new nsui.NSRange(0, 4)));
+            // A nil font is nonnull in NSText.h and aborts natively ("nil NSFont given"),
+            // which is easy to miss because the range guard fires first for the case above.
+            TestKit.expectThrows("NSText.setFontRange(null font) rejects",
+                    IllegalArgumentException.class,
+                    () -> text.setFontRange(null, new nsui.NSRange(0, 3)));
+            TestKit.noThrow("NSText.setFontRange in-range still works",
+                    () -> text.setFontRange(NSFont.systemFontOfSize(12), new nsui.NSRange(0, 3)));
+
+            nsui.NSMutableAttributedString mut = nsui.NSMutableAttributedString.create("abc");
+            TestKit.expectThrows("NSMutableAttributedString.append(null) rejects nil",
+                    IllegalArgumentException.class, () -> mut.append(null));
+            TestKit.expectThrows("NSMutableAttributedString.insertAttributedString(null,0) rejects nil",
+                    IllegalArgumentException.class, () -> mut.insertAttributedString(null, 0));
+            TestKit.expectThrows("NSMutableAttributedString.setAttributedString(null) rejects nil",
+                    IllegalArgumentException.class, () -> mut.setAttributedString(null));
+            TestKit.expectThrows("NSMutableAttributedString.replaceCharactersInRangeWithAttributedString(·,null) rejects nil",
+                    IllegalArgumentException.class,
+                    () -> mut.replaceCharactersInRangeWithAttributedString(new nsui.NSRange(0, 1), null));
+            TestKit.expectThrows("NSMutableAttributedString.addAttribute(nil value) rejects",
+                    IllegalArgumentException.class,
+                    () -> mut.addAttribute("NSFont", null, new nsui.NSRange(0, 1)));
+            TestKit.expectThrows("NSMutableAttributedString.addAttributes(nil) rejects",
+                    IllegalArgumentException.class,
+                    () -> mut.addAttributes(null, new nsui.NSRange(0, 1)));
+            // setAttributes: is the documented-nullable one and must stay accepted.
+            TestKit.noThrow("NSMutableAttributedString.setAttributes(null) passes nil",
+                    () -> mut.setAttributes(null, new nsui.NSRange(0, 1)));
+
+            nsui.NSString s = nsui.NSString.of("abc");
+            TestKit.expectThrows("NSString.lineRangeForRange out-of-range rejects",
+                    IllegalArgumentException.class, () -> s.lineRangeForRange(new nsui.NSRange(0, 4)));
+            TestKit.expectThrows("NSString.paragraphRangeForRange out-of-range rejects",
+                    IllegalArgumentException.class, () -> s.paragraphRangeForRange(new nsui.NSRange(0, 4)));
+            TestKit.expectThrows("NSString.rangeOfComposedCharacterSequencesForRange out-of-range rejects",
+                    IllegalArgumentException.class,
+                    () -> s.rangeOfComposedCharacterSequencesForRange(new nsui.NSRange(0, 4)));
+        } catch (Throwable t) {
+            TestKit.check(false, "text guard block threw: " + t);
+        }
+
+        // --- 8g. table / scroll-view / collection-view indexes measured aborting ---
+        try {
+            NSTableView tv = NSTableView.create(new NSRect(0, 0, 200, 100));
+            tv.addTableColumn(nsui.NSTableColumn.create("a"));
+            tv.addTableColumn(nsui.NSTableColumn.create("b"));
+            // NSTableView.h:232: both indexes must be < numberOfColumns. insertIndex let
+            // newIndex == count through and the native side aborted (verified).
+            TestKit.expectThrows("NSTableView.moveColumn(newIndex == numberOfColumns) rejects",
+                    IllegalArgumentException.class, () -> tv.moveColumn(0, 2));
+            TestKit.noThrow("NSTableView.moveColumn(0,1) still works", () -> tv.moveColumn(0, 1));
+            TestKit.expectThrows("NSTableView.setRowActionsVisible(true) rejects",
+                    IllegalArgumentException.class, () -> tv.setRowActionsVisible(true));
+            // No positive setRowActionsVisible(false) here on purpose: on a cell-based
+            // table AppKit raises for NO as well ("setRowActionsVisible: is only for view
+            // based NSTableView"), so asserting it would abort this test JVM.
+            // NSTableView.h:467: a row outside numberOfRows raises (verified view-based).
+            TestKit.expectThrows("NSTableView.rowViewAtRow(numberOfRows) rejects",
+                    IllegalArgumentException.class, () -> tv.rowViewAtRow(tv.numberOfRows(), false));
+
+            // NSScrollView.h:49 types contentView as NSClipView; a plain NSView aborted
+            // ("-[NSView documentView]: unrecognized selector"). Enforcement is the Java
+            // signature, so assert the signature itself: with the old NSView parameter
+            // getMethod(NSClipView.class) throws NoSuchMethodException. (A plain
+            // setContentView(NSClipView) call would pass under either signature.)
+            java.lang.reflect.Method setContentView = null;
+            try {
+                setContentView = NSScrollView.class.getMethod("setContentView", nsui.NSClipView.class);
+            } catch (NoSuchMethodException e) {
+                // leave null: the parameter type regressed to NSView
+            }
+            TestKit.check(setContentView != null, "NSScrollView.setContentView takes NSClipView (signature-enforced)");
+            NSScrollView sv2 = NSScrollView.create(new NSRect(0, 0, 200, 100));
+            TestKit.noThrow("NSScrollView.setContentView(NSClipView) works",
+                    () -> sv2.setContentView(nsui.NSClipView.create(new NSRect(0, 0, 100, 100))));
+
+            // moveSection:toSection: raised NSInternalInconsistencyException with one
+            // section (verified); it is only a no-op when there is no data source at all.
+            nsui.NSCollectionView cv2 = nsui.NSCollectionView.create(new NSRect(0, 0, 200, 100));
+            TestKit.expectThrows("NSCollectionView.moveSection(0, sections) rejects",
+                    IllegalArgumentException.class, () -> cv2.moveSection(0, cv2.numberOfSections()));
+            TestKit.noThrow("NSCollectionView.moveSection(0,0) still works", () -> cv2.moveSection(0, 0));
+        } catch (Throwable t) {
+            TestKit.check(false, "view index-guard block threw: " + t);
+        }
+
+        // --- 8h. remaining measured aborts: NSTextStorage.edited:, window border edge ---
+        // Both re-probed this round. Deliberately NOT fixed (verified harmless natively):
+        // invalidateAttributesInRange:/ensureAttributesAreFixedInRange: with an
+        // out-of-range value, NSMutableIndexSet.addIndex(-1)/addIndexesInRange({100,5}),
+        // NSCollectionView.registerClass(nil), NSTableView.deselectRow(50)/
+        // selectRowIndexes({50}) on an empty table, NSSplitView.setPosition:ofDividerAtIndex:
+        // with a bad divider index, NSTextField.setAttributedStringValue(null), and
+        // NSWindow.setAspectRatio(0,0) followed by setFrame:display: (no trap observed).
+        try {
+            nsui.NSTextStorage st = nsui.NSTextStorage.create("abc");
+            TestKit.expectThrows("NSTextStorage.edited out-of-range range rejects",
+                    IllegalArgumentException.class, () -> st.edited(0, new nsui.NSRange(100, 1), 0));
+            TestKit.noThrow("NSTextStorage.edited in-range still works",
+                    () -> st.edited(0, new nsui.NSRange(0, 3), 0));
+
+            NSWindow bw = TestKit.hiddenWindow(160, 120);
+            TestKit.expectThrows("NSWindow.setContentBorderThicknessForEdge(NSMinXEdge) rejects",
+                    IllegalArgumentException.class, () -> bw.setContentBorderThicknessForEdge(24, 0));
+            TestKit.expectThrows("NSWindow.setContentBorderThicknessForEdge(NSMaxXEdge) rejects",
+                    IllegalArgumentException.class, () -> bw.setContentBorderThicknessForEdge(24, 2));
+            TestKit.noThrow("NSWindow.setContentBorderThicknessForEdge(NSMinYEdge) still works",
+                    () -> bw.setContentBorderThicknessForEdge(24, 1));
+            TestKit.close(bw);
+        } catch (Throwable t) {
+            TestKit.check(false, "storage/window guard block threw: " + t);
+        }
+
+        // --- 8i. itemAtIndex: is single-section only ---
+        // With a 2-section data source AppKit raises NSInternalInconsistencyException
+        // ("Use -indexPathForItem:, when the CollectionView may contain more than one
+        // section", verified, exit 134); a section-0 index check alone did not catch it.
+        try {
+            nsui.NSCollectionView cv3 = nsui.NSCollectionView.create(new NSRect(0, 0, 200, 100));
+            MemorySegment ds = DelegateProxy.delegate("NSObject", "NSUISectionsOnlyDS",
+                    java.util.Map.of(), java.util.Map.of(),
+                    java.util.Map.of("numberOfSectionsInCollectionView:", sender -> 2L),
+                    java.util.Map.of(), java.util.Map.of(), java.util.Map.of(), java.util.Map.of());
+            cv3.setDataSource(ds);
+            // The data source is only consulted once a layout is installed; without this
+            // numberOfSections() is 0 and the rejection below would fire for the wrong
+            // reason (an empty view) instead of the multi-section guard.
+            MemorySegment flow = ObjC.msgSendId(
+                    ObjC.msgSendId(ObjC.cls("NSCollectionViewFlowLayout"), ObjC.sel("alloc")), ObjC.sel("init"));
+            cv3.setCollectionViewLayout(flow);
+            cv3.reloadData();
+            TestKit.check(cv3.numberOfSections() == 2,
+                    "sections-only data source reports 2 sections (got " + cv3.numberOfSections() + ")");
+            // Assert the *reason*, not just the type: with 2 sections the section-0 item
+            // count is 0, so Bounds.index would also throw IAE. Only the multi-section
+            // guard produces a message naming the section cause.
+            try {
+                cv3.itemAtIndex(0);
+                TestKit.check(false, "itemAtIndex on a 2-section view did not throw");
+            } catch (IllegalArgumentException e) {
+                String m = e.getMessage();
+                TestKit.check(m != null && m.contains("single-section"),
+                        "itemAtIndex multi-section rejection names the section cause (got '" + m + "')");
+            }
+        } catch (Throwable t) {
+            TestKit.check(false, "itemAtIndex multi-section block threw: " + t);
+        }
+
+        // --- 8j. NSGridView move* rejects toIndex == count (found by auditing the
+        // Bounds.insertIndex call sites after the NSTableView.moveColumn fix) ---
+        // Unlike NSTableView.moveRowAtIndex:toIndex: (which tolerates == count), the grid
+        // raises NSInternalInconsistencyException "toIndex out of range" for it (verified).
+        try {
+            nsui.NSGridView grid = nsui.NSGridView.gridViewWithNumberOfColumnsRows(2, 2);
+            TestKit.check(grid.numberOfRows() == 2 && grid.numberOfColumns() == 2,
+                    "gridViewWithNumberOfColumnsRows(2,2) reports 2x2 (got "
+                            + grid.numberOfRows() + "x" + grid.numberOfColumns() + ")");
+            TestKit.expectThrows("NSGridView.moveRowAtIndexToIndex(0, rows) rejects",
+                    IllegalArgumentException.class, () -> grid.moveRowAtIndexToIndex(0, 2));
+            TestKit.expectThrows("NSGridView.moveColumnAtIndexToIndex(0, cols) rejects",
+                    IllegalArgumentException.class, () -> grid.moveColumnAtIndexToIndex(0, 2));
+            TestKit.noThrow("NSGridView.moveRowAtIndexToIndex(0,1) still works",
+                    () -> grid.moveRowAtIndexToIndex(0, 1));
+        } catch (Throwable t) {
+            TestKit.check(false, "NSGridView move-guard block threw: " + t);
+        }
+
+        // --- 8k. corrections to two over-tight guards, plus nils that still aborted ---
+        // An adversarial review showed two guards from the first text/guard pass rejected
+        // calls that succeed natively (both re-verified here); and that four text nils were
+        // still forwarded although they abort the JVM.
+        try {
+            TestKit.noThrow("NSControl.sendAction(NULL, NULL) is a harmless NO",
+                    () -> slider.sendAction(null, null));
+            nsui.NSMutableAttributedString emptyFromNil =
+                    nsui.NSMutableAttributedString.create((nsui.NSAttributedString) null);
+            TestKit.check(emptyFromNil != null && emptyFromNil.length() == 0,
+                    "initWithAttributedString:nil yields an empty string, not an IAE");
+
+            nsui.NSText t2 = nsui.NSText.create(new NSRect(0, 0, 200, 100));
+            TestKit.expectThrows("NSText.setString(null) rejects nil string",
+                    IllegalArgumentException.class, () -> t2.setString(null));
+            TestKit.noThrow("NSText.setString(\"abc\") still works", () -> t2.setString("abc"));
+            TestKit.expectThrows("NSText.replaceCharactersInRangeWithString(·, null) rejects",
+                    IllegalArgumentException.class,
+                    () -> t2.replaceCharactersInRangeWithString(new nsui.NSRange(0, 1), null));
+            nsui.NSMutableAttributedString mut2 = nsui.NSMutableAttributedString.create("abc");
+            TestKit.expectThrows("NSMutableAttributedString.replaceCharactersInRangeWithString(·, null) rejects",
+                    IllegalArgumentException.class,
+                    () -> mut2.replaceCharactersInRangeWithString(new nsui.NSRange(0, 1), null));
+            nsui.NSTextView tv2 = nsui.NSTextView.create(new NSRect(0, 0, 200, 100));
+            TestKit.expectThrows("NSTextView.setAttributedString(null) rejects nil",
+                    IllegalArgumentException.class, () -> tv2.setAttributedString(null));
+            TestKit.expectThrows("NSTextView.setAttributedStringValue(null) rejects nil",
+                    IllegalArgumentException.class,
+                    () -> tv2.setAttributedStringValue((nsui.NSAttributedString) null));
+        } catch (Throwable t) {
+            TestKit.check(false, "correction/guard block threw: " + t);
         }
 
         // --- 9. value and layer struct round-trips ---

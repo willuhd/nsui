@@ -412,13 +412,16 @@ public class NSControl extends NSView {
         ensureInit();
         try { return (long) H.hSendActionOn().invokeExact(peer, Sels.sendActionOn, mask); } catch (Throwable t) { throw new RuntimeException("sendActionOn: failed", t); }
     }
-    /// sendAction:to: — `action` is a required SEL; `target` is nullable (nil means
-    /// the standard nil-target search), so a null target passes NULL.
+    /// sendAction:to: — BOTH arguments are nullable in NSControl.h:48
+    /// (`sendAction:(nullable SEL)action to:(nullable id)target`). A NULL SEL and a nil
+    /// target are both harmless natively: verified `sendAction:NULL to:NULL` returns NO
+    /// without raising, so neither is guarded (an earlier guard on `action` was a false
+    /// rejection once Bounds.nonNull started treating a zero-address segment as nil).
     public boolean sendAction(MemorySegment action, MemorySegment target) {
         ensureInit();
-        Bounds.nonNull(action, "sendAction:to: (action selector)");
         try {
-            return (boolean) H.hSendActionTo().invokeExact(peer, Sels.sendAction_to, action,
+            return (boolean) H.hSendActionTo().invokeExact(peer, Sels.sendAction_to,
+                    (MemorySegment) (action == null ? MemorySegment.NULL : action),
                     (MemorySegment) (target == null ? MemorySegment.NULL : target));
         } catch (Throwable t) { throw new RuntimeException("sendAction:to: failed", t); }
     }

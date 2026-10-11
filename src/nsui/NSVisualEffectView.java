@@ -166,24 +166,28 @@ public final class NSVisualEffectView extends NSView {
         }
     }
 
-    // AppKit 14+ uses `maskImage`/`setMaskImage:`; older SDKs documented `maskingImage`.
-    // We expose the spec name `maskingImage` but dispatch to whichever selector the runtime responds to.
+    // AppKit exposes this as `maskImage`/`setMaskImage:`; older SDKs documented the name `maskingImage`.
+    // We expose the spec name `maskingImage` but dispatch to the selector the runtime actually implements.
+    // `maskingImage`/`setMaskingImage:` never existed on NSVisualEffectView, so sending them (the
+    // previous fallback) raised an uncatchable NSInvalidArgumentException — fail loudly in Java instead.
     private MemorySegment maskingImageSel() {
         try {
             boolean responds = (boolean) hIsKind.invokeExact(peer, ObjC.sel("respondsToSelector:"), ObjC.sel("maskImage"));
-            return responds ? ObjC.sel("maskImage") : ObjC.sel("maskingImage");
+            if (responds) return ObjC.sel("maskImage");
         } catch (Throwable t) {
-            return ObjC.sel("maskImage");
+            // fall through to the throw below
         }
+        throw new IllegalStateException("NSVisualEffectView does not respond to maskImage (no maskingImage selector exists)");
     }
 
     private MemorySegment setMaskingImageSel() {
         try {
             boolean responds = (boolean) hIsKind.invokeExact(peer, ObjC.sel("respondsToSelector:"), ObjC.sel("setMaskImage:"));
-            return responds ? ObjC.sel("setMaskImage:") : ObjC.sel("setMaskingImage:");
+            if (responds) return ObjC.sel("setMaskImage:");
         } catch (Throwable t) {
-            return ObjC.sel("setMaskImage:");
+            // fall through to the throw below
         }
+        throw new IllegalStateException("NSVisualEffectView does not respond to setMaskImage: (no setMaskingImage: selector exists)");
     }
 
     /// [view maskingImage] / [view maskImage] — optional masking image (may be nil).

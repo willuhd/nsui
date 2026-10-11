@@ -11,8 +11,11 @@ import static nsui.objc.Sig.Ret;
 /// NSTouchBarItem — minimal wrap over AppKit NSTouchBarItem.
 /// Thin 1:1, stateless.
 /// SDK: $(xcrun --show-sdk-path)/System/Library/Frameworks/AppKit.framework/Headers/NSTouchBarItem.h
-/// Coverage: COMPLETE after this batch — identifier/visibilityPriority/view/viewController/
-/// customizationLabel/visible plus the four NSTouchBarItemIdentifier* extern constants below.
+/// Coverage: complete against the NSTouchBarItem.h API this wrapper exposes —
+/// identifier/visibilityPriority/view/viewController/customizationLabel/visible plus the four
+/// NSTouchBarItemIdentifier* extern constants below. NOTE: `view` and `visible` are readonly, so
+/// `setView:`/`setVisible:` are not supported and throw IllegalStateException; view-backed
+/// subclasses (NSCustomTouchBarItem) override setView.
 /// All shapes are the registered (ID ())/(VOID,ID)/(FLOAT ())/(VOID,FLOAT)/(BOOL ())/(VOID,BOOL) family
 /// (grep Sig.java per shape). OMITTED: -initWithCoder: (NSCoding archiving, out of scope for a
 /// stateless wrapper); -init is NS_UNAVAILABLE by design (use create(identifier)).
@@ -100,15 +103,11 @@ public class NSTouchBarItem extends NSObject {
         } catch (Throwable t) { return false; }
     }
 
+    /// setVisible: — NOT settable: `NSTouchBarItem.visible` is a readonly property, so no
+    /// subclass implements `setVisible:`; this always throws rather than silently doing nothing.
     public void setVisible(boolean flag) {
-        ensureInit();
-        try {
-            MemorySegment sel = ObjC.sel("setVisible:");
-            MethodHandle hResp = ObjC.handle(Sig.of(Ret.BOOL, Arg.ID));
-            boolean resp = (boolean) hResp.invokeExact(peer, ObjC.sel("respondsToSelector:"), sel);
-            if (!resp) return;
-            handles.hVoidBool().invokeExact(peer, sel, flag);
-        } catch (Throwable t) { /* no-op if absent */ }
+        throw new IllegalStateException("NSTouchBarItem.visible is readonly — setVisible: is not"
+                + " supported (change the item's visibilityPriority or remove/add it from the bar)");
     }
 
     /// view — NSView peer or null (guarded; not all items expose view).
@@ -124,15 +123,12 @@ public class NSTouchBarItem extends NSObject {
         } catch (Throwable t) { return null; }
     }
 
+    /// setView: — NOT settable on the base class: `NSTouchBarItem.view` is readonly and only
+    /// subclasses such as NSCustomTouchBarItem/NSViewTouchBarItem expose a setter; this always
+    /// throws rather than silently doing nothing.
     public void setView(NSView view) {
-        ensureInit();
-        try {
-            MemorySegment sel = ObjC.sel("setView:");
-            MethodHandle hResp = ObjC.handle(Sig.of(Ret.BOOL, Arg.ID));
-            boolean resp = (boolean) hResp.invokeExact(peer, ObjC.sel("respondsToSelector:"), sel);
-            if (!resp) return;
-            handles.hVoidId().invokeExact(peer, sel, (MemorySegment) (view == null ? MemorySegment.NULL : view.peer()));
-        } catch (Throwable t) { /* no-op if absent */ }
+        throw new IllegalStateException("NSTouchBarItem.view is readonly — use a view-backed subclass"
+                + " (NSCustomTouchBarItem.setView(NSView)) instead");
     }
 
     // ---- completeness: remaining header API in registered shapes ----

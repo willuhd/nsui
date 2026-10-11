@@ -41,6 +41,10 @@ public final class MPSImageMedian extends NSObject {
     public static MPSImageMedian create(MTLDevice device, long diameter) {
         ensureInit();
         Bounds.nonNull(device, "initWithDevice:kernelDiameter:");
+        if (diameter < 3 || (diameter & 1L) == 0) {
+            throw new IllegalArgumentException("initWithDevice:kernelDiameter: requires an odd kernel diameter >= 3 (got "
+                    + diameter + ")");
+        }
         try {
             MemorySegment p = ObjC.msgSendId(ObjC.cls("MPSImageMedian"), ObjC.sel("alloc"));
             p = (MemorySegment) handles.hInit().invokeExact(p, ObjC.sel("initWithDevice:kernelDiameter:"),

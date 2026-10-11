@@ -93,11 +93,12 @@ public class NSDocument extends NSObject {
         }
     }
 
-    /// setDisplayName: — set the display name.
+    /// setDisplayName: — set the display name (`null_resettable`: null resets to the default).
     public void setDisplayName(String name) {
         ensureInit();
         try {
-            handles.hVoidId().invokeExact(peer, ObjC.sel("setDisplayName:"), ObjC.nsstring(name));
+            handles.hVoidId().invokeExact(peer, ObjC.sel("setDisplayName:"),
+                    name == null ? MemorySegment.NULL : ObjC.nsstring(name));
         } catch (Throwable t) {
             throw new RuntimeException("setDisplayName: failed", t);
         }

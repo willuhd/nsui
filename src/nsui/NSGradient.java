@@ -106,6 +106,10 @@ public final class NSGradient extends NSObject {
     public static NSGradient initWithColorsAtLocationsColorSpace(NSArray colors, double[] locations, MemorySegment colorSpacePeer) {
         ensureInit();
         if (colors == null) throw new IllegalArgumentException("initWithColors:atLocations:colorSpace: null colors");
+        if (locations != null && colors.count() != locations.length) {
+            throw new IllegalArgumentException("initWithColors:atLocations:colorSpace: requires colors.count (" + colors.count()
+                    + ") == locations.length (" + locations.length + ")");
+        }
         MemorySegment loc = MemorySegment.NULL;
         if (locations != null && locations.length > 0) {
             loc = Scratch.allocInput((long) locations.length * 8L);

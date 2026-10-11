@@ -83,8 +83,14 @@ public final class Scratch {
     }
 
     /// End a turn. Only when the depth returns to 0 does the buffer rewind (offset &rarr; 0),
-    /// freeing all scratch slices for reuse next turn. Underflowing is treated as a full reset
-    /// (defense-in-depth) so a stray extra `endTurn()` can never corrupt the buffer.
+    /// freeing all scratch slices for reuse next turn.
+    ///
+    /// An extra `endTurn()` with no matching `beginTurn()` is treated as a full
+    /// reset rather than ignored. That keeps the buffer inside its window, but it
+    /// also means the rewind happens early: any `allocInput` slice still outstanding
+    /// is invalidated and its storage handed out again. Treat underflow as a caller
+    /// bug — the reset is a containment measure, not a licence to over-end. Slices
+    /// are only valid until the next rewind in any case (see ALLOCATION TIERS).
     public static void endTurn() {
         int d = DEPTH.get();
         if (d <= 1) {
@@ -123,6 +129,12 @@ public final class Scratch {
     /// (see ALLOCATION TIERS above). Bumps the thread-local buffer while there
     /// is room — rewound at the next outermost `endTurn` — and falls back to
     /// the global arena for that allocation when full. Never returns `null`.
+    ///
+    /// Note the consequence for a thread that never opens a turn: nothing ever
+    /// rewinds its buffer, so once the bump offset passes the 75% watermark every
+    /// further input spills into the immortal global arena and stays there. Callers
+    /// that allocate inputs without turns should either open turns (as every event
+    /// turn does) or watch `spilledBytes()`.
     public static MemorySegment allocInput(long byteSize) {
         if (byteSize < 0) {
             throw new IllegalArgumentException("negative alloc size: " + byteSize);

@@ -104,10 +104,10 @@ public final class NSAppearance extends NSObject {
         return ObjC.toString(s);
     }
 
-    /// `-[NSAppearance bestMatchFromAppearancesWithNames:]` — best match for the given names array.
-    /// The array should be an NSArray of NSString ids. Returns the best matching appearance name string id,
-    /// but we wrap the returned NSAppearance if the runtime returns an appearance; if it returns a string,
-    /// we fall back to appearanceNamed. We expose the direct peer for caller flexibility.
+    /// `-[NSAppearance bestMatchFromAppearancesWithNames:]` — returns the raw peer of the
+    /// best-matching appearance *name* (an NSString), or NULL when nothing matches; it does
+    /// not return, wrap, or fall back to an NSAppearance. `namesArray` is a raw
+    /// NSArray<NSAppearanceName> peer; use `ObjC.toString(...)` on the result for the name.
     public MemorySegment bestMatchFromAppearancesWithNames(MemorySegment namesArray) {
         ensureInit();
         try {

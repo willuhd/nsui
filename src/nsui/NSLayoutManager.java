@@ -406,11 +406,12 @@ public final class NSLayoutManager extends NSObject {
     // -getGlyphsInRange:... / -getLineFragmentInsertionPoints... / block enumeration /
     // drawing primitives omitted (pointers/blocks/multi-arg shapes) — reported.
 
-    /// [layoutManager CGGlyphAtIndex:] -> CGGlyph (uint32 widened to long, macOS 10.11+).
+    /// [layoutManager CGGlyphAtIndex:] -> CGGlyph (uint16_t, widened to long).
     public long cgGlyphAtIndex(long glyphIndex) {
         try {
-            MethodHandle h = ObjC.handle(Sig.of(Ret.INT, Arg.INT));
-            return (long) h.invokeExact(peer, ObjC.sel("CGGlyphAtIndex:"), glyphIndex);
+            MethodHandle h = ObjC.handle(Sig.of(Ret.SHORT, Arg.INT));
+            short glyph = (short) h.invokeExact(peer, ObjC.sel("CGGlyphAtIndex:"), glyphIndex);
+            return glyph & 0xFFFFL;
         } catch (Throwable t) {
             throw new RuntimeException("CGGlyphAtIndex: failed", t);
         }
@@ -443,7 +444,7 @@ public final class NSLayoutManager extends NSObject {
             MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.INT, Arg.ID));
             MemorySegment p = (MemorySegment) h.invokeExact(peer,
                     ObjC.sel("textContainerForGlyphAtIndex:effectiveRange:"), glyphIndex,
-                    (MemorySegment) (effectiveRangeOutOrNull == null ? MemorySegment.NULL : effectiveRangeOutOrNull));
+                    Bounds.outBuffer(effectiveRangeOutOrNull, 16, "textContainerForGlyphAtIndex:effectiveRange: (NSRange*)"));
             return NSTextContainer.wrap(p);
         } catch (Throwable t) {
             throw new RuntimeException("textContainerForGlyphAtIndex:effectiveRange: failed", t);
@@ -555,7 +556,7 @@ public final class NSLayoutManager extends NSObject {
             MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.INT, Arg.ID));
             return (MemorySegment) h.invokeExact(peer,
                     ObjC.sel("temporaryAttributesAtCharacterIndex:effectiveRange:"), charIndex,
-                    (MemorySegment) (effectiveRangeOutOrNull == null ? MemorySegment.NULL : effectiveRangeOutOrNull));
+                    Bounds.outBuffer(effectiveRangeOutOrNull, 16, "temporaryAttributesAtCharacterIndex:effectiveRange: (NSRange*)"));
         } catch (Throwable t) {
             throw new RuntimeException("temporaryAttributesAtCharacterIndex:effectiveRange: failed", t);
         }
@@ -601,7 +602,7 @@ public final class NSLayoutManager extends NSObject {
             return (MemorySegment) h.invokeExact(peer,
                     ObjC.sel("temporaryAttribute:atCharacterIndex:effectiveRange:"),
                     ObjC.nsstring(attrName == null ? "" : attrName), location,
-                    (MemorySegment) (effectiveRangeOutOrNull == null ? MemorySegment.NULL : effectiveRangeOutOrNull));
+                    Bounds.outBuffer(effectiveRangeOutOrNull, 16, "temporaryAttribute:atCharacterIndex:effectiveRange: (NSRange*)"));
         } catch (Throwable t) {
             throw new RuntimeException("temporaryAttribute:atCharacterIndex:effectiveRange: failed", t);
         }

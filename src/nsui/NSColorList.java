@@ -72,10 +72,12 @@ public final class NSColorList extends NSObject {
     /// setColor:forKey: (appends when the key is new).
     public void setColor(NSColor color, String key) {
         ensureInit();
+        Bounds.nonNull(color, "setColor:forKey:");
+        Bounds.nonNull(key, "setColor:forKey:");
         try {
             handles.hSetColor().invokeExact(peer, ObjC.sel("setColor:forKey:"),
-                    (MemorySegment) (color == null ? MemorySegment.NULL : color.peer()),
-                    (MemorySegment) (key == null ? MemorySegment.NULL : ObjC.nsstring(key)));
+                    (MemorySegment) color.peer(),
+                    (MemorySegment) ObjC.nsstring(key));
         } catch (Throwable t) {
             throw new RuntimeException("setColor:forKey: failed", t);
         }

@@ -248,10 +248,8 @@ public final class NSMenu extends NSObject {
     public void setItemArray(java.util.List<NSMenuItem> items) {
         ensureInit();
         if (items == null) return;
-        // Build NSArray from items
-        MemorySegment arr = ObjC.msgSendId(ObjC.cls("NSArray"), Sels.alloc);
-        // Use initWithObjects:count: via handle if needed, fallback to adding
-        // Simpler: create mutable array and add objects
+        // Build the NSArray directly into a mutable array (the old code also
+        // allocated a bare `[NSArray alloc]` here that was never used or released).
         MemorySegment mArr = ObjC.msgSendId(ObjC.cls("NSMutableArray"), Sels.array);
         for (NSMenuItem it : items) {
             if (it != null) ObjC.msgSendVoidId(mArr, Sels.addObject, it.peer());
@@ -273,6 +271,7 @@ public final class NSMenu extends NSObject {
     }
     public NSMenuItem insertItemWithTitle(String title, String action, String keyEquivalent, long index) {
         ensureInit();
+        Bounds.insertIndex(index, numberOfItems(), "insertItemWithTitle:action:keyEquivalent:atIndex:");
         try {
             MemorySegment selAction = (action == null || action.isEmpty()) ? MemorySegment.NULL : ObjC.sel(action);
             // null title is valid for search-field placeholder items (empty title + custom view)

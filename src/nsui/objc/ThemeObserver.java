@@ -244,11 +244,17 @@ public final class ThemeObserver {
     }
 
     public void disposeInstance() {
+        // Clear the flag under the lock (so workers stop scheduling), then shut the
+        // observer/executor down OUTSIDE it: stopNativeObserver awaits up to a second
+        // for in-flight work, and that work needs this same lock, so holding it here
+        // made every dispose stall the full timeout.
+        boolean wasInitialized;
         synchronized (lifecycleLock) {
-            if (initialized) {
-                stopNativeObserver();
-                initialized = false;
-            }
+            wasInitialized = initialized;
+            initialized = false;
+        }
+        if (wasInitialized) {
+            stopNativeObserver();
         }
     }
 

@@ -22,13 +22,11 @@ import static nsui.objc.Sig.Ret;
 ///
 /// Header-completeness (`NSValue.h` + `NSGeometry.h`/`NSRange.h` value categories): every
 /// safe method whose shape is in the Sig vocabulary is wrapped below. OMITTED —
-/// valueWithEdgeInsets:/edgeInsetsValue (need an NSEdgeInsets arg/return class in Sig;
-/// reusing of(ID,RECT)/of(RECT) would lie in the vocabulary accounting — flagged for the
-/// Sig owner); valueWithBytes:objCType:/value:withObjCType:/initWithBytes:objCType: and
+/// valueWithBytes:objCType:/value:withObjCType:/initWithBytes:objCType: and
 /// getValue:/getValue:size: (raw buffers + type strings; unsafe); initWithCoder: (needs NSCoder).
 public class NSValue extends NSObject {
 
-            private record Handles(MethodHandle hPointValue, MethodHandle hSizeValue, MethodHandle hRectValue, MethodHandle hRangeValue, MethodHandle hObjCType, MethodHandle hWithPoint, MethodHandle hWithSize, MethodHandle hWithRect, MethodHandle hWithRange) {}
+            private record Handles(MethodHandle hPointValue, MethodHandle hSizeValue, MethodHandle hRectValue, MethodHandle hRangeValue, MethodHandle hObjCType, MethodHandle hWithPoint, MethodHandle hWithSize, MethodHandle hWithRect, MethodHandle hWithRange, MethodHandle hEdgeInsetsValue, MethodHandle hWithEdgeInsets) {}
     private static volatile Handles handles;
 
     protected NSValue(MemorySegment peer) {
@@ -57,7 +55,9 @@ public class NSValue extends NSObject {
                 ObjC.handle(Sig.of(Ret.ID, Arg.POINT)),
                 ObjC.handle(Sig.of(Ret.ID, Arg.SIZE)),
                 ObjC.handle(Sig.of(Ret.ID, Arg.RECT)),
-                ObjC.handle(Sig.of(Ret.ID, Arg.RANGE))
+                ObjC.handle(Sig.of(Ret.ID, Arg.RANGE)),
+                ObjC.handle(Sig.of(Ret.EDGEINSETS)),
+                ObjC.handle(Sig.of(Ret.ID, Arg.EDGEINSETS))
         );
     }
 
@@ -103,6 +103,18 @@ public class NSValue extends NSObject {
                     ObjC.cls("NSValue"), ObjC.sel("valueWithRange:"), range.toSegment());
             return wrap(peer);
         } catch (Throwable t) { throw new RuntimeException("valueWithRange: failed", t); }
+    }
+
+    /// valueWithEdgeInsets: — `+ (NSValue *)valueWithEdgeInsets:(NSEdgeInsets)insets`
+    /// (NSGeometry.h). Sig registers `of(ID, EDGEINSETS)`, so the shape is exact.
+    public static NSValue valueWithEdgeInsets(NSEdgeInsets insets) {
+        if (insets == null) throw new IllegalArgumentException("edgeInsets null");
+        ensureInit();
+        try {
+            MemorySegment peer = (MemorySegment) handles.hWithEdgeInsets().invokeExact(
+                    ObjC.cls("NSValue"), ObjC.sel("valueWithEdgeInsets:"), insets.toSegment());
+            return wrap(peer);
+        } catch (Throwable t) { throw new RuntimeException("valueWithEdgeInsets: failed", t); }
     }
 
     /// valueWithNonretainedObject: — native.
@@ -155,6 +167,17 @@ public class NSValue extends NSObject {
             MemorySegment seg = (MemorySegment) handles.hRangeValue().invokeExact(ObjC.structSlot(), peer, ObjC.sel("rangeValue"));
             return NSRange.fromSegment(seg);
         } catch (Throwable t) { throw new RuntimeException("rangeValue failed", t); }
+    }
+
+    /// edgeInsetsValue — `@property (readonly) NSEdgeInsets edgeInsetsValue`
+    /// (NSGeometry.h).
+    public NSEdgeInsets edgeInsetsValue() {
+        ensureInit();
+        try {
+            MemorySegment seg = (MemorySegment) handles.hEdgeInsetsValue().invokeExact(
+                    ObjC.structSlot(), peer, ObjC.sel("edgeInsetsValue"));
+            return NSEdgeInsets.fromSegment(seg);
+        } catch (Throwable t) { throw new RuntimeException("edgeInsetsValue failed", t); }
     }
 
     /// objCType — C string

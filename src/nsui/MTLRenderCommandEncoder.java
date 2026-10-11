@@ -75,7 +75,8 @@ public final class MTLRenderCommandEncoder extends NSObject {
 
     /// setRenderPipelineState:.
     public void setRenderPipelineState(MTLRenderPipelineState state) {
-        ObjC.msgSendVoidId(peer, ObjC.sel("setRenderPipelineState:"), ObjC.nullablePeer(state));
+        Bounds.nonNull(state, "setRenderPipelineState:");
+        ObjC.msgSendVoidId(peer, ObjC.sel("setRenderPipelineState:"), state.peer());
     }
 
     /// setDepthStencilState: (nil disables depth/stencil testing).

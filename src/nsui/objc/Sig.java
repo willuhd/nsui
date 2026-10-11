@@ -306,6 +306,7 @@ public final class Sig {
         of(Ret.SHORT, Arg.INT),                           // characterAtIndex:
         of(Ret.EDGEINSETS),                                 // contentInsets / capInsets / safeAreaInsets / edgeInsets
         of(Ret.VOID, Arg.EDGEINSETS),                       // setContentInsets: / setCapInsets: / setEdgeInsets:
+        of(Ret.ID, Arg.EDGEINSETS),                         // NSValue valueWithEdgeInsets:
         // --- narrow scalars (append-only) ---
         // Ret.INT stays the C-long class: NSInteger/NSUInteger and the long/long-long
         // families are genuinely 64-bit, and the remaining 32-bit `i` returns read the

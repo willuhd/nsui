@@ -52,16 +52,17 @@ public final class NSWorkspace extends NSObject {
         }
     }
 
-    /// [workspace openURL:] — URL string -> BOOL (nil input yields NO).
+    /// [workspace openURL:] — URL or filesystem path string -> BOOL (nil input yields NO).
     public boolean openURL(String urlString) {
         ensureInit();
         // nil string maps straight to a nil URL: fileURLWithPath: would raise on nil.
         MemorySegment url = MemorySegment.NULL;
         if (urlString != null) {
-            // Build NSURL via NSURL URLWithString:
-            url = ObjC.msgSendIdId(ObjC.cls("NSURL"), ObjC.sel("URLWithString:"), ObjC.nsstring(urlString));
-            if (url == null || url.address() == 0) {
-                // try fileURLWithPath:
+            // A plain path (no scheme separator) must become a file URL: URLWithString:
+            // returns a non-nil, non-file URL for "/tmp/x", so a fallback after it is dead.
+            if (urlString.contains("://")) {
+                url = ObjC.msgSendIdId(ObjC.cls("NSURL"), ObjC.sel("URLWithString:"), ObjC.nsstring(urlString));
+            } else {
                 url = ObjC.msgSendIdId(ObjC.cls("NSURL"), ObjC.sel("fileURLWithPath:"), ObjC.nsstring(urlString));
             }
         }

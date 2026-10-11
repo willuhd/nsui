@@ -110,15 +110,15 @@ public final class NSWindowTabGroup extends NSObject {
         ObjC.msgSendVoidBool(peer, ObjC.sel("setOverviewVisible:"), flag);
     }
 
-    /// [group count] helper via windows count
+    /// [group count] — derived from the `windows` array.
+    ///
+    /// The class does not implement `count` (the object AppKit returns is a private
+    /// `NSWindowStackController`), and the old try/catch fallback could never run:
+    /// a native ObjC exception cannot be caught from Java — the process aborts before
+    /// the catch executes. So the count is taken from `windows` directly.
     public long count() {
         ensureInit();
-        try {
-            return (long) handles.hInt().invokeExact(peer, ObjC.sel("count"));
-        } catch (Throwable t) {
-            // fallback via windows array
-            NSArray arr = windows();
-            return arr == null ? 0 : arr.count();
-        }
+        NSArray arr = windows();
+        return arr == null ? 0 : arr.count();
     }
 }

@@ -46,12 +46,15 @@ public final class NSFilePromiseProvider extends NSObject {
         if (delegate == null || delegate.peer() == null || delegate.peer().address() == 0) {
             throw new IllegalArgumentException("initWithFileType:delegate: requires a non-nil delegate implementing the file-promise protocol");
         }
+        if (fileType == null || fileType.isEmpty()) {
+            throw new IllegalArgumentException("initWithFileType:delegate: requires a non-empty file type");
+        }
         ensureInit();
         try {
             MemorySegment alloc = ObjC.msgSendId(ObjC.cls("NSFilePromiseProvider"), ObjC.sel("alloc"));
             MethodHandle hInit = ObjC.handle(Sig.of(Ret.ID, Arg.ID, Arg.ID));
-            MemorySegment ft = fileType == null ? MemorySegment.NULL : ObjC.nsstring(fileType);
-            MemorySegment del = delegate == null ? MemorySegment.NULL : delegate.peer();
+            MemorySegment ft = ObjC.nsstring(fileType);
+            MemorySegment del = delegate.peer();
             MemorySegment peer = (MemorySegment) hInit.invokeExact(alloc, ObjC.sel("initWithFileType:delegate:"), ft, del);
             return wrap(peer);
         } catch (Throwable t) { throw new RuntimeException("NSFilePromiseProvider init failed", t); }

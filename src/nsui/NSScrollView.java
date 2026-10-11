@@ -118,10 +118,15 @@ public final class NSScrollView extends NSView {
     }
 
     /// [scroll setContentView:] — set the clip view.
+    ///
+    /// `contentView` is declared `strong` (nonnull) in NSScrollView.h, unlike the
+    /// adjacent `documentView` which *is* nullable — so a null clip view is a caller
+    /// error, not a detach. (The previous doc claimed parity with setDocumentView:.)
     public void setContentView(NSView view) {
         ensureInit();
+        Bounds.nonNull(view, "setContentView:");
         try {
-            hVoidId.invokeExact(peer, ObjC.sel("setContentView:"), (MemorySegment) (view == null ? MemorySegment.NULL : view.peer()));
+            hVoidId.invokeExact(peer, ObjC.sel("setContentView:"), view.peer());
         } catch (Throwable t) {
             throw new RuntimeException("setContentView: failed", t);
         }

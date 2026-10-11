@@ -214,8 +214,10 @@ public final class NSBezierPath extends NSObject {
         ObjC.msgSendVoidLong(peer, ObjC.sel("setLineJoinStyle:"), style);
     }
 
-    /// -CGPath — the CoreGraphics CGPath backing this bezier path (raw pointer,
-    /// owned by the path; do not release). Enables CAShapeLayer.setPath(NSBezierPath).
+    /// -CGPath — a copied, autoreleased CoreGraphics CGPathRef for this bezier path
+    /// (raw pointer, `CF_RETURNS_NOT_RETAINED`: do not release). It is only valid until
+    /// the enclosing autorelease pool drains, so do not hold it across a pool drain.
+    /// Enables CAShapeLayer.setPath(NSBezierPath).
     public MemorySegment cgPath() {
         ensureInit();
         return ObjC.msgSendId(peer, ObjC.sel("CGPath"));
@@ -493,6 +495,7 @@ public final class NSBezierPath extends NSObject {
     /// elementAtIndex: — the element kind (ELEMENT_*), points variant omitted.
     public long elementAtIndex(long index) {
         ensureInit();
+        Bounds.index(index, elementCount(), "elementAtIndex:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.INT, Arg.INT));
             return (long) h.invokeExact(peer, ObjC.sel("elementAtIndex:"), index);

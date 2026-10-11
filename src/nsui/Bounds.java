@@ -1,5 +1,7 @@
 package nsui;
 
+import java.lang.foreign.MemorySegment;
+
 /// Java-side pre-validation for native index and range arguments.
 ///
 /// Foundation and AppKit raise an Objective-C `NSRangeException` when an index or
@@ -62,6 +64,19 @@ final class Bounds {
             throw new IllegalArgumentException(what + ": index set reaches " + last
                     + " out of bounds (count " + count + ")");
         }
+    }
+
+    /// A caller-supplied out-parameter buffer must be NULL (ignore) or at least
+    /// `bytes` wide. Native code writes the full width regardless of the segment's
+    /// declared size, so a short segment corrupts neighbouring heap memory. Returns
+    /// the segment to forward (NULL for nil).
+    static MemorySegment outBuffer(MemorySegment seg, long bytes, String what) {
+        if (seg == null || seg.address() == 0) return MemorySegment.NULL;
+        if (seg.byteSize() < bytes) {
+            throw new IllegalArgumentException(what + ": out buffer must be null or at least "
+                    + bytes + " bytes (got " + seg.byteSize() + ")");
+        }
+        return seg;
     }
 
     /// `start`/`count` must satisfy `0 <= start <= start + count <= total` — the

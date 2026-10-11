@@ -79,15 +79,20 @@ public final class TouchBarWindowDocTest {
                         "NSTouchBarItem visibilityPriority restored (got " + item.visibilityPriority() + ")");
             } catch (Throwable t) { check(false, "NSTouchBarItem visibilityPriority threw: " + t); }
 
-            // visible toggle — guarded, may be no-op if selector absent
+            // visible is readonly: setVisible is not supported and must fail loudly
             try {
                 boolean v = item.isVisible();
-                TestKit.noThrow("NSTouchBarItem isVisible/setVisible no crash (v=" + v + " after=" + item.isVisible() + ")", () -> item.setVisible(!v));
-                item.setVisible(v);
+                TestKit.probe("NSTouchBarItem isVisible accessor (v=" + v + ")");
+                TestKit.expectThrows("NSTouchBarItem setVisible throws (readonly)", IllegalStateException.class,
+                        () -> item.setVisible(!v));
             } catch (Throwable t) { check(false, "NSTouchBarItem isVisible threw: " + t); }
 
-            // view null no crash
-            try { TestKit.noThrow("NSTouchBarItem setView null no crash", () -> item.setView(null)); } catch (Throwable t){ check(false, "setView null threw: "+t); }
+            // view is readonly on the base class: setView is not supported and must fail loudly
+            try {
+                TestKit.expectThrows("NSTouchBarItem setView throws (readonly)", IllegalStateException.class,
+                        () -> item.setView(null));
+            } catch (Throwable t){ check(false, "setView null threw: "+t); }
+            try { TestKit.noThrow("NSTouchBarItem view accessor no crash", () -> item.view()); } catch (Throwable t){ check(false, "view threw: "+t); }
             try { TestKit.noThrow("NSTouchBarItem view accessor no crash", () -> item.view()); } catch (Throwable t){ check(false, "view threw: "+t); }
 
         } catch (Throwable t) {

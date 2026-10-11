@@ -92,9 +92,9 @@ public final class TouchBarMenuTest {
             String gotId = item.identifier();
             check(iid.equals(gotId), "NSTouchBarItem identifier round-trip (got \"" + gotId + "\")");
 
-            // view null no crash
-            item.setView(null);
-            TestKit.probe("NSTouchBarItem setView(null) no crash");
+            // view is readonly on the base class: setView is not supported and must fail loudly
+            TestKit.expectThrows("NSTouchBarItem setView(null) throws (readonly)", IllegalStateException.class,
+                    () -> item.setView(null));
             TestKit.noThrow("NSTouchBarItem view() no crash", () -> item.view());
         } catch (Throwable t) {
             check(false, "NSTouchBarItem section threw: " + t);

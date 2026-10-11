@@ -1078,6 +1078,14 @@ public final class FoundationCoverageTest {
                 () -> md.resetBytesInRange(new NSRange(2, 9)));
         TestKit.expectThrows("NSMutableData replaceBytesInRange past end rejected", IllegalArgumentException.class,
                 () -> md.replaceBytesInRange(new NSRange(2, 9), new byte[9]));
+        // --- factory argument guards (auditor follow-ups) ---
+        TestKit.expectThrows("NSArray.arrayWithObject(null) rejected", IllegalArgumentException.class,
+                () -> NSArray.arrayWithObject(null));
+        TestKit.expectThrows("NSData.dataWithBytes length beyond the source rejected",
+                IllegalArgumentException.class,
+                () -> NSData.dataWithBytes(new byte[]{1, 2}, 5));
+        TestKit.expectThrows("NSData.dataWithBytes negative length rejected", IllegalArgumentException.class,
+                () -> NSData.dataWithBytes(new byte[]{1, 2}, -1));
         // NSDictionary dictionaryWithObjects:forKeys:count: has no wrapper in-file
         // (document-only, no guard) — no negative test. MTL colorAttachment
         // negatives live in MetalDepthStencilTest (owning suite).

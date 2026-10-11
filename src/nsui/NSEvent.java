@@ -638,14 +638,14 @@ ensureInit(); return ObjC.msgSendLong(peer, Sels.pressureBehavior); }
         } catch (Throwable t) { throw new RuntimeException("touchesMatchingPhase:inView: failed", t); }
     }
 
-    /// [event coalescedTouchesForTouch:] — coalesced touches for one touch.
-    public NSSet coalescedTouchesForTouch(MemorySegment touch) {
+    /// [event coalescedTouchesForTouch:] — coalesced touches for one touch (NSArray of NSTouch).
+    public NSArray coalescedTouchesForTouch(MemorySegment touch) {
         ensureInit();
         try {
             MemorySegment s = (MemorySegment) ObjC.handle(Sig.of(Ret.ID, Sig.Arg.ID))
                     .invokeExact(peer, Sels.coalescedTouchesForTouch,
                             (MemorySegment) (touch == null ? MemorySegment.NULL : touch));
-            return NSSet.wrap(s);
+            return NSArray.wrap(s);
         } catch (Throwable t) { throw new RuntimeException("coalescedTouchesForTouch: failed", t); }
     }
 

@@ -121,8 +121,20 @@ public final class NSCollectionView extends NSView {
         }
     }
 
-    /// [view setItemPrototype:]
+    /// [view setItemPrototype:] — raw peer overload; must be an NSCollectionViewItem.
+    ///
+    /// AppKit does not type-check the argument, it MESSAGES it
+    /// ("-[NSView _setCollectionView:]: unrecognized selector sent to instance", verified,
+    /// exit 134), so any other class aborts. The documented API requires an
+    /// NSCollectionViewItem, and subclasses (including KVO subclasses) pass isKindOfClass:,
+    /// so this mirrors the requirement instead of adding a stricter rule.
     public void setItemPrototype(MemorySegment prototype) {
+        if (prototype != null && prototype.address() != 0
+                && !NSObject.wrap(prototype).isKindOfClass("NSCollectionViewItem")) {
+            throw new IllegalArgumentException("setItemPrototype: the prototype must be an "
+                    + "NSCollectionViewItem (AppKit messages it with _setCollectionView:, which "
+                    + "aborts for any other class)");
+        }
         try {
             MemorySegment arg = (prototype == null || prototype.address() == 0) ? MemorySegment.NULL : prototype;
             handles.hSetDataSource().invokeExact(peer, ObjC.sel("setItemPrototype:"), (MemorySegment) arg);
@@ -275,8 +287,19 @@ public final class NSCollectionView extends NSView {
         }
     }
 
-    /// [view setCollectionViewLayout:]
+    /// [view setCollectionViewLayout:] — raw peer overload; must be an NSCollectionViewLayout.
+    ///
+    /// This mirrors AppKit's own assertion exactly, character for character:
+    /// "Invalid parameter not satisfying: newCollectionViewLayout == nil ||
+    /// [newCollectionViewLayout isKindOfClass:[NSCollectionViewLayout class]]" (verified,
+    /// exit 134). nil stays allowed; subclasses (flow/grid/compositional, KVO proxies) pass.
     public void setCollectionViewLayout(MemorySegment layout) {
+        if (layout != null && layout.address() != 0
+                && !NSObject.wrap(layout).isKindOfClass("NSCollectionViewLayout")) {
+            throw new IllegalArgumentException("setCollectionViewLayout: expected an "
+                    + "NSCollectionViewLayout (nil or an NSCollectionViewLayout subclass; AppKit "
+                    + "asserts isKindOfClass:[NSCollectionViewLayout class] and aborts)");
+        }
         try {
             MemorySegment arg = (layout == null || layout.address() == 0) ? MemorySegment.NULL : layout;
             handles.hSetDataSource().invokeExact(peer, ObjC.sel("setCollectionViewLayout:"), (MemorySegment) arg);

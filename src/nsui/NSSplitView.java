@@ -20,7 +20,6 @@ public final class NSSplitView extends NSView {
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
     private static volatile boolean initialized;
-    private static MethodHandle hInitFrame;     // (id, SEL, NSRect) -> id
     private static MethodHandle hGetBool;       // (id, SEL) -> BOOL
     private static MethodHandle hSetBool;       // (id, SEL, BOOL) -> void
     private static MethodHandle hGetLong;       // (id, SEL) -> long (NSInteger)
@@ -48,7 +47,6 @@ public final class NSSplitView extends NSView {
 
     private static synchronized void ensureInitLocked() {
         if (initialized) return;
-        hInitFrame = ObjC.handle(Sig.of(Ret.ID, Arg.RECT));
         hGetBool = ObjC.handle(Sig.of(Ret.BOOL));
         hSetBool = ObjC.handle(Sig.of(Ret.VOID, Arg.BOOL));
         hGetLong = ObjC.handle(Sig.of(Ret.INT));

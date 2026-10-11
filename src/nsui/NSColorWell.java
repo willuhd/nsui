@@ -23,7 +23,6 @@ public final class NSColorWell extends NSControl {
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
     private static volatile boolean initialized;
-    private static MethodHandle hInitFrame;   // (id, SEL, NSRect) -> id
     private static MethodHandle hSetColor;    // (id, SEL, id) -> void    [setColor:]
     private static MethodHandle hColor;       // (id, SEL) -> id          [color]
     private static MethodHandle hVoid;        // (id, SEL) -> void        [deactivate]
@@ -46,7 +45,6 @@ public final class NSColorWell extends NSControl {
 
     private static synchronized void ensureInitLocked() {
         if (initialized) return;
-        hInitFrame = ObjC.handle(Sig.of(Ret.ID, Arg.RECT));
         hSetColor = ObjC.handle(Sig.of(Ret.VOID, Arg.ID));
         hColor = ObjC.handle(Sig.of(Ret.ID));
         hVoid = ObjC.handle(Sig.of(Ret.VOID));

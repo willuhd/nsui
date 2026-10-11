@@ -19,7 +19,6 @@ public final class NSBox extends NSView {
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
     private static volatile boolean initialized;
-    private static MethodHandle hInitFrame;   // (id, SEL, NSRect) -> id
     private static MethodHandle hSetTitle;    // (id, SEL, id) -> void    [setTitle:]
     private static MethodHandle hTitle;       // (id, SEL) -> id          [title]
     private static MethodHandle hSetInt;      // (id, SEL, int) -> void   [setBoxType: / setBorderType: / setTitlePosition:]
@@ -40,7 +39,6 @@ public final class NSBox extends NSView {
 
     private static synchronized void ensureInitLocked() {
         if (initialized) return;
-        hInitFrame = ObjC.handle(Sig.of(Ret.ID, Arg.RECT));
         hSetTitle = ObjC.handle(Sig.of(Ret.VOID, Arg.ID));
         hTitle = ObjC.handle(Sig.of(Ret.ID));
         hSetInt = ObjC.handle(Sig.of(Ret.VOID, Arg.INT));

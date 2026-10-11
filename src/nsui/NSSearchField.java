@@ -24,7 +24,6 @@ public class NSSearchField extends NSTextField {
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
     private static volatile boolean initialized;
-    private static MethodHandle hInitFrame;   // (id, SEL, NSRect) -> id
     private static MethodHandle hBool;        // (id, SEL) -> bool
     private static MethodHandle hVoidBool;    // (id, SEL, bool) -> void
     private static MethodHandle hId;          // (id, SEL) -> id
@@ -45,7 +44,6 @@ public class NSSearchField extends NSTextField {
 
     private static synchronized void ensureInitLocked() {
         if (initialized) return;
-        hInitFrame = ObjC.handle(Sig.of(Ret.ID, Arg.RECT));
         hBool = ObjC.handle(Sig.of(Ret.BOOL));
         hVoidBool = ObjC.handle(Sig.of(Ret.VOID, Arg.BOOL));
         hId = ObjC.handle(Sig.of(Ret.ID));

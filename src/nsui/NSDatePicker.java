@@ -23,7 +23,6 @@ public final class NSDatePicker extends NSControl {
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
     private static volatile boolean initialized;
-    private static MethodHandle hInitFrame;   // (id, SEL, NSRect) -> id
     private static MethodHandle hSetDate;     // (id, SEL, id) -> void     [setDateValue:]
     private static MethodHandle hDate;        // (id, SEL) -> id           [dateValue]
     private static MethodHandle hSetInt;      // (id, SEL, int) -> void    [setDatePickerStyle: / setDatePickerElements:]
@@ -43,7 +42,6 @@ public final class NSDatePicker extends NSControl {
 
     private static synchronized void ensureInitLocked() {
         if (initialized) return;
-        hInitFrame = ObjC.handle(Sig.of(Ret.ID, Arg.RECT));
         hSetDate = ObjC.handle(Sig.of(Ret.VOID, Arg.ID));
         hDate = ObjC.handle(Sig.of(Ret.ID));
         hSetInt = ObjC.handle(Sig.of(Ret.VOID, Arg.INT));

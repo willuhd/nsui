@@ -24,7 +24,6 @@ public final class NSLevelIndicator extends NSControl {
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
     private static volatile boolean initialized;
-    private static MethodHandle hInitFrame;   // (id, SEL, NSRect) -> id
     private static MethodHandle hSetStyle;    // (id, SEL, int) -> void   [setLevelIndicatorStyle:]
     private static MethodHandle hSetDouble;   // (id, SEL, double) -> void  [setMinValue:/setMaxValue:/setDoubleValue:]
     private static MethodHandle hDouble;      // (id, SEL) -> double        [doubleValue]
@@ -42,7 +41,6 @@ public final class NSLevelIndicator extends NSControl {
 
     private static synchronized void ensureInitLocked() {
         if (initialized) return;
-        hInitFrame = ObjC.handle(Sig.of(Ret.ID, Arg.RECT));
         hSetStyle = ObjC.handle(Sig.of(Ret.VOID, Arg.INT));
         hSetDouble = ObjC.handle(Sig.of(Ret.VOID, Arg.DOUBLE));
         hDouble = ObjC.handle(Sig.of(Ret.DOUBLE));

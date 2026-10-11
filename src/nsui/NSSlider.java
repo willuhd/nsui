@@ -25,7 +25,6 @@ public final class NSSlider extends NSControl {
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
     private static volatile boolean initialized;
-    private static MethodHandle hInitFrame;   // (id, SEL, NSRect) -> id
     private static MethodHandle hSetDouble;   // (id, SEL, double) -> void  [setDoubleValue:/setMinValue:/setMaxValue:]
     private static MethodHandle hDouble;      // (id, SEL) -> double        [doubleValue]
     private static MethodHandle hBoolId;      // (id, SEL, id) -> bool      [acceptsFirstMouse:]
@@ -44,7 +43,6 @@ public final class NSSlider extends NSControl {
 
     private static synchronized void ensureInitLocked() {
         if (initialized) return;
-        hInitFrame = ObjC.handle(Sig.of(Ret.ID, Arg.RECT));
         hSetDouble = ObjC.handle(Sig.of(Ret.VOID, Arg.DOUBLE));
         hDouble = ObjC.handle(Sig.of(Ret.DOUBLE));
         hBoolId = ObjC.handle(Sig.of(Ret.BOOL, Arg.ID));

@@ -43,7 +43,6 @@ public class NSStackView extends NSView {
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
     private static volatile boolean initialized;
-    private static MethodHandle hInitFrame;   // (id, SEL, NSRect) -> id
     private static MethodHandle hSpacing;     // (id, SEL, double) -> void
     private static MethodHandle hEdgeInsets;  // (id, SEL, NSEdgeInsets) -> void (32-byte struct, layout-identical to NSRect)
     private static MethodHandle hGetDouble;   // (id, SEL) -> double
@@ -61,7 +60,6 @@ public class NSStackView extends NSView {
 
     private static synchronized void ensureInitLocked() {
         if (initialized) return;
-        hInitFrame = ObjC.handle(Sig.of(Ret.ID, Arg.RECT));
         hSpacing = ObjC.handle(Sig.of(Ret.VOID, Arg.DOUBLE));
         hEdgeInsets = ObjC.handle(Sig.of(Ret.VOID, Arg.EDGEINSETS));
         hGetDouble = ObjC.handle(Sig.of(Ret.DOUBLE));

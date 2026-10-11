@@ -21,7 +21,6 @@ public final class NSComboBox extends NSControl {
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
     private static volatile boolean initialized;
-    private static MethodHandle hInitFrame;   // (id, SEL, NSRect) -> id
     private static MethodHandle hAddItem;     // (id, SEL, id) -> void     [addItemWithObjectValue:]
     private static MethodHandle hSelect;      // (id, SEL, long) -> void   [selectItemAtIndex:]
     private static MethodHandle hInsert;      // (id, SEL, id, long) -> void [insertItemWithObjectValue:atIndex:]
@@ -42,7 +41,6 @@ public final class NSComboBox extends NSControl {
 
     private static synchronized void ensureInitLocked() {
         if (initialized) return;
-        hInitFrame = ObjC.handle(Sig.of(Ret.ID, Arg.RECT));
         hAddItem = ObjC.handle(Sig.of(Ret.VOID, Arg.ID));
         hSelect = ObjC.handle(Sig.of(Ret.VOID, Arg.INT));
         hInsert = ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.INT));

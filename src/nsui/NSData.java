@@ -13,6 +13,11 @@ import static nsui.objc.Sig.Ret;
 /// via Autorelease per frame, matching NSString/NSArray), so AppKit
 /// APIs reading the peer see the bytes. No side map, no address keys.
 ///
+/// **Lifetime:** an autoreleased result is valid only until the enclosing pool
+/// drains (the pool `NSApplication.pumpFor` pops each turn). Holding one across
+/// that boundary is a use-after-free; call `NSObject.keepAlive()` on any NSData
+/// you must keep longer than the current turn.
+///
 /// Header-completeness (`NSData.h`, immutable): every safe method whose shape is in the
 /// Sig vocabulary is wrapped below. OMITTED — rangeOfData:options:range: (needs
 /// of(RANGE,ID,INT,RANGE), not in Sig); dataWithBytesNoCopy:.../initWithBytesNoCopy:.../

@@ -351,9 +351,12 @@ public class NSControl extends NSView {
             return (int) h.invokeExact(peer, Sels.intValue);
         } catch (Throwable t) { throw new RuntimeException("intValue failed", t); }
     }
+    /// setIntValue: — C `int`, 32-bit (exact INT32 call shape).
     public void setIntValue(int v) {
         ensureInit();
-        ObjC.msgSendVoidLong(peer, Sels.setIntValue, v);
+        try {
+            ObjC.handle(Sig.of(Ret.VOID, Arg.INT32)).invokeExact(peer, Sels.setIntValue, v);
+        } catch (Throwable t) { throw new RuntimeException("setIntValue: failed", t); }
     }
     public long integerValue() {
         ensureInit();

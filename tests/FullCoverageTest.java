@@ -222,7 +222,17 @@ public final class FullCoverageTest {
             check(f.xHeight()!=0, "xHeight");
             check(!f.isFixedPitch(), "isFixedPitch");
             check(f.fontDescriptor()!=null && f.fontDescriptor().address()!=0, "fontDescriptor");
-            check(f.symbolicTraits()==2147483648L, "symbolicTraits");
+            // symbolicTraits is a 32-bit UNSIGNED mask, and Helvetica carries the high
+            // bit — so this is the exact oracle for the width fix: a signed widen
+            // would read -2147483648 here. (Was the bare magic value 2147483648L,
+            // which only asserted "some large number".)
+            check(f.symbolicTraits()==0x80000000L,
+                    "symbolicTraits reads the unsigned 32-bit high bit (got 0x"
+                            + Long.toHexString(f.symbolicTraits()) + ")");
+            NSFont boldF = NSFont.boldSystemFontOfSize(12);
+            check(boldF!=null && (boldF.symbolicTraits()&0x2L)!=0
+                            && (NSFont.systemFontOfSize(12).symbolicTraits()&0x2L)==0,
+                    "bold trait bit (0x2) set on a bold font and clear on a regular one");
             check(f.textTransform()!=null, "textTransform");
             check(f.boundingRectForFont()!=null, "boundingRect");
             check(f.maximumAdvancement()!=null, "maximumAdvancement");

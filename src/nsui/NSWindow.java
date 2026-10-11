@@ -2213,10 +2213,12 @@ ensureInit(); return ObjC.msgSendBool(peer, Sels.hasDynamicDepthLimit); }
         }
     }
 
-    /// [window setDepthLimit:].
+    /// [window setDepthLimit:] — NSWindowDepth is a 32-bit int (exact INT32 shape).
     public void setDepthLimit(long limit) {
         ensureInit();
-        ObjC.msgSendVoidLong(peer, Sels.setDepthLimit, limit);
+        try {
+            ObjC.handle(Sig.of(Ret.VOID, Arg.INT32)).invokeExact(peer, Sels.setDepthLimit, (int) limit);
+        } catch (Throwable t) { throw new RuntimeException("setDepthLimit: failed", t); }
     }
 
     /// [window animationBehavior] (macOS 10.7+) — 0=default, 1=none, ...5=alertPanel.

@@ -132,6 +132,12 @@ public final class CALayerPartsTest {
         }
 
         try {
+            // Real oracles: each factory must return without throwing. Non-nil stays a
+            // probe because EDR availability is machine-dependent, but the no-throw
+            // contract is now asserted (these were three bare probes).
+            TestKit.noThrow("EDR nits factory returns", () -> CAEDRMetadata.hdr10(0.5f, 4000.0f, 1.0f));
+            TestKit.noThrow("EDR SEI factory (nil blobs) returns", () -> CAEDRMetadata.hdr10(null, null, 1.0f));
+            TestKit.noThrow("EDR hlg factory (nil env) returns", () -> CAEDRMetadata.hlg(null));
             TestKit.probe("EDR nits factory non-nil: " + (CAEDRMetadata.hdr10(0.5f, 4000.0f, 1.0f) != null));
             TestKit.probe("EDR SEI factory non-nil (nil blobs): " + (CAEDRMetadata.hdr10(null, null, 1.0f) != null));
             TestKit.probe("EDR hlg factory non-nil: " + (CAEDRMetadata.hlg(null) != null));

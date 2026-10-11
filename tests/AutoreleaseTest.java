@@ -1,5 +1,9 @@
 package nsui.tests;
 
+import nsui.NSData;
+import nsui.NSPoint;
+import nsui.NSString;
+import nsui.NSValue;
 import nsui.objc.Autorelease;
 import nsui.objc.ObjC;
 
@@ -83,6 +87,40 @@ public class AutoreleaseTest {
             fail("post-stress sanity string mismatch");
         } else {
             System.out.println("[AutoreleaseTest] post-stress sanity ok");
+        }
+
+        // 6. Lifetime contract: a wrapper around an autoreleased factory result is
+        //    valid only until the enclosing pool drains. keepAlive() must retain it
+        //    so it survives; WITHOUT the retain the peer is freed and the next
+        //    message send is a use-after-free (the ce67abc regression).
+        //    Only the positive direction is asserted here: reading a freed peer is
+        //    undefined behaviour, so the test must never do it deliberately.
+        NSData keptData;
+        NSString keptString;
+        NSValue keptValue;
+        MemorySegment lifetimePool = Autorelease.push();
+        try {
+            keptData = NSData.dataWithBytes(new byte[]{1, 2, 3, 4}).keepAlive();
+            keptString = NSString.stringWithUTF8String("kept across drain").keepAlive();
+            keptValue = NSValue.valueWithPoint(new NSPoint(3, 4)).keepAlive();
+        } finally {
+            Autorelease.pop(lifetimePool);
+        }
+        if (keptData.length() != 4) {
+            fail("keepAlive() NSData did not survive the pool drain (len=" + keptData.length() + ")");
+        } else {
+            System.out.println("[AutoreleaseTest] keepAlive() NSData survives the pool drain (len=4)");
+        }
+        if (!"kept across drain".equals(keptString.string())) {
+            fail("keepAlive() NSString did not survive the pool drain");
+        } else {
+            System.out.println("[AutoreleaseTest] keepAlive() NSString survives the pool drain");
+        }
+        NSPoint keptPoint = keptValue.pointValue();
+        if (keptPoint.x() != 3 || keptPoint.y() != 4) {
+            fail("keepAlive() NSValue did not survive the pool drain (" + keptPoint + ")");
+        } else {
+            System.out.println("[AutoreleaseTest] keepAlive() NSValue survives the pool drain");
         }
 
         TestKit.end();

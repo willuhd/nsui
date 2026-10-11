@@ -269,18 +269,24 @@ public final class CoreAnimStressTest {
         }
     }
 
-    /// Completion ordering: a later install supersedes an earlier one in the
-    /// same transaction. Uses a hidden layer only (no window) and runloop pumps.
-    /// Raw blocks (MemorySegment overload) and runnable bodies share the one
-    /// native completion slot, so the two modes are not interleaved within one
-    /// transaction: installing one supersedes the other.
+    /// Completion ordering across installs and transactions. Uses a hidden layer
+    /// only (no window) and runloop pumps.
+    ///
+    /// QuartzCore's `setCompletionBlock:` is a per-thread transaction property, and
+    /// its header states that a block is invoked as soon as the group completes
+    /// "or the completion block is set to a different value" — so replacing it
+    /// delivers the replaced body too. Both bodies must run exactly once, and a
+    /// second transaction's install must never steal the first transaction's body.
     private static void completionSupersedeProof() {
-        System.out.println("--- CATransaction completion ordering (later install supersedes) ---");
+        System.out.println("--- CATransaction completion ordering (replacement + transactions) ---");
         try {
             CALayer l = CALayer.create();
             MemorySegment loop = ObjC.msgSendId(ObjC.cls("NSRunLoop"), ObjC.sel("currentRunLoop"));
 
-            // Phase 1: two runnable installs, one commit; only the second runs.
+            // Phase 1: two runnable installs, one transaction. Replacing the property
+            // delivers the replaced block as well, so BOTH run — exactly once each.
+            // (The old single-shared-block design made the two installs the SAME
+            // property value, so it silently dropped the first body.)
             AtomicInteger aFired = new AtomicInteger(0);
             AtomicInteger bFired = new AtomicInteger(0);
             CATransaction.begin();
@@ -290,7 +296,7 @@ public final class CoreAnimStressTest {
             l.setPosition(new NSPoint(7, 7));
             CATransaction.commit();
             long deadline = System.currentTimeMillis() + 2000;
-            while (bFired.get() == 0 && System.currentTimeMillis() < deadline) {
+            while ((aFired.get() == 0 || bFired.get() == 0) && System.currentTimeMillis() < deadline) {
                 CATransaction.flush();
                 MemorySegment until = ObjC.msgSendIdDouble(
                         ObjC.cls("NSDate"), ObjC.sel("dateWithTimeIntervalSinceNow:"), 0.05);
@@ -300,12 +306,15 @@ public final class CoreAnimStressTest {
                     Thread.sleep(20);
                 }
             }
-            check(bFired.get() > 0, "second completion runs after supersede (count=" + bFired.get() + ")");
-            check(aFired.get() == 0, "first completion does not run after supersede (count=" + aFired.get() + ")");
+            check(aFired.get() == 1,
+                    "replaced completion is still delivered exactly once (count=" + aFired.get() + ")");
+            check(bFired.get() == 1,
+                    "replacement completion runs exactly once (count=" + bFired.get() + ")");
 
-            // Phase 2: a raw install supersedes a queued runnable body.
-            // The raw block reuses the registered thunk target, so no new upcall
-            // is introduced; its delivery finds an empty queue and drops.
+            // Phase 2: a raw install replaces a queued runnable body.
+            // The raw block reuses the registered thunk target and has no body
+            // registered, so its own delivery is a harmless no-op; the replaced
+            // runnable body is still delivered exactly once.
             java.lang.invoke.MethodHandle target = MethodHandles.lookup().findStatic(
                     CATransaction.class, "completionThunk",
                     MethodType.methodType(void.class, MemorySegment.class));
@@ -316,8 +325,20 @@ public final class CoreAnimStressTest {
             CATransaction.setCompletionBlock(rawAlias);
             l.setPosition(new NSPoint(8, 8));
             CATransaction.commit();
-            CATransaction.completionThunk(MemorySegment.NULL);
-            check(runFired.get() == 0, "runnable body does not run after raw supersede (count=" + runFired.get() + ")");
+            TestKit.noThrow("completionThunk(NULL) is a no-op", () -> CATransaction.completionThunk(MemorySegment.NULL));
+            long deadlineRaw = System.currentTimeMillis() + 2000;
+            while (runFired.get() == 0 && System.currentTimeMillis() < deadlineRaw) {
+                CATransaction.flush();
+                MemorySegment until = ObjC.msgSendIdDouble(
+                        ObjC.cls("NSDate"), ObjC.sel("dateWithTimeIntervalSinceNow:"), 0.05);
+                try {
+                    ObjC.msgSendVoidId(loop, ObjC.sel("runUntilDate:"), until);
+                } catch (Throwable t) {
+                    Thread.sleep(20);
+                }
+            }
+            check(runFired.get() == 1,
+                    "replaced runnable body is delivered once when a raw block replaces it (count=" + runFired.get() + ")");
             CATransaction.setCompletionBlock((Runnable) null);
             try { CATransaction.commit(); } catch (Throwable ignore) {}
             CATransaction.flush();
@@ -345,6 +366,44 @@ public final class CoreAnimStressTest {
             CATransaction.setCompletionBlock((Runnable) null);
             try { CATransaction.commit(); } catch (Throwable ignore) {}
             CATransaction.flush();
+
+            // Phase 4: two SEPARATE transactions, each with its own pending completion.
+            // Regression guard: the second install must not destroy the first body.
+            // (A single shared slot + one global queue would leave exactly one body
+            // here, then run it for whichever transaction drained first — the first
+            // transaction's body would never run at all.)
+            int pendingBefore = CATransaction.pendingCompletionCount();
+            AtomicInteger t1Fired = new AtomicInteger(0);
+            AtomicInteger t2Fired = new AtomicInteger(0);
+            CATransaction.begin();
+            CATransaction.setAnimationDuration(0.01);
+            CATransaction.setCompletionBlock(t1Fired::incrementAndGet);
+            l.setPosition(new NSPoint(11, 11));
+            CATransaction.commit();
+            CATransaction.begin();
+            CATransaction.setAnimationDuration(0.01);
+            CATransaction.setCompletionBlock(t2Fired::incrementAndGet);
+            l.setPosition(new NSPoint(12, 12));
+            CATransaction.commit();
+            int pendingAfter = CATransaction.pendingCompletionCount();
+            check(pendingAfter == pendingBefore + 2,
+                    "two transactions keep two pending completions (before=" + pendingBefore
+                            + ", after=" + pendingAfter + ")");
+            long deadline3 = System.currentTimeMillis() + 3000;
+            while ((t1Fired.get() == 0 || t2Fired.get() == 0) && System.currentTimeMillis() < deadline3) {
+                CATransaction.flush();
+                MemorySegment until = ObjC.msgSendIdDouble(
+                        ObjC.cls("NSDate"), ObjC.sel("dateWithTimeIntervalSinceNow:"), 0.05);
+                try {
+                    ObjC.msgSendVoidId(loop, ObjC.sel("runUntilDate:"), until);
+                } catch (Throwable t) {
+                    Thread.sleep(20);
+                }
+            }
+            check(t1Fired.get() == 1,
+                    "first transaction's completion runs exactly once (count=" + t1Fired.get() + ")");
+            check(t2Fired.get() == 1,
+                    "second transaction's completion runs exactly once (count=" + t2Fired.get() + ")");
         } catch (Throwable t) {
             check(false, "completion ordering section threw: " + t);
             t.printStackTrace(System.out);

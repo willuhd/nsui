@@ -15,7 +15,7 @@ import static nsui.objc.Sig.Ret;
 public final class NSFont extends NSObject {
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
-    private record Handles(MethodHandle hFontWithName, MethodHandle hFontWithDescriptor, MethodHandle hSystemWeight, MethodHandle hDouble, MethodHandle hId, MethodHandle hBool, MethodHandle hInt) {}
+    private record Handles(MethodHandle hFontWithName, MethodHandle hFontWithDescriptor, MethodHandle hSystemWeight, MethodHandle hDouble, MethodHandle hId, MethodHandle hBool, MethodHandle hInt, MethodHandle hInt32) {}
     private static volatile Handles H;
 
     private NSFont(MemorySegment peer) {
@@ -41,7 +41,8 @@ public final class NSFont extends NSObject {
                 ObjC.handle(Sig.of(Ret.DOUBLE)),
                 ObjC.handle(Sig.of(Ret.ID)),
                 ObjC.handle(Sig.of(Ret.BOOL)),
-                ObjC.handle(Sig.of(Ret.INT)));
+                ObjC.handle(Sig.of(Ret.INT)),
+                ObjC.handle(Sig.of(Ret.INT32)));
     }
 
     /// [+[NSFont fontWithName:size:]] — the named font at a point size.
@@ -207,11 +208,14 @@ public final class NSFont extends NSObject {
         try { return (MemorySegment) H.hId().invokeExact(peer, ObjC.sel("fontDescriptor")); } catch (Throwable t) { throw new RuntimeException("fontDescriptor failed", t); }
     }
 
-    /// [fontDescriptor symbolicTraits] — bitmask (NSFontDescriptorSymbolicTraits).
+    /// [fontDescriptor symbolicTraits] — bitmask (NSFontDescriptorSymbolicTraits,
+    /// a 32-bit unsigned int). Read at its exact width and zero-extended into the
+    /// Java long, so the high trait bit (0x80000000) arrives as 2147483648 rather
+    /// than a sign-extended negative.
     public long symbolicTraits() {
         MemorySegment desc = fontDescriptor();
         if (desc == null || desc.address() == 0) return 0;
-        try { return (long) H.hInt().invokeExact(desc, ObjC.sel("symbolicTraits")); } catch (Throwable t) { throw new RuntimeException("symbolicTraits failed", t); }
+        try { return ((int) H.hInt32().invokeExact(desc, ObjC.sel("symbolicTraits"))) & 0xFFFFFFFFL; } catch (Throwable t) { throw new RuntimeException("symbolicTraits failed", t); }
     }
 
     /// [font textTransform] — NSAffineTransform peer or null.

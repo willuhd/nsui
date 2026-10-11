@@ -251,7 +251,10 @@ public final class WindowCoverageTest {
             check(w1.attachedSheet() == null && !w1.isSheet() && w1.sheetParent() == null,
                     "sheet state nil/false with no sheet");
             NSDictionary dd = w1.deviceDescription();
-            check(dd != null && dd.count() == 5, "deviceDescription null-safe");
+            // The key count is display/machine-dependent (5 here, but not on every
+            // Mac); the contract under test is null-safety, so assert non-empty.
+            check(dd != null && dd.count() > 0,
+                    "deviceDescription non-null and non-empty (count=" + (dd == null ? -1 : dd.count()) + ")");
             check(w1.screenObject() == null || w1.screenObject().frame().width() > 0,
                     "screenObject null-safe");
             check(w1.deepestScreenObject() == null

@@ -68,7 +68,7 @@ public final class SignatureConformanceTest {
     }
 
     private static final class Stats {
-        int checked, unresolved, noMatch, other, voidIgnored;
+        int checked, unresolved, noMatch, other, voidIgnored, widthMismatch;
     }
 
     // Caps measured on macOS 26.5.1 / GraalVM 25 (2026-10-07 runs): the test fails
@@ -86,6 +86,11 @@ public final class SignatureConformanceTest {
     private static final int NO_MATCH_BASELINE = 242;
     private static final int OTHER_CAP = 0;
     private static final int VOID_IGNORED_CAP = 0;
+    /// Integer-width disagreements (declared 64-bit INT vs real 32-bit `i`/`I`, or
+    /// the reverse). All eleven known sites were migrated to exact INT32 shapes, so
+    /// this is now a hard ZERO: any new disagreement fails the gate. (Previously the
+    /// gate mapped i/I/q/Q/l/L together and could not see width at all.)
+    private static final int WIDTH_MISMATCH_BASELINE = 0;
 
     private static final class Resolved {
         String name;
@@ -113,15 +118,22 @@ public final class SignatureConformanceTest {
 
         Stats st = new Stats();
         List<String> bad = new ArrayList<>();
-        for (Path f : files) scan(f, st, bad);
+        List<String> widthNotes = new ArrayList<>();
+        for (Path f : files) scan(f, st, bad, widthNotes);
 
         System.out.println("call sites checked: " + st.checked
                 + "  unresolved: " + st.unresolved
                 + "  no runtime method: " + st.noMatch + " (baseline " + NO_MATCH_BASELINE + ")"
                 + "  non-modelled struct in real sig: " + st.other + " (cap " + OTHER_CAP + ")"
-                + "  void-return-ignored: " + st.voidIgnored + " (cap " + VOID_IGNORED_CAP + ")");
+                + "  void-return-ignored: " + st.voidIgnored + " (cap " + VOID_IGNORED_CAP + ")"
+                + "  int-width disagreements: " + st.widthMismatch + " (baseline " + WIDTH_MISMATCH_BASELINE + ")");
         System.out.println("ABI mismatches: " + bad.size());
         for (String s : bad) System.out.println("  MISMATCH " + s);
+        if (!widthNotes.isEmpty()) {
+            System.out.println("Integer-width disagreements (" + widthNotes.size()
+                    + ") — benign on little-endian, listed so they can be migrated:");
+            for (String s : widthNotes) System.out.println("  WIDTH " + s);
+        }
 
         TestKit.check(st.checked > 3000, "resolved a meaningful number of call sites (got " + st.checked + ")");
         double unresolvedShare = st.checked + st.unresolved == 0 ? 0
@@ -138,6 +150,9 @@ public final class SignatureConformanceTest {
         TestKit.check(st.voidIgnored <= VOID_IGNORED_CAP,
                 "void-ignored return count within cap (got " + st.voidIgnored
                 + ", cap " + VOID_IGNORED_CAP + ")");
+        TestKit.check(st.widthMismatch <= WIDTH_MISMATCH_BASELINE,
+                "integer-width disagreements within baseline (got " + st.widthMismatch
+                + ", baseline " + WIDTH_MISMATCH_BASELINE + ")");
         TestKit.check(bad.isEmpty(), "every declared Sig shape matches the runtime type encoding");
         TestKit.end();
     }
@@ -178,7 +193,7 @@ public final class SignatureConformanceTest {
 
     // -------------------------------------------------------------------- scan
 
-    private static void scan(Path file, Stats st, List<String> bad) throws Throwable {
+    private static void scan(Path file, Stats st, List<String> bad, List<String> widthNotes) throws Throwable {
         String text = stripCommentLines(Files.readString(file));
         String stem = file.getFileName().toString().replace(".java", "");
 
@@ -284,6 +299,12 @@ public final class SignatureConformanceTest {
             List<String> real = abiOf(enc);
             if (real.contains("OTHER")) st.other++;
             if ("VOID".equals(assumed.get(0)) && !"VOID".equals(real.get(0))) st.voidIgnored++;
+            if (widthMismatch(assumed, real)) {
+                st.widthMismatch++;
+                widthNotes.add(file.getFileName() + "  " + clsName + "  " + sel
+                        + "  declared[" + String.join(",", assumed) + "]"
+                        + "  real[" + String.join(",", real) + "]  (" + enc + ")");
+            }
             if (matches(assumed, real)) continue;
 
             boolean tolerated = false;
@@ -394,10 +415,15 @@ public final class SignatureConformanceTest {
             // numerically (see NSNumber shortValue/unsignedShortValue).
             // Wider integers (i/I/q/Q/l/L) normalise to INT and never
             // match BOOL, BYTE, or SHORT in either direction.
+            // Wider integers: 32-bit `i`/`I` are INT32 (exact JAVA_INT
+            // descriptors); 64-bit `q`/`Q`/`l`/`L` are INT. The split makes width
+            // disagreements visible to WIDTH_MISMATCH_BASELINE instead of being
+            // invisible to this gate. None of them match BOOL, BYTE, or SHORT.
             case "B": return "BOOL";
             case "c": case "C": return "BYTE";
             case "s": case "S": return "SHORT";
-            case "q": case "Q": case "i": case "I": case "l": case "L": return "INT";
+            case "i": case "I": return "INT32";
+            case "q": case "Q": case "l": case "L": return "INT";
             default:
                 // C array in argument position (observed: `[2f]` in
                 // `v32@0:8Q16[2f]24` = CAMediaTimingFunction
@@ -441,10 +467,26 @@ public final class SignatureConformanceTest {
         // i/I/q/Q/l/L where BOOL is declared (or vice versa), and NSEdgeInsets
         // vs NSRect confusion, are now mismatches.
         if (a.equals(r)) return true;
-        // Declared INT32 (exact 32-bit call shape) matches real INT: the runtime
-        // encoding layer does not split 32/64-bit ints, so `I` reads as INT while
-        // the call itself uses the exact JAVA_INT descriptor.
+        // Integer width is tracked SEPARATELY from ABI compatibility. Any INT/INT32
+        // pairing is accepted here so this check keeps its boxed-vs-struct meaning;
+        // the width disagreement itself is counted per call site against
+        // WIDTH_MISMATCH_BASELINE (see widthMismatch), so the class stays visible
+        // and cannot silently grow.
         if (a.equals("INT32") && r.equals("INT")) return true;
+        if (a.equals("INT") && r.equals("INT32")) return true;
+        return false;
+    }
+
+    /// True when any integer position disagrees on width: the Java call shape uses a
+    /// 64-bit INT descriptor where the runtime declares the 32-bit `i`/`I`, or vice
+    /// versa. Benign on little-endian (the callee reads the low 32 bits), but it is
+    /// exactly the class the width migration exists to close.
+    private static boolean widthMismatch(List<String> assumed, List<String> real) {
+        if (assumed.size() != real.size()) return false;
+        for (int i = 0; i < assumed.size(); i++) {
+            String a = assumed.get(i), r = real.get(i);
+            if ((a.equals("INT") && r.equals("INT32")) || (a.equals("INT32") && r.equals("INT"))) return true;
+        }
         return false;
     }
 

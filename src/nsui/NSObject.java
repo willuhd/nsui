@@ -13,9 +13,20 @@ import nsui.objc.Sig;
 /// no state, no caching, no reflection. The wrapper exists to give selectors
 /// Java-shaped signatures, nothing more.
 ///
+/// Lifetime contract (read this before holding a factory result):
+///
+/// Factories in this toolkit return **autoreleased** objects — the arena memory
+/// model, drained by the pool `NSApplication.pumpFor` pushes/pops per turn and by
+/// `nsui.objc.Autorelease.run`. A wrapper created inside such a pool is valid only
+/// **until that pool drains**; holding it across the boundary and sending it
+/// another message is a use-after-free. Call `keepAlive()` on any factory result
+/// you must hold longer than the enclosing pool.
+///
 /// Header-completeness (`NSObjCRuntime.h` / `NSObject.h`): every safe method whose
 /// shape is in the Sig vocabulary is wrapped below. OMITTED — retain/release/autorelease
-/// (arena memory model: factories autorelease, drained via pool per frame);
+/// (arena memory model: factories autorelease, drained via pool per frame; the one
+/// deliberate exception is the `keepAlive()` escape hatch below, and there is no
+/// matching release — a kept-alive object lives for the process);
 /// performSelector: family (arbitrary-selector dispatch; use typed wrappers);
 /// KVO observe/removeObserver: (context-pointer machinery; addObserver:forKeyPath:options:
 /// context: also needs of(VOID,ID,ID,INT,ID), not in Sig); NSCoder/NSZone/Protocol plumbing
@@ -39,6 +50,31 @@ public class NSObject {
     }
 
     public MemorySegment peer() { return peer; }
+
+    /// Retain the native peer so it survives the enclosing autorelease-pool drain,
+    /// and return this wrapper for chaining.
+    ///
+    /// **Why this exists.** Factories here return autoreleased objects (see the
+    /// class doc's lifetime contract). A wrapper created inside a pool — inside a
+    /// `NSApplication.pumpFor` turn, or an `nsui.objc.Autorelease.run` body —
+    /// points at a freed object once that pool drains, and the next message send
+    /// is a use-after-free (observed as a crash or garbage, never as a Java
+    /// exception). Store and use factory results freely *within* the pool; call
+    /// `keepAlive()` on any result that must outlive it.
+    ///
+    /// There is deliberately no `release`: a kept-alive object lives for the
+    /// process, so retaining a large result set reintroduces exactly the unbounded
+    /// growth the autorelease model exists to avoid. Use it for genuinely
+    /// long-lived objects only.
+    ///
+    /// A nil/0 peer is a no-op (nothing to retain).
+    @SuppressWarnings("unchecked")
+    public <T extends NSObject> T keepAlive() {
+        if (peer != null && peer.address() != 0) {
+            ObjC.msgSendId(peer, ObjC.sel("retain"));
+        }
+        return (T) this;
+    }
 
     /// Wrap an id as an NSObject (null for nil).
     public static NSObject wrap(MemorySegment peer) {

@@ -768,6 +768,11 @@ public class CALayer extends NSObject {
     /// `layer.addSublayer(layer)`, and the indirect form would create the same cycle. Walking
     /// up from the receiver catches both; re-parenting a DESCENDANT stays legal.
     private void requireNotSelfOrAncestor(CALayer sublayer, String what) {
+        // A nil argument is a documented no-op natively (addSublayer:nil and
+        // insertSublayer:above:nil both return without raising), so the guard must not
+        // dereference it — an earlier version threw NPE here instead of passing nil through to
+        // the existing `sublayer == null ? MemorySegment.NULL : ...` coercion.
+        if (sublayer == null || sublayer.peer() == null || sublayer.peer().address() == 0) return;
         for (CALayer p = this; p != null; p = p.superlayer()) {
             if (p.peer() != null && p.peer().address() == sublayer.peer().address()) {
                 throw new IllegalArgumentException(what + ": the layer is the receiver or one of "

@@ -21,7 +21,7 @@ import static nsui.objc.Sig.Ret;
 /// initWithCoder: (NSCoding archiving) is out of scope for a stateless wrapper.
 public final class NSTouchBar extends NSObject {
 
-    private record Handles(MethodHandle hId, MethodHandle hVoidId, MethodHandle hTouchBarMakeItem) {}
+    private record Handles(MethodHandle hId, MethodHandle hVoidId) {}
     private static volatile Handles handles;
 
     private NSTouchBar(MemorySegment peer) {
@@ -40,7 +40,7 @@ public final class NSTouchBar extends NSObject {
 
     private static synchronized void ensureInitLocked() {
         if (handles != null) return;
-        handles = new Handles(ObjC.handle(Sig.of(Ret.ID)), ObjC.handle(Sig.of(Ret.VOID, Arg.ID)), ObjC.handle(Sig.of(Ret.ID, Arg.ID, Arg.ID)));
+        handles = new Handles(ObjC.handle(Sig.of(Ret.ID)), ObjC.handle(Sig.of(Ret.VOID, Arg.ID)));
     }
 
     /// alloc + init — empty touch bar.
@@ -242,8 +242,8 @@ public final class NSTouchBar extends NSObject {
     }
 
     /// itemForIdentifier: — resolve one instantiated item (or nil).
-    /// Shape (ID,ID) is in the vocabulary (grep: of(Ret.ID, Arg.ID)).
-    /// Uses the cached hTouchBarMakeItem handle (same ID,ID,ID shape family via invokeExact with 1 arg).
+    /// Shape (ID,ID) is in the vocabulary (grep: of(Ret.ID, Arg.ID)) and is built locally,
+    /// because this class has no cached handle for it (the old comment claimed it used one).
     public NSTouchBarItem itemForIdentifier(String identifier) {
         ensureInit();
         try {

@@ -83,7 +83,14 @@ public final class SignatureConformanceTest {
     // protocols (no class object) and the descriptor/state classes resolve to
     // method-less cluster stubs while msgSend works. Behavior for all of them
     // is proven by the readback suites instead.
-    private static final int NO_MATCH_BASELINE = 241;
+    // 241 -> 243: NSCollectionView.moveItemAtIndexPath:'s item-existence guard reads
+    // `section` and `item` from each NSIndexPath peer (ObjC.sel("section")/("item")).
+    // Those selectors live on NSIndexPath (an AppKit category), not on the enclosing
+    // wrapper class, so the lookup cannot resolve them — the same category of no-match as
+    // the Metal protocol selectors. Both encodings were measured directly:
+    // NSIndexPath -section and -item are "q16@0:8" (NSInteger), which is what msgSendLong
+    // sends, so the two unresolvable call sites are correct rather than unknown.
+    private static final int NO_MATCH_BASELINE = 243;
     private static final int OTHER_CAP = 0;
     private static final int VOID_IGNORED_CAP = 0;
     /// Integer-width disagreements (declared 64-bit INT vs real 32-bit `i`/`I`, or

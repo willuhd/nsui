@@ -653,10 +653,40 @@ public final class NSCollectionView extends NSView {
         }
     }
 
-    /// [view moveItemAtIndexPath:toIndexPath:]
+    /// Reject an index path that does not address an EXISTING item: its section must exist
+    /// and its item index must be below that section's item count. Verified natively on a
+    /// 2-item view: moving from (5,0) or to (2,0) / (0,1) raises
+    /// NSInternalInconsistencyException and aborts the JVM, while (0,0)->(1,0), (1,0)->(0,0)
+    /// and (0,0)->(0,0) are accepted. Note the DESTINATION is not allowed to be
+    /// item == count either (a move-to-end is not expressible).
+    ///
+    /// The bounds are deliberately asymmetric because AppKit's are: `item` is checked only
+    /// ABOVE (a 144-pair matrix found (-1,0)->(0,0) and (0,0)->(-1,0) both return without
+    /// raising, while item == count aborts), whereas `section` aborts at both ends
+    /// (section -1 does raise). Rejecting a negative item would reject a call AppKit accepts.
+    private void requireExistingItem(MemorySegment indexPath, String what) {
+        long section = ObjC.msgSendLong(indexPath, ObjC.sel("section"));
+        long item = ObjC.msgSendLong(indexPath, ObjC.sel("item"));
+        long sections = numberOfSections();
+        if (section < 0 || section >= sections) {
+            throw new IllegalArgumentException(what + ": section " + section
+                    + " out of bounds (sections " + sections + ")");
+        }
+        long items = numberOfItemsInSection(section);
+        if (item >= items) {
+            throw new IllegalArgumentException(what + ": item " + item
+                    + " out of bounds (section " + section + " has " + items + " items)");
+        }
+    }
+
+    /// [view moveItemAtIndexPath:toIndexPath:] — both paths must address an existing item
+    /// (see requireExistingItem). The insert/delete/reload siblings tolerate an out-of-range
+    /// path natively, so they are deliberately NOT given this check.
     public void moveItemAtIndexPath(MemorySegment from, MemorySegment to) {
         Bounds.nonNull(from, "moveItemAtIndexPath:toIndexPath: (from)");
         Bounds.nonNull(to, "moveItemAtIndexPath:toIndexPath: (to)");
+        requireExistingItem(from, "moveItemAtIndexPath:toIndexPath: (from)");
+        requireExistingItem(to, "moveItemAtIndexPath:toIndexPath: (to)");
         try {
             handles.hVoidIdId().invokeExact(peer, ObjC.sel("moveItemAtIndexPath:toIndexPath:"),
                     (MemorySegment) (from == null ? MemorySegment.NULL : from),

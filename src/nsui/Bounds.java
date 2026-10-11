@@ -116,9 +116,10 @@ final class Bounds {
     /// selectRowIndexes:/selectColumnIndexes:/noteHeightOfRowsWithIndexesChanged:/
     /// reloadDataForRowIndexes:/hideRowsAtIndexes: and NSCollectionView's
     /// insertSections:/deleteSections:/reloadSections:) and therefore cannot be pre-validated
-    /// here; the ones probed so far are natively tolerant for an out-of-range set (the row
-    /// mutation methods abort only for their begin/endUpdates precondition), but that is a
-    /// measured property, not a guard.
+    /// here. Measured on POPULATED views (2-section collection view, 3-row view-based table):
+    /// the collection-view section methods and the table's reload/noteHeight/select methods
+    /// tolerate an out-of-range set, while the table's insert/remove/hide/unhideRowsAtIndexes:
+    /// abort and are guarded at their call sites with this helper (see NSTableView).
     static void indexSet(NSIndexSet indexes, long count, String what) {
         if (indexes == null || indexes.isEmpty()) return;
         long last = indexes.lastIndex();

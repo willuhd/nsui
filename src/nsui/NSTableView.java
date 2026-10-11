@@ -1063,18 +1063,26 @@ public class NSTableView extends NSView {
     /// PRECONDITION (all four row-mutation methods below): AppKit raises
     /// NSInternalInconsistencyException "Insert/remove/move only works within a
     /// -beginUpdates/-endUpdates block or a View Based TableView" (verified, exit 134) when
-    /// called on a cell-based table outside an update block. The wrapper cannot detect
-    /// either condition (it keeps no update-block state and cannot query view-basedness), so
-    /// wrap them in beginUpdates()/endUpdates() — the documented usage.
+    /// called on a cell-based table outside an update block. The wrapper cannot detect that
+    /// (it keeps no update-block state and cannot query view-basedness), so wrap them in
+    /// beginUpdates()/endUpdates().
+    ///
+    /// The RANGE half IS checked here: even with the precondition satisfied, an index out of
+    /// range raises NSTableViewException "NSTableView error inserting/removing/moving row N
+    /// (numberOfRows: 3)" and aborts (verified on a 3-row view-based table inside
+    /// begin/endUpdates). `insertRowsAtIndexes:` accepts up to numberOfRows() (appending),
+    /// while remove/hide/unhide require an index below numberOfRows().
     /// [table insertRowsAtIndexes:withAnimation:]
     public void insertRowsAtIndexes(MemorySegment indexes, long animation) {
         ensureInit();
+        Bounds.indexSet(NSIndexSet.wrap(indexes), numberOfRows() + 1, "insertRowsAtIndexes:withAnimation:");
         try { H.hVoidIdInt().invokeExact(peer, Sels.insertRowsAtIndexes_withAnimation, (MemorySegment) (indexes == null ? MemorySegment.NULL : indexes), animation); } catch (Throwable t) { throw new RuntimeException("insertRowsAtIndexes:withAnimation: failed", t); }
     }
 
     /// [table removeRowsAtIndexes:withAnimation:] — see the update-block precondition above.
     public void removeRowsAtIndexes(MemorySegment indexes, long animation) {
         ensureInit();
+        Bounds.indexSet(NSIndexSet.wrap(indexes), numberOfRows(), "removeRowsAtIndexes:withAnimation:");
         try { H.hVoidIdInt().invokeExact(peer, Sels.removeRowsAtIndexes_withAnimation, (MemorySegment) (indexes == null ? MemorySegment.NULL : indexes), animation); } catch (Throwable t) { throw new RuntimeException("removeRowsAtIndexes:withAnimation: failed", t); }
     }
 
@@ -1094,12 +1102,14 @@ public class NSTableView extends NSView {
     /// [table hideRowsAtIndexes:withAnimation:] — see the update-block precondition above.
     public void hideRowsAtIndexes(MemorySegment indexes, long animation) {
         ensureInit();
+        Bounds.indexSet(NSIndexSet.wrap(indexes), numberOfRows(), "hideRowsAtIndexes:withAnimation:");
         try { H.hVoidIdInt().invokeExact(peer, Sels.hideRowsAtIndexes_withAnimation, (MemorySegment) (indexes == null ? MemorySegment.NULL : indexes), animation); } catch (Throwable t) { throw new RuntimeException("hideRowsAtIndexes:withAnimation: failed", t); }
     }
 
     /// [table unhideRowsAtIndexes:withAnimation:] — see the update-block precondition above.
     public void unhideRowsAtIndexes(MemorySegment indexes, long animation) {
         ensureInit();
+        Bounds.indexSet(NSIndexSet.wrap(indexes), numberOfRows(), "unhideRowsAtIndexes:withAnimation:");
         try { H.hVoidIdInt().invokeExact(peer, Sels.unhideRowsAtIndexes_withAnimation, (MemorySegment) (indexes == null ? MemorySegment.NULL : indexes), animation); } catch (Throwable t) { throw new RuntimeException("unhideRowsAtIndexes:withAnimation: failed", t); }
     }
 

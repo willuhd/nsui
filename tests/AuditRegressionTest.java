@@ -365,6 +365,23 @@ public final class AuditRegressionTest {
             TestKit.noThrow("NSTableView.rowViewAtRow(0) still works",
                     () -> tvRows.rowViewAtRow(0, false));
 
+            // Row-mutation RANGES, measured inside the required precondition (view-based
+            // table + begin/endUpdates, which this asserts nothing about because the guard
+            // fires first). Verified natively on this exact setup: insert accepts index ==
+            // count and aborts at count+1; remove/hide/unhide require index < count.
+            // Without the guard each of these killed the JVM with
+            // NSTableViewException "error inserting/removing/moving row N (numberOfRows: 3)".
+            MemorySegment set4 = nsui.NSIndexSet.indexSetWithIndex(4).peer();
+            MemorySegment set3 = nsui.NSIndexSet.indexSetWithIndex(3).peer();
+            TestKit.expectThrows("insertRowsAtIndexes(row 4 > count) rejects",
+                    IllegalArgumentException.class, () -> tvRows.insertRowsAtIndexes(set4, 0));
+            TestKit.expectThrows("removeRowsAtIndexes(row 3 == count) rejects",
+                    IllegalArgumentException.class, () -> tvRows.removeRowsAtIndexes(set3, 0));
+            TestKit.expectThrows("hideRowsAtIndexes(row 3 == count) rejects",
+                    IllegalArgumentException.class, () -> tvRows.hideRowsAtIndexes(set3, 0));
+            TestKit.expectThrows("unhideRowsAtIndexes(row 3 == count) rejects",
+                    IllegalArgumentException.class, () -> tvRows.unhideRowsAtIndexes(set3, 0));
+
             // NSScrollView.h:49 types contentView as NSClipView; a plain NSView aborted
             // ("-[NSView documentView]: unrecognized selector"). Enforcement is the Java
             // signature, so assert the signature itself: with the old NSView parameter
@@ -399,6 +416,34 @@ public final class AuditRegressionTest {
                     IllegalArgumentException.class, () -> cvSs.moveSection(1, 2));
             TestKit.noThrow("NSCollectionView.moveSection(0,1) is legal with 2 sections",
                     () -> cvSs.moveSection(0, 1));
+
+            // --- 8w. section MUTATIONS tolerate an out-of-range set (live data source) ---
+            // Verified natively on a data-source-driven 2-section view: reloadSections: with
+            // {0},{1},{2},{50} and deleteSections:/insertSections: with {2},{50} all return.
+            // Pinned as noThrow so a future range guard here would fail the suite instead of
+            // silently over-rejecting a call AppKit accepts. A fresh view/source is used so
+            // these mutations cannot perturb the assertions above.
+            MemorySegment mutDs = DelegateProxy.delegate("NSObject", "NSUISectionsOnlyDS3",
+                    java.util.Map.of(), java.util.Map.of(),
+                    java.util.Map.of("numberOfSectionsInCollectionView:", sender -> 2L),
+                    java.util.Map.of(), java.util.Map.of(), java.util.Map.of(), java.util.Map.of());
+            nsui.NSCollectionView cvMut = nsui.NSCollectionView.create(new NSRect(0, 0, 200, 100));
+            cvMut.setDataSource(mutDs);
+            cvMut.setCollectionViewLayout(ObjC.msgSendId(
+                    ObjC.msgSendId(ObjC.cls("NSCollectionViewFlowLayout"), ObjC.sel("alloc")), ObjC.sel("init")));
+            cvMut.reloadData();
+            TestKit.check(cvMut.numberOfSections() == 2,
+                    "section-mutation view reports 2 sections (got " + cvMut.numberOfSections() + ")");
+            MemorySegment sec2 = nsui.NSIndexSet.indexSetWithIndex(2).peer();
+            MemorySegment sec50 = nsui.NSIndexSet.indexSetWithIndex(50).peer();
+            TestKit.noThrow("reloadSections({2}) tolerated (== sectionCount)",
+                    () -> cvMut.reloadSections(sec2));
+            TestKit.noThrow("reloadSections({50}) tolerated",
+                    () -> cvMut.reloadSections(sec50));
+            TestKit.noThrow("deleteSections({50}) tolerated",
+                    () -> cvMut.deleteSections(sec50));
+            TestKit.noThrow("insertSections({50}) tolerated",
+                    () -> cvMut.insertSections(sec50));
         } catch (Throwable t) {
             TestKit.check(false, "view index-guard block threw: " + t);
         }
@@ -713,8 +758,68 @@ public final class AuditRegressionTest {
             TestKit.expectThrows("NSToolbar.insertItemWithItemIdentifier(NULL id, 0) rejects",
                     IllegalArgumentException.class,
                     () -> tb2.insertItemWithItemIdentifier((MemorySegment) null, 0));
+            // Exercises Bounds.nonNull's address()==0 branch (the Java-null branch is above).
+            TestKit.expectThrows("NSToolbar.insertItemWithItemIdentifier(MemorySegment.NULL, 0) rejects",
+                    IllegalArgumentException.class,
+                    () -> tb2.insertItemWithItemIdentifier(MemorySegment.NULL, 0));
         } catch (Throwable t) {
             TestKit.check(false, "nonnull-object guard block threw: " + t);
+        }
+
+        // --- 8v. NSCollectionView.moveItemAtIndexPath: needs EXISTING items ---
+        // Verified natively on a POPULATED 2-item view: moving from (5,0) or to (2,0) / (0,1)
+        // raises NSInternalInconsistencyException and aborts, while (0,0)->(1,0) and
+        // (1,0)->(0,0) are accepted. The insert/delete/reload siblings tolerate an
+        // out-of-range path (also verified on the populated view), so only move is guarded.
+        try {
+            nsui.NSCollectionView mcv = nsui.NSCollectionView.create(new NSRect(0, 0, 200, 100));
+            // The layout is required before setContent: without it AppKit aborts with
+            // "NSCollectionView item prototype must not be nil" (measured while writing this).
+            mcv.setCollectionViewLayout(ObjC.msgSendId(ObjC.cls("NSCollectionViewFlowLayout"), ObjC.sel("new")));
+            MemorySegment arr = ObjC.msgSendId(ObjC.cls("NSMutableArray"), ObjC.sel("array"));
+            for (int i = 0; i < 2; i++) {
+                MemorySegment item = ObjC.msgSendId(
+                        ObjC.msgSendId(ObjC.cls("NSCollectionViewItem"), ObjC.sel("alloc")),
+                        ObjC.sel("init"));
+                ObjC.msgSendVoidId(arr, ObjC.sel("addObject:"), item);
+            }
+            mcv.setContent(arr);
+            TestKit.check(mcv.numberOfItemsInSection(0) == 2,
+                    "populated collection view reports 2 items (got " + mcv.numberOfItemsInSection(0) + ")");
+            var pathHandle = ObjC.handle(nsui.objc.Sig.of(nsui.objc.Sig.Ret.ID,
+                    nsui.objc.Sig.Arg.INT, nsui.objc.Sig.Arg.INT));
+            java.util.function.BiFunction<Long, Long, MemorySegment> path = (it, sec) -> {
+                try {
+                    return (MemorySegment) pathHandle.invokeExact(ObjC.cls("NSIndexPath"),
+                            ObjC.sel("indexPathForItem:inSection:"), it.longValue(), sec.longValue());
+                } catch (Throwable t) {
+                    throw new RuntimeException(t);
+                }
+            };
+            MemorySegment p00 = path.apply(0L, 0L);
+            MemorySegment p10 = path.apply(1L, 0L);
+            MemorySegment p20 = path.apply(2L, 0L);
+            MemorySegment p50 = path.apply(5L, 0L);
+            MemorySegment p01 = path.apply(0L, 1L);
+            MemorySegment pNeg = path.apply(-1L, 0L);
+            TestKit.noThrow("moveItemAtIndexPath (0,0)->(1,0) is legal",
+                    () -> mcv.moveItemAtIndexPath(p00, p10));
+            TestKit.expectThrows("moveItemAtIndexPath (0,0)->(2,0) rejects (destination == count)",
+                    IllegalArgumentException.class, () -> mcv.moveItemAtIndexPath(p00, p20));
+            TestKit.expectThrows("moveItemAtIndexPath (2,0)->(0,0) rejects (source == count)",
+                    IllegalArgumentException.class, () -> mcv.moveItemAtIndexPath(p20, p00));
+            TestKit.expectThrows("moveItemAtIndexPath (5,0)->(0,0) rejects (no such source)",
+                    IllegalArgumentException.class, () -> mcv.moveItemAtIndexPath(p50, p00));
+            TestKit.expectThrows("moveItemAtIndexPath (0,0)->(0,1) rejects (no such section)",
+                    IllegalArgumentException.class, () -> mcv.moveItemAtIndexPath(p00, p01));
+            // Asymmetry pinned: AppKit bounds `item` only ABOVE, so a negative item is
+            // accepted (a 144-pair matrix found both directions return without raising),
+            // while a negative SECTION does abort. Rejecting the negative item would be a
+            // false rejection.
+            TestKit.noThrow("moveItemAtIndexPath (0,0)->(-1,0) is tolerated natively",
+                    () -> mcv.moveItemAtIndexPath(p00, pNeg));
+        } catch (Throwable t) {
+            TestKit.check(false, "collection-view move-guard block threw: " + t);
         }
 
         // --- 8p. range boundaries the first sweep got wrong ---

@@ -21,7 +21,6 @@ public final class NSSegmentedControl extends NSControl {
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
     private static volatile boolean initialized;
-    private static MethodHandle hInitFrame;    // (id, SEL, NSRect) -> id
     private static MethodHandle hSetCount;     // (id, SEL, long) -> void   [setSegmentCount:]
     private static MethodHandle hSetLabel;     // (id, SEL, id, long) -> void  [setLabel:forSegment:]
     private static MethodHandle hSetSelected;  // (id, SEL, long) -> void   [setSelectedSegment:]
@@ -57,7 +56,6 @@ public final class NSSegmentedControl extends NSControl {
 
     private static synchronized void ensureInitLocked() {
         if (initialized) return;
-        hInitFrame = ObjC.handle(Sig.of(Ret.ID, Arg.RECT));
         hSetCount = ObjC.handle(Sig.of(Ret.VOID, Arg.INT));
         hSetLabel = ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.INT));
         hSetSelected = ObjC.handle(Sig.of(Ret.VOID, Arg.INT));

@@ -21,7 +21,6 @@ public final class NSImageView extends NSControl {
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
     private static volatile boolean initialized;
-    private static MethodHandle hInitFrame;  // (id, SEL, NSRect) -> id
     private static MethodHandle hImage;      // (id, SEL) -> id [image]
     private static MethodHandle hSetImage;   // (id, SEL, id) -> void
     private static MethodHandle hAnimates;   // (id, SEL) -> bool [animates]
@@ -49,7 +48,6 @@ public final class NSImageView extends NSControl {
 
     private static synchronized void ensureInitLocked() {
         if (initialized) return;
-        hInitFrame = ObjC.handle(Sig.of(Ret.ID, Arg.RECT));
         hImage = ObjC.handle(Sig.of(Ret.ID));
         hSetImage = ObjC.handle(Sig.of(Ret.VOID, Arg.ID));
         hAnimates = ObjC.handle(Sig.of(Ret.BOOL));

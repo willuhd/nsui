@@ -401,7 +401,6 @@ public class NSTextView extends NSText {
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
     private static volatile boolean initialized;
-    private static MethodHandle hInitFrame;   // (id, SEL, NSRect) -> id
 
     private NSTextView(MemorySegment peer) {
         super(peer);
@@ -419,7 +418,6 @@ public class NSTextView extends NSText {
 
     private static synchronized void ensureInitLocked() {
         if (initialized) return;
-        hInitFrame = ObjC.handle(Sig.of(Ret.ID, Arg.RECT));
             Sels.populate();
         initialized = true;
 }

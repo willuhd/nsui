@@ -20,7 +20,6 @@ public class NSSecureTextField extends NSTextField {
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
     private static volatile boolean initialized;
-    private static MethodHandle hInitFrame;   // (id, SEL, NSRect) -> id
     private static MethodHandle hResponds;    // (id, SEL, id) -> bool [respondsToSelector:]
 
     private NSSecureTextField(MemorySegment peer) {
@@ -35,7 +34,6 @@ public class NSSecureTextField extends NSTextField {
 
     private static synchronized void ensureInitLocked() {
         if (initialized) return;
-        hInitFrame = ObjC.handle(Sig.of(Ret.ID, Arg.RECT));
         hResponds = ObjC.handle(Sig.of(Ret.BOOL, Arg.ID));
         initialized = true;
     }

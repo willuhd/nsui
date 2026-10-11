@@ -21,7 +21,6 @@ public final class NSTabView extends NSView {
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
     private static volatile boolean initialized;
-    private static MethodHandle hInitFrame;   // (id, SEL, NSRect) -> id
     private static MethodHandle hAddItem;     // (id, SEL, id) -> void    [addTabViewItem:]
     private static MethodHandle hCount;       // (id, SEL) -> long        [numberOfTabViewItems]
     private static MethodHandle hVoidId;      // (id, SEL, id) -> void
@@ -45,7 +44,6 @@ public final class NSTabView extends NSView {
 
     private static synchronized void ensureInitLocked() {
         if (initialized) return;
-        hInitFrame = ObjC.handle(Sig.of(Ret.ID, Arg.RECT));
         hAddItem = ObjC.handle(Sig.of(Ret.VOID, Arg.ID));
         hCount = ObjC.handle(Sig.of(Ret.INT));
         hVoidId = ObjC.handle(Sig.of(Ret.VOID, Arg.ID));

@@ -31,7 +31,6 @@ public final class NSPopUpButton extends NSControl {
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
     private static volatile boolean initialized;
-    private static MethodHandle hInitFrame;   // (id, SEL, NSRect) -> id
     private static MethodHandle hAddItem;     // (id, SEL, id) -> void     [addItemWithTitle:]
     private static MethodHandle hSelect;      // (id, SEL, long) -> void   [selectItemAtIndex:]
     private static MethodHandle hItemTitle;   // (id, SEL, long) -> id     [itemTitleAtIndex:]
@@ -57,7 +56,6 @@ public final class NSPopUpButton extends NSControl {
 
     private static synchronized void ensureInitLocked() {
         if (initialized) return;
-        hInitFrame = ObjC.handle(Sig.of(Ret.ID, Arg.RECT));
         hAddItem = ObjC.handle(Sig.of(Ret.VOID, Arg.ID));
         hSelect = ObjC.handle(Sig.of(Ret.VOID, Arg.INT));
         hItemTitle = ObjC.handle(Sig.of(Ret.ID, Arg.INT));

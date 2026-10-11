@@ -15,7 +15,6 @@ public final class NSScrollView extends NSView {
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
     private static volatile boolean initialized;
-    private static MethodHandle hInitFrame;   // (id, SEL, NSRect) -> id  [initWithFrame:]
     private static MethodHandle hVoidId;      // (id, SEL, id) -> void    [setDocumentView:]
     private static MethodHandle hVoidBool;    // (id, SEL, bool) -> void  [setHasVerticalScroller:/setHasHorizontalScroller:/setAutohidesScrollers:]
     private static MethodHandle hVoidInt;     // (id, SEL, long) -> void  [setBorderType:]
@@ -36,7 +35,6 @@ public final class NSScrollView extends NSView {
 
     private static synchronized void ensureInitLocked() {
         if (initialized) return;
-        hInitFrame = ObjC.handle(Sig.of(Ret.ID, Arg.RECT));
         hVoidId = ObjC.handle(Sig.of(Ret.VOID, Arg.ID));
         hVoidBool = ObjC.handle(Sig.of(Ret.VOID, Arg.BOOL));
         hVoidInt = ObjC.handle(Sig.of(Ret.VOID, Arg.INT));

@@ -1465,12 +1465,38 @@ public class NSView extends NSResponder {
     //   dragFile:fromRect:slideBack:event:, dragPromisedFilesOfTypes:..., convertPoint/Size/RectTo/FromBase, performMnemonic,
     //   shouldDrawColor, gState/allocateGState/releaseGState/setUpGState/renewGState, drawSheetBorderWithSize:, canDraw, acceptsTouchEvents.
     // - init overloads (initWithCoder:) — covered by create().
+    /// [view needsToDrawRect:] — whether the rect intersects the area needing display.
+    /// of(BOOL,RECT) was the missing shape; the call is a pure query (verified: exit 0).
+    public boolean needsToDrawRect(NSRect rect) {
+        ensureInit();
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.BOOL, Arg.RECT));
+            return (boolean) h.invokeExact(peer, ObjC.sel("needsToDrawRect:"), rect.toSegment());
+        } catch (Throwable t) {
+            throw new RuntimeException("needsToDrawRect: failed", t);
+        }
+    }
+
+    /// [view scrollRectToVisible:] — ask the enclosing clip view to reveal the rect; returns
+    /// NO when the view has no enclosing scroll view (verified on a bare view: false, exit 0,
+    /// no raise). Same of(BOOL,RECT) shape as needsToDrawRect:.
+    public boolean scrollRectToVisible(NSRect rect) {
+        ensureInit();
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.BOOL, Arg.RECT));
+            return (boolean) h.invokeExact(peer, ObjC.sel("scrollRectToVisible:"), rect.toSegment());
+        } catch (Throwable t) {
+            throw new RuntimeException("scrollRectToVisible: failed", t);
+        }
+    }
+
     // - out-params / C pointers: getRectsBeingDrawn:count:, getRectsExposedDuringLiveResize:count:,
     //   knowsPageRange:, adjustPageWidthNew:..., adjustPageHeightNew:....
     // - inexpressible shapes (absent from Sig vocabulary, requested): convertPoint:fromView:/toView: and
     //   convertSize:fromView:/toView: and convertRect:fromView:/toView: need of(POINT,POINT,ID)/of(SIZE,SIZE,ID)/of(RECT,RECT,ID);
     //   convertPointToBacking:/FromBacking:/ToLayer:/FromLayer: need of(POINT,POINT); backingAlignedRect:options: needs
-    //   of(RECT,RECT,INT); needsToDrawRect:/scrollRectToVisible: need of(BOOL,RECT); mouse:inRect: needs of(BOOL,POINT,RECT);
+    //   of(RECT,RECT,INT); (needsToDrawRect:/scrollRectToVisible: are implemented below —
+    //   of(BOOL,RECT) is now registered); mouse:inRect: needs of(BOOL,POINT,RECT);
     //   addToolTipRect:owner:userData: needs of(INT,RECT,ID,ID); stringForToolTip helpers need of(ID,ID,INT,POINT,ID);
     //   scrollClipView:toPoint: (NSClipViewSuperview) needs of(VOID,ID,POINT); rectForPage: needs of(RECT,INT);
     //   locationOfPrintRect: needs of(POINT,RECT); beginPageInRect:atPlacement: needs of(VOID,RECT,POINT);

@@ -1070,6 +1070,17 @@ public final class AuditRegressionTest {
             TestKit.check(false, "composed-character-range block threw: " + t);
         }
 
+        // --- 8ad. NSView needsToDrawRect:/scrollRectToVisible: (of(BOOL,RECT) now registered) ---
+        try {
+            NSView rv2 = NSView.create(new NSRect(0, 0, 100, 100), (v, d) -> {});
+            TestKit.noThrow("needsToDrawRect(inside) does not raise",
+                    () -> rv2.needsToDrawRect(new NSRect(0, 0, 10, 10)));
+            TestKit.check(!rv2.scrollRectToVisible(new NSRect(0, 0, 10, 10)),
+                    "scrollRectToVisible on a bare view returns false (no enclosing scroll view)");
+        } catch (Throwable t) {
+            TestKit.check(false, "NSView rect block threw: " + t);
+        }
+
         // --- 8z. type-confusion guards on the raw collection-view setters ---
         // AppKit does NOT raise a type error here, it either asserts isKindOfClass: or
         // messages the object: setCollectionViewLayout: with a plain NSView raised

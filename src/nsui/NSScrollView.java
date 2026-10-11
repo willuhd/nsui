@@ -122,7 +122,12 @@ public final class NSScrollView extends NSView {
     /// `contentView` is declared `strong` (nonnull) in NSScrollView.h, unlike the
     /// adjacent `documentView` which *is* nullable — so a null clip view is a caller
     /// error, not a detach. (The previous doc claimed parity with setDocumentView:.)
-    public void setContentView(NSView view) {
+    ///
+    /// The parameter is `NSClipView`, not `NSView`: `-[NSScrollView setContentView:]`
+    /// expects a clip view, and passing a plain NSView aborts the process
+    /// ("-[NSView documentView]: unrecognized selector", verified -> NSInvalidArgumentException,
+    /// exit 134). The Java signature is what let that happen, so it is narrowed here.
+    public void setContentView(NSClipView view) {
         ensureInit();
         Bounds.nonNull(view, "setContentView:");
         try {

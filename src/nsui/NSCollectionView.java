@@ -599,8 +599,17 @@ public final class NSCollectionView extends NSView {
         }
     }
 
-    /// [view moveSection:toSection:]
+    /// [view moveSection:toSection:] — both indexes are validated against
+    /// numberOfSections(). AppKit raises NSInternalInconsistencyException for an
+    /// out-of-range section ("attempt to to move section 0 to section 1, but there are
+    /// only 1 sections after the update"; "Invalid parameter not satisfying:
+    /// fromSection < _sectionCount"), which aborts the JVM. With no data source the
+    /// call is a silent no-op, which is why this looked harmless before.
     public void moveSection(long section, long newSection) {
+        ensureInit();
+        long sections = numberOfSections();
+        Bounds.index(section, sections, "moveSection:toSection: (section)");
+        Bounds.index(newSection, sections, "moveSection:toSection: (newSection)");
         try {
             handles.hVoidIntInt().invokeExact(peer, ObjC.sel("moveSection:toSection:"), section, newSection);
         } catch (Throwable t) {

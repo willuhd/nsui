@@ -321,6 +321,39 @@ public final class AuditRegressionTest {
             TestKit.check(false, "text guard block threw: " + t);
         }
 
+        // --- 8g. table / scroll-view / collection-view indexes measured aborting ---
+        try {
+            NSTableView tv = NSTableView.create(new NSRect(0, 0, 200, 100));
+            tv.addTableColumn(nsui.NSTableColumn.create("a"));
+            tv.addTableColumn(nsui.NSTableColumn.create("b"));
+            // NSTableView.h:232: both indexes must be < numberOfColumns. insertIndex let
+            // newIndex == count through and the native side aborted (verified).
+            TestKit.expectThrows("NSTableView.moveColumn(newIndex == numberOfColumns) rejects",
+                    IllegalArgumentException.class, () -> tv.moveColumn(0, 2));
+            TestKit.noThrow("NSTableView.moveColumn(0,1) still works", () -> tv.moveColumn(0, 1));
+            TestKit.expectThrows("NSTableView.setRowActionsVisible(true) rejects",
+                    IllegalArgumentException.class, () -> tv.setRowActionsVisible(true));
+            // NSTableView.h:467: a row outside numberOfRows raises (verified view-based).
+            TestKit.expectThrows("NSTableView.rowViewAtRow(numberOfRows) rejects",
+                    IllegalArgumentException.class, () -> tv.rowViewAtRow(tv.numberOfRows(), false));
+
+            // NSScrollView.h:49 types contentView as NSClipView; a plain NSView aborted
+            // ("-[NSView documentView]: unrecognized selector"). The signature now
+            // requires NSClipView, so this is the type-level regression guard.
+            NSScrollView sv2 = NSScrollView.create(new NSRect(0, 0, 200, 100));
+            TestKit.noThrow("NSScrollView.setContentView(NSClipView) works",
+                    () -> sv2.setContentView(nsui.NSClipView.create(new NSRect(0, 0, 100, 100))));
+
+            // moveSection:toSection: raised NSInternalInconsistencyException with one
+            // section (verified); it is only a no-op when there is no data source at all.
+            nsui.NSCollectionView cv2 = nsui.NSCollectionView.create(new NSRect(0, 0, 200, 100));
+            TestKit.expectThrows("NSCollectionView.moveSection(0, sections) rejects",
+                    IllegalArgumentException.class, () -> cv2.moveSection(0, cv2.numberOfSections()));
+            TestKit.noThrow("NSCollectionView.moveSection(0,0) still works", () -> cv2.moveSection(0, 0));
+        } catch (Throwable t) {
+            TestKit.check(false, "view index-guard block threw: " + t);
+        }
+
         // --- 9. value and layer struct round-trips ---
         try {
             NSValue v = NSValue.valueWithPoint(new NSPoint(3, 4));

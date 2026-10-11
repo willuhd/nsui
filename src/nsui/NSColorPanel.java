@@ -225,12 +225,14 @@ public final class NSColorPanel extends NSObject {
     /// maximumLinearExposure.
     public double maximumLinearExposure() {
         ensureInit();
+        if (!respondsToSelector(ObjC.sel("maximumLinearExposure"))) return 0.0;   // version-gated
         try { return (double) ObjC.handle(Sig.of(Ret.DOUBLE)).invokeExact(peer, ObjC.sel("maximumLinearExposure")); }
         catch (Throwable t) { throw new RuntimeException("maximumLinearExposure failed", t); }
     }
     /// setMaximumLinearExposure:.
     public void setMaximumLinearExposure(double v) {
         ensureInit();
+        if (!respondsToSelector(ObjC.sel("setMaximumLinearExposure:"))) return;   // version-gated
         try { ObjC.handle(Sig.of(Ret.VOID, Arg.DOUBLE)).invokeExact(peer, ObjC.sel("setMaximumLinearExposure:"), v); }
         catch (Throwable t) { throw new RuntimeException("setMaximumLinearExposure: failed", t); }
     }

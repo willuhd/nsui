@@ -208,6 +208,7 @@ public final class NSSlider extends NSControl {
     /// [slider neutralValue] — value the slider fills from (26.0+; defaults to minValue).
     /// Shapes (DOUBLE ()) / (VOID,DOUBLE) are in the vocabulary; reuses hDouble/hSetDouble.
     public double neutralValue() {
+        if (!respondsToSelector(ObjC.sel("neutralValue"))) return 0.0;     // macOS 26+
         try {
             return (double) hDouble.invokeExact(peer, ObjC.sel("neutralValue"));
         } catch (Throwable t) {
@@ -216,6 +217,7 @@ public final class NSSlider extends NSControl {
     }
     /// [slider setNeutralValue:].
     public void setNeutralValue(double v) {
+        if (!respondsToSelector(ObjC.sel("setNeutralValue:"))) return;     // macOS 26+
         try {
             hSetDouble.invokeExact(peer, ObjC.sel("setNeutralValue:"), v);
         } catch (Throwable t) {
@@ -237,10 +239,12 @@ public final class NSSlider extends NSControl {
     /// NSTintProminence — Automatic 0, None 1, Primary 2, Secondary 3 (26.0+, from NSTintProminence.h).
     /// Shapes (INT ()) / (VOID,INT) are in the vocabulary.
     public long tintProminence() {
+        if (!respondsToSelector(ObjC.sel("tintProminence"))) return 0L;   // macOS 26+
         return ObjC.msgSendLong(peer, ObjC.sel("tintProminence"));
     }
     /// [slider setTintProminence:].
     public void setTintProminence(long prominence) {
+        if (!respondsToSelector(ObjC.sel("setTintProminence:"))) return;   // macOS 26+
         ObjC.msgSendVoidLong(peer, ObjC.sel("setTintProminence:"), prominence);
     }
 

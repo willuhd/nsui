@@ -2848,12 +2848,14 @@ public class NSView extends NSResponder {
     /// [view prefersCompactControlSizeMetrics] (macOS 26+).
     public boolean prefersCompactControlSizeMetrics() {
         ensureInit();
+        if (!respondsToSelector(Sels.prefersCompactControlSizeMetrics)) return false;   // macOS 26+
         return ObjC.msgSendBool(peer, Sels.prefersCompactControlSizeMetrics);
     }
 
     /// [view setPrefersCompactControlSizeMetrics:] (macOS 26+).
     public void setPrefersCompactControlSizeMetrics(boolean flag) {
         ensureInit();
+        if (!respondsToSelector(Sels.setPrefersCompactControlSizeMetrics)) return;   // macOS 26+
         ObjC.msgSendVoidBool(peer, Sels.setPrefersCompactControlSizeMetrics, flag);
     }
 

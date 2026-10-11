@@ -383,7 +383,10 @@ public class NSGestureRecognizer extends NSObject {
     public void otherMouseDragged(NSEvent event) { sendGestureEvent("otherMouseDragged:", event); }
 
     /// mouseCancelled: (macOS 26+).
-    public void mouseCancelled(NSEvent event) { sendGestureEvent("mouseCancelled:", event); }
+    public void mouseCancelled(NSEvent event) {
+        if (!respondsToSelector(ObjC.sel("mouseCancelled:"))) return;   // macOS 26+
+        sendGestureEvent("mouseCancelled:", event);
+    }
 
     /// keyDown:.
     public void keyDown(NSEvent event) { sendGestureEvent("keyDown:", event); }
@@ -423,6 +426,7 @@ public class NSGestureRecognizer extends NSObject {
     /// name — the recognizer's developer-assigned name, or null (macOS 26+).
     public String name() {
         ensureInit();
+        if (!respondsToSelector(ObjC.sel("name"))) return null;   // macOS 26+
         try {
             MemorySegment s = (MemorySegment) handles.hGetId().invokeExact(peer, ObjC.sel("name"));
             return ObjC.toString(s);
@@ -432,6 +436,7 @@ public class NSGestureRecognizer extends NSObject {
     /// setName: — assign a developer name (null clears; macOS 26+).
     public void setName(String name) {
         ensureInit();
+        if (!respondsToSelector(ObjC.sel("setName:"))) return;   // macOS 26+
         try {
             handles.hSetDelegate().invokeExact(peer, ObjC.sel("setName:"),
                     (MemorySegment) (name == null ? MemorySegment.NULL : ObjC.nsstring(name)));
@@ -440,6 +445,7 @@ public class NSGestureRecognizer extends NSObject {
 
     /// modifierFlags — the modifier flags captured for the gesture (macOS 26+).
     public long modifierFlags() {
+        if (!respondsToSelector(ObjC.sel("modifierFlags"))) return 0L;   // macOS 26+
         return ObjC.msgSendLong(peer, ObjC.sel("modifierFlags"));
     }
 }

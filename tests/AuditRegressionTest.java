@@ -689,6 +689,34 @@ public final class AuditRegressionTest {
             TestKit.check(false, "ordered-set move-guard block threw: " + t);
         }
 
+        // --- 8s. nonnull object arguments that abort (or crash) natively ---
+        // CALayer.replaceSublayer:with: with a nil OLD layer is a hard SIGSEGV (exit 139,
+        // no exception, no message) — the guard is what keeps this test JVM alive.
+        try {
+            nsui.CALayer cl = nsui.CALayer.create();
+            nsui.CALayer oldL = nsui.CALayer.create();
+            cl.addSublayer(oldL);
+            TestKit.expectThrows("CALayer.replaceSublayer(null, x) rejects (native SIGSEGV)",
+                    IllegalArgumentException.class, () -> cl.replaceSublayer(null, nsui.CALayer.create()));
+            TestKit.noThrow("CALayer.replaceSublayer(old, null) is tolerated natively",
+                    () -> cl.replaceSublayer(oldL, null));
+            TestKit.expectThrows("CALayer.addConstraint(null) rejects",
+                    IllegalArgumentException.class, () -> cl.addConstraint(null));
+
+            nsui.NSLayoutManager lm2 = nsui.NSLayoutManager.create();
+            TestKit.expectThrows("NSLayoutManager.addTextContainer(null) rejects",
+                    IllegalArgumentException.class, () -> lm2.addTextContainer(null));
+            TestKit.noThrow("NSLayoutManager.addTextContainer(container) still works",
+                    () -> lm2.addTextContainer(nsui.NSTextContainer.create()));
+
+            nsui.NSToolbar tb2 = nsui.NSToolbar.create("round9toolbar");
+            TestKit.expectThrows("NSToolbar.insertItemWithItemIdentifier(NULL id, 0) rejects",
+                    IllegalArgumentException.class,
+                    () -> tb2.insertItemWithItemIdentifier((MemorySegment) null, 0));
+        } catch (Throwable t) {
+            TestKit.check(false, "nonnull-object guard block threw: " + t);
+        }
+
         // --- 8p. range boundaries the first sweep got wrong ---
         // An adversarial review re-probed these. smartInsert* abort only on an out-of-range
         // LOCATION ({3,1} and {2,5} on a 3-char view are accepted natively, so the earlier

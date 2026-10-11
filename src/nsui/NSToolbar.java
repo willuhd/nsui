@@ -211,11 +211,14 @@ public final class NSToolbar extends NSObject {
     }
 
     /// Raw peer variant: insertItemWithItemIdentifier:atIndex: with id identifier.
+    /// The identifier is required: nil raises NSInvalidArgumentException
+    /// ("-[__NSArrayM insertObject:atIndex:]: object cannot be nil", verified, exit 134).
+    /// (The String overload above gets this from ObjC.nsstring.)
     public void insertItemWithItemIdentifier(MemorySegment identifier, long index) {
         Bounds.nonNegative(index, "insertItemWithItemIdentifier:atIndex:");
+        Bounds.nonNull(identifier, "insertItemWithItemIdentifier:atIndex: (identifier)");
         try {
-            MemorySegment arg = (identifier == null || identifier.address() == 0) ? MemorySegment.NULL : identifier;
-            handles.hInsertItem().invokeExact(peer, ObjC.sel("insertItemWithItemIdentifier:atIndex:"), (MemorySegment) arg, index);
+            handles.hInsertItem().invokeExact(peer, ObjC.sel("insertItemWithItemIdentifier:atIndex:"), identifier, index);
         } catch (Throwable t) {
             throw new RuntimeException("insertItemWithItemIdentifier:atIndex: failed", t);
         }

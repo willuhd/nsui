@@ -1079,6 +1079,11 @@ public class NSTableView extends NSView {
     }
 
     /// [table moveRowAtIndex:toIndex:]
+    /// [table moveRowAtIndex:toIndex:] — unlike moveColumn:, the native side does not raise
+    /// for an out-of-range destination (measured on a 3-row view-based table: toIndex 3 and 4
+    /// both survive), so this guard is deliberately NOT tightened to index(). It is
+    /// nonetheless slightly stricter than native: `insertIndex` allows `count` but rejects
+    /// `count+1`, which the native side tolerates — a nonsense destination either way.
     public void moveRowAtIndex(long oldIndex, long newIndex) {
         Bounds.index(oldIndex, numberOfRows(), "moveRowAtIndex:toIndex:");
         Bounds.insertIndex(newIndex, numberOfRows(), "moveRowAtIndex:toIndex:");

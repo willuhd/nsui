@@ -83,8 +83,11 @@ public final class NSLayoutManager extends NSObject {
     // ---- text containers ----
 
     /// [layoutManager addTextContainer:]
+    /// A nil container raises NSInvalidArgumentException ("-[__NSArrayM insertObject:
+    /// atIndex:]: object cannot be nil", verified, exit 134) and aborts the JVM.
     public void addTextContainer(NSTextContainer container) {
         ensureInit();
+        Bounds.nonNull(container, "addTextContainer:");
         try {
             handles.hAddContainer().invokeExact(peer, ObjC.sel("addTextContainer:"), (MemorySegment) (container == null ? MemorySegment.NULL : container.peer()));
         } catch (Throwable t) {

@@ -416,6 +416,34 @@ public final class AuditRegressionTest {
                     IllegalArgumentException.class, () -> cvSs.moveSection(1, 2));
             TestKit.noThrow("NSCollectionView.moveSection(0,1) is legal with 2 sections",
                     () -> cvSs.moveSection(0, 1));
+
+            // --- 8w. section MUTATIONS tolerate an out-of-range set (live data source) ---
+            // Verified natively on a data-source-driven 2-section view: reloadSections: with
+            // {0},{1},{2},{50} and deleteSections:/insertSections: with {2},{50} all return.
+            // Pinned as noThrow so a future range guard here would fail the suite instead of
+            // silently over-rejecting a call AppKit accepts. A fresh view/source is used so
+            // these mutations cannot perturb the assertions above.
+            MemorySegment mutDs = DelegateProxy.delegate("NSObject", "NSUISectionsOnlyDS3",
+                    java.util.Map.of(), java.util.Map.of(),
+                    java.util.Map.of("numberOfSectionsInCollectionView:", sender -> 2L),
+                    java.util.Map.of(), java.util.Map.of(), java.util.Map.of(), java.util.Map.of());
+            nsui.NSCollectionView cvMut = nsui.NSCollectionView.create(new NSRect(0, 0, 200, 100));
+            cvMut.setDataSource(mutDs);
+            cvMut.setCollectionViewLayout(ObjC.msgSendId(
+                    ObjC.msgSendId(ObjC.cls("NSCollectionViewFlowLayout"), ObjC.sel("alloc")), ObjC.sel("init")));
+            cvMut.reloadData();
+            TestKit.check(cvMut.numberOfSections() == 2,
+                    "section-mutation view reports 2 sections (got " + cvMut.numberOfSections() + ")");
+            MemorySegment sec2 = nsui.NSIndexSet.indexSetWithIndex(2).peer();
+            MemorySegment sec50 = nsui.NSIndexSet.indexSetWithIndex(50).peer();
+            TestKit.noThrow("reloadSections({2}) tolerated (== sectionCount)",
+                    () -> cvMut.reloadSections(sec2));
+            TestKit.noThrow("reloadSections({50}) tolerated",
+                    () -> cvMut.reloadSections(sec50));
+            TestKit.noThrow("deleteSections({50}) tolerated",
+                    () -> cvMut.deleteSections(sec50));
+            TestKit.noThrow("insertSections({50}) tolerated",
+                    () -> cvMut.insertSections(sec50));
         } catch (Throwable t) {
             TestKit.check(false, "view index-guard block threw: " + t);
         }

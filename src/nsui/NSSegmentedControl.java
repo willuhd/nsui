@@ -241,8 +241,18 @@ public final class NSSegmentedControl extends NSControl {
         }
     }
 
-    /// [control setSelectedSegment:] — select the segment at the given index.
+    /// [control setSelectedSegment:] — select the segment at the given index, or -1 to
+    /// clear the selection.
+    ///
+    /// Measured on a 2-segment control: -1, 0 and 1 are accepted; 2 and 5 raise
+    /// NSRangeException ("-[NSSegmentedCell _segmentsDeselectedBySegment:]: index (2)
+    /// beyond bounds (1)") and abort the JVM. So the valid range is -1 .. segmentCount-1.
     public void setSelectedSegment(long index) {
+        long segments = segmentCount();
+        if (index < -1 || index >= segments) {
+            throw new IllegalArgumentException("setSelectedSegment: index " + index
+                    + " out of bounds (-1 to clear, else 0.." + (segments - 1) + ")");
+        }
         try {
             hSetSelected.invokeExact(peer, ObjC.sel("setSelectedSegment:"), index);
         } catch (Throwable t) {

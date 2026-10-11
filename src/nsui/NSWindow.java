@@ -669,6 +669,7 @@ public class NSWindow extends NSResponder {
     public static NSWindow create(NSRect contentRect, long styleMask, long backingStoreType, boolean defer) {
         ObjC.requireMainThread("NSWindow.create");
         ensureInit();
+        Bounds.nonNull(contentRect, "NSWindow.create (contentRect)");   // named IAE, not a bare NPE
         MemorySegment win = ObjC.msgSendId(ObjC.cls("NSWindow"), Sels.alloc);
         win = ObjC.msgSendIdRectLongLongBool(win, Sels.initWithContentRect_styleMask_backing_defer,
                 contentRect.toSegment(), styleMask, backingStoreType, defer);
@@ -687,6 +688,7 @@ public class NSWindow extends NSResponder {
     public static NSWindow createPanel(NSRect contentRect, long styleMask, long backingStoreType, boolean defer) {
         ObjC.requireMainThread("NSWindow.createPanel");
         ensureInit();
+        Bounds.nonNull(contentRect, "NSWindow.createPanel (contentRect)");   // named IAE, not a bare NPE
         MemorySegment panel = ObjC.msgSendId(ObjC.cls("NSPanel"), Sels.alloc);
         panel = ObjC.msgSendIdRectLongLongBool(panel, Sels.initWithContentRect_styleMask_backing_defer,
                 contentRect.toSegment(), styleMask, backingStoreType, defer);

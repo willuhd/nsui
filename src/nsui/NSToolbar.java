@@ -179,13 +179,28 @@ public final class NSToolbar extends NSObject {
     }
 
     // ---- items ----
+    //
+    // Index validation here is deliberately PARTIAL, and the reason is measured rather than
+    // assumed. The native assertions are
+    //   insertItemWithItemIdentifier:atIndex:  0 <= index <= [_currentItems count]
+    //   removeItemAtIndex:                     0 <= index <  [_currentItems count]
+    // and a violation raises NSInternalInconsistencyException, aborting the JVM. A negative
+    // index is therefore always fatal and is checked in Java. An over-large index is NOT
+    // checked, because no reliable count is reachable from Java in the state that matters:
+    // an item inserted with an identifier AppKit does not realize (e.g. "item1" with no
+    // delegate) leaves `-items`/`-itemIdentifiers` empty, and whether removeItemAtIndex:0
+    // then succeeds or aborts depends on that unrealized state — it succeeds when nothing
+    // has queried the toolbar in between and aborts after an `items()`/`itemIdentifiers()`
+    // query, even though both states report an empty array. `-items` does track
+    // `_currentItems` in every state measured; the count is simply 0 in both. Because the
+    // two states are indistinguishable from Java, a count-based upper bound either rejects
+    // a legal call (the no-query order) or fails to prevent the abort (the query order), so
+    // the upper bound is left to AppKit and documented.
 
     /// [toolbar insertItemWithItemIdentifier:atIndex:] — index may equal the item count.
-    /// Only the negative half is validated: the native assertion is
-    /// `0 <= index <= [_currentItems count]`, and `-items` does not reliably report that
-    /// count (a windowless toolbar keeps returning an empty array after a successful
-    /// insert), so checking an upper bound here would reject legal calls. A negative index
-    /// raises natively (verified, exit 134: "Invalid parameter not satisfying: index>=0").
+    /// Only the negative half is validated (see the block comment above); a negative index
+    /// raises natively ("Invalid parameter not satisfying: index>=0 && index<=[_currentItems
+    /// count]", verified, exit 134).
     public void insertItemWithItemIdentifier(String identifier, long index) {
         Bounds.nonNegative(index, "insertItemWithItemIdentifier:atIndex:");
         try {
@@ -206,9 +221,10 @@ public final class NSToolbar extends NSObject {
         }
     }
 
-    /// [toolbar removeItemAtIndex:] — see insertItemWithItemIdentifier for why only the
-    /// negative half is checked (the native assertion is `0 <= index < _currentItems count`
-    /// and `-items` is not a reliable count). Negative raises natively too.
+    /// [toolbar removeItemAtIndex:] — only a negative index is validated (see the block
+    /// comment above); negative raises natively too ("Invalid parameter not satisfying:
+    /// index != -1", verified). An index into the unrealized-item state can still abort:
+    /// see the block comment for why Java cannot distinguish it.
     public void removeItemAtIndex(long index) {
         Bounds.nonNegative(index, "removeItemAtIndex:");
         try {

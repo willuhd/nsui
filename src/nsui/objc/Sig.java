@@ -207,7 +207,7 @@ public final class Sig {
         of(Ret.ID, Arg.FLOAT, Arg.FLOAT, Arg.FLOAT),  // HDR10MetadataWithMinLuminance:...
         of(Ret.ID, Arg.INT, Arg.ID, Arg.INT, Arg.DOUBLE, Arg.DOUBLE), // constraintWithAttribute:scale:offset:
         of(Ret.ID, Arg.INT, Arg.ID, Arg.INT, Arg.DOUBLE), // constraintWithAttribute:offset:
-        of(Ret.ID, Arg.INT, Arg.ID, Arg.INT),          // constraintWithAttribute: (source-relative)
+        of(Ret.ID, Arg.INT, Arg.ID, Arg.INT),          // NSString stringByPaddingToLength:withString:startingAtIndex:
         of(Ret.ID, Arg.DOUBLE, Arg.DOUBLE, Arg.DOUBLE, Arg.DOUBLE),  // colorWithSRGBRed:green:blue:alpha:
         of(Ret.ID, Arg.INT, Arg.BOOL),                  // standardWindowButton:forFlag:
         // Metal v1 (all auto-registered like the rest)
@@ -274,8 +274,9 @@ public final class Sig {
         of(Ret.RANGE, Arg.ID, Arg.INT),                     // rangeOfString:options: (id,int)->range
         of(Ret.RANGE, Arg.ID, Arg.INT, Arg.RANGE),          // rangeOfString:options:range: / rangeOfCharacterFromSet:options:range:
         of(Ret.INT, Arg.ID, Arg.INT),                       // NSString compare:options:
-        // (of(Ret.ID, Arg.INT, Arg.ID, Arg.INT) is already listed above under
-        //  constraintWithAttribute:; descriptors are keyed by shape, so one entry serves both.)
+        // (of(Ret.ID, Arg.INT, Arg.ID, Arg.INT) is already listed above, for
+        //  stringByPaddingToLength:withString:startingAtIndex:; descriptors are keyed by SHAPE,
+        //  so the one entry serves every selector with that signature.)
         of(Ret.ID, Arg.ID, Arg.ID, Arg.INT, Arg.RANGE),     // NSString stringByReplacingOccurrencesOfString:withString:options:range:
         of(Ret.ID, Arg.RANGE, Arg.ID),                      // replaceCharactersInRange:withString: (range,id)->void/id variant
         of(Ret.VOID, Arg.RANGE, Arg.ID),                     // replaceCharactersInRange:withString: void variant

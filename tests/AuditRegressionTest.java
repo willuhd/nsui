@@ -1712,6 +1712,50 @@ public final class AuditRegressionTest {
             TestKit.check(false, "macOS 11/12 guard block threw: " + t);
         }
 
+        // --- 8ba. discriminating coverage for the THREE setters 1c7d776 guarded ---
+        // The verifier noted the round-trips added there targeted NSSlider/NSView instead, so the
+        // three guarded setters still had only non-discriminating assertions. Round-trip each.
+        try {
+            nsui.NSTextField dField = nsui.NSTextField.create(new NSRect(0, 0, 120, 24));
+            if (dField.respondsToSelector(ObjC.sel("setPlaceholderAttributedStrings:"))) {
+                nsui.NSArray ph = nsui.NSArray.mutableArray();
+                ph.addObject(nsui.NSAttributedString.create("p"));
+                dField.setPlaceholderAttributedStrings(ph);
+                TestKit.check(dField.placeholderAttributedStrings() != null
+                                && dField.placeholderAttributedStrings().count() == 1,
+                        "placeholderAttributedStrings reaches native (count 1)");
+                dField.setPlaceholderAttributedStrings(null);
+                nsui.NSArray cleared = dField.placeholderAttributedStrings();
+                TestKit.check(cleared == null || cleared.count() == 0,
+                        "clearing placeholderAttributedStrings reaches native");
+            } else {
+                TestKit.probe("setPlaceholderAttributedStrings: absent on this host");
+            }
+            if (dField.respondsToSelector(ObjC.sel("setResolvesNaturalAlignmentWithBaseWritingDirection:"))) {
+                dField.setResolvesNaturalAlignmentWithBaseWritingDirection(true);
+                TestKit.check(dField.resolvesNaturalAlignmentWithBaseWritingDirection(),
+                        "resolvesNaturalAlignment reads back true");
+                dField.setResolvesNaturalAlignmentWithBaseWritingDirection(false);
+                TestKit.check(!dField.resolvesNaturalAlignmentWithBaseWritingDirection(),
+                        "resolvesNaturalAlignment reads back false");
+            } else {
+                TestKit.probe("setResolvesNaturalAlignment... absent on this host");
+            }
+            nsui.NSToolbarItem dItem = nsui.NSToolbarItem.create("probe.tint");
+            if (dItem.respondsToSelector(ObjC.sel("setBackgroundTintColor:"))) {
+                nsui.NSColor red = nsui.NSColor.redColor();
+                dItem.setBackgroundTintColor(red);
+                nsui.NSColor tintBack = dItem.backgroundTintColor();
+                TestKit.check(tintBack != null && tintBack.peer() != null && red.peer() != null
+                                && tintBack.peer().address() == red.peer().address(),
+                        "backgroundTintColor reaches native (same peer)");
+            } else {
+                TestKit.probe("setBackgroundTintColor: absent on this host");
+            }
+        } catch (Throwable t) {
+            TestKit.check(false, "setter round-trip block threw: " + t);
+        }
+
         // --- 8z. type-confusion guards on the raw collection-view setters ---
         // AppKit does NOT raise a type error here, it either asserts isKindOfClass: or
         // messages the object: setCollectionViewLayout: with a plain NSView raised

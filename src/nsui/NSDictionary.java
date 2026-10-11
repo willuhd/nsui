@@ -38,7 +38,6 @@ public final class NSDictionary extends NSObject {
     }
 
     /// Create an empty dictionary via `[NSDictionary dictionary]`.
-
     public static NSDictionary dictionary() {
         ensureInit();
         MemorySegment d = ObjC.msgSendId(ObjC.cls("NSDictionary"), ObjC.sel("dictionary"));

@@ -88,6 +88,18 @@ public final class MediaCoverageTest {
             check(c.linearExposure() == 1.0, "linearExposure == 1.0 for SDR");
             check(c.standardDynamicRangeColor() != null, "standardDynamicRangeColor non-nil");
             check(c.colorByApplyingContentHeadroom(1.0) != null, "colorByApplyingContentHeadroom(1.0) non-nil");
+            // Negative guards: the component readers are colour-space specific. These
+            // used to abort natively (a grey is type()==0, so the old type()!=0 check
+            // let whiteColor().rgba() through to a raising native read).
+            boolean grayRgbaRejected = false;
+            try { NSColor.whiteColor().rgba(); } catch (IllegalArgumentException expected) { grayRgbaRejected = true; }
+            check(grayRgbaRejected, "rgba() on a grey colour is rejected in Java (was a native abort)");
+            boolean rgbCmykRejected = false;
+            try { c.cmyka(); } catch (IllegalArgumentException expected) { rgbCmykRejected = true; }
+            check(rgbCmykRejected, "cmyka() on an RGB colour is rejected in Java (was a native abort)");
+            boolean rgbWhiteRejected = false;
+            try { c.whiteAlpha(); } catch (IllegalArgumentException expected) { rgbWhiteRejected = true; }
+            check(rgbWhiteRejected, "whiteAlpha() on an RGB colour is rejected in Java");
             NSColor gray = NSColor.colorWithWhite(0.5, 1.0);
             check(gray != null, "colorWithWhite non-nil");
             double[] wa = gray.whiteAlpha();

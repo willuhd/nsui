@@ -769,6 +769,7 @@ public class NSWindow extends NSResponder {
 
     /// setFrame:display: — resize/reposition (and optionally redraw immediately).
     public void setFrameDisplay(NSRect frame, boolean display) {
+        Bounds.notNaN(frame, "setFrame:display:");
         ensureInit();
         checkClosed();
         try {
@@ -780,6 +781,7 @@ public class NSWindow extends NSResponder {
 
     /// setFrameOrigin: — move the window (fires windowDidMove:).
     public void setFrameOrigin(NSPoint origin) {
+        Bounds.notNaN(origin, "setFrameOrigin:");
         ensureInit();
         try {
             H.hSetFrameOrigin().invokeExact(peer, Sels.setFrameOrigin, origin.toSegment());
@@ -790,6 +792,7 @@ public class NSWindow extends NSResponder {
 
     /// setContentSize: — the content area's size.
     public void setContentSize(NSSize size) {
+        Bounds.notNaN(size, "setContentSize:");
         ensureInit();
         try {
             H.hSetContentSize().invokeExact(peer, Sels.setContentSize, size.toSegment());
@@ -1726,6 +1729,7 @@ ensureInit(); return ObjC.msgSendBool(peer, Sels.hasDynamicDepthLimit); }
 
     /// [window setFrameTopLeftPoint:] — position by top-left corner.
     public void setFrameTopLeftPoint(NSPoint point) {
+        Bounds.notNaN(point, "setFrameTopLeftPoint:");
         ensureInit();
         try {
             H.hSetFrameOrigin().invokeExact(peer, Sels.setFrameTopLeftPoint, point.toSegment());

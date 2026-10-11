@@ -557,6 +557,9 @@ public class NSView extends NSResponder {
     /// alloc + initWithFrame: and register the Java drawable for this view.
     public static NSView create(NSRect frame, Drawable drawable) {
         ensureInit();
+        // This factory reaches initWithFrame: directly (its own hInitFrame handle), so it needs
+        // the NaN check too — ObjC.newView's guard does not cover it.
+        Bounds.notNaN(frame, "initWithFrame:");
         MemorySegment v = ObjC.msgSendId(drawableClass, Sels.alloc);
         try {
             v = (MemorySegment) H.hInitFrame().invokeExact(v, Sels.initWithFrame, frame.toSegment());
@@ -1014,6 +1017,7 @@ public class NSView extends NSResponder {
 
     /// setFrame: — reposition/resize in the superview's coordinates.
     public void setFrame(NSRect frame) {
+        Bounds.notNaN(frame, "setFrame:");
         ensureInit();
         try {
             H.hSetFrame().invokeExact(peer, Sels.setFrame, frame.toSegment());
@@ -1045,6 +1049,7 @@ public class NSView extends NSResponder {
 
     /// setBounds: — set the view's bounds.
     public void setBounds(NSRect bounds) {
+        Bounds.notNaN(bounds, "setBounds:");
         ensureInit();
         try {
             H.hSetBounds().invokeExact(peer, Sels.setBounds, bounds.toSegment());
@@ -1663,6 +1668,7 @@ public class NSView extends NSResponder {
 
     /// [view setFrameOrigin:] — move without resizing.
     public void setFrameOrigin(NSPoint origin) {
+        Bounds.notNaN(origin, "setFrameOrigin:");
         ensureInit();
         try {
             H.hSetPoint().invokeExact(peer, Sels.setFrameOrigin, origin.toSegment());
@@ -1673,6 +1679,7 @@ public class NSView extends NSResponder {
 
     /// [view setFrameSize:] — resize keeping origin.
     public void setFrameSize(NSSize size) {
+        Bounds.notNaN(size, "setFrameSize:");
         ensureInit();
         try {
             H.hSetSize().invokeExact(peer, Sels.setFrameSize, size.toSegment());
@@ -1693,6 +1700,7 @@ public class NSView extends NSResponder {
 
     /// [view setBoundsSize:].
     public void setBoundsSize(NSSize size) {
+        Bounds.notNaN(size, "setBoundsSize:");
         ensureInit();
         try {
             H.hSetSize().invokeExact(peer, Sels.setBoundsSize, size.toSegment());
@@ -2172,6 +2180,7 @@ public class NSView extends NSResponder {
 
     /// [view scrollPoint:] — scroll to bring a point visible.
     public void scrollPoint(NSPoint point) {
+        Bounds.notNaN(point, "scrollPoint:");
         ensureInit();
         try {
             H.hSetPoint().invokeExact(peer, Sels.scrollPoint, point.toSegment());

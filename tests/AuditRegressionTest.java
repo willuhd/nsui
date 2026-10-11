@@ -1845,6 +1845,56 @@ public final class AuditRegressionTest {
             TestKit.check(false, "setter-twin block threw: " + t);
         }
 
+        // --- 8bd. NaN geometry: AppKit TRAPS (133) or raises (134); guard rejects NaN only ---
+        // Measured raw: setFrame/setFrameOrigin/setFrameSize/setBounds/setBoundsSize/scrollPoint,
+        // NSWindow setFrame:display:/setContentSize: and initWithFrame: TRAP on NaN; NSWindow
+        // setFrameOrigin:/setFrameTopLeftPoint:, CALayer setFrame:/setPosition:/setBounds: and
+        // NSSplitView setPosition: raise. INFINITY is tolerated by the view/window setters, so the
+        // guard must NOT reject it (the last four assertions pin that).
+        try {
+            double nan = Double.NaN;
+            NSRect nanRect = new NSRect(nan, 0, 10, 10);
+            NSSize nanSize = new NSSize(nan, nan);
+            NSPoint nanPoint = new NSPoint(nan, nan);
+            TestKit.expectThrows("NSView.create(NaN frame) rejects instead of trapping",
+                    IllegalArgumentException.class, () -> NSView.create(nanRect, (v, d) -> {}));
+            NSView gv = NSView.create(new NSRect(0, 0, 100, 100), (v, d) -> {});
+            TestKit.expectThrows("setFrame(NaN) rejects instead of trapping",
+                    IllegalArgumentException.class, () -> gv.setFrame(nanRect));
+            TestKit.expectThrows("setBoundsSize(NaN) rejects instead of trapping",
+                    IllegalArgumentException.class, () -> gv.setBoundsSize(nanSize));
+            TestKit.expectThrows("setFrameOrigin(NaN) rejects instead of trapping",
+                    IllegalArgumentException.class, () -> gv.setFrameOrigin(nanPoint));
+            TestKit.expectThrows("scrollPoint(NaN) rejects instead of trapping",
+                    IllegalArgumentException.class, () -> gv.scrollPoint(nanPoint));
+            NSWindow gw = TestKit.hiddenWindow(120, 80);
+            TestKit.expectThrows("NSWindow.setFrameDisplay(NaN) rejects",
+                    IllegalArgumentException.class, () -> gw.setFrameDisplay(nanRect, true));
+            TestKit.expectThrows("NSWindow.setContentSize(NaN) rejects",
+                    IllegalArgumentException.class, () -> gw.setContentSize(nanSize));
+            nsui.CALayer gl = nsui.CALayer.create();
+            TestKit.expectThrows("CALayer.setPosition(NaN) rejects",
+                    IllegalArgumentException.class, () -> gl.setPosition(nanPoint));
+            nsui.NSSplitView gsv = nsui.NSSplitView.create(new NSRect(0, 0, 200, 100));
+            gsv.addArrangedSubview(NSView.create(new NSRect(0, 0, 100, 100), (v, d) -> {}));
+            TestKit.expectThrows("NSSplitView.setPosition(NaN) rejects",
+                    IllegalArgumentException.class, () -> gsv.setPosition(nan, 0));
+            TestKit.expectThrows("NSSplitView.setPosition(infinity) rejects (native raises)",
+                    IllegalArgumentException.class, () -> gsv.setPosition(Double.POSITIVE_INFINITY, 0));
+            // Over-tightening protection: AppKit ACCEPTS infinity in the view/window geometry
+            // setters and NaN in min/max size, so those must still go through.
+            TestKit.noThrow("setFrame with an INFINITY rect is still accepted (native exit 0)",
+                    () -> gv.setFrame(new NSRect(0, 0, Double.POSITIVE_INFINITY, 10)));
+            TestKit.noThrow("setBoundsSize with INFINITY is still accepted",
+                    () -> gv.setBoundsSize(new NSSize(Double.POSITIVE_INFINITY, 10)));
+            TestKit.noThrow("setMinSize(NaN) is still accepted (native tolerates it)",
+                    () -> gw.setMinSize(nanSize));
+            TestKit.noThrow("setAspectRatio(NaN) is still accepted",
+                    () -> gw.setAspectRatio(nanSize));
+        } catch (Throwable t) {
+            TestKit.check(false, "NaN geometry block threw: " + t);
+        }
+
         // --- 8z. type-confusion guards on the raw collection-view setters ---
         // AppKit does NOT raise a type error here, it either asserts isKindOfClass: or
         // messages the object: setCollectionViewLayout: with a plain NSView raised

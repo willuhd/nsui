@@ -556,6 +556,7 @@ public class CALayer extends NSObject {
 
     /// [layer setPosition:]
     public void setPosition(NSPoint p) {
+        Bounds.notNaN(p, "setPosition:");
         ensureInit();
         try {
             handles.hSetPoint().invokeExact(peer, Sels.setPosition, p.toSegment());
@@ -607,6 +608,7 @@ public class CALayer extends NSObject {
 
     /// [layer setFrame:]
     public void setFrame(NSRect frame) {
+        Bounds.notNaN(frame, "setFrame:");
         ensureInit();
         try {
             handles.hSetRect().invokeExact(peer, Sels.setFrame, frame.toSegment());

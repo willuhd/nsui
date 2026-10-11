@@ -364,6 +364,15 @@ public final class ObjC {
     /// a per-class handle, minus ~8 lines per call site. Throws when native
     /// construction fails or returns nil (never returns a null peer).
     public static MemorySegment newView(String className, nsui.NSRect frame) {
+        // initWithFrame: with NaN traps the process (SIGTRAP, exit 133) for every view class, so
+        // the check lives here rather than in each factory. Bounds.notNaN (package nsui) documents
+        // the same rule; it is inlined because Bounds is package-private and the other geometry
+        // setters are guarded there.
+        if (frame != null && (Double.isNaN(frame.x()) || Double.isNaN(frame.y())
+                || Double.isNaN(frame.width()) || Double.isNaN(frame.height()))) {
+            throw new IllegalArgumentException("initWithFrame: rect " + frame
+                    + " contains NaN (AppKit traps on NaN geometry)");
+        }
         MemorySegment clsSeg = cls(className);
         if (clsSeg == null || clsSeg.address() == 0) {
             throw new IllegalStateException("class not found: " + className);

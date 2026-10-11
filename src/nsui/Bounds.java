@@ -16,6 +16,54 @@ final class Bounds {
 
     private Bounds() {}
 
+    /// Reject NaN geometry, which AppKit TRAPS on (SIGTRAP, exit 133) in the layout setters.
+    ///
+    /// Measured with standalone receivers: a NaN in any component of
+    /// NSView setFrame:/setFrameOrigin:/setFrameSize:/setBounds:/setBoundsSize:/scrollPoint:,
+    /// NSWindow setFrame:display:/setContentSize: and initWithFrame: (every view factory) traps
+    /// the process; NSWindow setFrameOrigin:/setFrameTopLeftPoint:, CALayer
+    /// setFrame:/setPosition:/setBounds: and NSSplitView setPosition: raise
+    /// NSInvalidArgumentException instead. INFINITY is TOLERATED by the view/window geometry
+    /// setters (measured exit 0), so only NaN is rejected here — over-rejecting INF would refuse
+    /// a value AppKit accepts. Deliberately NOT guarded, because AppKit tolerates NaN there:
+    /// setMinSize:/setMaxSize:/setAspectRatio:, setNeedsDisplayInRect:, the convert* family,
+    /// alpha and magnification.
+    public static void notNaN(NSRect r, String what) {
+        if (r == null) throw new IllegalArgumentException(what + ": null rect");
+        if (Double.isNaN(r.x()) || Double.isNaN(r.y())
+                || Double.isNaN(r.width()) || Double.isNaN(r.height())) {
+            throw new IllegalArgumentException(what + ": rect " + r
+                    + " contains NaN (AppKit traps on NaN geometry)");
+        }
+    }
+
+    /// See notNaN(NSRect,String) — same rule for a size.
+    public static void notNaN(NSSize s, String what) {
+        if (s == null) throw new IllegalArgumentException(what + ": null size");
+        if (Double.isNaN(s.width()) || Double.isNaN(s.height())) {
+            throw new IllegalArgumentException(what + ": size " + s
+                    + " contains NaN (AppKit traps on NaN geometry)");
+        }
+    }
+
+    /// See notNaN(NSRect,String) — same rule for a point.
+    public static void notNaN(NSPoint p, String what) {
+        if (p == null) throw new IllegalArgumentException(what + ": null point");
+        if (Double.isNaN(p.x()) || Double.isNaN(p.y())) {
+            throw new IllegalArgumentException(what + ": point " + p
+                    + " contains NaN (AppKit traps on NaN geometry)");
+        }
+    }
+
+    /// Reject NaN and +/-INFINITY: NSSplitView.setPosition: raises for both (measured exit 134),
+    /// unlike the view/window geometry setters, which accept INFINITY.
+    public static void finite(double value, String what) {
+        if (!Double.isFinite(value)) {
+            throw new IllegalArgumentException(what + ": value " + value
+                    + " is not finite (AppKit raises for NaN and infinity here)");
+        }
+    }
+
     /// A required (non-null) argument. AppKit declares these `nonnull`, so `null`
     /// is a caller error; report it as `IllegalArgumentException` naming the call
     /// instead of a raw NullPointerException at the peer dereference.

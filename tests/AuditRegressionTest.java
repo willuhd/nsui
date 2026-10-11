@@ -453,6 +453,39 @@ public final class AuditRegressionTest {
             TestKit.check(false, "NSGridView move-guard block threw: " + t);
         }
 
+        // --- 8k. corrections to two over-tight guards, plus nils that still aborted ---
+        // An adversarial review showed two guards from the first text/guard pass rejected
+        // calls that succeed natively (both re-verified here); and that four text nils were
+        // still forwarded although they abort the JVM.
+        try {
+            TestKit.noThrow("NSControl.sendAction(NULL, NULL) is a harmless NO",
+                    () -> slider.sendAction(null, null));
+            nsui.NSMutableAttributedString emptyFromNil =
+                    nsui.NSMutableAttributedString.create((nsui.NSAttributedString) null);
+            TestKit.check(emptyFromNil != null && emptyFromNil.length() == 0,
+                    "initWithAttributedString:nil yields an empty string, not an IAE");
+
+            nsui.NSText t2 = nsui.NSText.create(new NSRect(0, 0, 200, 100));
+            TestKit.expectThrows("NSText.setString(null) rejects nil string",
+                    IllegalArgumentException.class, () -> t2.setString(null));
+            TestKit.noThrow("NSText.setString(\"abc\") still works", () -> t2.setString("abc"));
+            TestKit.expectThrows("NSText.replaceCharactersInRangeWithString(·, null) rejects",
+                    IllegalArgumentException.class,
+                    () -> t2.replaceCharactersInRangeWithString(new nsui.NSRange(0, 1), null));
+            nsui.NSMutableAttributedString mut2 = nsui.NSMutableAttributedString.create("abc");
+            TestKit.expectThrows("NSMutableAttributedString.replaceCharactersInRangeWithString(·, null) rejects",
+                    IllegalArgumentException.class,
+                    () -> mut2.replaceCharactersInRangeWithString(new nsui.NSRange(0, 1), null));
+            nsui.NSTextView tv2 = nsui.NSTextView.create(new NSRect(0, 0, 200, 100));
+            TestKit.expectThrows("NSTextView.setAttributedString(null) rejects nil",
+                    IllegalArgumentException.class, () -> tv2.setAttributedString(null));
+            TestKit.expectThrows("NSTextView.setAttributedStringValue(null) rejects nil",
+                    IllegalArgumentException.class,
+                    () -> tv2.setAttributedStringValue((nsui.NSAttributedString) null));
+        } catch (Throwable t) {
+            TestKit.check(false, "correction/guard block threw: " + t);
+        }
+
         // --- 9. value and layer struct round-trips ---
         try {
             NSValue v = NSValue.valueWithPoint(new NSPoint(3, 4));

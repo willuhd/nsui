@@ -70,10 +70,10 @@ public class NSMutableAttributedString extends NSAttributedString {
     }
 
     /// `[[NSMutableAttributedString alloc] initWithAttributedString:attrStr]`
-    /// `attrStr` is nonnull in the header; nil raises NSInvalidArgumentException.
+    /// `attrStr` is nonnull in the header, but nil does NOT raise: verified to return a
+    /// valid empty string (length 0), so it is deliberately accepted here.
     public static NSMutableAttributedString create(NSAttributedString attrStr) {
         ensureMutInit();
-        Bounds.nonNull(attrStr, "initWithAttributedString: (attributed string)");
         MemorySegment alloc = ObjC.msgSendId(ObjC.cls("NSMutableAttributedString"), ObjC.sel("alloc"));
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.ID));
@@ -86,9 +86,12 @@ public class NSMutableAttributedString extends NSAttributedString {
         }
     }
 
-    /// [mutable replaceCharactersInRange:withString:]
+    /// [mutable replaceCharactersInRange:withString:] — a nil string is rejected.
+    /// It used to be silently replaced by "" (deleting the range); the NSMutableAttributedString
+    /// and NSText siblings named the same way now agree, and nil does not mean "clear".
     public void replaceCharactersInRangeWithString(NSRange range, String str) {
         ensureMutInit();
+        Bounds.nonNull(str, "replaceCharactersInRange:withString: (string)");
         if (range == null) throw new IllegalArgumentException("replaceCharactersInRange:withString: null range");
         long n = length();
         if (range.location() < 0 || range.length() < 0 || range.location() > n || range.length() > n - range.location())
@@ -96,7 +99,7 @@ public class NSMutableAttributedString extends NSAttributedString {
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.RANGE, Arg.ID));
             h.invokeExact(peer, ObjC.sel("replaceCharactersInRange:withString:"),
-                    range.toSegment(), ObjC.nsstring(str == null ? "" : str));
+                    range.toSegment(), ObjC.nsstring(str));
         } catch (Throwable t) {
             throw new RuntimeException("replaceCharactersInRange:withString: failed", t);
         }

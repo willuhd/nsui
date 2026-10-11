@@ -55,8 +55,11 @@ public class NSText extends NSView {
     }
 
     /// [text setString:] — replace the plain string contents.
+    /// A nil string raises NSInvalidArgumentException natively ("nil NSString given",
+    /// verified, exit 134); it is not a "clear" (pass "" for that).
     public void setString(String s) {
-        ObjC.msgSendVoidId(peer, ObjC.sel("setString:"), s == null ? MemorySegment.NULL : ObjC.nsstring(s));
+        Bounds.nonNull(s, "setString:");
+        ObjC.msgSendVoidId(peer, ObjC.sel("setString:"), ObjC.nsstring(s));
     }
 
     // ---- rich text / graphics ----
@@ -131,13 +134,16 @@ public class NSText extends NSView {
         return s == null ? 0 : s.length();
     }
 
-    /// [text replaceCharactersInRange:withString:]
+    /// [text replaceCharactersInRange:withString:] — a nil string raises
+    /// NSInvalidArgumentException natively ("nil NSString given", verified), so it is
+    /// rejected here rather than forwarded.
     public void replaceCharactersInRangeWithString(NSRange range, String string) {
         Bounds.range(range, textLength(), "replaceCharactersInRange:withString:");
+        Bounds.nonNull(string, "replaceCharactersInRange:withString: (string)");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.RANGE, Arg.ID));
             h.invokeExact(peer, ObjC.sel("replaceCharactersInRange:withString:"),
-                    range.toSegment(), (MemorySegment) (string == null ? MemorySegment.NULL : ObjC.nsstring(string)));
+                    range.toSegment(), ObjC.nsstring(string));
         } catch (Throwable t) {
             throw new RuntimeException("replaceCharactersInRange:withString: failed", t);
         }

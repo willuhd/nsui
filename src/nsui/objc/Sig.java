@@ -274,6 +274,8 @@ public final class Sig {
         of(Ret.VOID, Arg.ID, Arg.ID, Arg.RANGE),             // addAttribute:value:range: (id, id, NSRange) -> void
         // CALayer opacity (float)
         of(Ret.FLOAT), of(Ret.VOID, Arg.FLOAT),
+        of(Ret.FLOAT, Arg.INT),                             // NSSplitView holdingPriorityForSubviewAtIndex:
+        of(Ret.VOID, Arg.FLOAT, Arg.INT),                   // NSSplitView setHoldingPriority:forSubviewAtIndex:
         // --- nsui3 Window/App/Graphics extensions (append-only) ---
         of(Ret.VOID, Arg.RECT, Arg.DOUBLE),                 // NSGradient drawInRect:angle:
         of(Ret.ID, Arg.ID, Arg.BOOL),                       // NSGraphicsContext graphicsContextWithCGContext:flipped:

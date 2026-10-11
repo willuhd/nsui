@@ -991,6 +991,33 @@ public final class AuditRegressionTest {
             }
         }
 
+        // --- 8aa. NSSplitView holding priority: float shape, priority > 0 ---
+        // Was omitted for a missing Sig shape; the shapes are registered now. Measured: the
+        // priority must be > 0 (0.0 and -5.0 abort with "priority > 0", 0.001 and 1.0 are
+        // accepted) while the INDEX is unvalidated (0, 1 and 5 all return on a 2-subview view).
+        try {
+            nsui.NSSplitView spv = nsui.NSSplitView.create(new NSRect(0, 0, 300, 100));
+            spv.addArrangedSubview(NSView.create(new NSRect(0, 0, 100, 100), (v, d) -> {}));
+            spv.addArrangedSubview(NSView.create(new NSRect(0, 0, 100, 100), (v, d) -> {}));
+            TestKit.noThrow("setHoldingPriorityForSubviewAtIndex(250, 0) is legal",
+                    () -> spv.setHoldingPriorityForSubviewAtIndex(250.0f, 0));
+            TestKit.check(spv.holdingPriorityForSubviewAtIndex(0) == 250.0f,
+                    "holding priority round-trips (got " + spv.holdingPriorityForSubviewAtIndex(0) + ")");
+            TestKit.expectThrows("setHoldingPriorityForSubviewAtIndex(0, 0) rejects (native assert)",
+                    IllegalArgumentException.class,
+                    () -> spv.setHoldingPriorityForSubviewAtIndex(0.0f, 0));
+            TestKit.expectThrows("setHoldingPriorityForSubviewAtIndex(-5, 0) rejects",
+                    IllegalArgumentException.class,
+                    () -> spv.setHoldingPriorityForSubviewAtIndex(-5.0f, 0));
+            TestKit.expectThrows("setHoldingPriorityForSubviewAtIndex(NaN, 0) rejects",
+                    IllegalArgumentException.class,
+                    () -> spv.setHoldingPriorityForSubviewAtIndex(Float.NaN, 0));
+            TestKit.noThrow("setHoldingPriorityForSubviewAtIndex(250, 5) is a native no-op",
+                    () -> spv.setHoldingPriorityForSubviewAtIndex(250.0f, 5));
+        } catch (Throwable t) {
+            TestKit.check(false, "split-view holding-priority block threw: " + t);
+        }
+
         // --- 8z. type-confusion guards on the raw collection-view setters ---
         // AppKit does NOT raise a type error here, it either asserts isKindOfClass: or
         // messages the object: setCollectionViewLayout: with a plain NSView raised

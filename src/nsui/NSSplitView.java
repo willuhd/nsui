@@ -163,9 +163,42 @@ public final class NSSplitView extends NSView {
     // Omitted:
     // - delegate property + NSSplitViewDelegate protocol methods — need upcall machinery.
     // - fully covered elsewhere: vertical/dividerStyle/setPosition:ofDividerAtIndex:.
-    // - NSLayoutPriority is float: holdingPriorityForSubviewAtIndex: needs of(FLOAT,INT) and
-    //   setHoldingPriority:forSubviewAtIndex: needs of(VOID,FLOAT,INT) — both absent from the
-    //   Sig vocabulary (requested shapes), so they are omitted rather than sent with a wrong shape.
+    // - NSLayoutPriority IS float; holdingPriorityForSubviewAtIndex: and
+    //   setHoldingPriority:forSubviewAtIndex: used to be omitted because of(FLOAT,INT) and
+    //   of(VOID,FLOAT,INT) were missing from the Sig vocabulary. Both shapes are registered
+    //   now and both methods are implemented below.
+
+    /// [splitView holdingPriorityForSubviewAtIndex:] — NSLayoutPriority, i.e. a FLOAT.
+    public float holdingPriorityForSubviewAtIndex(long index) {
+        ensureInit();
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.FLOAT, Arg.INT));
+            return (float) h.invokeExact(peer, ObjC.sel("holdingPriorityForSubviewAtIndex:"), index);
+        } catch (Throwable t) {
+            throw new RuntimeException("holdingPriorityForSubviewAtIndex: failed", t);
+        }
+    }
+
+    /// [splitView setHoldingPriority:forSubviewAtIndex:] — NSLayoutPriority (float).
+    ///
+    /// The PRIORITY must be > 0: AppKit asserts "Invalid parameter not satisfying: priority > 0"
+    /// and aborts the JVM (verified: 0.0 and -5.0 abort, 0.001 and 1.0 are accepted), so that
+    /// half is guarded; NaN fails the same comparison and is rejected too. The INDEX is NOT
+    /// validated by AppKit — an out-of-range index is a silent no-op (verified: 0, 1 and 5 all
+    /// return on a 2-subview split view) — so it is deliberately not guarded.
+    public void setHoldingPriorityForSubviewAtIndex(float priority, long index) {
+        if (!(priority > 0.0f)) {
+            throw new IllegalArgumentException(
+                    "setHoldingPriority:forSubviewAtIndex: priority must be > 0 (got " + priority + ")");
+        }
+        ensureInit();
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.FLOAT, Arg.INT));
+            h.invokeExact(peer, ObjC.sel("setHoldingPriority:forSubviewAtIndex:"), priority, index);
+        } catch (Throwable t) {
+            throw new RuntimeException("setHoldingPriority:forSubviewAtIndex: failed", t);
+        }
+    }
 
     /// [splitView autosaveName] (may be nil).
     public String autosaveName() {

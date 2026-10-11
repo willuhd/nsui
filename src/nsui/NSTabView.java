@@ -95,6 +95,7 @@ public final class NSTabView extends NSView {
 
     /// [tabView selectTabViewItemAtIndex:] — select by index.
     public void selectTabViewItemAtIndex(long index) {
+        Bounds.index(index, numberOfTabViewItems(), "selectTabViewItemAtIndex:");
         try {
             hVoidInt.invokeExact(peer, ObjC.sel("selectTabViewItemAtIndex:"), index);
         } catch (Throwable t) {
@@ -153,6 +154,7 @@ public final class NSTabView extends NSView {
 
     /// [tabView tabViewItemAtIndex:].
     public NSTabViewItem tabViewItemAtIndex(long index) {
+        Bounds.index(index, numberOfTabViewItems(), "tabViewItemAtIndex:");
         try {
             MemorySegment p = (MemorySegment) hIdInt.invokeExact(peer, ObjC.sel("tabViewItemAtIndex:"), index);
             return NSTabViewItem.wrap(p);

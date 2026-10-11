@@ -156,9 +156,11 @@ public final class NSTableColumn extends NSObject {
         try { return (MemorySegment) hId.invokeExact(peer, ObjC.sel("headerCell")); } catch (Throwable t) { throw new RuntimeException("headerCell failed", t); }
     }
 
-    /// [column setHeaderCell:]
+    /// [column setHeaderCell:] — NSTableColumn.h says 'cell' must be non-nil (and an
+    /// NSTableHeaderCell); nil raises natively.
     public void setHeaderCell(MemorySegment cell) {
-        try { hVoidId.invokeExact(peer, ObjC.sel("setHeaderCell:"), (MemorySegment) ((MemorySegment) (cell == null ? MemorySegment.NULL : cell))); } catch (Throwable t) { throw new RuntimeException("setHeaderCell: failed", t); }
+        if (cell == null || cell.address() == 0) throw new IllegalArgumentException("setHeaderCell: requires a non-nil cell");
+        try { hVoidId.invokeExact(peer, ObjC.sel("setHeaderCell:"), cell); } catch (Throwable t) { throw new RuntimeException("setHeaderCell: failed", t); }
     }
 
     /// [column dataCell] — NSCell peer (id). Deprecated but still queried by delegate tests.
@@ -166,9 +168,10 @@ public final class NSTableColumn extends NSObject {
         try { return (MemorySegment) hId.invokeExact(peer, ObjC.sel("dataCell")); } catch (Throwable t) { throw new RuntimeException("dataCell failed", t); }
     }
 
-    /// [column setDataCell:]
+    /// [column setDataCell:] — the property is `strong id` (nonnull); nil raises natively.
     public void setDataCell(MemorySegment cell) {
-        try { hVoidId.invokeExact(peer, ObjC.sel("setDataCell:"), (MemorySegment) ((MemorySegment) (cell == null ? MemorySegment.NULL : cell))); } catch (Throwable t) { throw new RuntimeException("setDataCell: failed", t); }
+        if (cell == null || cell.address() == 0) throw new IllegalArgumentException("setDataCell: requires a non-nil cell");
+        try { hVoidId.invokeExact(peer, ObjC.sel("setDataCell:"), cell); } catch (Throwable t) { throw new RuntimeException("setDataCell: failed", t); }
     }
 
     /// [column dataCellForRow:] — per-row data cell (if row-specific).

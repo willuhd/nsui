@@ -141,6 +141,7 @@ public class NSAttributedString extends NSObject {
     /// [attributedString attributedSubstringFromRange:] -> NSAttributedString
     public NSAttributedString attributedSubstring(NSRange range) {
         ensureInit();
+        Bounds.range(range, length(), "attributedSubstringFromRange:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.RANGE));
             MemorySegment p = (MemorySegment) h.invokeExact(peer, ObjC.sel("attributedSubstringFromRange:"), range.toSegment());
@@ -153,6 +154,8 @@ public class NSAttributedString extends NSObject {
     /// [attributedString rangeOfTextBlock:atIndex:] -> NSRange (block is NSTextBlock*).
     public NSRange rangeOfTextBlock(MemorySegment block, long location) {
         ensureInit();
+        Bounds.nonNull(block, "rangeOfTextBlock:atIndex:");
+        Bounds.index(location, length(), "rangeOfTextBlock:atIndex:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.RANGE, Arg.ID, Arg.INT));
             MemorySegment s = (MemorySegment) h.invokeExact(ObjC.structSlot(), peer,
@@ -167,6 +170,8 @@ public class NSAttributedString extends NSObject {
     /// [attributedString rangeOfTextTable:atIndex:] -> NSRange (table is NSTextTable*).
     public NSRange rangeOfTextTable(MemorySegment table, long location) {
         ensureInit();
+        Bounds.nonNull(table, "rangeOfTextTable:atIndex:");
+        Bounds.index(location, length(), "rangeOfTextTable:atIndex:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.RANGE, Arg.ID, Arg.INT));
             MemorySegment s = (MemorySegment) h.invokeExact(ObjC.structSlot(), peer,
@@ -181,6 +186,8 @@ public class NSAttributedString extends NSObject {
     /// [attributedString rangeOfTextList:atIndex:] -> NSRange (list is NSTextList*).
     public NSRange rangeOfTextList(MemorySegment list, long location) {
         ensureInit();
+        Bounds.nonNull(list, "rangeOfTextList:atIndex:");
+        Bounds.index(location, length(), "rangeOfTextList:atIndex:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.RANGE, Arg.ID, Arg.INT));
             MemorySegment s = (MemorySegment) h.invokeExact(ObjC.structSlot(), peer,
@@ -268,6 +275,7 @@ public class NSAttributedString extends NSObject {
     /// [attributedString RTFFromRange:documentAttributes:] -> NSData* (raw segment).
     public MemorySegment rtfFromRange(NSRange range, MemorySegment docAttributes) {
         ensureInit();
+        Bounds.range(range, length(), "RTFFromRange:documentAttributes:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.RANGE, Arg.ID));
             return (MemorySegment) h.invokeExact(peer, ObjC.sel("RTFFromRange:documentAttributes:"),
@@ -280,6 +288,7 @@ public class NSAttributedString extends NSObject {
     /// [attributedString RTFDFromRange:documentAttributes:] -> NSData* (raw segment).
     public MemorySegment rtfdFromRange(NSRange range, MemorySegment docAttributes) {
         ensureInit();
+        Bounds.range(range, length(), "RTFDFromRange:documentAttributes:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.RANGE, Arg.ID));
             return (MemorySegment) h.invokeExact(peer, ObjC.sel("RTFDFromRange:documentAttributes:"),
@@ -292,6 +301,7 @@ public class NSAttributedString extends NSObject {
     /// [attributedString docFormatFromRange:documentAttributes:] -> NSData* (raw segment).
     public MemorySegment docFormatFromRange(NSRange range, MemorySegment docAttributes) {
         ensureInit();
+        Bounds.range(range, length(), "docFormatFromRange:documentAttributes:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.RANGE, Arg.ID));
             return (MemorySegment) h.invokeExact(peer, ObjC.sel("docFormatFromRange:documentAttributes:"),
@@ -330,6 +340,7 @@ public class NSAttributedString extends NSObject {
     /// [attributedString fontAttributesInRange:] -> NSDictionary* ("copy font" attributes).
     public MemorySegment fontAttributesInRange(NSRange range) {
         ensureInit();
+        Bounds.range(range, length(), "fontAttributesInRange:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.RANGE));
             return (MemorySegment) h.invokeExact(peer, ObjC.sel("fontAttributesInRange:"), range.toSegment());
@@ -341,6 +352,7 @@ public class NSAttributedString extends NSObject {
     /// [attributedString rulerAttributesInRange:] -> NSDictionary* ("copy ruler" attributes).
     public MemorySegment rulerAttributesInRange(NSRange range) {
         ensureInit();
+        Bounds.range(range, length(), "rulerAttributesInRange:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.RANGE));
             return (MemorySegment) h.invokeExact(peer, ObjC.sel("rulerAttributesInRange:"), range.toSegment());
@@ -352,6 +364,7 @@ public class NSAttributedString extends NSObject {
     /// [attributedString containsAttachmentsInRange:] — YES if an attachment sits in range.
     public boolean containsAttachmentsInRange(NSRange range) {
         ensureInit();
+        Bounds.range(range, length(), "containsAttachmentsInRange:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.BOOL, Arg.RANGE));
             return (boolean) h.invokeExact(peer, ObjC.sel("containsAttachmentsInRange:"), range.toSegment());

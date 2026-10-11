@@ -91,6 +91,7 @@ public final class NSGridView extends NSView {
 
     /// [grid columnAtIndex:] -> NSGridColumn (as NSObject)
     public NSObject columnAtIndex(long index) {
+        Bounds.index(index, numberOfColumns(), "columnAtIndex:");
         ensureInit();
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.INT));
@@ -103,6 +104,7 @@ public final class NSGridView extends NSView {
 
     /// [grid rowAtIndex:] -> NSGridRow (as NSObject)
     public NSObject rowAtIndex(long index) {
+        Bounds.index(index, numberOfRows(), "rowAtIndex:");
         ensureInit();
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.INT));
@@ -221,6 +223,8 @@ public final class NSGridView extends NSView {
 
     /// [grid cellAtColumnIndex:rowIndex:] — the merged cell at those coordinates.
     public NSObject cellAtColumnIndexRowIndex(long columnIndex, long rowIndex) {
+        Bounds.index(columnIndex, numberOfColumns(), "cellAtColumnIndex:rowIndex:");
+        Bounds.index(rowIndex, numberOfRows(), "cellAtColumnIndex:rowIndex:");
         ensureInit();
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.INT, Arg.INT));
@@ -260,6 +264,8 @@ public final class NSGridView extends NSView {
 
     /// [grid moveRowAtIndex:toIndex:].
     public void moveRowAtIndexToIndex(long fromIndex, long toIndex) {
+        Bounds.index(fromIndex, numberOfRows(), "moveRowAtIndex:toIndex:");
+        Bounds.insertIndex(toIndex, numberOfRows(), "moveRowAtIndex:toIndex:");
         ensureInit();
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.INT, Arg.INT));
@@ -271,6 +277,7 @@ public final class NSGridView extends NSView {
 
     /// [grid removeRowAtIndex:].
     public void removeRowAtIndex(long index) {
+        Bounds.index(index, numberOfRows(), "removeRowAtIndex:");
         ensureInit();
         try {
             handles.hVoidInt().invokeExact(peer, ObjC.sel("removeRowAtIndex:"), index);
@@ -295,6 +302,8 @@ public final class NSGridView extends NSView {
 
     /// [grid moveColumnAtIndex:toIndex:].
     public void moveColumnAtIndexToIndex(long fromIndex, long toIndex) {
+        Bounds.index(fromIndex, numberOfColumns(), "moveColumnAtIndex:toIndex:");
+        Bounds.insertIndex(toIndex, numberOfColumns(), "moveColumnAtIndex:toIndex:");
         ensureInit();
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.INT, Arg.INT));
@@ -306,6 +315,7 @@ public final class NSGridView extends NSView {
 
     /// [grid removeColumnAtIndex:].
     public void removeColumnAtIndex(long index) {
+        Bounds.index(index, numberOfColumns(), "removeColumnAtIndex:");
         ensureInit();
         try {
             handles.hVoidInt().invokeExact(peer, ObjC.sel("removeColumnAtIndex:"), index);

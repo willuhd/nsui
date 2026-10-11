@@ -72,6 +72,7 @@ public final class NSComboBox extends NSControl {
 
     /// [combo insertItemWithObjectValue:atIndex:] — insert a value at index.
     public void insertItemWithObjectValueAtIndex(String value, long index) {
+        Bounds.insertIndex(index, numberOfItems(), "insertItemWithObjectValue:atIndex:");
         try {
             hInsert.invokeExact(peer, ObjC.sel("insertItemWithObjectValue:atIndex:"), ObjC.nsstring(value), index);
         } catch (Throwable t) {
@@ -81,6 +82,7 @@ public final class NSComboBox extends NSControl {
 
     /// [combo removeItemAtIndex:] — remove the item at index.
     public void removeItemAtIndex(long index) {
+        Bounds.index(index, numberOfItems(), "removeItemAtIndex:");
         try {
             hSelect.invokeExact(peer, ObjC.sel("removeItemAtIndex:"), index);
         } catch (Throwable t) {
@@ -104,6 +106,7 @@ public final class NSComboBox extends NSControl {
 
     /// [combo selectItemAtIndex:] — select the item at the given index.
     public void selectItemAtIndex(long index) {
+        Bounds.index(index, numberOfItems(), "selectItemAtIndex:");
         try {
             hSelect.invokeExact(peer, ObjC.sel("selectItemAtIndex:"), index);
         } catch (Throwable t) {
@@ -113,6 +116,7 @@ public final class NSComboBox extends NSControl {
 
     /// [combo deselectItemAtIndex:] — deselect the item at index.
     public void deselectItemAtIndex(long index) {
+        Bounds.index(index, numberOfItems(), "deselectItemAtIndex:");
         try {
             hSelect.invokeExact(peer, ObjC.sel("deselectItemAtIndex:"), index);
         } catch (Throwable t) {
@@ -152,6 +156,7 @@ public final class NSComboBox extends NSControl {
 
     /// [combo itemObjectValueAtIndex:] — object value at index.
     public MemorySegment itemObjectValueAtIndex(long index) {
+        Bounds.index(index, numberOfItems(), "itemObjectValueAtIndex:");
         try {
             return (MemorySegment) hItemValue.invokeExact(peer, ObjC.sel("itemObjectValueAtIndex:"), index);
         } catch (Throwable t) {
@@ -285,6 +290,7 @@ public final class NSComboBox extends NSControl {
 
     /// [combo scrollItemAtIndexToTop:] — scroll so the item sits at the top of the list.
     public void scrollItemAtIndexToTop(long index) {
+        Bounds.index(index, numberOfItems(), "scrollItemAtIndexToTop:");
         try {
             hSelect.invokeExact(peer, ObjC.sel("scrollItemAtIndexToTop:"), index);
         } catch (Throwable t) {
@@ -294,6 +300,7 @@ public final class NSComboBox extends NSControl {
 
     /// [combo scrollItemAtIndexToVisible:] — scroll the minimum needed to reveal the item.
     public void scrollItemAtIndexToVisible(long index) {
+        Bounds.index(index, numberOfItems(), "scrollItemAtIndexToVisible:");
         try {
             hSelect.invokeExact(peer, ObjC.sel("scrollItemAtIndexToVisible:"), index);
         } catch (Throwable t) {

@@ -110,12 +110,14 @@ public final class NSPrintInfo extends NSObject {
         } catch (Throwable t) { throw new RuntimeException("jobDisposition failed", t); }
     }
 
-    /// setJobDisposition:
+    /// setJobDisposition: — the property is `copy` (nonnull); nil raises natively.
+    /// (`paperName` next to it IS nullable, so its nil is left alone.)
     public void setJobDisposition(String disposition) {
         ensureInit();
+        Bounds.nonNull(disposition, "setJobDisposition:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.ID));
-            h.invokeExact(peer, ObjC.sel("setJobDisposition:"), (MemorySegment) (disposition == null ? MemorySegment.NULL : ObjC.nsstring(disposition)));
+            h.invokeExact(peer, ObjC.sel("setJobDisposition:"), ObjC.nsstring(disposition));
         } catch (Throwable t) { throw new RuntimeException("setJobDisposition: failed", t); }
     }
 

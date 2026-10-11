@@ -161,6 +161,7 @@ public final class NSPopUpButton extends NSControl {
 
     /// [popup removeItemAtIndex:] — remove the item at the given index.
     public void removeItemAtIndex(long index) {
+        Bounds.index(index, numberOfItems(), "removeItemAtIndex:");
         try {
             hSelect.invokeExact(peer, ObjC.sel("removeItemAtIndex:"), index);
         } catch (Throwable t) {
@@ -179,6 +180,7 @@ public final class NSPopUpButton extends NSControl {
 
     /// [popup insertItemWithTitle:atIndex:] — insert an item at the given index.
     public void insertItemWithTitleAtIndex(String title, long index) {
+        Bounds.insertIndex(index, numberOfItems(), "insertItemWithTitle:atIndex:");
         try {
             hInsert.invokeExact(peer, ObjC.sel("insertItemWithTitle:atIndex:"), ObjC.nsstring(title), index);
         } catch (Throwable t) {
@@ -216,6 +218,7 @@ public final class NSPopUpButton extends NSControl {
 
     /// [popup itemTitleAtIndex:] — the title of the item at the given index.
     public String itemTitleAtIndex(long index) {
+        Bounds.index(index, numberOfItems(), "itemTitleAtIndex:");
         try {
             MemorySegment title = (MemorySegment) hItemTitle.invokeExact(peer, ObjC.sel("itemTitleAtIndex:"), index);
             return ObjC.toString(title);
@@ -390,6 +393,7 @@ public final class NSPopUpButton extends NSControl {
     /// [popup itemAtIndex:] — the NSMenuItem at the index (or nil).
     /// Shape (ID,INT) is in the vocabulary; reuses hItemTitle (same shape as itemTitleAtIndex:).
     public NSMenuItem itemAtIndex(long index) {
+        Bounds.index(index, numberOfItems(), "itemAtIndex:");
         try {
             MemorySegment p = (MemorySegment) hItemTitle.invokeExact(peer, ObjC.sel("itemAtIndex:"), index);
             return NSMenuItem.wrap(p);

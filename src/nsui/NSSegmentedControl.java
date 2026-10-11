@@ -91,8 +91,10 @@ public final class NSSegmentedControl extends NSControl {
 
     // ---------------------------------------------------------------- instance API
 
-    /// [control setSegmentCount:] — number of segments.
+    /// [control setSegmentCount:] — number of segments. A negative count is a caller
+    /// error (AppKit treats it as a very large unsigned value).
     public void setSegmentCount(long count) {
+        if (count < 0) throw new IllegalArgumentException("setSegmentCount: negative count " + count);
         try {
             hSetCount.invokeExact(peer, ObjC.sel("setSegmentCount:"), count);
         } catch (Throwable t) {

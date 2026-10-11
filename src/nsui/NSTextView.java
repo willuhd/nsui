@@ -1609,8 +1609,12 @@ public class NSTextView extends NSText {
     }
 
     /// [textView smartDeleteRangeForProposedRange:] -> NSRange.
+    /// An out-of-range proposal raises NSRangeException natively
+    /// ("-[NSBigMutableString characterAtIndex:]: Index 100 out of bounds; string length 3",
+    /// verified, exit 134) and aborts the JVM. A valid range is fine.
     public NSRange smartDeleteRangeForProposedRange(NSRange proposedCharRange) {
         ensureInit();
+        Bounds.range(proposedCharRange, textLength(), "smartDeleteRangeForProposedRange:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.RANGE, Arg.RANGE));
             MemorySegment s = (MemorySegment) h.invokeExact(ObjC.structSlot(), peer,
@@ -1630,8 +1634,11 @@ public class NSTextView extends NSText {
     // -smartInsertForString:... (out-pointers) omitted — reported.
 
     /// [textView smartInsertBeforeStringForString:replacingRange:] — may return nil.
+    /// An out-of-range replacement range raises NSRangeException natively (verified,
+    /// exit 134: "Index 99 out of bounds; string length 3"); nil pasteString is fine.
     public String smartInsertBeforeStringForStringReplacingRange(String pasteString, NSRange charRangeToReplace) {
         ensureInit();
+        Bounds.range(charRangeToReplace, textLength(), "smartInsertBeforeStringForString:replacingRange:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.ID, Arg.RANGE));
             MemorySegment s = (MemorySegment) h.invokeExact(peer,
@@ -1644,8 +1651,11 @@ public class NSTextView extends NSText {
     }
 
     /// [textView smartInsertAfterStringForString:replacingRange:] — may return nil.
+    /// An out-of-range replacement range raises NSRangeException natively (verified,
+    /// exit 134); nil pasteString is fine.
     public String smartInsertAfterStringForStringReplacingRange(String pasteString, NSRange charRangeToReplace) {
         ensureInit();
+        Bounds.range(charRangeToReplace, textLength(), "smartInsertAfterStringForString:replacingRange:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.ID, Arg.RANGE));
             MemorySegment s = (MemorySegment) h.invokeExact(peer,

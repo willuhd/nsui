@@ -573,6 +573,30 @@ public final class AuditRegressionTest {
             TestKit.check(false, "nil-legality correction block threw: " + t);
         }
 
+        // --- 8n. NSTextView smart* methods abort on an out-of-range replacement range ---
+        // Found by sweeping every NSRange-parameter method for missing validation: the
+        // invalidate/ensure/temp-attribute families are all tolerant natively, but these
+        // three index into the string and raise NSRangeException (verified, exit 134).
+        try {
+            nsui.NSTextView stv = nsui.NSTextView.create(new NSRect(0, 0, 200, 100));
+            stv.setString("abc");
+            TestKit.expectThrows("NSTextView.smartDeleteRangeForProposedRange out-of-range rejects",
+                    IllegalArgumentException.class,
+                    () -> stv.smartDeleteRangeForProposedRange(new nsui.NSRange(100, 1)));
+            TestKit.noThrow("NSTextView.smartDeleteRangeForProposedRange(0,3) still works",
+                    () -> stv.smartDeleteRangeForProposedRange(new nsui.NSRange(0, 3)));
+            TestKit.expectThrows("NSTextView.smartInsertBeforeString… out-of-range rejects",
+                    IllegalArgumentException.class,
+                    () -> stv.smartInsertBeforeStringForStringReplacingRange("x", new nsui.NSRange(100, 1)));
+            TestKit.expectThrows("NSTextView.smartInsertAfterString… out-of-range rejects",
+                    IllegalArgumentException.class,
+                    () -> stv.smartInsertAfterStringForStringReplacingRange("x", new nsui.NSRange(100, 1)));
+            TestKit.noThrow("NSTextView.smartInsertBeforeString…(0,3) still works",
+                    () -> stv.smartInsertBeforeStringForStringReplacingRange("x", new nsui.NSRange(0, 3)));
+        } catch (Throwable t) {
+            TestKit.check(false, "smart* range-guard block threw: " + t);
+        }
+
         // --- 9. value and layer struct round-trips ---
         try {
             NSValue v = NSValue.valueWithPoint(new NSPoint(3, 4));

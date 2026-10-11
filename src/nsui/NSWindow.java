@@ -1320,6 +1320,12 @@ public class NSWindow extends NSResponder {
     /// Sheet completion block body — static and capture-free; routes via block address.
     /// Remove-then-run ordering: a handler beginning another sheet must not see its own entry.
     /// Absent entry (abandoned sheet) is dropped silently.
+    ///
+    /// CONTRACT: `handler.accept` runs directly under the FFM upcall stub, so a
+    /// throwing completion handler aborts the VM (the same fail-fast policy as
+    /// `Drawable.draw`, `Dispatch.onMain` and `DelegateProxy`'s callbacks). Catch
+    /// errors inside the handler. Entries live until their block fires, so a sheet
+    /// that is never dismissed keeps its handler and block allocated.
     public static void sheetCompletionThunk(MemorySegment blockSelf, long response) {
         java.util.function.IntConsumer handler = SHEET_HANDLERS.remove(blockSelf.address());
         if (handler != null) {

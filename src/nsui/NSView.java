@@ -710,6 +710,10 @@ public class NSView extends NSResponder {
     /// requires `enableMouseTracking` on the view AND
     /// `NSWindow.setAcceptsMouseMovedEvents(true)` on its window;
     /// `onMouseEntered`/`onMouseExited` need only `enableMouseTracking`.
+    ///
+    /// CONTRACT: throwing out of any of these aborts the VM — an exception cannot
+    /// cross the FFM upcall stub, exactly as with `Drawable.draw` and
+    /// `DelegateProxy`'s callbacks. Catch mouse-event errors inside the callback.
     public interface MouseListener {
         /// Mouse button went down inside the view.
         default void onMouseDown(NSView v, NSEvent e) {}
@@ -731,6 +735,10 @@ public class NSView extends NSResponder {
     /// continuing the responder chain toward the window. A key listener also
     /// flips the view's `acceptsFirstResponder` to true so it can actually
     /// receive keys.
+    ///
+    /// CONTRACT: throwing out of any of these aborts the VM — an exception cannot
+    /// cross the FFM upcall stub, exactly as with `Drawable.draw` and
+    /// `DelegateProxy`'s callbacks. Catch key-event errors inside the callback.
     public interface KeyListener {
         /// Key pressed. Return true if handled (stops the chain).
         default boolean onKeyDown(NSView v, NSEvent e) { return false; }

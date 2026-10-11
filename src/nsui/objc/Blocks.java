@@ -93,9 +93,12 @@ public final class Blocks {
     /// @param fd       the FULL upcall descriptor INCLUDING the leading block-pointer
     /// parameter. e.g. `FunctionDescriptor.ofVoid(PTR)` for a
     /// no-arg void block.
-    /// @return the block segment, allocated in the global arena (lives forever;
-    /// strong references to it and the stub are held internally so GC can
-    /// never collect them).
+    /// @return the block segment, allocated in the global arena (never freed, so it
+    /// safely outlives any frame; the arena itself roots the block and its stub, so
+    /// GC cannot collect them — there is deliberately no Java field for them).
+    ///
+    /// CONTRACT: throwing out of `target` aborts the VM — an exception cannot cross
+    /// the FFM upcall stub. Catch errors inside the block body.
     public static MemorySegment block(MethodHandle target, FunctionDescriptor fd) {
         ensureInit();
 

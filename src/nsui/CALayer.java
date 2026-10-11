@@ -811,8 +811,12 @@ public class CALayer extends NSObject {
     }
 
     /// [layer addConstraint:] — append one CAConstraint.
+    /// A nil constraint raises NSInvalidArgumentException ("-[__NSPlaceholderArray
+    /// initWithObjects:count:]: attempt to insert nil object from objects[0]", verified,
+    /// exit 134) and aborts the JVM.
     public void addConstraint(CAConstraint constraint) {
         ensureInit();
+        Bounds.nonNull(constraint, "addConstraint:");
         try {
             handles.hSetId().invokeExact(peer, Sels.addConstraint,
                     (MemorySegment) (constraint == null ? MemorySegment.NULL : constraint.peer()));
@@ -1320,8 +1324,12 @@ public class CALayer extends NSObject {
     }
 
     /// [layer replaceSublayer:with:] — in-place swap preserving index.
+    /// `oldLayer` is required: the native side SEGFAULTS (SIGSEGV, exit 139 — no exception,
+    /// no message) when it is nil. `newLayer` may be nil (verified tolerated), which drops
+    /// the old sublayer without inserting a replacement.
     public void replaceSublayer(CALayer oldLayer, CALayer newLayer) {
         ensureInit();
+        Bounds.nonNull(oldLayer, "replaceSublayer:with: (oldLayer)");
         try {
             handles.hSetIdId().invokeExact(peer, Sels.replaceSublayer_with,
                     (MemorySegment) (oldLayer == null ? MemorySegment.NULL : oldLayer.peer()),

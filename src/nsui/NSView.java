@@ -993,6 +993,9 @@ public class NSView extends NSResponder {
     /// up from the receiver catches both the self and the ancestor case in O(depth); adding a
     /// DESCENDANT (a legitimate re-parent/re-order) is unaffected.
     void requireNotSelfOrAncestor(NSView view, String what) {
+        // Defensive: every current caller rejects or skips nil first, but a nil must never NPE
+        // inside a guard (see the CALayer sibling, where nil IS legal).
+        if (view == null || view.peer() == null || view.peer().address() == 0) return;
         for (NSView p = this; p != null; p = p.superview()) {
             if (p.peer() != null && p.peer().address() == view.peer().address()) {
                 throw new IllegalArgumentException(what + ": the view is the receiver or one of "

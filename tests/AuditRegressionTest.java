@@ -1608,6 +1608,27 @@ public final class AuditRegressionTest {
             TestKit.check(false, "removeItem block threw: " + t);
         }
 
+        // --- 8ax. nil must stay a no-op through the cycle guards (CALayer regression) ---
+        // AppKit treats addSublayer:nil / insertSublayer:above:nil as no-ops (verified exit 0),
+        // and the guard's own call sites coerce nil to NULL — so the walk must not dereference it.
+        try {
+            nsui.CALayer nl = nsui.CALayer.create();
+            nsui.CALayer other = nsui.CALayer.create();
+            TestKit.noThrow("CALayer.addSublayer(null) is a no-op, not an NPE",
+                    () -> nl.addSublayer(null));
+            TestKit.noThrow("CALayer.insertSublayer(null, 0) is a no-op",
+                    () -> nl.insertSublayer(null, 0));
+            TestKit.noThrow("CALayer.insertSublayerAbove(null, sibling) is a no-op",
+                    () -> nl.insertSublayerAbove(null, other));
+            TestKit.noThrow("CALayer.insertSublayerBelow(null, sibling) is a no-op",
+                    () -> nl.insertSublayerBelow(null, other));
+            nl.addSublayer(other);
+            TestKit.noThrow("CALayer.replaceSublayer(sublayer, null) still works",
+                    () -> nl.replaceSublayer(other, null));
+        } catch (Throwable t) {
+            TestKit.check(false, "nil-through-cycle-guard block threw: " + t);
+        }
+
         // --- 8z. type-confusion guards on the raw collection-view setters ---
         // AppKit does NOT raise a type error here, it either asserts isKindOfClass: or
         // messages the object: setCollectionViewLayout: with a plain NSView raised

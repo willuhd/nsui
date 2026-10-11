@@ -66,11 +66,15 @@ public final class NSPasteboardItem extends NSObject {
         }
     }
 
-    /// Convenience: create with string content for a UTI type.
+    /// Convenience: create with string content for a UTI type. Throws when the
+    /// pasteboard item refuses the type (`setString:forType:` returns NO), which
+    /// would otherwise leave a silently empty item.
     public static NSPasteboardItem withString(String string, String type) {
         NSPasteboardItem item = create();
         if (item != null && string != null && type != null) {
-            item.setStringForType(string, type);
+            if (!item.setStringForType(string, type)) {
+                throw new IllegalStateException("NSPasteboardItem refused string content for type: " + type);
+            }
         }
         return item;
     }

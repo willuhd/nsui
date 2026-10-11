@@ -42,7 +42,9 @@ public final class NSArray extends NSObject {
         return (peer == null || peer.address() == 0) ? null : new NSArray(peer);
     }
 
-    /// Create an empty mutable array via `[NSMutableArray array]`.
+    /// Create an empty IMMUTABLE array via `[NSArray array]`. Use `mutableArray()`
+    /// when you intend to add or remove elements — the returned array rejects
+    /// mutation with a native exception.
     public static NSArray array() {
         ensureInit();
         MemorySegment arr = ObjC.msgSendId(ObjC.cls("NSArray"), ObjC.sel("array"));
@@ -162,10 +164,12 @@ public final class NSArray extends NSObject {
         return java.util.Collections.unmodifiableList(list);
     }
 
-    /// +arrayWithObject:.
+    /// +arrayWithObject:. A null object is a caller error here (`[NSArray
+    /// arrayWithObject:nil]` raises natively), matching `arrayByAddingObject`;
+    /// it used to silently return an empty array.
     public static NSArray arrayWithObject(NSObject object) {
         ensureInit();
-        if (object == null) return array();
+        if (object == null) throw new IllegalArgumentException("arrayWithObject: null object");
         return wrap(ObjC.msgSendIdId(ObjC.cls("NSArray"), ObjC.sel("arrayWithObject:"), object.peer()));
     }
 
@@ -296,6 +300,7 @@ public final class NSArray extends NSObject {
     public NSArray objectsAtIndexes(NSIndexSet indexes) {
         ensureInit();
         if (indexes == null) return array();
+        Bounds.indexSet(indexes, count(), "objectsAtIndexes:");
         return wrap(ObjC.msgSendIdId(peer, ObjC.sel("objectsAtIndexes:"), indexes.peer()));
     }
 

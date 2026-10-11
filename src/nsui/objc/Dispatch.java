@@ -94,10 +94,15 @@ public final class Dispatch {
     /// CONTRACT: a throwing body aborts the VM at the upcall stub (fail-fast).
     public static void onMain(Runnable body) {
         ensureInit();
+        // Enqueue BEFORE submitting, so the block can never fire with no body
+        // waiting. If the submission itself throws, undo the enqueue: otherwise the
+        // orphaned body would be popped by the next block, permanently shifting the
+        // one-block <-> one-body pairing this class relies on.
         PENDING.add(body);
         try {
             hDispatchAsync.invokeExact(MAIN_QUEUE, SHARED_BLOCK);
         } catch (Throwable t) {
+            PENDING.remove(body);
             throw new RuntimeException("dispatch_async failed", t);
         }
     }

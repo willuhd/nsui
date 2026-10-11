@@ -13,7 +13,9 @@ public record NSPoint(double x, double y) {
 
     public static final NSPoint ZERO = new NSPoint(0, 0);
 
-    /// 16-byte segment in the global arena: x at offset 0, y at offset 8.
+    /// 16-byte scratch segment (`Scratch.allocInput`, turn-scoped): x at offset 0,
+    /// y at offset 8. Pass it straight into the call; it is invalidated by the next
+    /// scratch rewind.
     public MemorySegment toSegment() {
         MemorySegment s = Scratch.allocInput(16);
         s.set(ValueLayout.JAVA_DOUBLE, 0, x);

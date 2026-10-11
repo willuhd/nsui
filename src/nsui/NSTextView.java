@@ -537,12 +537,14 @@ public class NSTextView extends NSText {
         return NSMutableAttributedString.wrap(p);
     }
 
-    /// [textView setTextColor:range:] convenience via textStorage
+    /// [textView setTextColor:range:] — delegates to the native
+    /// `setTextColor:range:` (inherited from NSText).
+    ///
+    /// The previous implementation called `textStorage.addAttribute:` with the
+    /// literal string "NSForegroundColorAttributeName" as the key. The runtime value
+    /// of that constant is `@"NSColor"`, so the attribute was silently never applied.
     public void setTextColor(NSColor color, NSRange range) {
-        NSMutableAttributedString ts = textStorage();
-        if (ts != null) {
-            ts.addAttribute("NSForegroundColorAttributeName", (MemorySegment) (color == null ? MemorySegment.NULL : color.peer()), range);
-        }
+        setTextColorRange(color, range);
     }
 
     // ---- NSLayoutManager trio (minimal) ----
@@ -1011,7 +1013,7 @@ public class NSTextView extends NSText {
             MemorySegment p = (MemorySegment) h.invokeExact(peer,
                     Sels.completionsForPartialWordRange_indexOfSelectedItem,
                     charRange.toSegment(),
-                    (MemorySegment) (indexOutOrNull == null ? MemorySegment.NULL : indexOutOrNull));
+                    Bounds.outBuffer(indexOutOrNull, 8, "completionsForPartialWordRange:indexOfSelectedItem: (NSInteger*)"));
             return NSArray.wrap(p);
         } catch (Throwable t) {
             throw new RuntimeException("completionsForPartialWordRange:indexOfSelectedItem: failed", t);
@@ -1143,7 +1145,7 @@ public class NSTextView extends NSText {
             MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.ID, Arg.ID));
             return (MemorySegment) h.invokeExact(peer, Sels.dragImageForSelectionWithEvent_origin,
                     (MemorySegment) (event == null ? MemorySegment.NULL : event),
-                    (MemorySegment) (originOutOrNull == null ? MemorySegment.NULL : originOutOrNull));
+                    Bounds.outBuffer(originOutOrNull, 16, "dragImageForSelectionWithEvent:origin: (NSPoint*)"));
         } catch (Throwable t) {
             throw new RuntimeException("dragImageForSelectionWithEvent:origin: failed", t);
         }

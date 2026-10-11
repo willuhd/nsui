@@ -122,11 +122,17 @@ public class NSTextStorage extends NSMutableAttributedString {
         }
     }
 
-    /// Typed convenience: set delegate via NSTextStorageDelegate marker (stores raw id if delegate supplies a peer).
+    /// Typed convenience: a Java `NSTextStorageDelegate` has no native peer, so this
+    /// cannot install one. It used to send `setDelegate:NULL`, which silently CLEARED
+    /// any delegate the caller had installed; it now fails fast rather than mutating
+    /// state. Bridge with `DelegateProxy` and use `setDelegate(MemorySegment)`.
     public void setDelegate(NSTextStorageDelegate delegate) {
-        // NSTextStorageDelegate is a pure Java interface — no peer. Store as null.
-        // Callers that bridge via DelegateProxy should use setDelegate(MemorySegment).
-        setDelegate((MemorySegment) null);
+        if (delegate == null) {
+            setDelegate((MemorySegment) null);
+            return;
+        }
+        throw new IllegalArgumentException("setDelegate(NSTextStorageDelegate): a Java delegate has no"
+                + " native peer — build a DelegateProxy and use setDelegate(MemorySegment)");
     }
 
     // ---- layout managers ----

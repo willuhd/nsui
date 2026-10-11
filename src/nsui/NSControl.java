@@ -332,8 +332,9 @@ public class NSControl extends NSView {
     }
     public void setAttributedStringValue(MemorySegment value) {
         ensureInit();
-        // nil clears the attributed string value.
-        ObjC.msgSendVoidId(peer, Sels.setAttributedStringValue, (MemorySegment) (value == null ? MemorySegment.NULL : value));
+        // `attributedStringValue` is nonnull in the header; a nil value raises.
+        Bounds.nonNull(value, "setAttributedStringValue:");
+        ObjC.msgSendVoidId(peer, Sels.setAttributedStringValue, value);
     }
     // ---- typed NSAttributedString variants (preferred) ----
     public NSAttributedString attributedStringValueTyped() {
@@ -342,7 +343,8 @@ public class NSControl extends NSView {
     }
     public void setAttributedStringValue(NSAttributedString value) {
         ensureInit();
-        ObjC.msgSendVoidId(peer, Sels.setAttributedStringValue, (MemorySegment) (value == null ? MemorySegment.NULL : value.peer()));
+        Bounds.nonNull(value, "setAttributedStringValue:");
+        ObjC.msgSendVoidId(peer, Sels.setAttributedStringValue, value.peer());
     }
 
     // ---- numeric values ----

@@ -100,31 +100,20 @@ public final class NSSwitch extends NSControl {
 
     // ---------------------------------------------------------------- instance API
 
-    /// [switch state] — NSControlStateValue (0=off, 1=on, -1=mixed).
+    /// [switch state] — documented `NSControlStateValue` only: 0 = off, 1 = on,
+    /// -1 = mixed (mixed only when `allowsMixedState` is YES). Any other stored
+    /// value is reported as on (1), matching AppKit.
     public long state() {
         long nativeState = ObjC.msgSendLong(peer, ObjC.sel("state"));
         // If we are in fallback mixed mode and the last set was -1, native clamps
         // to 0/1 — return the simulated -1 so the round-trip works.
         Long stored = stateFallback.get(peer.address());
-        if (stored != null && stored == -1L) {
-            boolean mixed = mixedFallback.getOrDefault(peer.address(), false);
-            // also check native allowsMixedState if it exists
-            if (mixed) {
-                // If native still reports 0/1 due to clamp, surface -1
-                // (if user set to 0/1 after, stored will have been updated)
-                return -1L;
-            }
-            try {
-                ensureInit();
-                boolean responds = (boolean) hResponds.invokeExact(peer, ObjC.sel("respondsToSelector:"), ObjC.sel("allowsMixedState"));
-                if (responds && ObjC.msgSendBool(peer, ObjC.sel("allowsMixedState"))) {
-                    return -1L;
-                }
-            } catch (Throwable t) {
-                // ignore, return native
-            }
+        if (stored != null && stored == -1L && allowsMixedState()) {
+            return -1L;
         }
-        return nativeState;
+        if (nativeState == 0L) return 0L;
+        if (nativeState == -1L && allowsMixedState()) return -1L;
+        return 1L;
     }
 
     /// [switch setState:] — set the switch state (NSControlStateValue).

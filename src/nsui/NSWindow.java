@@ -945,16 +945,33 @@ public class NSWindow extends NSResponder {
         return ObjC.msgSendBool(peer, Sels.hidesOnDeactivate);
     }
 
-    /// [panel setBecomesKeyOnlyIfNeeded:] — key only while controls need it (NSPanel).
+    /// [panel setBecomesKeyOnlyIfNeeded:] — key only while controls need it.
+    ///
+    /// **NSPanel only.** `NSWindow` does not implement this selector (verified via
+    /// `instancesRespondToSelector`), so calling it on a peer created with
+    /// `NSWindow.create` would abort the JVM with an unrecognized selector. The
+    /// guard turns that into an exception naming the requirement.
     public void setBecomesKeyOnlyIfNeeded(boolean onlyIfNeeded) {
         ensureInit();
+        requirePanelSelector(Sels.setBecomesKeyOnlyIfNeeded, "setBecomesKeyOnlyIfNeeded:");
         ObjC.msgSendVoidBool(peer, Sels.setBecomesKeyOnlyIfNeeded, onlyIfNeeded);
     }
 
-    /// [panel becomesKeyOnlyIfNeeded].
+    /// [panel becomesKeyOnlyIfNeeded] — NSPanel only (see the setter).
     public boolean becomesKeyOnlyIfNeeded() {
         ensureInit();
+        requirePanelSelector(Sels.becomesKeyOnlyIfNeeded, "becomesKeyOnlyIfNeeded");
         return ObjC.msgSendBool(peer, Sels.becomesKeyOnlyIfNeeded);
+    }
+
+    /// Guard an NSPanel-only selector. `NSWindow` does not implement these, so
+    /// sending one to a plain window is an unrecognized-selector abort rather than
+    /// a catchable Java error.
+    private void requirePanelSelector(MemorySegment selector, String what) {
+        if (!respondsToSelector(selector)) {
+            throw new IllegalStateException(what
+                    + " is NSPanel-only; create the peer with NSWindow.createPanel");
+        }
     }
 
     /// [window standardWindowButton:] — one of the standard close/miniaturize/zoom
@@ -1597,27 +1614,36 @@ ensureInit(); return ObjC.msgSendBool(peer, Sels.hasDynamicDepthLimit); }
         return NSArray.wrap(ObjC.msgSendId(peer, Sels.titlebarAccessoryViewControllers));
     }
 
-    /// [window addTitlebarAccessoryViewController:].
+    /// [window addTitlebarAccessoryViewController:] — the controller is non-null.
     public void addTitlebarAccessoryViewController(NSObject childViewController) {
         ensureInit();
+        Bounds.nonNull(childViewController, "addTitlebarAccessoryViewController:");
         ObjC.msgSendVoidId(peer, Sels.addTitlebarAccessoryViewController,
-                childViewController == null ? MemorySegment.NULL : childViewController.peer());
+                childViewController.peer());
     }
 
-    /// [window insertTitlebarAccessoryViewController:atIndex:].
+    /// [window insertTitlebarAccessoryViewController:atIndex:] — non-null controller
+    /// and an index within 0...current count (AppKit raises otherwise).
     public void insertTitlebarAccessoryViewControllerAtIndex(NSObject childViewController, long index) {
         ensureInit();
+        Bounds.nonNull(childViewController, "insertTitlebarAccessoryViewController:atIndex:");
+        NSArray current = titlebarAccessoryViewControllers();
+        Bounds.insertIndex(index, current == null ? 0 : current.count(),
+                "insertTitlebarAccessoryViewController:atIndex:");
         try {
             H.hVoidIdInt().invokeExact(peer, Sels.insertTitlebarAccessoryViewController_atIndex,
-                    (MemorySegment) (childViewController == null ? MemorySegment.NULL : childViewController.peer()), index);
+                    childViewController.peer(), index);
         } catch (Throwable t) {
             throw new RuntimeException("insertTitlebarAccessoryViewController:atIndex: failed", t);
         }
     }
 
-    /// [window removeTitlebarAccessoryViewControllerAtIndex:].
+    /// [window removeTitlebarAccessoryViewControllerAtIndex:] — index must be in range.
     public void removeTitlebarAccessoryViewControllerAtIndex(long index) {
         ensureInit();
+        NSArray current = titlebarAccessoryViewControllers();
+        Bounds.index(index, current == null ? 0 : current.count(),
+                "removeTitlebarAccessoryViewControllerAtIndex:");
         ObjC.msgSendVoidLong(peer, Sels.removeTitlebarAccessoryViewControllerAtIndex, index);
     }
 

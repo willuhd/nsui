@@ -90,18 +90,24 @@ public class NSSavePanel extends NSObject {
     }
 
     // ---- allowedFileTypes ----
+    /// [panel setAllowedFileTypes:] — `null` (or an empty list) means "any file
+    /// type", which AppKit spells as nil. An EMPTY array raises, so the previous
+    /// "null -> empty array" mapping turned the documented default into an abort.
     public void setAllowedFileTypes(java.util.List<String> types) {
         ensureInit();
+        if (types == null || types.isEmpty()) {
+            try { hSetAllowed.invokeExact(peer, ObjC.sel("setAllowedFileTypes:"), MemorySegment.NULL); }
+            catch (Throwable e) { throw new RuntimeException("setAllowedFileTypes: failed", e); }
+            return;
+        }
         MemorySegment arr = ObjC.msgSendId(ObjC.cls("NSMutableArray"), ObjC.sel("array"));
-        if (types != null) {
-            for (String t : types) {
-                ObjC.msgSendVoidId(arr, ObjC.sel("addObject:"), ObjC.nsstring(t));
-            }
+        for (String t : types) {
+            ObjC.msgSendVoidId(arr, ObjC.sel("addObject:"), ObjC.nsstring(t));
         }
         try { hSetAllowed.invokeExact(peer, ObjC.sel("setAllowedFileTypes:"), arr); } catch (Throwable e) { throw new RuntimeException("setAllowedFileTypes: failed", e); }
     }
     public void setAllowedFileTypes(String... types) {
-        setAllowedFileTypes(types == null ? java.util.List.of() : java.util.List.of(types));
+        setAllowedFileTypes(types == null ? null : java.util.List.of(types));
     }
     public MemorySegment allowedFileTypesId() {
         ensureInit();

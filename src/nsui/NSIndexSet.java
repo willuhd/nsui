@@ -53,6 +53,21 @@ public class NSIndexSet extends NSObject {
     /// [NSIndexSet indexSetWithIndexesInRange:]
     public static NSIndexSet indexSetWithIndexesInRange(NSRange range) {
         ensureInit();
+        if (range == null) {
+            throw new IllegalArgumentException("indexSetWithIndexesInRange:: null range");
+        }
+        long location = range.location();
+        long length = range.length();
+        if (location < 0 || length < 0) {
+            throw new IllegalArgumentException("indexSetWithIndexesInRange:: range {location=" + location
+                    + ", length=" + length + "} out of bounds (negative)");
+        }
+        try {
+            Math.addExact(location, length);
+        } catch (ArithmeticException e) {
+            throw new IllegalArgumentException("indexSetWithIndexesInRange:: range {location=" + location
+                    + ", length=" + length + "} overflows");
+        }
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.RANGE));
             MemorySegment s = (MemorySegment) h.invokeExact(ObjC.cls("NSIndexSet"), ObjC.sel("indexSetWithIndexesInRange:"), range.toSegment());

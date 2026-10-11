@@ -194,12 +194,12 @@ public final class NSUserDefaults extends NSObject {
 
     /// addSuiteNamed: / removeSuiteNamed:.
     public void addSuiteNamed(String suite) {
-        ObjC.msgSendVoidId(peer, ObjC.sel("addSuiteNamed:"),
-                (MemorySegment) (suite == null ? MemorySegment.NULL : ObjC.nsstring(suite)));
+        Bounds.nonNull(suite, "addSuiteNamed:");
+        ObjC.msgSendVoidId(peer, ObjC.sel("addSuiteNamed:"), ObjC.nsstring(suite));
     }
     public void removeSuiteNamed(String suite) {
-        ObjC.msgSendVoidId(peer, ObjC.sel("removeSuiteNamed:"),
-                (MemorySegment) (suite == null ? MemorySegment.NULL : ObjC.nsstring(suite)));
+        Bounds.nonNull(suite, "removeSuiteNamed:");
+        ObjC.msgSendVoidId(peer, ObjC.sel("removeSuiteNamed:"), ObjC.nsstring(suite));
     }
 
     /// dictionaryRepresentation.

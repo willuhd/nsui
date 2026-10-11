@@ -447,12 +447,19 @@ public final class ObjC {
     /// Struct-returning message (NSRect); uses objc_msgSend_stret on x86_64.
     /// FFM gives downcalls with group-layout returns an implicit leading
     /// SegmentAllocator parameter, which is where the returned struct is written.
+    ///
+    /// The returned segment is the per-thread `RECT_SLOT`, shared by every struct
+    /// return (RECT/EDGEINSETS/POINT/SIZE/RANGE). Copy the values out immediately —
+    /// before the next struct-returning call — or a nested call will overwrite them.
+    /// All in-tree callers do this via `NSRect.fromSegment` etc.
     public static MemorySegment msgSendRect(MemorySegment recv, MemorySegment s) {
         if (!INIT && !INITIALIZING) throw new IllegalStateException("ObjC.init() must run first (from main, at runtime)");
         try { return (MemorySegment) hRect.invokeExact((SegmentAllocator) RECT_SLOT.get(), recv, s); } catch (Throwable t) { throw fail(t); }
     }
 
     /// Struct-returning message (NSEdgeInsets, 32 bytes — same stret class as NSRect).
+    /// Same shared-slot rule as `msgSendRect`: consume (copy) the result before the
+    /// next struct-returning call.
     public static MemorySegment msgSendEdgeInsets(MemorySegment recv, MemorySegment s) {
         if (!INIT && !INITIALIZING) throw new IllegalStateException("ObjC.init() must run first (from main, at runtime)");
         try { return (MemorySegment) hEdgeInsets.invokeExact((SegmentAllocator) RECT_SLOT.get(), recv, s); } catch (Throwable t) { throw fail(t); }

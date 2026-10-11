@@ -198,6 +198,7 @@ public class NSOrderedSet extends NSObject {
     public NSArray objectsAtIndexes(NSIndexSet indexes) {
         ensureInit();
         if (indexes == null) return NSArray.array();
+        Bounds.indexSet(indexes, count(), "objectsAtIndexes:");
         return NSArray.wrap(ObjC.msgSendIdId(peer, ObjC.sel("objectsAtIndexes:"), indexes.peer()));
     }
 

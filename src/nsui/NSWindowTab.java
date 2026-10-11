@@ -56,19 +56,31 @@ public final class NSWindowTab extends NSObject {
         }
     }
 
-    /// [tab setTitle:]
+    /// [tab setTitle:] — the property is `null_resettable`, so null resets it to the default title.
     public void setTitle(String title) {
         ensureInit();
         try {
-            handles.hVoidId().invokeExact(peer, ObjC.sel("setTitle:"), ObjC.nsstring(title));
+            handles.hVoidId().invokeExact(peer, ObjC.sel("setTitle:"),
+                    title == null ? MemorySegment.NULL : ObjC.nsstring(title));
         } catch (Throwable t) {
             throw new RuntimeException("setTitle: failed", t);
         }
     }
 
-    /// [tab isVisible]
+    /// The real `NSWindowTab` does not implement this selector (AppKit's tab objects
+    /// are private), so sending it is an unrecognized-selector ABORT rather than a
+    /// catchable error. Guarding turns it into a named exception.
+    private void requireImplemented(String selector, String what) {
+        if (!respondsToSelector(ObjC.sel(selector))) {
+            throw new IllegalStateException(what
+                    + " is not implemented by this NSWindowTab peer (AppKit's tab objects are private)");
+        }
+    }
+
+    /// [tab isVisible] — **not implemented by the real class** (guarded).
     public boolean isVisible() {
         ensureInit();
+        requireImplemented("isVisible", "isVisible");
         try {
             return (boolean) handles.hBool().invokeExact(peer, ObjC.sel("isVisible"));
         } catch (Throwable t) {
@@ -76,9 +88,10 @@ public final class NSWindowTab extends NSObject {
         }
     }
 
-    /// [tab tabGroup] -> NSWindowTabGroup
+    /// [tab tabGroup] -> NSWindowTabGroup — **not implemented by the real class** (guarded).
     public NSWindowTabGroup tabGroup() {
         ensureInit();
+        requireImplemented("tabGroup", "tabGroup");
         try {
             MemorySegment g = (MemorySegment) handles.hId().invokeExact(peer, ObjC.sel("tabGroup"));
             return NSWindowTabGroup.wrap(g);
@@ -87,9 +100,10 @@ public final class NSWindowTab extends NSObject {
         }
     }
 
-    /// [tab identifier] -> NSString
+    /// [tab identifier] -> NSString — **not implemented by the real class** (guarded).
     public String identifier() {
         ensureInit();
+        requireImplemented("identifier", "identifier");
         try {
             MemorySegment s = (MemorySegment) handles.hId().invokeExact(peer, ObjC.sel("identifier"));
             return ObjC.toString(s);
@@ -98,9 +112,10 @@ public final class NSWindowTab extends NSObject {
         }
     }
 
-    /// [tab setIdentifier:]
+    /// [tab setIdentifier:] — **not implemented by the real class** (guarded).
     public void setIdentifier(String ident) {
         ensureInit();
+        requireImplemented("setIdentifier:", "setIdentifier:");
         try {
             handles.hVoidId().invokeExact(peer, ObjC.sel("setIdentifier:"), ObjC.nsstring(ident));
         } catch (Throwable t) {

@@ -28,7 +28,10 @@ public final class NSStatusItem extends NSObject {
     public static final long BEHAVIOR_REMOVAL_ALLOWED  = 1L << 1; // NSStatusItemBehaviorRemovalAllowed
     public static final long BEHAVIOR_TERMINATION_ON_REMOVAL = 1L << 2; // NSStatusItemBehaviorTerminationOnRemoval
     public static final long BEHAVIOR_TERMINATION      = BEHAVIOR_TERMINATION_ON_REMOVAL; // legacy alias
-    // convenience alias: expandable / removal-allowed
+    /// NOT an AppKit constant: `NSStatusItem.h` defines only RemovalAllowed and
+    /// TerminationOnRemoval. Kept as a deprecated alias of `BEHAVIOR_REMOVAL_ALLOWED`
+    /// for older callers; use `BEHAVIOR_REMOVAL_ALLOWED` instead.
+    @Deprecated
     public static final long BEHAVIOR_EXPANDABLE       = BEHAVIOR_REMOVAL_ALLOWED;
 
     private NSStatusItem(MemorySegment peer) {

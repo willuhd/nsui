@@ -18,18 +18,25 @@ import static nsui.objc.Sig.Ret;
 /// protocol methods (use DelegateProxy, not this wrapper).
 public final class NSApplication extends NSObject {
 
-    private static NSApplication shared;
+    /// Cached `sharedApplication` wrapper. Volatile + double-checked so two threads
+    /// cannot each construct one (the native singleton is shared either way, but the
+    /// Java-side invariant should hold).
+    private static volatile NSApplication shared;
 
     private NSApplication(MemorySegment peer) {
         super(peer);
     }
 
-    /// [NSApplication sharedApplication] — singleton.
+    /// [NSApplication sharedApplication] — singleton, safe to call from any thread.
     public static NSApplication shared() {
-        if (shared == null) {
-            shared = new NSApplication(ObjC.msgSendId(ObjC.cls("NSApplication"), ObjC.sel("sharedApplication")));
+        NSApplication s = shared;
+        if (s != null) return s;
+        synchronized (NSApplication.class) {
+            if (shared == null) {
+                shared = new NSApplication(ObjC.msgSendId(ObjC.cls("NSApplication"), ObjC.sel("sharedApplication")));
+            }
+            return shared;
         }
-        return shared;
     }
 
     /// setActivationPolicy: -- returns the native BOOL (YES on success). The old
@@ -199,7 +206,9 @@ public final class NSApplication extends NSObject {
     /// [NSApp run] — pull events, dispatch, flush drawing, repeat until the
     /// deadline. Production code lets run() own the thread forever; this is
     /// for tests, previews, and embedding, where the caller must get control
-    /// back. Never blocks past the deadline; each turn waits at most 50 ms.
+    /// back. The loop checks the deadline between turns and each turn is bounded
+    /// (a 50 ms event wait plus a 10 ms sleep), so it can overshoot by at most one
+    /// turn — it does not return early, and it does not block indefinitely.
     public void pumpFor(long millis) throws InterruptedException {
         MemorySegment dateCls = ObjC.cls("NSDate");
         long deadline = System.currentTimeMillis() + millis;

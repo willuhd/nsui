@@ -391,9 +391,71 @@ public final class NSColor extends NSObject {
         }
     }
 
-    /// Component-reader guard: pattern/catalog colors raise natively.
+    /// `NSColorSpaceModelRGB` / `NSColorSpaceModelCMYK` (NSColorSpace.h): Gray=0,
+    /// RGB=1, CMYK=2.
+    private static final long COLOR_SPACE_MODEL_RGB = 1;
+    private static final long COLOR_SPACE_MODEL_CMYK = 2;
+
+    /// Component-colour reader guard.
+    ///
+    /// `type()` is the only colour property that is safe on EVERY colour: catalog and
+    /// pattern colours raise natively from `numberOfComponents`/`colorSpace`, so they
+    /// must be rejected before either is touched. The old `type() != 0` check stopped
+    /// there, which is why `whiteColor().rgba()` still aborted — a grey colour is
+    /// `type() == 0` with two components.
+    private void requireComponentColor(String what) {
+        if (type() != 0) {
+            throw new IllegalArgumentException(what
+                    + ": not a component color (pattern/catalog colors raise natively)");
+        }
+    }
+
+    /// `colorSpaceModel` of this colour, or -1 when it has no colour space.
+    private long colorSpaceModel() {
+        MemorySegment space = colorSpacePeer();
+        return (space == null || space.address() == 0)
+                ? -1 : ObjC.msgSendLong(space, ObjC.sel("colorSpaceModel"));
+    }
+
+    /// Component-reader guard for `getRed:green:blue:alpha:`: needs an RGBA colour.
     private void requireRGB() {
-        if (type() != 0) throw new IllegalArgumentException("not an RGB-convertible color");
+        requireComponentColor("rgba");
+        long n = numberOfComponents();
+        if (n != 4) {
+            throw new IllegalArgumentException("rgba: not an RGBA color (" + n + " components)");
+        }
+        long model = colorSpaceModel();
+        if (model != COLOR_SPACE_MODEL_RGB) {
+            throw new IllegalArgumentException("rgba: not an RGB color (colorSpaceModel=" + model + ")");
+        }
+    }
+
+    /// Component-reader guard for `getWhite:alpha:`: needs a gray colour.
+    private void requireGray() {
+        requireComponentColor("whiteAlpha");
+        long n = numberOfComponents();
+        if (n != 2) {
+            throw new IllegalArgumentException("whiteAlpha: not a gray color (" + n + " components)");
+        }
+        long model = colorSpaceModel();
+        if (model != 0) {
+            throw new IllegalArgumentException("whiteAlpha: not a gray color (colorSpaceModel=" + model + ")");
+        }
+    }
+
+    /// Component-reader guard for `getCyan:magenta:yellow:black:alpha:`: needs a CMYK
+    /// colour. (`cmyka()` used to call `requireRGB()`, so passing the guard guaranteed
+    /// the native CMYK read would raise.)
+    private void requireCMYK() {
+        requireComponentColor("cmyka");
+        long n = numberOfComponents();
+        if (n != 5) {
+            throw new IllegalArgumentException("cmyka: not a CMYK color (" + n + " components)");
+        }
+        long model = colorSpaceModel();
+        if (model != COLOR_SPACE_MODEL_CMYK) {
+            throw new IllegalArgumentException("cmyka: not a CMYK color (colorSpaceModel=" + model + ")");
+        }
     }
 
     /// Read the RGBA components back via `getRed:green:blue:alpha:` (four
@@ -578,7 +640,7 @@ public final class NSColor extends NSObject {
 
     /// getWhite:alpha: via the escape hatch (gray-model colors only).
     public double[] whiteAlpha() {
-        requireRGB();
+        requireGray();
         MemorySegment out = Scratch.allocInput(16);
         MemorySegment b0 = out.asSlice(0, 8);
         MemorySegment b1 = out.asSlice(8, 8);
@@ -588,7 +650,7 @@ public final class NSColor extends NSObject {
 
     /// getCyan:magenta:yellow:black:alpha: via the escape hatch (CMYK colors only).
     public double[] cmyka() {
-        requireRGB();
+        requireCMYK();
         MemorySegment out = Scratch.allocInput(40);
         MemorySegment b0 = out.asSlice(0, 8);
         MemorySegment b1 = out.asSlice(8, 8);
@@ -605,9 +667,11 @@ public final class NSColor extends NSObject {
         };
     }
 
-    /// getComponents: — all floating-point components incl. alpha.
+    /// getComponents: — all floating-point components incl. alpha. Valid for ANY
+    /// component colour (it re-derives the count), so it only needs the
+    /// component-colour guard, not the RGB one.
     public double[] getComponents() {
-        requireRGB();
+        requireComponentColor("getComponents");
         int n = (int) numberOfComponents();
         if (n <= 0) return new double[0];
         MemorySegment out = Scratch.allocInput((long) n * 8L);

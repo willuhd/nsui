@@ -179,6 +179,7 @@ public class NSText extends NSView {
 
     /// [text RTFDFromRange:] -> NSData* (raw segment, may be nil).
     public MemorySegment rtfdFromRange(NSRange range) {
+        Bounds.range(range, textLength(), "RTFDFromRange:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.RANGE));
             return (MemorySegment) h.invokeExact(peer, ObjC.sel("RTFDFromRange:"), range.toSegment());
@@ -296,8 +297,9 @@ public class NSText extends NSView {
 
     // ---- ranged font / color ----
 
-    /// [text setTextColor:range:] — nil color removes NSForegroundColorAttributeName.
+    /// [text setTextColor:range:] — nil color removes the foreground colour.
     public void setTextColorRange(NSColor color, NSRange range) {
+        Bounds.range(range, textLength(), "setTextColor:range:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.RANGE));
             h.invokeExact(peer, ObjC.sel("setTextColor:range:"),

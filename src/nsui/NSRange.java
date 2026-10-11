@@ -62,7 +62,10 @@ public record NSRange(long location, long length) {
         return !(other.location + other.length <= location || other.location >= location + length);
     }
 
-    /// Intersection range or ZERO if no overlap.
+    /// Intersection range, or `{0, 0}` when the ranges do not overlap — matching
+    /// `NSIntersectionRange`, which uses an empty range (not `NOT_FOUND`) for that
+    /// case. Check `isEmpty()` on the result if you need to distinguish "no overlap"
+    /// from "overlap of length zero".
     public NSRange intersection(NSRange other) {
         long nLoc = Math.max(location, other.location);
         long nEnd = Math.min(max(), other.max());

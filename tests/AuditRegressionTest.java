@@ -200,6 +200,17 @@ public final class AuditRegressionTest {
             TestKit.check(false, "NSValue.valueWithPoint threw: " + t);
         }
         try {
+            // valueWithEdgeInsets:/edgeInsetsValue were omitted while Sig could not
+            // express NSEdgeInsets; both shapes now exist, so the pair must round-trip.
+            NSEdgeInsets in = new NSEdgeInsets(1, 2, 3, 4);
+            NSValue ev = NSValue.valueWithEdgeInsets(in);
+            TestKit.check(ev != null && in.equals(ev.edgeInsetsValue()),
+                    "NSValue.valueWithEdgeInsets/edgeInsetsValue round-trip (got "
+                            + (ev == null ? "null" : ev.edgeInsetsValue().toString()) + ")");
+        } catch (Throwable t) {
+            TestKit.check(false, "NSValue edgeInsets round-trip threw: " + t);
+        }
+        try {
             CAMetalLayer layer = CAMetalLayer.create();
             layer.setDrawableSize(new NSSize(128, 64));
             NSSize got = layer.drawableSize();

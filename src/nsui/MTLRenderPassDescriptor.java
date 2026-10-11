@@ -13,6 +13,9 @@ import static nsui.objc.Sig.Ret;
 /// autoreleased: drain via pool per frame).
 public final class MTLRenderPassDescriptor extends NSObject {
 
+    /// MTLMaxColorAttachments (MTLDevice.h) — maximum color attachment slots.
+    public static final long MAX_COLOR_ATTACHMENTS = 8;
+
     private record Handles(MethodHandle hAt) {}
     private static volatile Handles handles;
 
@@ -66,13 +69,14 @@ public final class MTLRenderPassDescriptor extends NSObject {
     }
 
     /// colorAttachments[i] via objectAtIndexedSubscript:.
-    /// Negative indices fail fast in Java. There is no upper-bound check:
-    /// the attachment array exposes no count, and an out-of-range index
-    /// raises natively (uncatchable), so callers must stay in range.
+    /// Rejects negative indices and indices >= MTLMaxColorAttachments (8) in Java;
+    /// the attachment array exposes no count, and an out-of-range index raises
+    /// natively (uncatchable).
     public MTLRenderPassColorAttachmentDescriptor colorAttachment(long index) {
         ensureInit();
-        if (index < 0)
-            throw new IllegalArgumentException("colorAttachment: index " + index + " out of bounds (negative)");
+        if (index < 0 || index >= MAX_COLOR_ATTACHMENTS)
+            throw new IllegalArgumentException("colorAttachment: index " + index
+                    + " out of bounds (0.." + (MAX_COLOR_ATTACHMENTS - 1) + ")");
         try {
             MemorySegment arr = ObjC.msgSendId(peer, ObjC.sel("colorAttachments"));
             if (arr.address() == 0) return null;

@@ -110,7 +110,10 @@ public final class WindowCheck {
                     if (pidNum == null || pidNum.address() == 0) continue;
                     if (cfNumLong(pidNum, arena) != pid) continue;
                     found = true;
-                    long num = cfNumLong((MemorySegment) invoke(hDictGet, dict, kWindowNumber), arena);
+                    // The dict may legitimately lack kCGWindowNumber: guard the lookup
+                    // exactly as the pid lookup above does (cfNumLong also null-guards).
+                    MemorySegment numSeg = (MemorySegment) invoke(hDictGet, dict, kWindowNumber);
+                    long num = (numSeg == null || numSeg.address() == 0) ? 0L : cfNumLong(numSeg, arena);
                     String owner = cfString((MemorySegment) invoke(hDictGet, dict, kOwnerName), arena);
                     String title = cfString((MemorySegment) invoke(hDictGet, dict, kWindowName), arena);
                     double bx = Double.NaN, by = Double.NaN, bw = Double.NaN, bh = Double.NaN;
@@ -147,18 +150,22 @@ public final class WindowCheck {
 
     // ------------------------------------------------------------------ helpers
 
+    /// CFNumberGetValue returns a BOOL; a failed conversion leaves the out-buffer
+    /// untouched, so reading it unconditionally would report uninitialised arena
+    /// memory. Returns `Long.MIN_VALUE` when the conversion fails.
     private static long cfNumLong(MemorySegment num, Arena arena) {
+        if (num == null || num.address() == 0) return Long.MIN_VALUE;
         MemorySegment out = arena.allocate(LONG);
-        invoke(hNumGet, num, 4L /* kCFNumberSInt64Type */, out);
-        return out.get(ValueLayout.JAVA_LONG, 0);
+        boolean ok = (boolean) invoke(hNumGet, num, 4L /* kCFNumberSInt64Type */, out);
+        return ok ? out.get(ValueLayout.JAVA_LONG, 0) : Long.MIN_VALUE;
     }
 
     private static double cfDictDouble(MemorySegment dict, MemorySegment key, Arena arena) {
         MemorySegment num = (MemorySegment) invoke(hDictGet, dict, key);
         if (num == null || num.address() == 0) return Double.NaN;
         MemorySegment out = arena.allocate(LINKER.canonicalLayouts().get("double"));
-        invoke(hNumGet, num, 13L /* kCFNumberDoubleType */, out);
-        return out.get(ValueLayout.JAVA_DOUBLE, 0);
+        boolean ok = (boolean) invoke(hNumGet, num, 13L /* kCFNumberDoubleType */, out);
+        return ok ? out.get(ValueLayout.JAVA_DOUBLE, 0) : Double.NaN;
     }
 
     private static void release(MemorySegment seg) {

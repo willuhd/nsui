@@ -45,28 +45,21 @@ public final class NSFindPanel extends NSObject {
         initialized = true;
     }
 
-    // ---- shared accessor (tries NSFindPanel, falls back to NSPanel) ----
+    // ---- shared accessor (no native NSFindPanel class exists) ----
 
-    /// `+[NSFindPanel sharedFindPanel]` — if class exists, otherwise nil.
+    /// `+[NSFindPanel sharedFindPanel]` — always nil: there is no native `NSFindPanel`
+    /// class in the macOS SDK, so this returns null rather than fabricating an
+    /// uninitialized `NSPanel`. Use `NSTextFinder` for find UI.
     public static NSFindPanel sharedFindPanel() {
         ensureInit();
-        // NSFindPanel is private on some SDKs; try NSFindPanel first, then NSTextFinder's panel
-        MemorySegment cls = null;
+        // NSFindPanel is private/absent on every SDK; probe once in case a future
+        // OS reintroduces it, otherwise report nil honestly.
         try {
-            cls = ObjC.cls("NSFindPanel");
-            // quick check: does it respond to sharedFindPanel?
+            MemorySegment cls = ObjC.cls("NSFindPanel");
             MemorySegment p = ObjC.msgSendId(cls, ObjC.sel("sharedFindPanel"));
             if (p != null && p.address() != 0) return wrap(p);
         } catch (Throwable ignored) {}
-        // Fallback: use NSPanel's shared instance as a placeholder panel
-        try {
-            MemorySegment p = ObjC.msgSendId(ObjC.cls("NSPanel"), ObjC.sel("alloc"));
-            // init is (id) -> id already handled; just return generic panel as find panel
-            // Instead return null to indicate no find panel class
-            return null;
-        } catch (Throwable t) {
-            return null;
-        }
+        return null;
     }
 
     /// Create a basic panel for find UI (alloc+init).

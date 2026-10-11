@@ -55,6 +55,7 @@ public final class NSHelpManager extends NSObject {
     }
     /// setContextHelp:forObject:.
     public void setContextHelp(NSAttributedString help, NSObject object) {
+        Bounds.nonNull(help, "setContextHelp:forObject:");
         setTwo("setContextHelp:forObject:", ObjC.nullablePeer(help), ObjC.nullablePeer(object));
     }
     /// removeContextHelpForObject:.
@@ -78,6 +79,7 @@ public final class NSHelpManager extends NSObject {
     /// registerBooksInBundle: — register help books in a plugin bundle.
     public boolean registerBooksInBundle(NSBundle bundle) {
         ensureInit();
+        Bounds.nonNull(bundle, "registerBooksInBundle:");
         try {
             return (boolean) handles.hBoolId().invokeExact(peer, ObjC.sel("registerBooksInBundle:"), ObjC.nullablePeer(bundle));
         } catch (Throwable t) { throw new RuntimeException("registerBooksInBundle: failed", t); }

@@ -45,13 +45,14 @@ public final class MTLTexture extends NSObject {
     /// Bytes per pixel for the formats this toolkit creates. 0 = unknown, in
     /// which case the row-stride check is skipped rather than guessed.
     private static long bytesPerPixel(long format) {
-        // RGBA8Unorm (70) / BGRA8Unorm (80) / Depth32Float / Depth24Unorm_Stencil8.
+        // RGBA8Unorm (70) / BGRA8Unorm (80) / Depth32Float / Depth24Unorm_Stencil8,
+        // and the 32-bit stencil-only formats X32_Stencil8 / X24_Stencil8.
         if (format == 70 || format == MTLRenderPipelineColorAttachmentDescriptor.PIXEL_FORMAT_BGRA8_UNORM
                 || format == MTLTextureDescriptor.PIXEL_FORMAT_DEPTH32_FLOAT
-                || format == MTLTextureDescriptor.PIXEL_FORMAT_DEPTH24_UNORM_STENCIL8) return 4;
-        if (format == MTLTextureDescriptor.PIXEL_FORMAT_DEPTH32_FLOAT_STENCIL8
+                || format == MTLTextureDescriptor.PIXEL_FORMAT_DEPTH24_UNORM_STENCIL8
                 || format == MTLTextureDescriptor.PIXEL_FORMAT_X32_STENCIL8
-                || format == MTLTextureDescriptor.PIXEL_FORMAT_X24_STENCIL8) return 8;
+                || format == MTLTextureDescriptor.PIXEL_FORMAT_X24_STENCIL8) return 4;
+        if (format == MTLTextureDescriptor.PIXEL_FORMAT_DEPTH32_FLOAT_STENCIL8) return 8;
         if (format == MTLTextureDescriptor.PIXEL_FORMAT_DEPTH16_UNORM) return 2;
         if (format == MTLTextureDescriptor.PIXEL_FORMAT_STENCIL8) return 1;
         return 0;
@@ -105,9 +106,9 @@ public final class MTLTexture extends NSObject {
     /// and the row stride against the pixel size before touching the GPU, so an
     /// out-of-range region or a too-small stride fails here rather than writing
     /// out of bounds. Sizing uses long math so a large region cannot silently
-    /// overflow. The upload is copied synchronously via the call-scoped bump
-    /// buffer (as with setVertexBytes); streaming uploads should prefer a blit
-    /// encoder instead of repeated small replaces.
+    /// overflow. The upload is copied synchronously and the staging buffer comes
+    /// from a confined arena closed here, so it is reclaimed; streaming uploads
+    /// should prefer a blit encoder instead of repeated small replaces.
     public void replaceRegion(MTLRegion region, long level, byte[] data, int bytesPerRow) {
         ensureInit();
         if (region == null) throw new IllegalArgumentException("region is null");
@@ -136,14 +137,16 @@ public final class MTLTexture extends NSObject {
             throw new IllegalArgumentException("data too short: " + data.length + " < bytesPerRow*height "
                     + len + " (bytesPerRow " + bytesPerRow + " height " + h + ")");
         }
-        MemorySegment buf = nsui.objc.Scratch.allocInput(len);
-        MemorySegment.copy(data, 0, buf, java.lang.foreign.ValueLayout.JAVA_BYTE, 0, (int) len);
-        try {
-            handles.hReplaceRegion().invokeExact(peer,
-                    ObjC.sel("replaceRegion:mipmapLevel:withBytes:bytesPerRow:"),
-                    region.toSegment(), level, buf, (long) bytesPerRow);
-        } catch (Throwable t) {
-            throw new RuntimeException("replaceRegion:... failed", t);
+        try (java.lang.foreign.Arena arena = java.lang.foreign.Arena.ofConfined()) {
+            MemorySegment buf = arena.allocate(len);
+            MemorySegment.copy(data, 0, buf, java.lang.foreign.ValueLayout.JAVA_BYTE, 0, (int) len);
+            try {
+                handles.hReplaceRegion().invokeExact(peer,
+                        ObjC.sel("replaceRegion:mipmapLevel:withBytes:bytesPerRow:"),
+                        region.toSegment(), level, buf, (long) bytesPerRow);
+            } catch (Throwable t) {
+                throw new RuntimeException("replaceRegion:... failed", t);
+            }
         }
     }
 }

@@ -227,10 +227,12 @@ public final class NSEvent extends NSObject {
         return ObjC.msgSendLong(peer, Sels.type);
     }
 
-    /// NSEventTypeLeftMouseDown (1) / LeftMouseUp (2).
+    /// Mouse-family event types: 1-9 (button/move/enter/exit) **plus** the
+    /// "other button" family 25-27 (`otherMouseDown`/`Up`/`Dragged`). The previous
+    /// `1..9` range reported middle/other-button events as non-mouse.
     public boolean isMouseEvent() {
         long t = type();
-        return t >= 1 && t <= 9;
+        return (t >= 1 && t <= 9) || (t >= 25 && t <= 27);
     }
 
     /// NSEventTypeKeyDown (10) / KeyUp (11).
@@ -242,6 +244,18 @@ public final class NSEvent extends NSObject {
     private void requireKeyEvent(String accessor) {
         if (!isKeyEvent()) {
             throw new IllegalStateException(accessor + " is only valid for key events (type 10/11); current type=" + type());
+        }
+    }
+
+    /// KeyDown (10), KeyUp (11) or FlagsChanged (12): the event types that carry a
+    /// hardware key code. Gating `keyCode` to 10/11 rejected valid use — reading the
+    /// key code is the documented way to tell WHICH modifier changed on a
+    /// flagsChanged event.
+    private void requireKeyCodeEvent(String accessor) {
+        long t = type();
+        if (t != 10 && t != 11 && t != 12) {
+            throw new IllegalStateException(accessor
+                    + " is only valid for key or flagsChanged events (type 10/11/12); current type=" + t);
         }
     }
 
@@ -275,10 +289,11 @@ public final class NSEvent extends NSObject {
 
     /// [event keyCode] — hardware keyboard code (CGKeyCode, unsigned short).
     ///
-    /// **Key events only.** Guarded.
+    /// Valid on key down/up AND on flagsChanged (type 12), where it identifies the
+    /// modifier that changed. Guarded against other event types.
     public long keyCode() {
         ensureInit();
-        requireKeyEvent("keyCode");
+        requireKeyCodeEvent("keyCode");
         return ((short) ObjC.msgSendShort(peer, Sels.keyCode)) & 0xFFFFL;
     }
 

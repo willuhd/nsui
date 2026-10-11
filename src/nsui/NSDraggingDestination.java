@@ -8,6 +8,14 @@ import nsui.objc.DelegateProxy;
 
 /// NSDraggingDestination — minimal protocol marker for drop targets.
 ///
+/// IMPORTANT LIMITATION: AppKit sends these selectors to the registered destination
+/// VIEW, not to a separate delegate object. `delegate()` installs them on a
+/// DelegateProxy-backed plain NSObject, so on a real drop the callbacks below are never
+/// delivered — the instance and its selector shapes exist as a scaffold. The
+/// `NSDraggingSession` parameter is in fact an `NSDraggingInfo` peer (the toolkit has
+/// no NSDraggingInfo wrapper), so session-only accessors on it are wrong. A correct
+/// binding needs these selectors installed on a view subclass.
+///
 /// Coverage notes (header: NSDragging.h, destination section, wins on API truth):
 /// - Wired: draggingEntered:/Updated:/Exited:, prepare/perform/conclude,
 ///   draggingEnded:, updateDraggingItemsForDrag: and the spring-loading

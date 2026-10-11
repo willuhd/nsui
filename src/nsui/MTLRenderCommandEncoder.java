@@ -40,7 +40,7 @@ public final class MTLRenderCommandEncoder extends NSObject {
         handles = new Handles(
                 ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.INT, Arg.INT)),
                 ObjC.handle(Sig.of(Ret.VOID, Arg.INT, Arg.INT, Arg.INT)),
-                ObjC.handle(Sig.of(Ret.VOID, Arg.INT, Arg.INT)),
+                ObjC.handle(Sig.of(Ret.VOID, Arg.INT32, Arg.INT32)),
                 ObjC.handle(Sig.of(Ret.VOID, Arg.FLOAT, Arg.FLOAT, Arg.FLOAT)),
                 ObjC.handle(Sig.of(Ret.VOID, Arg.MTLVIEWPORT)),
                 ObjC.handle(Sig.of(Ret.VOID, Arg.MTLSCISSORRECT)),
@@ -84,9 +84,12 @@ public final class MTLRenderCommandEncoder extends NSObject {
         ObjC.msgSendVoidId(peer, ObjC.sel("setDepthStencilState:"), ObjC.nullablePeer(state));
     }
 
-    /// setStencilReferenceValue: (uint32_t).
+    /// setStencilReferenceValue: (uint32_t, exact 32-bit INT32 call shape).
     public void setStencilReferenceValue(long value) {
-        ObjC.msgSendVoidLong(peer, ObjC.sel("setStencilReferenceValue:"), value & 0xFFFFFFFFL);
+        ensureInit();
+        try {
+            ObjC.handle(Sig.of(Ret.VOID, Arg.INT32)).invokeExact(peer, ObjC.sel("setStencilReferenceValue:"), (int) value);
+        } catch (Throwable t) { throw new RuntimeException("setStencilReferenceValue: failed", t); }
     }
 
     /// setStencilFrontReferenceValue:backReferenceValue: (two uint32_t).
@@ -94,7 +97,7 @@ public final class MTLRenderCommandEncoder extends NSObject {
         ensureInit();
         try {
             handles.hStencilFront().invokeExact(peer, ObjC.sel("setStencilFrontReferenceValue:backReferenceValue:"),
-                    front & 0xFFFFFFFFL, back & 0xFFFFFFFFL);
+                    (int) front, (int) back);
         } catch (Throwable t) {
             throw new RuntimeException("setStencilFrontReferenceValue:backReferenceValue: failed", t);
         }

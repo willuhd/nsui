@@ -214,6 +214,13 @@ public final class EventCoverageTest {
         TestKit.check(ev != null, "NSEvent.eventWithCGEvent real event");
         TestKit.check(ev.type() == 1, "synthetic type() == 1 leftMouseDown (got " + ev.type() + ")");
         TestKit.check(ev.isMouseEvent() && !ev.isKeyEvent(), "synthetic isMouseEvent && !isKeyEvent");
+        // otherMouseDown (25) is in the mouse family too: the old 1..9 range said no.
+        MemorySegment cgOther = (MemorySegment) hCreate.invokeExact(
+                MemorySegment.NULL, (int) 25 /* kCGEventOtherMouseDown */, point, (int) 2);
+        NSEvent otherEv = NSEvent.eventWithCGEvent(cgOther);
+        TestKit.check(otherEv != null && otherEv.type() == 25 && otherEv.isMouseEvent(),
+                "otherMouseDown (25) reports isMouseEvent (got "
+                        + (otherEv == null ? "null" : otherEv.type() + "/" + otherEv.isMouseEvent()) + ")");
         TestKit.check(ev.clickCount() >= 1, "synthetic clickCount() >= 1 (got " + ev.clickCount() + ")");
         TestKit.check(ev.buttonNumber() == 0, "synthetic buttonNumber() == 0");
         // Direct CG conversion carries CG time 0 (the queued path in NSEventTest
@@ -325,6 +332,22 @@ public final class EventCoverageTest {
                 "synthetic key charactersByApplyingModifiers() == c");
         TestKit.check(kev.buttonNumber() == 0, "synthetic key buttonNumber() == 0");
         TestKit.check(kev.windowNumber() == 0, "synthetic key windowNumber() == 0");
+
+        // ---- synthetic flagsChanged (12): keyCode is valid, characters is not ----
+        // Reading keyCode on a flagsChanged event is how you tell WHICH modifier
+        // changed; the old key-only guard (types 10/11) rejected it.
+        FunctionDescriptor setTypeDesc = FunctionDescriptor.ofVoid(ValueLayout.ADDRESS, ValueLayout.JAVA_INT);
+        MethodHandle hSetType = linker.downcallHandle(cg.find("CGEventSetType").orElseThrow(), setTypeDesc);
+        MemorySegment cgFlags = (MemorySegment) hKey.invokeExact(MemorySegment.NULL, (short) 55, true);
+        hSetType.invokeExact(cgFlags, 12 /* kCGEventFlagsChanged */);
+        NSEvent fev = NSEvent.eventWithCGEvent(cgFlags);
+        TestKit.check(fev != null && fev.type() == 12,
+                "synthetic flagsChanged type() == 12 (got " + (fev == null ? "null" : fev.type()) + ")");
+        TestKit.check(fev.keyCode() == 55,
+                "flagsChanged keyCode() == 55 (previously rejected as non-key, got " + fev.keyCode() + ")");
+        boolean flagsCharsRejected = false;
+        try { fev.characters(); } catch (IllegalStateException expected) { flagsCharsRejected = true; }
+        TestKit.check(flagsCharsRejected, "flagsChanged still rejects characters()");
 
         // ---- synthetic CG scroll event: scroll-only accessors ----
         FunctionDescriptor scrollDesc = FunctionDescriptor.of(ValueLayout.ADDRESS, ValueLayout.ADDRESS,

@@ -75,6 +75,18 @@ If a signature is missing, the build succeeds but the binary fails at runtime wi
 - Memory uses a global arena. Per-turn inputs (rects, C strings) use a thread-local bump arena. Struct returns use the global arena.
 - Window existence is verified via `CGWindowListCopyWindowInfo` from CoreGraphics.
 
+### Platform baseline
+
+The suite is developed and run on **macOS 26.x on arm64**. No minimum deployment target is
+declared, and there is no `operatingSystemVersion` runtime check anywhere: APIs that arrived in
+a later release are either guarded per method with `respondsToSelector:` (the getter returns a
+default and the setter is a no-op when the selector is absent) or, for a handful of families,
+sent unconditionally and therefore expected to abort on a host that predates them.
+
+So on an older macOS the guarded accessors degrade silently while the unguarded ones can fault.
+If you need to support an older release, the guard pattern to copy is
+`NSButton.setTintProminence:`/`borderShape` (macOS 26 selectors, no-op / 0 when absent).
+
 ### Project status
 
 Library package is `nsui`: AppKit, Core Animation, and Metal bindings over FFM. In development (currently 153 AppKit/Foundation wrapper files, 27 Core Animation files and 25 Metal files, one public class each).

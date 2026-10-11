@@ -205,8 +205,8 @@ public final class Sig {
         of(Ret.ID, Arg.FLOAT, Arg.FLOAT, Arg.FLOAT, Arg.FLOAT), // timingFunctionWithControlPoints::::
         of(Ret.ID, Arg.ID, Arg.ID, Arg.FLOAT),        // HDR10MetadataWithDisplayInfo:contentInfo:scale:
         of(Ret.ID, Arg.FLOAT, Arg.FLOAT, Arg.FLOAT),  // HDR10MetadataWithMinLuminance:...
-        of(Ret.ID, Arg.INT, Arg.ID, Arg.INT, Arg.DOUBLE, Arg.DOUBLE), // constraintWithAttribute:scale:offset:
-        of(Ret.ID, Arg.INT, Arg.ID, Arg.INT, Arg.DOUBLE), // constraintWithAttribute:offset:
+        // (the constraintWithAttribute:scale:offset: / :offset: shapes live further down as the
+        //  Arg.INT32 twins CAConstraint actually uses; these INT-width duplicates had no caller)
         of(Ret.ID, Arg.INT, Arg.ID, Arg.INT),          // NSString stringByPaddingToLength:withString:startingAtIndex:
         of(Ret.ID, Arg.DOUBLE, Arg.DOUBLE, Arg.DOUBLE, Arg.DOUBLE),  // colorWithSRGBRed:green:blue:alpha:
         of(Ret.ID, Arg.INT, Arg.BOOL),                  // standardWindowButton:forFlag:

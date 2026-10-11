@@ -643,6 +643,14 @@ public final class DelegateProxy {
     }
 
     /// Add a `-(BOOL)method:(id)` (encoding "c@:@") to a class pair unless already present.
+    ///
+    /// Encoding note (measured): on arm64 macOS AppKit's own BOOL methods publish "B"
+    /// (`method_getTypeEncoding` on `-[NSView acceptsFirstResponder]` gives "B16@0:8"), so
+    /// "B" is the platform's spelling there. These methods are NEW methods on a runtime
+    /// subclass rather than overrides, so there is no superclass encoding to match, and the
+    /// runtime does not consult an encoding when AppKit sends the selector; only an
+    /// NSInvocation-style caller would. Both "B" and "c" are 1-byte classes and the stub
+    /// writes 0/1, so the choice is nominal — "c" is kept for continuity.
     private static void addBoolMethod(MemorySegment pair, String selector) {
         RuntimeClass rc = classInfo(pair);
         if (rc.boolMethods().add(selector)) {

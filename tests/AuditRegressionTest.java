@@ -1513,8 +1513,15 @@ public final class AuditRegressionTest {
         // assertions below also prove the guards do not short-circuit a live call.
         try {
             nsui.NSSlider vSlider = nsui.NSSlider.create(new NSRect(0, 0, 100, 24));
-            TestKit.noThrow("NSSlider.tintProminence()/setTintProminence() are guarded but live",
-                    () -> { vSlider.setTintProminence(1); vSlider.tintProminence(); });
+            // Round-trips, not bare noThrow: a guard that short-circuits (returning the default
+            // without calling native) would pass a noThrow assertion but fail these.
+            if (vSlider.respondsToSelector(ObjC.sel("setTintProminence:"))) {
+                vSlider.setTintProminence(2);
+                TestKit.check(vSlider.tintProminence() == 2,
+                        "tintProminence round-trips through native (got " + vSlider.tintProminence() + ")");
+            } else {
+                TestKit.probe("tintProminence absent on this host (guard not exercised)");
+            }
             TestKit.noThrow("NSSlider.neutralValue()/setNeutralValue() are guarded but live",
                     () -> { vSlider.setNeutralValue(0.5); vSlider.neutralValue(); });
             nsui.NSTextField vField = nsui.NSTextField.create(new NSRect(0, 0, 100, 24));
@@ -1530,8 +1537,13 @@ public final class AuditRegressionTest {
             nsui.NSToolbarItem vItem = nsui.NSToolbarItem.create("probe.item");
             TestKit.noThrow("NSToolbarItem.style() is guarded but live", () -> vItem.style());
             NSView vView = NSView.create(new NSRect(0, 0, 10, 10), (v, d) -> {});
-            TestKit.noThrow("NSView.prefersCompactControlSizeMetrics() is guarded but live",
-                    () -> vView.prefersCompactControlSizeMetrics());
+            if (vView.respondsToSelector(ObjC.sel("setPrefersCompactControlSizeMetrics:"))) {
+                vView.setPrefersCompactControlSizeMetrics(true);
+                TestKit.check(vView.prefersCompactControlSizeMetrics(),
+                        "prefersCompactControlSizeMetrics round-trips through native");
+            } else {
+                TestKit.probe("prefersCompactControlSizeMetrics absent (guard not exercised)");
+            }
             TestKit.noThrow("NSScreen.cgDirectDisplayID() is guarded but live",
                     () -> nsui.NSScreen.mainScreen().cgDirectDisplayID());
             TestKit.noThrow("NSColorPanel.maximumLinearExposure() is guarded but live",

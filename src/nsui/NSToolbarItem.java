@@ -342,6 +342,7 @@ public final class NSToolbarItem extends NSObject implements NSUserInterfaceItem
     }
     /// setBackgroundTintColor:.
     public void setBackgroundTintColor(NSColor color) {
+        if (!respondsToSelector(ObjC.sel("setBackgroundTintColor:"))) return;   // macOS 26+
         try {
             handles.hSetLabel().invokeExact(peer, ObjC.sel("setBackgroundTintColor:"), (MemorySegment) (color == null ? MemorySegment.NULL : color.peer()));
         } catch (Throwable t) { throw new RuntimeException("setBackgroundTintColor: failed", t); }

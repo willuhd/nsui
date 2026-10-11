@@ -295,6 +295,7 @@ public class NSTextField extends NSControl {
     }
     /// [field setPlaceholderAttributedStrings:].
     public void setPlaceholderAttributedStrings(NSArray strings) {
+        if (!respondsToSelector(ObjC.sel("setPlaceholderAttributedStrings:"))) return;   // macOS 26+
         ObjC.msgSendVoidId(peer, ObjC.sel("setPlaceholderAttributedStrings:"),
                 (MemorySegment) (strings == null ? MemorySegment.NULL : strings.peer()));
     }
@@ -307,6 +308,7 @@ public class NSTextField extends NSControl {
     }
     /// [field setResolvesNaturalAlignmentWithBaseWritingDirection:].
     public void setResolvesNaturalAlignmentWithBaseWritingDirection(boolean flag) {
+        if (!respondsToSelector(ObjC.sel("setResolvesNaturalAlignmentWithBaseWritingDirection:"))) return;  // macOS 26+
         ObjC.msgSendVoidBool(peer, ObjC.sel("setResolvesNaturalAlignmentWithBaseWritingDirection:"), flag);
     }
 

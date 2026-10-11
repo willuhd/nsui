@@ -704,6 +704,12 @@ public final class AuditRegressionTest {
                     IllegalArgumentException.class, () -> NSWindow.create(null, 0, 2, false));
             TestKit.expectThrows("NSPanel.create(null rect) reports a named IAE",
                     IllegalArgumentException.class, () -> nsui.NSPanel.create(null, 0, 2, false));
+
+            // addTabbedWindow: nil aborts natively; the wrapper used to return silently,
+            // suppressing the error. Now a named IAE.
+            NSWindow tabWin = TestKit.hiddenWindow(120, 80);
+            TestKit.expectThrows("NSWindow.addTabbedWindow(null) rejects",
+                    IllegalArgumentException.class, () -> tabWin.addTabbedWindow(null, 0));
         } catch (Throwable t) {
             TestKit.check(false, "probe-found guard block threw: " + t);
         }

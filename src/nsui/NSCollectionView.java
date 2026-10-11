@@ -627,6 +627,15 @@ public final class NSCollectionView extends NSView {
     }
 
     /// [view insertItemsAtIndexPaths:] — NSSet of NSIndexPath peers.
+    /// [view insertItemsAtIndexPaths:] — NSSet of NSIndexPath peers.
+    ///
+    /// Deliberately NOT validated, together with its delete/reload siblings: AppKit tolerates
+    /// any index path here. Measured with a data-source-backed count (a runtime data source
+    /// reporting 2 sections x 3 items, so the counts are live rather than from the legacy
+    /// setContent:): insert/delete/reload with {50,0} (item out of range), {0,50} (section out
+    /// of range), {-1,0} and {0,-1} (negatives) all return without raising. Adding a range
+    /// guard would therefore reject calls AppKit accepts. Only moveItemAtIndexPath: validates
+    /// (see requireExistingItem).
     public void insertItemsAtIndexPaths(MemorySegment indexPaths) {
         try {
             handles.hSetDataSource().invokeExact(peer, ObjC.sel("insertItemsAtIndexPaths:"), (MemorySegment) (indexPaths == null ? MemorySegment.NULL : indexPaths));
@@ -635,7 +644,7 @@ public final class NSCollectionView extends NSView {
         }
     }
 
-    /// [view deleteItemsAtIndexPaths:]
+    /// [view deleteItemsAtIndexPaths:] — unvalidated like insertItemsAtIndexPaths: (see there).
     public void deleteItemsAtIndexPaths(MemorySegment indexPaths) {
         try {
             handles.hSetDataSource().invokeExact(peer, ObjC.sel("deleteItemsAtIndexPaths:"), (MemorySegment) (indexPaths == null ? MemorySegment.NULL : indexPaths));
@@ -644,7 +653,7 @@ public final class NSCollectionView extends NSView {
         }
     }
 
-    /// [view reloadItemsAtIndexPaths:]
+    /// [view reloadItemsAtIndexPaths:] — unvalidated like insertItemsAtIndexPaths: (see there).
     public void reloadItemsAtIndexPaths(MemorySegment indexPaths) {
         try {
             handles.hSetDataSource().invokeExact(peer, ObjC.sel("reloadItemsAtIndexPaths:"), (MemorySegment) (indexPaths == null ? MemorySegment.NULL : indexPaths));

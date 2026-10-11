@@ -196,7 +196,7 @@ public final class NSString extends NSObject {
     public static final long UTF32_STRING_ENCODING = 0x8c000100L;
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
-            private record Handles(MethodHandle hLength, MethodHandle hIsEqual, MethodHandle hUTF8String) {}
+            private record Handles(MethodHandle hLength, MethodHandle hIsEqual) {} {}
     private static volatile Handles handles;
 
     private NSString(MemorySegment peer) {
@@ -229,7 +229,7 @@ public final class NSString extends NSObject {
         if (handles != null) return;
         // hash is INT return, no args
         // UTF8String is ID return? Actually returns const char* (PTR) but we don't use handle for it; ObjC.toString handles directly.
-        Handles h = new Handles(ObjC.handle(Sig.of(Ret.INT)), ObjC.handle(Sig.of(Ret.BOOL, Arg.ID)), null);
+        Handles h = new Handles(ObjC.handle(Sig.of(Ret.INT)), ObjC.handle(Sig.of(Ret.BOOL, Arg.ID)));
             Sels.populate();
         handles = h;
 }

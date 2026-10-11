@@ -15,7 +15,7 @@ import static nsui.objc.Sig.Ret;
 /// helpers instead) and the completionHandler block property (same reason).
 public final class NSAnimationContext extends NSObject {
 
-            private record Handles(MethodHandle hCurrent, MethodHandle hGetDouble, MethodHandle hSetDouble, MethodHandle hVoid, MethodHandle hBool, MethodHandle hVoidBool, MethodHandle hSetId) {}
+            private record Handles(MethodHandle hCurrent, MethodHandle hGetDouble, MethodHandle hSetDouble, MethodHandle hBool, MethodHandle hVoidBool, MethodHandle hSetId) {} {}
     private static volatile Handles handles;
 
     private NSAnimationContext(MemorySegment peer) {
@@ -38,7 +38,6 @@ public final class NSAnimationContext extends NSObject {
                 ObjC.handle(Sig.of(Ret.ID)),
                 ObjC.handle(Sig.of(Ret.DOUBLE)),
                 ObjC.handle(Sig.of(Ret.VOID, Arg.DOUBLE)),
-                ObjC.handle(Sig.of(Ret.VOID)),
                 ObjC.handle(Sig.of(Ret.BOOL)),
                 ObjC.handle(Sig.of(Ret.VOID, Arg.BOOL)),
                 ObjC.handle(Sig.of(Ret.VOID, Arg.ID))

@@ -13,7 +13,7 @@ import static nsui.objc.Sig.Ret;
 /// (setMnemonicLocation:/mnemonicLocation/mnemonic/setTitleWithMnemonic:).
 public final class NSMenuItem extends NSObject {
 
-    private record Handles(MethodHandle hIdInt) {}
+    private record Handles() {} {}
     private static volatile Handles H;
 
     private NSMenuItem(MemorySegment peer) {
@@ -28,7 +28,7 @@ public final class NSMenuItem extends NSObject {
 
     private static synchronized void ensureInitLocked() {
         if (H != null) return;
-        H = new Handles(ObjC.handle(Sig.of(Ret.ID, Arg.INT)));
+        H = new Handles();
     }
 
     public static NSMenuItem wrap(MemorySegment peer) {

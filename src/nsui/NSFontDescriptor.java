@@ -11,7 +11,7 @@ import static nsui.objc.Sig.Ret;
 /// Thin 1:1 wrapper over native `NSFontDescriptor`.
 public final class NSFontDescriptor extends NSObject {
 
-            private record Handles(MethodHandle hWithNameSize, MethodHandle hWithAttrs, MethodHandle hGetId, MethodHandle hGetInt32, MethodHandle hVoidId) {}
+            private record Handles(MethodHandle hWithNameSize, MethodHandle hWithAttrs, MethodHandle hGetId, MethodHandle hGetInt32) {} {}
     private static volatile Handles handles;
 
     private NSFontDescriptor(MemorySegment peer) {
@@ -34,9 +34,7 @@ public final class NSFontDescriptor extends NSObject {
                 ObjC.handle(Sig.of(Ret.ID, Arg.ID, Arg.DOUBLE)),
                 ObjC.handle(Sig.of(Ret.ID, Arg.ID)),
                 ObjC.handle(Sig.of(Ret.ID)),
-                ObjC.handle(Sig.of(Ret.INT32)),
-                ObjC.handle(Sig.of(Ret.VOID, Arg.ID))
-        );
+                ObjC.handle(Sig.of(Ret.INT32)));
     }
 
     // ---- factory ----

@@ -21,7 +21,7 @@ import static nsui.objc.Sig.Ret;
 /// stateless wrapper); -init is NS_UNAVAILABLE by design (use create(identifier)).
 public class NSTouchBarItem extends NSObject {
 
-            private record Handles(MethodHandle hInitId, MethodHandle hId, MethodHandle hVoidId, MethodHandle hBool, MethodHandle hVoidBool, MethodHandle hFloat, MethodHandle hSetFloat) {}
+            private record Handles(MethodHandle hInitId, MethodHandle hId, MethodHandle hBool, MethodHandle hFloat, MethodHandle hSetFloat) {} {}
     private static volatile Handles handles;
 
     protected NSTouchBarItem(MemorySegment peer) {
@@ -43,9 +43,7 @@ public class NSTouchBarItem extends NSObject {
         handles = new Handles(
                 ObjC.handle(Sig.of(Ret.ID, Arg.ID)),
                 ObjC.handle(Sig.of(Ret.ID)),
-                ObjC.handle(Sig.of(Ret.VOID, Arg.ID)),
                 ObjC.handle(Sig.of(Ret.BOOL)),
-                ObjC.handle(Sig.of(Ret.VOID, Arg.BOOL)),
                 ObjC.handle(Sig.of(Ret.FLOAT)),
                 ObjC.handle(Sig.of(Ret.VOID, Arg.FLOAT))
         );

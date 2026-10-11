@@ -12,7 +12,7 @@ import static nsui.objc.Sig.Ret;
 /// Thin 1:1, stateless.
 public final class NSWindowTabGroup extends NSObject {
 
-            private record Handles(MethodHandle hId, MethodHandle hBool, MethodHandle hVoidId, MethodHandle hInt) {}
+            private record Handles(MethodHandle hId, MethodHandle hBool, MethodHandle hVoidId) {} {}
     private static volatile Handles handles;
 
     private NSWindowTabGroup(MemorySegment peer) {
@@ -34,9 +34,7 @@ public final class NSWindowTabGroup extends NSObject {
         handles = new Handles(
                 ObjC.handle(Sig.of(Ret.ID)),
                 ObjC.handle(Sig.of(Ret.BOOL)),
-                ObjC.handle(Sig.of(Ret.VOID, Arg.ID)),
-                ObjC.handle(Sig.of(Ret.INT))
-        );
+                ObjC.handle(Sig.of(Ret.VOID, Arg.ID)));
     }
 
     /// [group windows] -> NSArray of NSWindow

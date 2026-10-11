@@ -40,6 +40,7 @@ public final class MPSImageMedian extends NSObject {
     /// initWithDevice:kernelDiameter: (odd).
     public static MPSImageMedian create(MTLDevice device, long diameter) {
         ensureInit();
+        Bounds.nonNull(device, "initWithDevice:kernelDiameter:");
         try {
             MemorySegment p = ObjC.msgSendId(ObjC.cls("MPSImageMedian"), ObjC.sel("alloc"));
             p = (MemorySegment) handles.hInit().invokeExact(p, ObjC.sel("initWithDevice:kernelDiameter:"),
@@ -53,6 +54,9 @@ public final class MPSImageMedian extends NSObject {
 
     /// encodeToCommandBuffer:sourceTexture:destinationTexture:.
     public void encode(MTLCommandBuffer buffer, MTLTexture source, MTLTexture destination) {
+        Bounds.nonNull(buffer, "encodeToCommandBuffer:sourceTexture:destinationTexture:");
+        Bounds.nonNull(source, "encodeToCommandBuffer:sourceTexture:destinationTexture:");
+        Bounds.nonNull(destination, "encodeToCommandBuffer:sourceTexture:destinationTexture:");
         try {
             handles.hEncode().invokeExact(peer, ObjC.sel("encodeToCommandBuffer:sourceTexture:destinationTexture:"),
                     buffer.peer(), source.peer(), destination.peer());

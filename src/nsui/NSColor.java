@@ -304,6 +304,7 @@ public final class NSColor extends NSObject {
     /// [+[NSColor colorWithPatternImage:]] — pattern color tiled from an image.
     public static NSColor colorWithPatternImage(NSImage image) {
         ensureInit();
+        Bounds.nonNull(image, "colorWithPatternImage:");
         try {
             MemorySegment c = (MemorySegment) H.hPattern().invokeExact(ObjC.cls("NSColor"), ObjC.sel("colorWithPatternImage:"), image.peer());
             return new NSColor(c);
@@ -361,6 +362,7 @@ public final class NSColor extends NSObject {
 
     /// [color blendedColorWithFraction:ofColor:] — blend with another color.
     public NSColor blendedColorWithFraction(double fraction, NSColor other) {
+        Bounds.nonNull(other, "blendedColorWithFraction:ofColor:");
         try {
             MemorySegment c = (MemorySegment) H.hBlended().invokeExact(peer, ObjC.sel("blendedColorWithFraction:ofColor:"), fraction, other.peer());
             return (c == null || c.address() == 0) ? null : new NSColor(c);

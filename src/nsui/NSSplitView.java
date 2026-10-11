@@ -132,6 +132,7 @@ public final class NSSplitView extends NSView {
 
     /// [splitView addArrangedSubview:] — add a pane (also becomes a subview).
     public void addArrangedSubview(NSView subview) {
+        Bounds.nonNull(subview, "addArrangedSubview:");
         ObjC.msgSendVoidId(peer, ObjC.sel("addArrangedSubview:"), subview.peer());
     }
 
@@ -210,6 +211,7 @@ public final class NSSplitView extends NSView {
     /// [splitView isSubviewCollapsed:].
     public boolean isSubviewCollapsed(NSView subview) {
         ensureInit();
+        Bounds.nonNull(subview, "isSubviewCollapsed:");
         try {
             return (boolean) hBoolId.invokeExact(peer, ObjC.sel("isSubviewCollapsed:"), subview.peer());
         } catch (Throwable t) {
@@ -265,6 +267,11 @@ public final class NSSplitView extends NSView {
     /// [splitView insertArrangedSubview:atIndex:].
     public void insertArrangedSubview(NSView view, long index) {
         ensureInit();
+        Bounds.nonNull(view, "insertArrangedSubview:atIndex:");
+        NSArray existing = arrangedSubviews();
+        if (existing != null) {
+            Bounds.insertIndex(index, existing.count(), "insertArrangedSubview:atIndex:");
+        }
         try {
             hVoidIdInt.invokeExact(peer, ObjC.sel("insertArrangedSubview:atIndex:"), view.peer(), index);
         } catch (Throwable t) {
@@ -274,6 +281,7 @@ public final class NSSplitView extends NSView {
 
     /// [splitView removeArrangedSubview:].
     public void removeArrangedSubview(NSView view) {
+        Bounds.nonNull(view, "removeArrangedSubview:");
         ObjC.msgSendVoidId(peer, ObjC.sel("removeArrangedSubview:"), view.peer());
     }
 }

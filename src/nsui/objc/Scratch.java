@@ -67,10 +67,13 @@ public final class Scratch {
     private static final class Buffer {
         final MemorySegment seg;
         long offset;
+        /// Cumulative bytes this thread sent to the global arena instead of the buffer.
+        long spilled;
 
         Buffer() {
             this.seg = Arena.global().allocate(BUFFER_BYTES, 8);
             this.offset = 0;
+            this.spilled = 0;
         }
     }
 
@@ -110,6 +113,7 @@ public final class Scratch {
                 return b.seg.asSlice(base, round);
             }
             // outside the bump window: this single allocation goes to the global arena.
+            b.spilled += round;
             return Arena.global().allocate(round, 8);
         }
         return Arena.global().allocate(roundUp(byteSize), 8);
@@ -132,6 +136,7 @@ public final class Scratch {
             return b.seg.asSlice(base, round);
         }
         // outside the bump window: this single allocation goes to the global arena.
+        b.spilled += round;
         return Arena.global().allocate(round, 8);
     }
 
@@ -149,9 +154,21 @@ public final class Scratch {
         return DEPTH.get() > 0;
     }
 
-    /// Bytes of scratch currently in use (bump offset); 0 when no turn is active.
+    /// Bytes of scratch currently in use in the ACTIVE turn (bump offset); 0 when
+    /// no turn is active. This is deliberately turn-scoped: `allocInput` bumps the
+    /// same buffer outside a turn, and those bytes are rewound at the next turn
+    /// boundary rather than counted here. For the un-reclaimable part, see
+    /// `spilledBytes()`.
     public static long used() {
         if (DEPTH.get() == 0) return 0;
         return BUFFERS.get().offset;
+    }
+
+    /// Cumulative bytes that fell back to the global arena on this thread because a
+    /// single allocation did not fit the bump window. Global-arena memory is never
+    /// reclaimed, so this is monotonic — a leak oracle for callers that allocate
+    /// more than the buffer per turn. 0 means every allocation so far was bumped.
+    public static long spilledBytes() {
+        return BUFFERS.get().spilled;
     }
 }

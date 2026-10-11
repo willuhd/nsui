@@ -73,44 +73,57 @@ public final class CG {
     }
 
     // ---------------------------------------------------------------- API
+    // Every entry point self-initializes: these are the library's drawing API, and
+    // a caller that reaches one before CG.ensureInit() must not get a bare NPE from
+    // a null handle (matching ObjC's fail-fast message style).
 
     public static void setRGBFillColor(MemorySegment ctx, double r, double g, double b, double a) {
+        ensureInit();
         try { hFillColor.invokeExact(ctx, r, g, b, a); } catch (Throwable t) { throw fail(t); }
     }
 
     public static void setRGBStrokeColor(MemorySegment ctx, double r, double g, double b, double a) {
+        ensureInit();
         try { hStrokeColor.invokeExact(ctx, r, g, b, a); } catch (Throwable t) { throw fail(t); }
     }
 
     public static void setLineWidth(MemorySegment ctx, double w) {
+        ensureInit();
         try { hLineWidth.invokeExact(ctx, w); } catch (Throwable t) { throw fail(t); }
     }
 
     public static void fillRect(MemorySegment ctx, double x, double y, double w, double h) {
+        ensureInit();
         try { hFillRect.invokeExact(ctx, ObjC.rect(x, y, w, h)); } catch (Throwable t) { throw fail(t); }
     }
 
     public static void strokeRect(MemorySegment ctx, double x, double y, double w, double h) {
+        ensureInit();
         try { hStrokeRect.invokeExact(ctx, ObjC.rect(x, y, w, h)); } catch (Throwable t) { throw fail(t); }
     }
 
     public static void fillEllipseInRect(MemorySegment ctx, double x, double y, double w, double h) {
+        ensureInit();
         try { hFillEllipse.invokeExact(ctx, ObjC.rect(x, y, w, h)); } catch (Throwable t) { throw fail(t); }
     }
 
     public static void moveToPoint(MemorySegment ctx, double x, double y) {
+        ensureInit();
         try { hMoveToPoint.invokeExact(ctx, x, y); } catch (Throwable t) { throw fail(t); }
     }
 
     public static void addLineToPoint(MemorySegment ctx, double x, double y) {
+        ensureInit();
         try { hAddLineToPoint.invokeExact(ctx, x, y); } catch (Throwable t) { throw fail(t); }
     }
 
     public static void strokePath(MemorySegment ctx) {
+        ensureInit();
         try { hStrokePath.invokeExact(ctx); } catch (Throwable t) { throw fail(t); }
     }
 
     public static void setShouldAntialias(MemorySegment ctx, boolean flag) {
+        ensureInit();
         try { hSetAntialias.invokeExact(ctx, flag); } catch (Throwable t) { throw fail(t); }
     }
 

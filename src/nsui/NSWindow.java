@@ -2451,7 +2451,10 @@ ensureInit(); return ObjC.msgSendBool(peer, Sels.hasDynamicDepthLimit); }
         return NSViewController.wrap(ObjC.msgSendId(peer, Sels.contentViewController));
     }
 
-    /// [window setContentViewController:] — nil detaches (also clears contentView).
+    /// [window setContentViewController:] — nil is passed through to AppKit.
+    /// (The previous doc claimed this "also clears contentView"; measured on this OS
+    /// it does not, so do not rely on either behaviour — use setContentView: to
+    /// change the content view explicitly.)
     public void setContentViewController(NSViewController controller) {
         ensureInit();
         ObjC.msgSendVoidId(peer, Sels.setContentViewController,

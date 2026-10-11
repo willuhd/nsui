@@ -108,6 +108,7 @@ public final class ObjC {
     /// The shared struct-return slot as an allocator. Replaces per-call
     /// `Arena.global()` at every struct-return downcall site.
     public static SegmentAllocator structSlot() {
+        if (!INIT && !INITIALIZING) throw new IllegalStateException("ObjC.init() must run first (from main, at runtime)");
         return (SegmentAllocator) RECT_SLOT.get();
     }
 
@@ -203,6 +204,7 @@ public final class ObjC {
 
     /// dlopen() a system framework so its classes become visible to the ObjC runtime.
     public static void ensureFramework(String name) {
+        if (!INIT && !INITIALIZING) throw new IllegalStateException("ObjC.init() must run first (from main, at runtime)");
         String path = "/System/Library/Frameworks/" + name + ".framework/" + name;
         MemorySegment h = (MemorySegment) invokeX(hDlopen, cstring(path), 0x2 /* RTLD_NOW */ | 0x8 /* RTLD_GLOBAL */);
         if (h.address() == 0) {
@@ -264,12 +266,17 @@ public final class ObjC {
     }
 
     /// sel_registerName(name) — cached per distinct name. See cls() for the fast path.
+    /// A NULL result is never cached, mirroring `cls()`: `sel_registerName` does not
+    /// return NULL for a non-null name in practice, but caching one would pin a miss
+    /// exactly the way the old `cls()` cache did.
     public static MemorySegment sel(String name) {
         if (!INIT && !INITIALIZING) throw new IllegalStateException("ObjC.init() must run first (from main, at runtime)");
         MemorySegment s = SEL_RESULT.get(name);
         if (s != null) return s;
-        return SEL_RESULT.computeIfAbsent(name,
-                n -> (MemorySegment) invokeX(hSelRegister, globalCstring(n)));
+        MemorySegment fresh = (MemorySegment) invokeX(hSelRegister, globalCstring(name));
+        if (fresh == null || fresh.address() == 0) return fresh;
+        MemorySegment prev = SEL_RESULT.putIfAbsent(name, fresh);
+        return prev != null ? prev : fresh;
     }
 
     /// True when the calling thread is AppKit's main thread ([NSThread isMainThread]).
@@ -461,6 +468,7 @@ public final class ObjC {
     /// (id/SEL/pointers), NULL-padded to the fixed 6-arg descriptor. The AOT-safe
     /// escape hatch for selectors whose exact signature is not in the vocabulary.
     public static MemorySegment invoke(MemorySegment recv, MemorySegment sel, MemorySegment... args) {
+        if (!INIT && !INITIALIZING) throw new IllegalStateException("ObjC.init() must run first (from main, at runtime)");
         if (args.length > 6) {
             throw new IllegalArgumentException("escape hatch supports up to 6 object args, got " + args.length);
         }
@@ -479,6 +487,7 @@ public final class ObjC {
 
     /// Void-returning variant of `invoke`.
     public static void invokeVoid(MemorySegment recv, MemorySegment sel, MemorySegment... args) {
+        if (!INIT && !INITIALIZING) throw new IllegalStateException("ObjC.init() must run first (from main, at runtime)");
         if (args.length > 6) {
             throw new IllegalArgumentException("escape hatch supports up to 6 object args, got " + args.length);
         }
@@ -507,16 +516,19 @@ public final class ObjC {
 
     /// class_addMethod — installs a Java method (via an FFM upcall stub) as an ObjC method.
     public static boolean addMethod(MemorySegment cls, String selector, MemorySegment imp, String types) {
+        if (!INIT && !INITIALIZING) throw new IllegalStateException("ObjC.init() must run first (from main, at runtime)");
         return (boolean) invokeX(hAddMethod, cls, sel(selector), imp, cstring(types));
     }
 
     /// FFM upcall stub: a real C function pointer that calls back into Java.
     public static MemorySegment upcall(MethodHandle target, FunctionDescriptor descriptor) {
+        if (!INIT && !INITIALIZING) throw new IllegalStateException("ObjC.init() must run first (from main, at runtime)");
         return LINKER.upcallStub(target, descriptor, ARENA);
     }
 
     /// class_getSuperclass(cls).
     public static MemorySegment classGetSuperclass(MemorySegment cls) {
+        if (!INIT && !INITIALIZING) throw new IllegalStateException("ObjC.init() must run first (from main, at runtime)");
         try { return (MemorySegment) hGetSuperclass.invokeExact(cls); } catch (Throwable t) { throw fail(t); }
     }
 
@@ -532,6 +544,7 @@ public final class ObjC {
 
     /// objc_msgSendSuper(superStruct, SEL) — dispatch to the receiver's superclass.
     public static void msgSendSuperVoid(MemorySegment superStruct, MemorySegment sel) {
+        if (!INIT && !INITIALIZING) throw new IllegalStateException("ObjC.init() must run first (from main, at runtime)");
         try { hMsgSuper.invokeExact(superStruct, sel); } catch (Throwable t) { throw fail(t); }
     }
 

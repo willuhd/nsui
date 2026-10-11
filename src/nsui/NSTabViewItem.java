@@ -93,6 +93,7 @@ public final class NSTabViewItem extends NSObject {
 
     /// [item setView:] — the content view shown while this tab is selected.
     public void setView(NSView view) {
+        Bounds.nonNull(view, "setView:");
         try {
             hSetView.invokeExact(peer, ObjC.sel("setView:"), view.peer());
         } catch (Throwable t) {
@@ -214,6 +215,7 @@ public final class NSTabViewItem extends NSObject {
     /// +[NSTabViewItem tabViewItemWithViewController:] — item wrapping a view controller.
     public static NSTabViewItem tabViewItemWithViewController(NSViewController controller) {
         ensureInit();
+        Bounds.nonNull(controller, "tabViewItemWithViewController:");
         try {
             MemorySegment p = (MemorySegment) hInitIdentifier.invokeExact(ObjC.cls("NSTabViewItem"), ObjC.sel("tabViewItemWithViewController:"), controller.peer());
             if (p == null || p.address() == 0) throw new IllegalStateException("tabViewItemWithViewController: returned nil");

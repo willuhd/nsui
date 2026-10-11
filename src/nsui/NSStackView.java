@@ -79,11 +79,13 @@ public class NSStackView extends NSView {
 
     /// addArrangedSubview: — append a view to the stack (also a subview).
     public void addArrangedSubview(NSView subview) {
+        Bounds.nonNull(subview, "addArrangedSubview:");
         ObjC.msgSendVoidId(peer, ObjC.sel("addArrangedSubview:"), subview.peer());
     }
 
     /// removeArrangedSubview: — take a view back out of the stack's layout (still a subview).
     public void removeArrangedSubview(NSView subview) {
+        Bounds.nonNull(subview, "removeArrangedSubview:");
         ObjC.msgSendVoidId(peer, ObjC.sel("removeArrangedSubview:"), subview.peer());
     }
 
@@ -229,6 +231,7 @@ public class NSStackView extends NSView {
     /// +[NSStackView stackViewWithViews:] — horizontal stack of the given views.
     public static NSStackView stackViewWithViews(NSArray views) {
         ensureInit();
+        Bounds.nonNull(views, "stackViewWithViews:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.ID));
             MemorySegment p = (MemorySegment) h.invokeExact(ObjC.cls("NSStackView"), ObjC.sel("stackViewWithViews:"), views.peer());
@@ -241,6 +244,8 @@ public class NSStackView extends NSView {
 
     /// [stack insertArrangedSubview:atIndex:].
     public void insertArrangedSubview(NSView view, long index) {
+        Bounds.nonNull(view, "insertArrangedSubview:atIndex:");
+        Bounds.insertIndex(index, arrangedSubviews().size(), "insertArrangedSubview:atIndex:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.INT));
             h.invokeExact(peer, ObjC.sel("insertArrangedSubview:atIndex:"), view.peer(), index);
@@ -256,6 +261,7 @@ public class NSStackView extends NSView {
 
     /// [stack setCustomSpacing:afterView:].
     public void setCustomSpacingAfterView(double spacing, NSView view) {
+        Bounds.nonNull(view, "setCustomSpacing:afterView:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.DOUBLE, Arg.ID));
             h.invokeExact(peer, ObjC.sel("setCustomSpacing:afterView:"), spacing, view.peer());
@@ -266,6 +272,7 @@ public class NSStackView extends NSView {
 
     /// [stack customSpacingAfterView:].
     public double customSpacingAfterView(NSView view) {
+        Bounds.nonNull(view, "customSpacingAfterView:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.DOUBLE, Arg.ID));
             return (double) h.invokeExact(peer, ObjC.sel("customSpacingAfterView:"), view.peer());
@@ -276,6 +283,7 @@ public class NSStackView extends NSView {
 
     /// [stack addView:inGravity:] — gravity-area placement (distribution gravityAreas mode).
     public void addViewInGravity(NSView view, long gravity) {
+        Bounds.nonNull(view, "addView:inGravity:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.INT));
             h.invokeExact(peer, ObjC.sel("addView:inGravity:"), view.peer(), gravity);
@@ -285,7 +293,14 @@ public class NSStackView extends NSView {
     }
 
     /// [stack insertView:atIndex:inGravity:] — shares the registered (VOID,ID,INT,INT) shape.
+    /// The index is scoped to one gravity area, so it is validated against that
+    /// area's count (AppKit raises NSRangeException when it is out of bounds).
     public void insertViewAtIndexInGravity(NSView view, long index, long gravity) {
+        Bounds.nonNull(view, "insertView:atIndex:inGravity:");
+        NSArray existing = viewsInGravity(gravity);
+        if (existing != null) {
+            Bounds.insertIndex(index, existing.count(), "insertView:atIndex:inGravity:");
+        }
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.INT, Arg.INT));
             h.invokeExact(peer, ObjC.sel("insertView:atIndex:inGravity:"), view.peer(), index, gravity);
@@ -296,6 +311,7 @@ public class NSStackView extends NSView {
 
     /// [stack removeView:] — remove a gravity-managed view.
     public void removeView(NSView view) {
+        Bounds.nonNull(view, "removeView:");
         ObjC.msgSendVoidId(peer, ObjC.sel("removeView:"), view.peer());
     }
 
@@ -309,11 +325,13 @@ public class NSStackView extends NSView {
         }
     }
 
-    /// [stack setViews:inGravity:].
+    /// [stack setViews:inGravity:]. AppKit tolerates nil here (it clears the
+    /// gravity area), so a null Java array passes nil rather than throwing.
     public void setViewsInGravity(NSArray views, long gravity) {
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.INT));
-            h.invokeExact(peer, ObjC.sel("setViews:inGravity:"), views.peer(), gravity);
+            h.invokeExact(peer, ObjC.sel("setViews:inGravity:"),
+                    (MemorySegment) (views == null ? MemorySegment.NULL : views.peer()), gravity);
         } catch (Throwable t) {
             throw new RuntimeException("setViews:inGravity: failed", t);
         }

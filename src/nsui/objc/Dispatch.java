@@ -39,6 +39,13 @@ public final class Dispatch {
     private static MethodHandle hDispatchAsync;
 
     /// Runnables awaiting their block's execution on the main queue (FIFO).
+    ///
+    /// Deliberately unbounded, and exactly paired with `dispatch_async`: each
+    /// `onMain` enqueues one body and submits one block, and `runBody` pops exactly
+    /// one body per delivery, so the queue holds precisely the not-yet-drained
+    /// work. It therefore grows only if a caller keeps posting while the main run
+    /// loop never runs — the ordinary meaning of "the queue is the backlog", not a
+    /// leak. Drain it by pumping the run loop (`NSApplication.pumpFor`).
     private static final ConcurrentLinkedQueue<Runnable> PENDING = new ConcurrentLinkedQueue<>();
 
     /// One shared immortal block for every onMain dispatch: bodies travel via

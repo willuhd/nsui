@@ -58,6 +58,7 @@ public class NSLayoutAnchor extends NSObject {
 
     public NSLayoutConstraint constraintEqualToAnchor(NSLayoutAnchor anchor) {
         ensureInit();
+        Bounds.nonNull(anchor, "constraintEqualToAnchor:");
         try {
             MemorySegment c = (MemorySegment) hEqualToAnchor.invokeExact(peer, ObjC.sel("constraintEqualToAnchor:"), anchor.peer());
             return NSLayoutConstraint.wrap(c);
@@ -68,6 +69,7 @@ public class NSLayoutAnchor extends NSObject {
 
     public NSLayoutConstraint constraintEqualToAnchor(NSLayoutAnchor anchor, double constant) {
         ensureInit();
+        Bounds.nonNull(anchor, "constraintEqualToAnchor:constant:");
         try {
             MemorySegment c = (MemorySegment) hEqualToAnchorConstant.invokeExact(peer, ObjC.sel("constraintEqualToAnchor:constant:"), anchor.peer(), constant);
             return NSLayoutConstraint.wrap(c);
@@ -78,6 +80,7 @@ public class NSLayoutAnchor extends NSObject {
 
     public NSLayoutConstraint constraintGreaterThanOrEqualToAnchor(NSLayoutAnchor anchor) {
         ensureInit();
+        Bounds.nonNull(anchor, "constraintGreaterThanOrEqualToAnchor:");
         try {
             MemorySegment c = (MemorySegment) hGreaterThanOrEqualToAnchor.invokeExact(peer, ObjC.sel("constraintGreaterThanOrEqualToAnchor:"), anchor.peer());
             return NSLayoutConstraint.wrap(c);
@@ -88,6 +91,7 @@ public class NSLayoutAnchor extends NSObject {
 
     public NSLayoutConstraint constraintGreaterThanOrEqualToAnchor(NSLayoutAnchor anchor, double constant) {
         ensureInit();
+        Bounds.nonNull(anchor, "constraintGreaterThanOrEqualToAnchor:constant:");
         try {
             MemorySegment c = (MemorySegment) hEqualToAnchorConstant.invokeExact(peer, ObjC.sel("constraintGreaterThanOrEqualToAnchor:constant:"), anchor.peer(), constant);
             return NSLayoutConstraint.wrap(c);
@@ -98,6 +102,7 @@ public class NSLayoutAnchor extends NSObject {
 
     public NSLayoutConstraint constraintLessThanOrEqualToAnchor(NSLayoutAnchor anchor) {
         ensureInit();
+        Bounds.nonNull(anchor, "constraintLessThanOrEqualToAnchor:");
         try {
             MemorySegment c = (MemorySegment) hLessThanOrEqualToAnchor.invokeExact(peer, ObjC.sel("constraintLessThanOrEqualToAnchor:"), anchor.peer());
             return NSLayoutConstraint.wrap(c);
@@ -108,6 +113,7 @@ public class NSLayoutAnchor extends NSObject {
 
     public NSLayoutConstraint constraintLessThanOrEqualToAnchor(NSLayoutAnchor anchor, double constant) {
         ensureInit();
+        Bounds.nonNull(anchor, "constraintLessThanOrEqualToAnchor:constant:");
         try {
             MemorySegment c = (MemorySegment) hEqualToAnchorConstant.invokeExact(peer, ObjC.sel("constraintLessThanOrEqualToAnchor:constant:"), anchor.peer(), constant);
             return NSLayoutConstraint.wrap(c);
@@ -152,6 +158,7 @@ public class NSLayoutAnchor extends NSObject {
     /// Dimension: constraintEqualToAnchor:multiplier:constant: (3-arg) — now uses vocabulary directly, no silent fallback
     public NSLayoutConstraint constraintEqualToAnchorWithMultiplier(NSLayoutAnchor anchor, double multiplier, double constant) {
         ensureInit();
+        Bounds.nonNull(anchor, "constraintEqualToAnchor:multiplier:constant:");
         try {
             MemorySegment c = (MemorySegment) hEqualToAnchorMultiplierConstant.invokeExact(peer, ObjC.sel("constraintEqualToAnchor:multiplier:constant:"), anchor.peer(), multiplier, constant);
             return NSLayoutConstraint.wrap(c);
@@ -163,6 +170,7 @@ public class NSLayoutAnchor extends NSObject {
     /// Dimension: constraintEqualToAnchor:multiplier: (single multiplier)
     public NSLayoutConstraint constraintEqualToAnchorWithMultiplier(NSLayoutAnchor anchor, double multiplier) {
         ensureInit();
+        Bounds.nonNull(anchor, "constraintEqualToAnchor:multiplier:");
         try {
             MemorySegment c = (MemorySegment) hEqualToAnchorMultiplier.invokeExact(peer, ObjC.sel("constraintEqualToAnchor:multiplier:"), anchor.peer(), multiplier);
             return NSLayoutConstraint.wrap(c);

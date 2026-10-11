@@ -65,6 +65,7 @@ public final class NSTabView extends NSView {
 
     /// [tabView addTabViewItem:] — append a tab item.
     public void addTabViewItem(NSTabViewItem item) {
+        Bounds.nonNull(item, "addTabViewItem:");
         try {
             hAddItem.invokeExact(peer, ObjC.sel("addTabViewItem:"), item.peer());
         } catch (Throwable t) {
@@ -163,6 +164,7 @@ public final class NSTabView extends NSView {
     /// [tabView indexOfTabViewItem:].
     public long indexOfTabViewItem(NSTabViewItem item) {
         // (id, SEL, id) -> long  shape not in vocab? Use handle (Ret.INT, Arg.ID) is present
+        Bounds.nonNull(item, "indexOfTabViewItem:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.INT, Arg.ID));
             return (long) h.invokeExact(peer, ObjC.sel("indexOfTabViewItem:"), item.peer());
@@ -173,6 +175,7 @@ public final class NSTabView extends NSView {
 
     /// [tabView removeTabViewItem:].
     public void removeTabViewItem(NSTabViewItem item) {
+        Bounds.nonNull(item, "removeTabViewItem:");
         try {
             hVoidId.invokeExact(peer, ObjC.sel("removeTabViewItem:"), item.peer());
         } catch (Throwable t) {
@@ -182,6 +185,8 @@ public final class NSTabView extends NSView {
 
     /// [tabView insertTabViewItem:atIndex:].
     public void insertTabViewItem(NSTabViewItem item, long index) {
+        Bounds.nonNull(item, "insertTabViewItem:atIndex:");
+        Bounds.insertIndex(index, numberOfTabViewItems(), "insertTabViewItem:atIndex:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.INT));
             h.invokeExact(peer, ObjC.sel("insertTabViewItem:atIndex:"), item.peer(), index);
@@ -302,10 +307,12 @@ public final class NSTabView extends NSView {
         }
     }
 
-    /// [tabView setTabViewItems:].
+    /// [tabView setTabViewItems:]. AppKit tolerates nil here (it clears the tab
+    /// list), so a null Java array passes nil rather than throwing.
     public void setTabViewItems(NSArray items) {
         try {
-            hVoidId.invokeExact(peer, ObjC.sel("setTabViewItems:"), items.peer());
+            hVoidId.invokeExact(peer, ObjC.sel("setTabViewItems:"),
+                    (MemorySegment) (items == null ? MemorySegment.NULL : items.peer()));
         } catch (Throwable t) {
             throw new RuntimeException("setTabViewItems: failed", t);
         }

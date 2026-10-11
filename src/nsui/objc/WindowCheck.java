@@ -39,8 +39,20 @@ public final class WindowCheck {
 
     private WindowCheck() {}
 
+    private static volatile boolean INIT;
+
     /// Run-time init, from main() (native-image: no FFM work in static initializers).
+    /// Idempotent, like every other `ensureInit` in this package.
     public static void init() {
+        if (INIT) return;
+        synchronized (WindowCheck.class) {
+            if (INIT) return;
+            initLocked();
+            INIT = true;
+        }
+    }
+
+    private static void initLocked() {
         LINKER = Linker.nativeLinker();
         ARENA = Arena.global();
         PTR = (ValueLayout) LINKER.canonicalLayouts().get("void*");

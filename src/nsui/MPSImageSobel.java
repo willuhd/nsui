@@ -36,6 +36,7 @@ public final class MPSImageSobel extends NSObject {
 
     /// initWithDevice:.
     public static MPSImageSobel create(MTLDevice device) {
+        Bounds.nonNull(device, "initWithDevice:");
         try { ObjC.ensureFramework("MetalPerformanceShaders"); } catch (Throwable ignored) {}
         MemorySegment p = ObjC.msgSendId(ObjC.cls("MPSImageSobel"), ObjC.sel("alloc"));
         p = ObjC.msgSendIdId(p, ObjC.sel("initWithDevice:"), device.peer());
@@ -45,6 +46,9 @@ public final class MPSImageSobel extends NSObject {
 
     /// encodeToCommandBuffer:sourceTexture:destinationTexture:.
     public void encode(MTLCommandBuffer buffer, MTLTexture source, MTLTexture destination) {
+        Bounds.nonNull(buffer, "encodeToCommandBuffer:sourceTexture:destinationTexture:");
+        Bounds.nonNull(source, "encodeToCommandBuffer:sourceTexture:destinationTexture:");
+        Bounds.nonNull(destination, "encodeToCommandBuffer:sourceTexture:destinationTexture:");
         try {
             handles.hEncode().invokeExact(peer, ObjC.sel("encodeToCommandBuffer:sourceTexture:destinationTexture:"),
                     buffer.peer(), source.peer(), destination.peer());

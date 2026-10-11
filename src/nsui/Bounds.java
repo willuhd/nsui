@@ -65,12 +65,16 @@ final class Bounds {
         }
     }
 
-    /// `index` must satisfy `0 <= index <= count` (array-insert semantics: inserting
-    /// at `count` appends).
+    /// `index` must satisfy `0 <= index <= max`, where `max` is the caller's inclusive
+    /// bound: for a plain array insert that is the element count (inserting at `count`
+    /// appends), while `NSMutableOrderedSet.moveObjectsAtIndexes:toIndex:` passes
+    /// `count - k` because the destination indexes the array after the moved objects are
+    /// removed. The message says "max" rather than "count" so an adjusted bound cannot read
+    /// as if it were the element count.
     static void insertIndex(long index, long count, String what) {
         if (index < 0 || index > count) {
             throw new IllegalArgumentException(what + ": index " + index
-                    + " out of bounds (count " + count + ", insert allows count)");
+                    + " out of bounds (max " + count + ")");
         }
     }
 
@@ -106,6 +110,15 @@ final class Bounds {
 
     /// Every index in a non-empty index set must be `< count`. An empty set is a
     /// no-op (matches the native methods).
+    ///
+    /// This helper takes a typed `NSIndexSet`, so it can only guard the wrappers that expose
+    /// one. Several AppKit methods take a raw `MemorySegment` peer instead (NSTableView's
+    /// selectRowIndexes:/selectColumnIndexes:/noteHeightOfRowsWithIndexesChanged:/
+    /// reloadDataForRowIndexes:/hideRowsAtIndexes: and NSCollectionView's
+    /// insertSections:/deleteSections:/reloadSections:) and therefore cannot be pre-validated
+    /// here; the ones probed so far are natively tolerant for an out-of-range set (the row
+    /// mutation methods abort only for their begin/endUpdates precondition), but that is a
+    /// measured property, not a guard.
     static void indexSet(NSIndexSet indexes, long count, String what) {
         if (indexes == null || indexes.isEmpty()) return;
         long last = indexes.lastIndex();

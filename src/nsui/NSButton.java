@@ -224,7 +224,10 @@ public final class NSButton extends NSControl {
         button.setTarget(target);
         button.setAction(actionSelector);
         button.setBezelStyle(1L);        // NSBezelStyleRounded
-        button.setButtonType(0L);        // NSButtonTypeMomentaryPushIn
+        // NSButtonTypeMomentaryPushIn is 7 (NSButtonCell.h: MomentaryLight is 0). The
+        // old value 0 contradicted this comment AND the ButtonType enum's own doc, and
+        // produced a MomentaryLight button — a visible tracking difference.
+        button.setButtonType(ButtonType.momentaryPushIn.value);
         button.sizeToFit();
 
         // Re-apply the frame with the fitted size, preserving the requested origin.
@@ -335,7 +338,8 @@ public final class NSButton extends NSControl {
     /// Typed overload.
     public void setBezelStyle(BezelStyle s) { setBezelStyle(s.value); }
 
-    /// [button setButtonType:] — NSButtonType (0 = MomentaryPushIn).
+    /// [button setButtonType:] — NSButtonType. MomentaryLight is 0 and
+    /// MomentaryPushIn is 7 (see the ButtonType enum); they are different behaviours.
     public void setButtonType(long type) {
         ensureInit();
         ObjC.msgSendVoidLong(peer, Sels.setButtonType, type);

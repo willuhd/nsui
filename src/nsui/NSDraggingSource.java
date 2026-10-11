@@ -39,8 +39,15 @@ public interface NSDraggingSource {
 
     /// Create a DelegateProxy-backed ObjC delegate/source for this dragging source.
     /// Reuses existing shapes (IntArg for long mask, VoidArg for void, BoolArg for BOOL).
-    /// Note: sourceOperationMaskForDraggingContext: natively has 2 args (session, context)
-    /// but we reuse IntArg (single-id) as approximation — context is ignored safely (extra register ignored on arm64).
+    ///
+    /// LIMITATIONS (register-approximated; no crash, but values are not delivered):
+    /// - `sourceOperationMaskForDraggingContext:` natively takes (session, context). The
+    ///   single-id upcall shape delivers only `session`, so `context` is never read and
+    ///   the Java callback always sees `context == 0`.
+    /// - `draggingSession:endedAtPoint:operation:` natively takes (session, point,
+    ///   operation). The void upcall shape delivers only `session`, so the Java callback
+    ///   ALWAYS receives `NSPoint.ZERO` and operation `0` — do not read them.
+    /// Being exact needs a dedicated multi-arg upcall shape for each selector.
     static MemorySegment delegate(NSDraggingSource src) {
         if (src == null) throw new IllegalArgumentException("src is null");
         Map<String, DelegateProxy.IntArg> ints = new HashMap<>();

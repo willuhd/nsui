@@ -327,6 +327,7 @@ public final class Sig {
         of(Ret.VOID, Arg.ID, Arg.INT32),                    // insertSublayer:atIndex: (unsigned int)
         of(Ret.ID, Arg.INT32, Arg.ID, Arg.INT32),           // CAConstraint constraintWithAttribute:relativeTo:attribute:
         of(Ret.ID, Arg.INT32, Arg.ID, Arg.INT32, Arg.DOUBLE),                     // ...attribute:offset:
-        of(Ret.ID, Arg.INT32, Arg.ID, Arg.INT32, Arg.DOUBLE, Arg.DOUBLE)          // ...attribute:scale:offset:
+        of(Ret.ID, Arg.INT32, Arg.ID, Arg.INT32, Arg.DOUBLE, Arg.DOUBLE),         // ...attribute:scale:offset:
+        of(Ret.VOID, Arg.INT32, Arg.INT32)                  // MTL setStencilFrontReferenceValue:backReferenceValue: (two uint32_t)
     );
 }

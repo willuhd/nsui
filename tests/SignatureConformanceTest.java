@@ -83,7 +83,7 @@ public final class SignatureConformanceTest {
     // protocols (no class object) and the descriptor/state classes resolve to
     // method-less cluster stubs while msgSend works. Behavior for all of them
     // is proven by the readback suites instead.
-    private static final int NO_MATCH_BASELINE = 242;
+    private static final int NO_MATCH_BASELINE = 241;
     private static final int OTHER_CAP = 0;
     private static final int VOID_IGNORED_CAP = 0;
     /// Integer-width disagreements (declared 64-bit INT vs real 32-bit `i`/`I`, or
@@ -206,6 +206,15 @@ public final class SignatureConformanceTest {
             recComps.put(mr.group(1), comps);
         }
 
+        // Local handle declarations: `MethodHandle x = ObjC.handle(Sig.of(...));` followed
+        // by `x.invokeExact(...)`. The inline pattern below does not match these, so such
+        // call sites used to fall into `unresolved` and were invisible to the width check
+        // — which is exactly where a 16-bit CGGlyph read as 64-bit hid.
+        Map<String, List<String>> localHandles = new LinkedHashMap<>();
+        Matcher lh = Pattern.compile(
+                "MethodHandle\\s+(\\w+)\\s*=\\s*ObjC\\.handle\\(Sig\\.of\\(([^)]*)\\)\\)").matcher(text);
+        while (lh.find()) localHandles.put(lh.group(1), shapeOf(lh.group(2)));
+
         List<String> defName = new ArrayList<>();
         List<String> defShape = new ArrayList<>();
         List<Integer> defOffset = new ArrayList<>();
@@ -282,6 +291,13 @@ public final class SignatureConformanceTest {
                 Matcher im = Pattern.compile("ObjC\\.handle\\(Sig\\.of\\((.*?)\\)\\)\\s*\\.invokeExact",
                         Pattern.DOTALL).matcher(stmt);
                 if (im.find()) assumed = shapeOf(im.group(1));
+            }
+            if (assumed == null) {
+                // A local handle variable: take the LAST `<name>.invokeExact` in the statement.
+                Matcher lm = Pattern.compile("(\\w+)\\.invokeExact").matcher(stmt);
+                String localName = null;
+                while (lm.find()) localName = lm.group(1);
+                if (localName != null) assumed = localHandles.get(localName);
             }
             if (assumed == null || assumed.isEmpty()) { st.unresolved++; continue; }
 

@@ -5,6 +5,7 @@ import java.lang.invoke.MethodHandle;
 
 import nsui.objc.ObjC;
 import nsui.objc.Sig;
+import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
 
 /// One render-pass stencil target: texture + load/store actions + clear
@@ -72,8 +73,10 @@ public final class MTLRenderPassStencilAttachmentDescriptor extends NSObject {
         }
     }
 
-    /// setClearStencil: — uint32_t.
+    /// setClearStencil: — uint32_t (exact 32-bit INT32 call shape).
     public void setClearStencil(long value) {
-        ObjC.msgSendVoidLong(peer, ObjC.sel("setClearStencil:"), value & 0xFFFFFFFFL);
+        try {
+            ObjC.handle(Sig.of(Ret.VOID, Arg.INT32)).invokeExact(peer, ObjC.sel("setClearStencil:"), (int) value);
+        } catch (Throwable t) { throw new RuntimeException("setClearStencil: failed", t); }
     }
 }

@@ -94,6 +94,8 @@ public final class NSLayoutManager extends NSObject {
 
     /// [layoutManager insertTextContainer:atIndex:]
     public void insertTextContainerAtIndex(NSTextContainer container, long index) {
+        Bounds.nonNull(container, "insertTextContainer:atIndex:");
+        Bounds.insertIndex(index, textContainers().size(), "insertTextContainer:atIndex:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.INT));
             h.invokeExact(peer, ObjC.sel("insertTextContainer:atIndex:"), (MemorySegment) (container == null ? MemorySegment.NULL : container.peer()), index);
@@ -104,6 +106,7 @@ public final class NSLayoutManager extends NSObject {
 
     /// [layoutManager removeTextContainerAtIndex:]
     public void removeTextContainerAtIndex(long index) {
+        Bounds.index(index, textContainers().size(), "removeTextContainerAtIndex:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.INT));
             h.invokeExact(peer, ObjC.sel("removeTextContainerAtIndex:"), index);

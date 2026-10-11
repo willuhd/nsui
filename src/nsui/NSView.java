@@ -803,11 +803,16 @@ public class NSView extends NSResponder {
     /// `setAcceptsMouseMovedEvents(true)`.
     public void enableMouseTracking() {
         ensureInit();
-        if (!TRACKING_VIEWS.add(peer.address())) return;
+        // Mark the view as tracked only AFTER the area is really installed: marking
+        // first meant a throw from NSTrackingArea.create/addTrackingArea left the
+        // address in the set forever, and every retry was then a silent no-op, so
+        // onMouseEntered/Exited/Moved were never delivered for that view again.
+        if (TRACKING_VIEWS.contains(peer.address())) return;
         long options = trackingMouseEnteredAndExited | trackingMouseMoved
                 | trackingActiveAlways | trackingInVisibleRect;
         NSTrackingArea area = NSTrackingArea.create(bounds(), options, this);
         ObjC.msgSendVoidId(peer, Sels.addTrackingArea, area.peer());
+        TRACKING_VIEWS.add(peer.address());
     }
 
     // ---- FFM upcall targets: input-event overrides on the ObjC subclass ----

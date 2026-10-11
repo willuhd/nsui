@@ -249,6 +249,7 @@ public final class NSSlider extends NSControl {
     /// [slider tickMarkValueAtIndex:] — slider value for a tick mark (raises on bad index).
     /// Shape (DOUBLE,INT) is in the vocabulary (grep: of(Ret.DOUBLE, Arg.INT)).
     public double tickMarkValueAtIndex(long index) {
+        Bounds.index(index, numberOfTickMarks(), "tickMarkValueAtIndex:");
         try {
             return (double) hDoubleInt.invokeExact(peer, ObjC.sel("tickMarkValueAtIndex:"), index);
         } catch (Throwable t) {

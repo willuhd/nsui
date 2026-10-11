@@ -222,6 +222,9 @@ public final class NSSegmentedControl extends NSControl {
 
     /// [control setSelected:forSegment:] — set selected state for segment (trackingMode SelectAny).
     public void setSelectedForSegment(boolean selected, long segment) {
+        // Probed: this is the ONLY per-segment accessor that raises for an
+        // out-of-range segment (setLabel/setTag/labelFor/setWidthForSegment tolerate it).
+        Bounds.index(segment, segmentCount(), "setSelected:forSegment:");
         try {
             hSetSelectedFor.invokeExact(peer, ObjC.sel("setSelected:forSegment:"), selected, segment);
         } catch (Throwable t) {

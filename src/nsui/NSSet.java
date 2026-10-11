@@ -42,7 +42,7 @@ public class NSSet extends NSObject {
     /// [NSSet setWithObject:] — single object.
     public static NSSet setWithObject(NSObject object) {
         ensureInit();
-        if (object == null) return set();
+        if (object == null) throw new IllegalArgumentException("setWithObject: null object");
         MemorySegment s = ObjC.msgSendIdId(ObjC.cls("NSSet"), ObjC.sel("setWithObject:"), object.peer());
         return wrap(s);
     }

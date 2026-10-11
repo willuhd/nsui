@@ -51,6 +51,12 @@ public record NSRange(long location, long length) {
     }
 
     /// Contains range fully.
+    ///
+    /// NOTE: this is a toolkit helper, not `NSLocationInRange` — the native mirror is
+    /// `contains(long index)` below. This deliberately treats an EMPTY range whose
+    /// location sits exactly at either boundary as contained (the long-standing
+    /// documented special case), which is why `{5,10}.contains({15,0})` is true while
+    /// `NSLocationInRange(15, {5,10})` is false.
     public boolean contains(NSRange other) {
         if (other.isEmpty()) return contains(other.location) || other.location == location + length;
         return other.location >= location && other.max() <= max();

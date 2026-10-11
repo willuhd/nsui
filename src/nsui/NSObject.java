@@ -107,6 +107,7 @@ public class NSObject {
 
     /// `isKindOfClass:` by class name (cached via `cls`).
     public boolean isKindOfClass(String className) {
+        if (className == null) return false;   // mirrors isMemberOfClass(String)
         return isKindOfClass(ObjC.cls(className));
     }
 

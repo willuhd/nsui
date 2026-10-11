@@ -1680,6 +1680,38 @@ public final class AuditRegressionTest {
             TestKit.check(false, "version-gate completion block threw: " + t);
         }
 
+        // --- 8az. macOS 11/12 accessors guarded for a uniform version story ---
+        try {
+            nsui.NSSearchField sf = nsui.NSSearchField.create(new NSRect(0, 0, 120, 30));
+            TestKit.noThrow("searchTextBounds() is guarded but live (macOS 11+)",
+                    () -> sf.searchTextBounds());
+            TestKit.noThrow("searchButtonBounds()/cancelButtonBounds() are guarded but live",
+                    () -> { sf.searchButtonBounds(); sf.cancelButtonBounds(); });
+            nsui.NSMutableParagraphStyle mps = nsui.NSMutableParagraphStyle.create();
+            if (mps.respondsToSelector(ObjC.sel("setUsesDefaultHyphenation:"))) {
+                mps.setUsesDefaultHyphenation(true);
+                TestKit.check(mps.usesDefaultHyphenation(),
+                        "usesDefaultHyphenation round-trips (macOS 12+)");
+            } else {
+                TestKit.probe("usesDefaultHyphenation absent on this host");
+            }
+            NSWindow subWin = TestKit.hiddenWindow(120, 80);
+            if (subWin.respondsToSelector(ObjC.sel("setSubtitle:"))) {
+                subWin.setSubtitle("probe");
+                TestKit.check("probe".equals(subWin.subtitle()),
+                        "subtitle round-trips (macOS 11+)");
+            } else {
+                TestKit.probe("subtitle absent on this host");
+            }
+            nsui.NSFontDescriptor fd = nsui.NSFontDescriptor
+                    .preferredFontDescriptorForTextStyleOptions("NSBody", null);
+            TestKit.check(fd != null, "preferredFontDescriptorForTextStyle:options: returned a descriptor (macOS 11+)");
+            TestKit.noThrow("NSImage.imageWithSystemSymbolName is guarded but live (macOS 11+)",
+                    () -> nsui.NSImage.imageWithSystemSymbolName("star.fill", null));
+        } catch (Throwable t) {
+            TestKit.check(false, "macOS 11/12 guard block threw: " + t);
+        }
+
         // --- 8z. type-confusion guards on the raw collection-view setters ---
         // AppKit does NOT raise a type error here, it either asserts isKindOfClass: or
         // messages the object: setCollectionViewLayout: with a plain NSView raised

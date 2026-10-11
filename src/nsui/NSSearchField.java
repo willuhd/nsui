@@ -231,14 +231,17 @@ public class NSSearchField extends NSTextField {
     /// [field searchTextBounds] — rect for the search text (macOS 11+).
     /// Shape (RECT ()) is in the Sig vocabulary (grep Sig.java: of(Ret.RECT)).
     public NSRect searchTextBounds() {
+        if (!respondsToSelector(ObjC.sel("searchTextBounds"))) return NSRect.ZERO;   // macOS 11+
         return NSRect.fromSegment(ObjC.msgSendRect(peer, ObjC.sel("searchTextBounds")));
     }
     /// [field searchButtonBounds] — rect for the search button (macOS 11+).
     public NSRect searchButtonBounds() {
+        if (!respondsToSelector(ObjC.sel("searchButtonBounds"))) return NSRect.ZERO;   // macOS 11+
         return NSRect.fromSegment(ObjC.msgSendRect(peer, ObjC.sel("searchButtonBounds")));
     }
     /// [field cancelButtonBounds] — rect for the cancel button (macOS 11+).
     public NSRect cancelButtonBounds() {
+        if (!respondsToSelector(ObjC.sel("cancelButtonBounds"))) return NSRect.ZERO;   // macOS 11+
         return NSRect.fromSegment(ObjC.msgSendRect(peer, ObjC.sel("cancelButtonBounds")));
     }
 

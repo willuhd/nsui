@@ -138,6 +138,16 @@ public final class NSImage extends NSObject {
     public static NSImage imageWithSystemSymbolName(String symbolName, String accessibilityDescription) {
         ensureInit();
         if (symbolName == null || symbolName.isEmpty()) return null;
+        // macOS 11+ class method: on an older host it is absent, so report nil (callers fall back
+        // to imageNamed:) instead of aborting with an unrecognized selector.
+        try {
+            boolean responds = (boolean) ObjC.handle(Sig.of(Ret.BOOL, Arg.ID)).invokeExact(
+                    ObjC.cls("NSImage"), ObjC.sel("respondsToSelector:"),
+                    ObjC.sel("imageWithSystemSymbolName:accessibilityDescription:"));
+            if (!responds) return null;
+        } catch (Throwable t) {
+            throw new RuntimeException("imageWithSystemSymbolName presence check failed", t);
+        }
         try {
             java.lang.invoke.MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.ID, Arg.ID));
             MemorySegment desc = (accessibilityDescription == null ? MemorySegment.NULL : ObjC.nsstring(accessibilityDescription));

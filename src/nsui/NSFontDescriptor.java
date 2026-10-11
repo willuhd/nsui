@@ -207,6 +207,15 @@ public final class NSFontDescriptor extends NSObject {
     /// `+[NSFontDescriptor preferredFontDescriptorForTextStyle:options:]` (macOS 11+).
     public static NSFontDescriptor preferredFontDescriptorForTextStyleOptions(String style, MemorySegment optionsOrNull) {
         ensureInit();
+        // macOS 11+ CLASS method: check the class object, not an instance.
+        try {
+            boolean responds = (boolean) ObjC.handle(Sig.of(Ret.BOOL, Arg.ID)).invokeExact(
+                    ObjC.cls("NSFontDescriptor"), ObjC.sel("respondsToSelector:"),
+                    ObjC.sel("preferredFontDescriptorForTextStyle:options:"));
+            if (!responds) return null;
+        } catch (Throwable t) {
+            throw new RuntimeException("preferredFontDescriptorForTextStyle:options: presence check failed", t);
+        }
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.ID, Arg.ID));
             MemorySegment d = (MemorySegment) h.invokeExact(ObjC.cls("NSFontDescriptor"),

@@ -243,11 +243,13 @@ public class NSTextStorage extends NSMutableAttributedString {
 
     /// [storage textStorageObserver] — raw id (may be nil, macOS 12+).
     public MemorySegment textStorageObserver() {
+        if (!respondsToSelector(ObjC.sel("textStorageObserver"))) return MemorySegment.NULL;   // macOS 12+
         return ObjC.msgSendId(peer, ObjC.sel("textStorageObserver"));
     }
 
     /// [storage setTextStorageObserver:] — raw id (macOS 12+).
     public void setTextStorageObserver(MemorySegment observer) {
+        if (!respondsToSelector(ObjC.sel("setTextStorageObserver:"))) return;   // macOS 12+
         ObjC.msgSendVoidId(peer, ObjC.sel("setTextStorageObserver:"),
                 (MemorySegment) (observer == null ? MemorySegment.NULL : observer));
     }

@@ -187,6 +187,7 @@ public class NSMutableParagraphStyle extends NSParagraphStyle {
 
     /// [style setUsesDefaultHyphenation:] (macOS 12+).
     public void setUsesDefaultHyphenation(boolean flag) {
+        if (!respondsToSelector(ObjC.sel("setUsesDefaultHyphenation:"))) return;   // macOS 12+
         ObjC.msgSendVoidBool(peer, ObjC.sel("setUsesDefaultHyphenation:"), flag);
     }
 

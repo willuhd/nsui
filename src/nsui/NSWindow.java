@@ -1600,6 +1600,7 @@ ensureInit(); return ObjC.msgSendBool(peer, Sels.hasDynamicDepthLimit); }
 
     /// [window subtitle] (macOS 11+) — secondary title text, may be nil.
     public String subtitle() {
+        if (!respondsToSelector(Sels.subtitle)) return null;   // macOS 11+
         ensureInit();
         return ObjC.toString(ObjC.msgSendId(peer, Sels.subtitle));
     }
@@ -1609,6 +1610,7 @@ ensureInit(); return ObjC.msgSendBool(peer, Sels.hasDynamicDepthLimit); }
     /// aborts the JVM). A Java null is therefore mapped to `""` (visually empty).
     public void setSubtitle(String subtitle) {
         ensureInit();
+        if (!respondsToSelector(Sels.setSubtitle)) return;   // macOS 11+
         ObjC.msgSendVoidId(peer, Sels.setSubtitle,
                 ObjC.nsstring(subtitle == null ? "" : subtitle));
     }

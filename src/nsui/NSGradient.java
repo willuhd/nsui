@@ -149,13 +149,26 @@ public final class NSGradient extends NSObject {
         return ObjC.msgSendLong(peer, ObjC.sel("numberOfColorStops"));
     }
 
-    /// drawFromPointToPoint: — NOT WRAPPED (kept only for source compatibility:
-    /// FullCoverageTest calls it and asserts the vocabulary-miss message).
-    /// Always throws: drawFromPoint:toPoint:options: needs (VOID,POINT,POINT,INT),
-    /// which is NOT in the Sig vocabulary (verified by grep). Use drawInRect:angle:.
+    /// [gradient drawFromPoint:toPoint:options:] — draw along the line between two points.
+    ///
+    /// This used to throw unconditionally, claiming the (VOID,POINT,POINT,INT) shape was
+    /// missing from the Sig vocabulary. That was wrong: Arg.POINT and Arg.INT both exist, and
+    /// the native call succeeds (verified: a fresh gradient draws with exit 0 even without a
+    /// current graphics context). The 2-arg form passes options = 0.
     public void drawFromPointToPoint(NSPoint start, NSPoint end) {
-        throw new RuntimeException(new UnsupportedOperationException(
-                "drawFromPoint:toPoint:options: not in minimal vocab — use drawInRect:angle:"));
+        drawFromPointToPoint(start, end, 0L);
+    }
+
+    /// [gradient drawFromPoint:toPoint:options:] with explicit NSGradientDrawingOptions.
+    public void drawFromPointToPoint(NSPoint start, NSPoint end, long options) {
+        ensureInit();
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.POINT, Arg.POINT, Arg.INT));
+            h.invokeExact(peer, ObjC.sel("drawFromPoint:toPoint:options:"),
+                    start.toSegment(), end.toSegment(), options);
+        } catch (Throwable t) {
+            throw new RuntimeException("drawFromPoint:toPoint:options: failed", t);
+        }
     }
 
     /// interpolatedColorAtLocation: — the blended color at 0..1 (nil-safe).

@@ -218,10 +218,99 @@ public class NSStackView extends NSView {
     // Omitted:
     // - delegate property + NSStackViewDelegate protocol methods — need upcall machinery.
     // - deprecated hasEqualSpacing (use distribution instead).
-    // - inexpressible shapes (absent from Sig vocabulary, requested): visibilityPriorityForView: needs
-    //   of(FLOAT,ID); setVisibilityPriority:forView: needs of(VOID,FLOAT,ID). NSLayoutPriority is float,
-    //   so clippingResistancePriorityForOrientation:/huggingPriorityForOrientation: need of(FLOAT,INT) and
-    //   their setters need of(VOID,FLOAT,INT) — omitted rather than sent with a wrong shape.
+    // - priorities: the shapes of(FLOAT,ID), of(VOID,FLOAT,ID), of(FLOAT,INT) and
+    //   of(VOID,FLOAT,INT) are registered now, so the four priority accessors below are
+    //   implemented. NSLayoutPriority is a float on the wire (f24@0:8@16, v28@0:8f16@20,
+    //   f24@0:8q16, v28@0:8f16q20).
+    //
+    // MEASURED preconditions: BOTH visibilityPriorityForView: and setVisibilityPriority:forView:
+    // abort with NSInternalInconsistencyException "View ... is not (and has to be) in stack
+    // view ..." when the view is not an ARRANGED subview (a plain addSubview: view aborts too,
+    // while an addArrangedSubview: view is accepted), so both are membership-guarded.
+    // Priority VALUES are not validated (0.0 and -5.0 are accepted for all three priorities,
+    // unlike NSSplitView holdingPriority:), and the orientation argument is unvalidated
+    // (0, 1, 2 and 9 all return), so neither needs a guard.
+    private static boolean isArrangedView(NSStackView stack, NSView view) {
+        NSArray arranged = stack.views();
+        return arranged != null && arranged.containsObject(view);
+    }
+
+    /// [stack visibilityPriorityForView:] — NSLayoutPriority (float).
+    public float visibilityPriorityForView(NSView view) {
+        Bounds.nonNull(view, "visibilityPriorityForView:");
+        ensureInit();
+        if (!isArrangedView(this, view)) {
+            throw new IllegalArgumentException("visibilityPriorityForView: the view must be an "
+                    + "arranged subview of this stack view (AppKit raises otherwise)");
+        }
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.FLOAT, Arg.ID));
+            return (float) h.invokeExact(peer, ObjC.sel("visibilityPriorityForView:"), view.peer());
+        } catch (Throwable t) {
+            throw new RuntimeException("visibilityPriorityForView: failed", t);
+        }
+    }
+
+    /// [stack setVisibilityPriority:forView:] — any priority value is accepted; the view must
+    /// be an arranged subview (see isArrangedView).
+    public void setVisibilityPriorityForView(float priority, NSView view) {
+        Bounds.nonNull(view, "setVisibilityPriority:forView:");
+        ensureInit();
+        if (!isArrangedView(this, view)) {
+            throw new IllegalArgumentException("setVisibilityPriority:forView: the view must be an "
+                    + "arranged subview of this stack view (AppKit raises otherwise)");
+        }
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.FLOAT, Arg.ID));
+            h.invokeExact(peer, ObjC.sel("setVisibilityPriority:forView:"), priority, view.peer());
+        } catch (Throwable t) {
+            throw new RuntimeException("setVisibilityPriority:forView: failed", t);
+        }
+    }
+
+    /// [stack huggingPriorityForOrientation:] — NSLayoutPriority (float); orientation is unvalidated.
+    public float huggingPriorityForOrientation(long orientation) {
+        ensureInit();
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.FLOAT, Arg.INT));
+            return (float) h.invokeExact(peer, ObjC.sel("huggingPriorityForOrientation:"), orientation);
+        } catch (Throwable t) {
+            throw new RuntimeException("huggingPriorityForOrientation: failed", t);
+        }
+    }
+
+    /// [stack setHuggingPriority:forOrientation:]
+    public void setHuggingPriorityForOrientation(float priority, long orientation) {
+        ensureInit();
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.FLOAT, Arg.INT));
+            h.invokeExact(peer, ObjC.sel("setHuggingPriority:forOrientation:"), priority, orientation);
+        } catch (Throwable t) {
+            throw new RuntimeException("setHuggingPriority:forOrientation: failed", t);
+        }
+    }
+
+    /// [stack clippingResistancePriorityForOrientation:]
+    public float clippingResistancePriorityForOrientation(long orientation) {
+        ensureInit();
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.FLOAT, Arg.INT));
+            return (float) h.invokeExact(peer, ObjC.sel("clippingResistancePriorityForOrientation:"), orientation);
+        } catch (Throwable t) {
+            throw new RuntimeException("clippingResistancePriorityForOrientation: failed", t);
+        }
+    }
+
+    /// [stack setClippingResistancePriority:forOrientation:]
+    public void setClippingResistancePriorityForOrientation(float priority, long orientation) {
+        ensureInit();
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.FLOAT, Arg.INT));
+            h.invokeExact(peer, ObjC.sel("setClippingResistancePriority:forOrientation:"), priority, orientation);
+        } catch (Throwable t) {
+            throw new RuntimeException("setClippingResistancePriority:forOrientation: failed", t);
+        }
+    }
     // Note: insertView:atIndex:inGravity: shares the registered of(VOID,ID,INT,INT) descriptor
     // (listed in Sig as setVertexBytes:length:atIndex: — descriptors are keyed by shape, not selector).
 

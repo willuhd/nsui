@@ -266,6 +266,7 @@ public final class Sig {
         of(Ret.BOOL, Arg.RANGE),                            // contains / isEqual with range
         of(Ret.INT, Arg.RANGE),                             // length/count helpers with range
         of(Ret.RANGE, Arg.ID),                              // rangeOfString: (id) -> range
+        of(Ret.RANGE, Arg.INT),                             // rangeOfComposedCharacterSequenceAtIndex: (int) -> range
         of(Ret.RANGE, Arg.ID, Arg.INT),                     // rangeOfString:options: (id,int)->range
         of(Ret.ID, Arg.RANGE, Arg.ID),                      // replaceCharactersInRange:withString: (range,id)->void/id variant
         of(Ret.VOID, Arg.RANGE, Arg.ID),                     // replaceCharactersInRange:withString: void variant
@@ -274,11 +275,16 @@ public final class Sig {
         of(Ret.VOID, Arg.ID, Arg.ID, Arg.RANGE),             // addAttribute:value:range: (id, id, NSRange) -> void
         // CALayer opacity (float)
         of(Ret.FLOAT), of(Ret.VOID, Arg.FLOAT),
+        of(Ret.FLOAT, Arg.INT),                             // NSSplitView holdingPriorityForSubviewAtIndex:
+        of(Ret.VOID, Arg.FLOAT, Arg.INT),                   // NSSplitView setHoldingPriority:forSubviewAtIndex:
+        of(Ret.FLOAT, Arg.ID),                              // NSStackView visibilityPriorityForView:
+        of(Ret.VOID, Arg.FLOAT, Arg.ID),                    // NSStackView setVisibilityPriority:forView:
         // --- nsui3 Window/App/Graphics extensions (append-only) ---
         of(Ret.VOID, Arg.RECT, Arg.DOUBLE),                 // NSGradient drawInRect:angle:
         of(Ret.ID, Arg.ID, Arg.BOOL),                       // NSGraphicsContext graphicsContextWithCGContext:flipped:
         of(Ret.ID, Arg.RECT, Arg.INT, Arg.ID, Arg.ID),      // NSTrackingArea initWithRect:options:owner:userInfo:
         of(Ret.VOID, Arg.POINT, Arg.POINT, Arg.POINT),      // NSBezierPath curveToPoint:controlPoint1:controlPoint2:
+        of(Ret.VOID, Arg.POINT, Arg.POINT, Arg.INT),        // NSGradient drawFromPoint:toPoint:options:
         of(Ret.VOID, Arg.ID, Arg.RECT),                     // NSWorkspace iconForFileType etc alt
         of(Ret.BOOL, Arg.ID, Arg.BOOL),                     // NSWorkspace openURL with flag variant
         of(Ret.ID, Arg.RECT, Arg.INT),                      // NSGridView helper (rect,int)->id

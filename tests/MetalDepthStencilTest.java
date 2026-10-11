@@ -613,14 +613,26 @@ public final class MetalDepthStencilTest {
         MTLRenderPassDescriptor passForGuard = MTLRenderPassDescriptor.create();
         TestKit.expectThrows("render pass colorAttachment(negative) rejected",
                 IllegalArgumentException.class, () -> passForGuard.colorAttachment(-1));
-        // Huge indices cannot be guarded: the attachment array exposes no count
-        // and objectAtIndexedSubscript: raises natively (uncatchable abort), so
-        // this path is documented, never executed.
-        TestKit.skipCase("render pass colorAttachment(huge) untestable: native abort, no count API");
+        // The bound IS known: Metal's array asserts "attachmentIndex(8) must be < 8" (verified
+        // raw, exit 134) and the wrapper guards with MAX_COLOR_ATTACHMENTS == 8, so the huge
+        // case is testable — this used to skip with an outdated "no count API" rationale.
+        TestKit.noThrow("render pass colorAttachment(7) is accepted (last valid index)",
+                () -> passForGuard.colorAttachment(MTLRenderPassDescriptor.MAX_COLOR_ATTACHMENTS - 1));
+        TestKit.expectThrows("render pass colorAttachment(MAX) rejected",
+                IllegalArgumentException.class,
+                () -> passForGuard.colorAttachment(MTLRenderPassDescriptor.MAX_COLOR_ATTACHMENTS));
+        TestKit.expectThrows("render pass colorAttachment(99) rejected",
+                IllegalArgumentException.class, () -> passForGuard.colorAttachment(99));
         MTLRenderPipelineDescriptor pipeForGuard = MTLRenderPipelineDescriptor.create();
         TestKit.expectThrows("pipeline colorAttachment(negative) rejected",
                 IllegalArgumentException.class, () -> pipeForGuard.colorAttachment(-1));
-        TestKit.skipCase("pipeline colorAttachment(huge) untestable: native abort, no count API");
+        TestKit.noThrow("pipeline colorAttachment(7) is accepted (last valid index)",
+                () -> pipeForGuard.colorAttachment(MTLRenderPipelineDescriptor.MAX_COLOR_ATTACHMENTS - 1));
+        TestKit.expectThrows("pipeline colorAttachment(MAX) rejected",
+                IllegalArgumentException.class,
+                () -> pipeForGuard.colorAttachment(MTLRenderPipelineDescriptor.MAX_COLOR_ATTACHMENTS));
+        TestKit.expectThrows("pipeline colorAttachment(99) rejected",
+                IllegalArgumentException.class, () -> pipeForGuard.colorAttachment(99));
 
         TestKit.check(color.pixelFormat() == COLOR_FORMAT, "colour texture reports BGRA8Unorm");
     }

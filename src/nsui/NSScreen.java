@@ -193,17 +193,20 @@ public final class NSScreen extends NSObject {
 
     /// [screen safeAreaInsets] (macOS 12.0+) — obscured distance from each edge.
     public NSEdgeInsets safeAreaInsets() {
+        if (!respondsToSelector(ObjC.sel("safeAreaInsets"))) return NSEdgeInsets.ZERO;   // macOS 12+
         return NSEdgeInsets.fromSegment(ObjC.msgSendEdgeInsets(peer, ObjC.sel("safeAreaInsets")));
     }
 
     /// [screen auxiliaryTopLeftArea] (macOS 12.0+) — unobscured area above the
     /// safe area, top-left; empty when none.
     public NSRect auxiliaryTopLeftArea() {
+        if (!respondsToSelector(ObjC.sel("auxiliaryTopLeftArea"))) return NSRect.ZERO;   // macOS 12+
         return NSRect.fromSegment(ObjC.msgSendRect(peer, ObjC.sel("auxiliaryTopLeftArea")));
     }
 
     /// [screen auxiliaryTopRightArea] (macOS 12.0+) — mirror of top-left.
     public NSRect auxiliaryTopRightArea() {
+        if (!respondsToSelector(ObjC.sel("auxiliaryTopRightArea"))) return NSRect.ZERO;   // macOS 12+
         return NSRect.fromSegment(ObjC.msgSendRect(peer, ObjC.sel("auxiliaryTopRightArea")));
     }
 
@@ -249,12 +252,14 @@ public final class NSScreen extends NSObject {
 
     /// [screen maximumFramesPerSecond] (macOS 12.0+).
     public long maximumFramesPerSecond() {
+        if (!respondsToSelector(ObjC.sel("maximumFramesPerSecond"))) return 0L;   // macOS 12+
         return ObjC.msgSendLong(peer, ObjC.sel("maximumFramesPerSecond"));
     }
 
     /// [screen minimumRefreshInterval] (macOS 12.0+) — seconds.
     public double minimumRefreshInterval() {
         ensureInit();
+        if (!respondsToSelector(ObjC.sel("minimumRefreshInterval"))) return 0.0;   // macOS 12+
         try {
             return (double) H.hGetDouble().invokeExact(peer, ObjC.sel("minimumRefreshInterval"));
         } catch (Throwable t) {
@@ -265,6 +270,7 @@ public final class NSScreen extends NSObject {
     /// [screen maximumRefreshInterval] (macOS 12.0+) — seconds.
     public double maximumRefreshInterval() {
         ensureInit();
+        if (!respondsToSelector(ObjC.sel("maximumRefreshInterval"))) return 0.0;   // macOS 12+
         try {
             return (double) H.hGetDouble().invokeExact(peer, ObjC.sel("maximumRefreshInterval"));
         } catch (Throwable t) {
@@ -275,6 +281,7 @@ public final class NSScreen extends NSObject {
     /// [screen displayUpdateGranularity] (macOS 12.0+) — seconds.
     public double displayUpdateGranularity() {
         ensureInit();
+        if (!respondsToSelector(ObjC.sel("displayUpdateGranularity"))) return 0.0;   // macOS 12+
         try {
             return (double) H.hGetDouble().invokeExact(peer, ObjC.sel("displayUpdateGranularity"));
         } catch (Throwable t) {
@@ -285,6 +292,7 @@ public final class NSScreen extends NSObject {
     /// [screen lastDisplayUpdateTimestamp] (macOS 12.0+) — seconds since wake.
     public double lastDisplayUpdateTimestamp() {
         ensureInit();
+        if (!respondsToSelector(ObjC.sel("lastDisplayUpdateTimestamp"))) return 0.0;   // macOS 12+
         try {
             return (double) H.hGetDouble().invokeExact(peer, ObjC.sel("lastDisplayUpdateTimestamp"));
         } catch (Throwable t) {
@@ -311,6 +319,7 @@ public final class NSScreen extends NSObject {
     public CADisplayLink displayLinkWithTarget(NSObject target, String selector) {
         ensureInit();
         Bounds.nonNull(selector, "displayLinkWithTarget:selector: (selector name)");
+        if (!respondsToSelector(ObjC.sel("displayLinkWithTarget:selector:"))) return null;   // macOS 14+
         try {
             MemorySegment link = (MemorySegment) H.hIdIdId().invokeExact(peer,
                     ObjC.sel("displayLinkWithTarget:selector:"),

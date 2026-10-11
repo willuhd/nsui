@@ -178,20 +178,36 @@ public final class NSMenuItem extends NSObject {
         ObjC.msgSendVoidBool(ObjC.cls("NSMenuItem"), ObjC.sel("setUsesUserKeyEquivalents:"), flag);
     }
 
-    /// sectionHeaderWithTitle: (macOS 14+; guarded).
+    /// sectionHeaderWithTitle: (macOS 14+; class-responds guarded, nil when absent).
+    ///
+    /// CORRECTED: this used to be "guarded" by a try/catch, which guards NOTHING — an
+    /// unrecognized selector raises an ObjC exception that terminates the process (verified,
+    /// exit 134) before Java can catch. It now asks the CLASS whether it responds.
     public static NSMenuItem sectionHeaderWithTitle(String title) {
         try {
-            MemorySegment p = ObjC.msgSendIdId(ObjC.cls("NSMenuItem"), ObjC.sel("sectionHeaderWithTitle:"),
-                    (MemorySegment) (title == null ? MemorySegment.NULL : ObjC.nsstring(title)));
-            return wrap(p);
-        } catch (Throwable t) { return null; }
+            boolean responds = (boolean) ObjC.handle(Sig.of(Ret.BOOL, Arg.ID)).invokeExact(
+                    ObjC.cls("NSMenuItem"), ObjC.sel("respondsToSelector:"),
+                    ObjC.sel("sectionHeaderWithTitle:"));
+            if (!responds) return null;
+        } catch (Throwable t) {
+            throw new RuntimeException("sectionHeaderWithTitle: presence check failed", t);
+        }
+        MemorySegment p = ObjC.msgSendIdId(ObjC.cls("NSMenuItem"), ObjC.sel("sectionHeaderWithTitle:"),
+                (MemorySegment) (title == null ? MemorySegment.NULL : ObjC.nsstring(title)));
+        return wrap(p);
     }
 
-    /// writingToolsItems (macOS 15.2+; guarded, nil when absent).
+    /// writingToolsItems (macOS 15.2+; class-responds guarded, nil when absent).
     public static NSArray writingToolsItems() {
         try {
-            return NSArray.wrap(ObjC.msgSendId(ObjC.cls("NSMenuItem"), ObjC.sel("writingToolsItems")));
-        } catch (Throwable t) { return null; }
+            boolean responds = (boolean) ObjC.handle(Sig.of(Ret.BOOL, Arg.ID)).invokeExact(
+                    ObjC.cls("NSMenuItem"), ObjC.sel("respondsToSelector:"),
+                    ObjC.sel("writingToolsItems"));
+            if (!responds) return null;
+        } catch (Throwable t) {
+            throw new RuntimeException("writingToolsItems presence check failed", t);
+        }
+        return NSArray.wrap(ObjC.msgSendId(ObjC.cls("NSMenuItem"), ObjC.sel("writingToolsItems")));
     }
 
     /// userKeyEquivalent (nil-safe).
@@ -199,22 +215,24 @@ public final class NSMenuItem extends NSObject {
         return ObjC.toString(ObjC.msgSendId(peer, ObjC.sel("userKeyEquivalent")));
     }
 
-    /// allowsAutomaticKeyEquivalentLocalization / Mirroring (macOS 12+; guarded).
+    /// allowsAutomaticKeyEquivalentLocalization / Mirroring (macOS 12+; responds-guarded).
+    ///
+    /// CORRECTED: the try/catch these used to rely on is not a guard (see sectionHeaderWithTitle).
     public boolean allowsAutomaticKeyEquivalentLocalization() {
-        try { return ObjC.msgSendBool(peer, ObjC.sel("allowsAutomaticKeyEquivalentLocalization")); }
-        catch (Throwable t) { return true; }
+        if (!respondsToSelector(ObjC.sel("allowsAutomaticKeyEquivalentLocalization"))) return true;
+        return ObjC.msgSendBool(peer, ObjC.sel("allowsAutomaticKeyEquivalentLocalization"));
     }
     public void setAllowsAutomaticKeyEquivalentLocalization(boolean flag) {
-        try { ObjC.msgSendVoidBool(peer, ObjC.sel("setAllowsAutomaticKeyEquivalentLocalization:"), flag); }
-        catch (Throwable ignored) {}
+        if (!respondsToSelector(ObjC.sel("setAllowsAutomaticKeyEquivalentLocalization:"))) return;
+        ObjC.msgSendVoidBool(peer, ObjC.sel("setAllowsAutomaticKeyEquivalentLocalization:"), flag);
     }
     public boolean allowsAutomaticKeyEquivalentMirroring() {
-        try { return ObjC.msgSendBool(peer, ObjC.sel("allowsAutomaticKeyEquivalentMirroring")); }
-        catch (Throwable t) { return true; }
+        if (!respondsToSelector(ObjC.sel("allowsAutomaticKeyEquivalentMirroring"))) return true;
+        return ObjC.msgSendBool(peer, ObjC.sel("allowsAutomaticKeyEquivalentMirroring"));
     }
     public void setAllowsAutomaticKeyEquivalentMirroring(boolean flag) {
-        try { ObjC.msgSendVoidBool(peer, ObjC.sel("setAllowsAutomaticKeyEquivalentMirroring:"), flag); }
-        catch (Throwable ignored) {}
+        if (!respondsToSelector(ObjC.sel("setAllowsAutomaticKeyEquivalentMirroring:"))) return;
+        ObjC.msgSendVoidBool(peer, ObjC.sel("setAllowsAutomaticKeyEquivalentMirroring:"), flag);
     }
 
     /// isHighlighted / isHiddenOrHasHiddenAncestor / isSectionHeader.

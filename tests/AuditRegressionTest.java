@@ -1394,6 +1394,18 @@ public final class AuditRegressionTest {
             TestKit.check(false, "subclass-only selector block threw: " + t);
         }
 
+        // --- 8ao. selector/class names must not contain a NUL (silent truncation) ---
+        try {
+            TestKit.expectThrows("ObjC.sel with an embedded NUL rejects instead of truncating",
+                    IllegalArgumentException.class, () -> ObjC.sel("addSubview:\u0000junk"));
+            TestKit.expectThrows("ObjC.cls with an embedded NUL rejects",
+                    IllegalArgumentException.class, () -> ObjC.cls("NSView\u0000junk"));
+            TestKit.noThrow("ObjC.sel of a normal name still works",
+                    () -> ObjC.sel("addSubview:"));
+        } catch (Throwable t) {
+            TestKit.check(false, "NUL-name block threw: " + t);
+        }
+
         // --- 8z. type-confusion guards on the raw collection-view setters ---
         // AppKit does NOT raise a type error here, it either asserts isKindOfClass: or
         // messages the object: setCollectionViewLayout: with a plain NSView raised

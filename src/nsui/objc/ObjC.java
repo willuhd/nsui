@@ -236,6 +236,17 @@ public final class ObjC {
         return ARENA.allocateFrom(s);
     }
 
+    /// `sel`/`cls` take a C string name, so an embedded NUL would SILENTLY truncate it and
+    /// register/look up a different selector or class (e.g. "addSubview:\0junk" -> "addSubview:").
+    /// `cstring` has always rejected this; these paths use the global arena instead and did not.
+    /// The check sits after the cache lookup so hot cached sel()/cls() calls stay allocation-free.
+    private static void requireNoNul(String name, String what) {
+        if (name != null && name.indexOf(0) >= 0) {
+            throw new IllegalArgumentException(what + " must not contain a NUL byte (it would "
+                    + "silently truncate to \"" + name.substring(0, name.indexOf(0)) + "\")");
+        }
+    }
+
     /// Registered SEL / class pointer per distinct name, forever. `sel_registerName`
     /// is idempotent (same name always yields the same SEL) and classes live for
     /// the process (nothing here is ever unloaded), so caching the RESULT — not
@@ -259,6 +270,7 @@ public final class ObjC {
         if (!INIT && !INITIALIZING) throw new IllegalStateException("ObjC.init() must run first (from main, at runtime)");
         MemorySegment c = CLASS_RESULT.get(name);
         if (c != null) return c;
+        requireNoNul(name, "class name");
         MemorySegment fresh = (MemorySegment) invokeX(hGetClass, globalCstring(name));
         if (fresh == null || fresh.address() == 0) return fresh;
         MemorySegment prev = CLASS_RESULT.putIfAbsent(name, fresh);
@@ -273,6 +285,7 @@ public final class ObjC {
         if (!INIT && !INITIALIZING) throw new IllegalStateException("ObjC.init() must run first (from main, at runtime)");
         MemorySegment s = SEL_RESULT.get(name);
         if (s != null) return s;
+        requireNoNul(name, "selector name");
         MemorySegment fresh = (MemorySegment) invokeX(hSelRegister, globalCstring(name));
         if (fresh == null || fresh.address() == 0) return fresh;
         MemorySegment prev = SEL_RESULT.putIfAbsent(name, fresh);

@@ -411,6 +411,16 @@ public final class NSMenu extends NSObject {
         ensureInit();
         ObjC.msgSendVoid(peer, Sels.update);
     }
+    /// [menu performActionForItemAtIndex:] — cause the item's action to be performed.
+    ///
+    /// NOT range-guarded, and it cannot be called from this harness at all: AppKit asserts
+    /// "Invalid parameter not satisfying: charCode != nil" for EVERY index — valid ones
+    /// included — on a standalone menu, on a populated menu, and after
+    /// `NSApplication.setMainMenu:`. It needs an active menu-tracking/key-equivalent context
+    /// (an event char code), so call it only from inside menu validation/handling, not on a
+    /// menu you built and hold. A Bounds.index check would not prevent that abort and would
+    /// falsely suggest the call is safe. (An earlier audit listed this method as tolerant;
+    /// that probe used an empty menu and missed the assertion.)
     public void performActionForItemAtIndex(long index) {
         ensureInit();
         ObjC.msgSendVoidLong(peer, Sels.performActionForItemAtIndex, index);

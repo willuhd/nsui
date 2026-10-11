@@ -98,6 +98,7 @@ public final class NSSwitch extends NSControl {
         ensureInit();
         MemorySegment s = ObjC.msgSendId(switchClass, ObjC.sel("alloc"));
         try {
+            Bounds.notNaN(frame, "initWithFrame:");
             s = (MemorySegment) hInitFrame.invokeExact(s, ObjC.sel("initWithFrame:"), frame.toSegment());
         } catch (Throwable t) {
             throw new RuntimeException("initWithFrame: failed for NSSwitch", t);

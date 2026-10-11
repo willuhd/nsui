@@ -211,6 +211,7 @@ public final class NSButton extends NSControl {
         ensureInit();
         MemorySegment b = ObjC.msgSendId(ObjC.cls("NSButton"), Sels.alloc);
         try {
+            Bounds.notNaN(frame, "initWithFrame:");
             b = (MemorySegment) H.hInitFrame().invokeExact(b, Sels.initWithFrame, frame.toSegment());
         } catch (Throwable t) {
             throw new RuntimeException("initWithFrame: failed for NSButton", t);

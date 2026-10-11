@@ -153,6 +153,7 @@ public final class NSSplitView extends NSView {
     /// Alias matching the ObjC selector spelling: `setPosition:ofDividerAtIndex:`.
     /// Delegates to `setPositionOfDividerAtIndex`.
     public void setPosition(double position, long dividerIndex) {
+        Bounds.finite(position, "setPosition:ofDividerAtIndex:");
         setPositionOfDividerAtIndex(position, dividerIndex);
     }
 

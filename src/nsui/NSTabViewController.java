@@ -59,7 +59,24 @@ public final class NSTabViewController extends NSViewController {
     }
     /// selectedTabViewItemIndex / setter.
     public long selectedTabViewItemIndex() { return ObjC.msgSendLong(peer, ObjC.sel("selectedTabViewItemIndex")); }
-    public void setSelectedTabViewItemIndex(long i) { ObjC.msgSendVoidLong(peer, ObjC.sel("setSelectedTabViewItemIndex:"), i); }
+
+    /// [tabViewController setSelectedTabViewItemIndex:] — -1 clears the selection.
+    ///
+    /// Measured on a 2-item controller: 0 and 1 are accepted, while 2 and 5 raise
+    /// NSInternalInconsistencyException ("Selected index (5) is outside of the valid range")
+    /// and abort the JVM. -1 is accepted and is the ONLY value a 0-item controller accepts
+    /// (index 0 aborts there). Valid range: -1 .. count-1 — like
+    /// NSSegmentedControl.setSelectedSegment:, and unlike NSTabView.selectTabViewItemAtIndex:,
+    /// which rejects -1.
+    public void setSelectedTabViewItemIndex(long i) {
+        NSArray items = tabViewItems();
+        long n = items == null ? 0 : items.count();
+        if (i < -1 || i >= n) {
+            throw new IllegalArgumentException("setSelectedTabViewItemIndex: index " + i
+                    + " out of bounds (-1 to clear, else 0.." + (n - 1) + ")");
+        }
+        ObjC.msgSendVoidLong(peer, ObjC.sel("setSelectedTabViewItemIndex:"), i);
+    }
     /// tabViewItems — one item per child view controller.
     public NSArray tabViewItems() { return NSArray.wrap(ObjC.msgSendId(peer, ObjC.sel("tabViewItems"))); }
     /// addTabViewItem:.

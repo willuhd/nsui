@@ -969,6 +969,39 @@ public final class AuditRegressionTest {
             }
         }
 
+        // --- 8y. tab view CONTROLLER index: -1 allowed, count and above fatal ---
+        // Measured: 0 and 1 accepted on a 2-item controller; 2 and 5 raise
+        // NSInternalInconsistencyException and abort; -1 is accepted and is the only value a
+        // 0-item controller accepts. (NSTabView.selectTabViewItemAtIndex: rejects -1 instead,
+        // which is why the two guards differ.)
+        try {
+            nsui.NSTabViewController tvc = nsui.NSTabViewController.create();
+            TestKit.expectThrows("setSelectedTabViewItemIndex(0) on a 0-item controller rejects",
+                    IllegalArgumentException.class, () -> tvc.setSelectedTabViewItemIndex(0));
+            TestKit.noThrow("setSelectedTabViewItemIndex(-1) on a 0-item controller is legal",
+                    () -> tvc.setSelectedTabViewItemIndex(-1));
+            for (int i = 0; i < 2; i++) {
+                nsui.NSTabViewItem item = nsui.NSTabViewItem.create("tab" + i);
+                nsui.NSViewController vc = nsui.NSViewController.create();
+                vc.setView(NSView.create(new NSRect(0, 0, 50, 50), (v, d) -> {}));
+                item.setViewController(vc);
+                tvc.addTabViewItem(item);
+            }
+            TestKit.check(tvc.tabViewItems() != null && tvc.tabViewItems().count() == 2,
+                    "tab view controller reports 2 items");
+            TestKit.noThrow("setSelectedTabViewItemIndex(0) is legal", () -> tvc.setSelectedTabViewItemIndex(0));
+            TestKit.noThrow("setSelectedTabViewItemIndex(1) is legal", () -> tvc.setSelectedTabViewItemIndex(1));
+            TestKit.noThrow("setSelectedTabViewItemIndex(-1) clears", () -> tvc.setSelectedTabViewItemIndex(-1));
+            TestKit.expectThrows("setSelectedTabViewItemIndex(2) rejects (== count)",
+                    IllegalArgumentException.class, () -> tvc.setSelectedTabViewItemIndex(2));
+            TestKit.expectThrows("setSelectedTabViewItemIndex(5) rejects",
+                    IllegalArgumentException.class, () -> tvc.setSelectedTabViewItemIndex(5));
+            TestKit.expectThrows("setSelectedTabViewItemIndex(-2) rejects",
+                    IllegalArgumentException.class, () -> tvc.setSelectedTabViewItemIndex(-2));
+        } catch (Throwable t) {
+            TestKit.check(false, "tab-view-controller index block threw: " + t);
+        }
+
         // --- 11. lifetime / leak oracles ---
         // A runtime ObjC class pair is created once per (super, className) and never
         // disposed, so creating the same delegate shape repeatedly must NOT grow the

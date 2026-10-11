@@ -1625,6 +1625,7 @@ ensureInit(); return ObjC.msgSendBool(peer, Sels.hasDynamicDepthLimit); }
     /// [window setToolbarStyle:].
     public void setToolbarStyle(long style) {
         ensureInit();
+        if (!respondsToSelector(Sels.setToolbarStyle)) return;   // macOS 11+
         ObjC.msgSendVoidLong(peer, Sels.setToolbarStyle, style);
     }
 
@@ -2419,6 +2420,7 @@ ensureInit(); return ObjC.msgSendBool(peer, Sels.hasDynamicDepthLimit); }
     /// [window setTitlebarSeparatorStyle:].
     public void setTitlebarSeparatorStyle(long style) {
         ensureInit();
+        if (!respondsToSelector(Sels.setTitlebarSeparatorStyle)) return;   // macOS 11+
         ObjC.msgSendVoidLong(peer, Sels.setTitlebarSeparatorStyle, style);
     }
 

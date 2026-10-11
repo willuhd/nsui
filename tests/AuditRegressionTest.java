@@ -1804,6 +1804,47 @@ public final class AuditRegressionTest {
         } catch (Throwable t) {
             TestKit.check(false, "version batch block threw: " + t);
         }
+        // --- 8bc. setter twins of the version-guarded getters ---
+        // A scan for "getter guarded, setter not" found five that my annotation sweep had missed
+        // (the setter's javadoc carries no version note). Round-trip each so the guard on this
+        // host must let the call reach native.
+        try {
+            nsui.NSToolbarItem t2 = nsui.NSToolbarItem.create("probe.twin");
+            if (t2.respondsToSelector(ObjC.sel("setNavigational:"))) {
+                t2.setNavigational(true);
+                TestKit.check(t2.isNavigational(), "setNavigational: round-trips (macOS 11+)");
+            } else {
+                TestKit.probe("setNavigational: absent on this host");
+            }
+            if (t2.respondsToSelector(ObjC.sel("setHidden:"))) {
+                t2.setHidden(true);
+                TestKit.check(t2.isHidden(), "setHidden: round-trips (macOS 15+)");
+            } else {
+                TestKit.probe("setHidden: absent on this host");
+            }
+            NSWindow twinWin = TestKit.hiddenWindow(150, 90);
+            if (twinWin.respondsToSelector(ObjC.sel("setTitlebarSeparatorStyle:"))) {
+                twinWin.setTitlebarSeparatorStyle(1);
+                TestKit.check(twinWin.titlebarSeparatorStyle() == 1,
+                        "setTitlebarSeparatorStyle: round-trips (macOS 11+)");
+            } else {
+                TestKit.probe("setTitlebarSeparatorStyle: absent on this host");
+            }
+            nsui.NSWindowController twinWc = nsui.NSWindowController.create();
+            if (twinWc.respondsToSelector(ObjC.sel("setPreviewRepresentableActivityItems:"))) {
+                nsui.NSArray acts = nsui.NSArray.mutableArray();
+                acts.addObject(nsui.NSString.of("x"));
+                twinWc.setPreviewRepresentableActivityItems(acts);
+                nsui.NSArray backActs = twinWc.previewRepresentableActivityItems();
+                TestKit.check(backActs != null && backActs.count() == 1,
+                        "setPreviewRepresentableActivityItems: round-trips (macOS 13.2+)");
+            } else {
+                TestKit.probe("setPreviewRepresentableActivityItems: absent on this host");
+            }
+        } catch (Throwable t) {
+            TestKit.check(false, "setter-twin block threw: " + t);
+        }
+
         // --- 8z. type-confusion guards on the raw collection-view setters ---
         // AppKit does NOT raise a type error here, it either asserts isKindOfClass: or
         // messages the object: setCollectionViewLayout: with a plain NSView raised

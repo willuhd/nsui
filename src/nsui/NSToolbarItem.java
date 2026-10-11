@@ -391,6 +391,7 @@ public final class NSToolbarItem extends NSObject implements NSUserInterfaceItem
     }
     /// setNavigational:.
     public void setNavigational(boolean flag) {
+        if (!respondsToSelector(ObjC.sel("setNavigational:"))) return;   // macOS 11+
         try { handles.hSetEnabled().invokeExact(peer, ObjC.sel("setNavigational:"), flag); }
         catch (Throwable t) { throw new RuntimeException("setNavigational: failed", t); }
     }
@@ -410,6 +411,7 @@ public final class NSToolbarItem extends NSObject implements NSUserInterfaceItem
     }
     /// setHidden:.
     public void setHidden(boolean flag) {
+        if (!respondsToSelector(ObjC.sel("setHidden:"))) return;   // macOS 15+
         try { handles.hSetEnabled().invokeExact(peer, ObjC.sel("setHidden:"), flag); }
         catch (Throwable t) { throw new RuntimeException("setHidden: failed", t); }
     }

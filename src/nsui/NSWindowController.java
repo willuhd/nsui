@@ -224,6 +224,7 @@ public final class NSWindowController extends NSObject {
     /// [controller setPreviewRepresentableActivityItems:] — nil restores fallback.
     public void setPreviewRepresentableActivityItems(NSArray items) {
         ensureInit();
+        if (!respondsToSelector(ObjC.sel("setPreviewRepresentableActivityItems:"))) return;   // macOS 13.2+
         try {
             handles.hVoidId().invokeExact(peer, ObjC.sel("setPreviewRepresentableActivityItems:"),
                     (MemorySegment) (items == null ? MemorySegment.NULL : items.peer()));

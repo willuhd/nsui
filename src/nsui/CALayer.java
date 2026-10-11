@@ -763,9 +763,23 @@ public class CALayer extends NSObject {
         } catch (Throwable t) { throw new RuntimeException("setShadowOffset: failed", t); }
     }
 
+    /// Reject inserting a layer that is the receiver or one of its ancestors: AppKit raises
+    /// CALayerInvalid "layer ... is a part of cycle in its layer tree" (verified, exit 134) for
+    /// `layer.addSublayer(layer)`, and the indirect form would create the same cycle. Walking
+    /// up from the receiver catches both; re-parenting a DESCENDANT stays legal.
+    private void requireNotSelfOrAncestor(CALayer sublayer, String what) {
+        for (CALayer p = this; p != null; p = p.superlayer()) {
+            if (p.peer() != null && p.peer().address() == sublayer.peer().address()) {
+                throw new IllegalArgumentException(what + ": the layer is the receiver or one of "
+                        + "its ancestors; AppKit raises for that cycle");
+            }
+        }
+    }
+
     /// [layer addSublayer:] — append a child layer (deduped onto the VOID,id handle).
     public void addSublayer(CALayer sublayer) {
         ensureInit();
+        requireNotSelfOrAncestor(sublayer, "addSublayer:");
         try {
             handles.hSetId().invokeExact(peer, Sels.addSublayer, (MemorySegment) (sublayer == null ? MemorySegment.NULL : sublayer.peer()));
         } catch (Throwable t) { throw new RuntimeException("addSublayer: failed", t); }
@@ -1297,6 +1311,7 @@ public class CALayer extends NSObject {
     /// shape; out-of-range indices are clamped by Core Animation rather than raising.
     public void insertSublayer(CALayer sublayer, long index) {
         ensureInit();
+        requireNotSelfOrAncestor(sublayer, "insertSublayer:atIndex:");
         try {
             handles.hSetIdInt().invokeExact(peer, Sels.insertSublayer_atIndex,
                     (MemorySegment) (sublayer == null ? MemorySegment.NULL : sublayer.peer()), (int) index);
@@ -1306,6 +1321,7 @@ public class CALayer extends NSObject {
     /// [layer insertSublayer:above:] — place directly above a sibling.
     public void insertSublayerAbove(CALayer sublayer, CALayer sibling) {
         ensureInit();
+        requireNotSelfOrAncestor(sublayer, "insertSublayer:above:");
         try {
             handles.hSetIdId().invokeExact(peer, Sels.insertSublayer_above,
                     (MemorySegment) (sublayer == null ? MemorySegment.NULL : sublayer.peer()),
@@ -1316,6 +1332,7 @@ public class CALayer extends NSObject {
     /// [layer insertSublayer:below:] — place directly below a sibling.
     public void insertSublayerBelow(CALayer sublayer, CALayer sibling) {
         ensureInit();
+        requireNotSelfOrAncestor(sublayer, "insertSublayer:below:");
         try {
             handles.hSetIdId().invokeExact(peer, Sels.insertSublayer_below,
                     (MemorySegment) (sublayer == null ? MemorySegment.NULL : sublayer.peer()),
@@ -1330,6 +1347,7 @@ public class CALayer extends NSObject {
     public void replaceSublayer(CALayer oldLayer, CALayer newLayer) {
         ensureInit();
         Bounds.nonNull(oldLayer, "replaceSublayer:with: (oldLayer)");
+        if (newLayer != null) requireNotSelfOrAncestor(newLayer, "replaceSublayer:with:");
         try {
             handles.hSetIdId().invokeExact(peer, Sels.replaceSublayer_with,
                     (MemorySegment) (oldLayer == null ? MemorySegment.NULL : oldLayer.peer()),

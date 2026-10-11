@@ -2478,9 +2478,20 @@ ensureInit(); return ObjC.msgSendBool(peer, Sels.hasDynamicDepthLimit); }
     }
 
     /// [window addChildWindow:ordered:] — `place`: -1=out, 0=below, 1=above.
+    ///
+    /// The window must not be the receiver or one of its ancestors: AppKit raises
+    /// NSInvalidArgumentException "addChildWindow:ordered: cannot add self as child of itself"
+    /// (verified, exit 134), so the whole parent chain is checked (which also covers the
+    /// indirect cycle `a.addChildWindow(b); b.addChildWindow(a)`).
     public void addChildWindow(NSWindow child, long place) {
         ensureInit();
         if (child == null) return;
+        for (NSWindow p = this; p != null; p = p.parentWindow()) {
+            if (p.peer() != null && p.peer().address() == child.peer().address()) {
+                throw new IllegalArgumentException("addChildWindow:ordered: the window is the "
+                        + "receiver or one of its ancestors; AppKit raises for that cycle");
+            }
+        }
         try {
             H.hVoidIdInt().invokeExact(peer, Sels.addChildWindow_ordered, child.peer(), place);
         } catch (Throwable t) {

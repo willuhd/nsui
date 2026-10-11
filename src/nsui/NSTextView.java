@@ -526,17 +526,8 @@ public class NSTextView extends NSText {
     }
     @Override
     public void setAttributedString(NSAttributedString s) {
-        ensureInit();
-        // NSTextView has no setAttributedString: — use its textStorage (NSTextStorage is a
-        // NSMutableAttributedString). Route through the same nonnull contract: a nil value
-        // reaches textStorage and raises NSInvalidArgumentException ("nil argument"), so
-        // this override must not forward NULL and bypass the base guard.
-        Bounds.nonNull(s, "setAttributedString: (attributed string)");
-        MemorySegment storage = ObjC.msgSendId(peer, Sels.textStorage);
-        if (storage != null && storage.address() != 0) {
-            ObjC.msgSendVoidId(storage, Sels.setAttributedString, s.peer());
-            return;
-        }
+        // NSTextView has no setAttributedString: — the base method routes through textStorage
+        // (NSTextStorage is an NSMutableAttributedString) and enforces the nonnull contract.
         super.setAttributedString(s);
     }
 

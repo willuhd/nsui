@@ -775,6 +775,8 @@ public class NSTableView extends NSView {
 
     /// [table moveColumn:toColumn:]
     public void moveColumn(long oldIndex, long newIndex) {
+        Bounds.index(oldIndex, numberOfColumns(), "moveColumn:toColumn:");
+        Bounds.insertIndex(newIndex, numberOfColumns(), "moveColumn:toColumn:");
         ensureInit();
         try { H.hVoidIntInt().invokeExact(peer, Sels.moveColumn_toColumn, oldIndex, newIndex); } catch (Throwable t) { throw new RuntimeException("moveColumn:toColumn: failed", t); }
     }
@@ -1052,6 +1054,8 @@ public class NSTableView extends NSView {
 
     /// [table moveRowAtIndex:toIndex:]
     public void moveRowAtIndex(long oldIndex, long newIndex) {
+        Bounds.index(oldIndex, numberOfRows(), "moveRowAtIndex:toIndex:");
+        Bounds.insertIndex(newIndex, numberOfRows(), "moveRowAtIndex:toIndex:");
         ensureInit();
         try { H.hVoidIntInt().invokeExact(peer, Sels.moveRowAtIndex_toIndex, oldIndex, newIndex); } catch (Throwable t) { throw new RuntimeException("moveRowAtIndex:toIndex: failed", t); }
     }

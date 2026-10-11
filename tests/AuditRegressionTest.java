@@ -365,6 +365,23 @@ public final class AuditRegressionTest {
             TestKit.noThrow("NSTableView.rowViewAtRow(0) still works",
                     () -> tvRows.rowViewAtRow(0, false));
 
+            // Row-mutation RANGES, measured inside the required precondition (view-based
+            // table + begin/endUpdates, which this asserts nothing about because the guard
+            // fires first). Verified natively on this exact setup: insert accepts index ==
+            // count and aborts at count+1; remove/hide/unhide require index < count.
+            // Without the guard each of these killed the JVM with
+            // NSTableViewException "error inserting/removing/moving row N (numberOfRows: 3)".
+            MemorySegment set4 = nsui.NSIndexSet.indexSetWithIndex(4).peer();
+            MemorySegment set3 = nsui.NSIndexSet.indexSetWithIndex(3).peer();
+            TestKit.expectThrows("insertRowsAtIndexes(row 4 > count) rejects",
+                    IllegalArgumentException.class, () -> tvRows.insertRowsAtIndexes(set4, 0));
+            TestKit.expectThrows("removeRowsAtIndexes(row 3 == count) rejects",
+                    IllegalArgumentException.class, () -> tvRows.removeRowsAtIndexes(set3, 0));
+            TestKit.expectThrows("hideRowsAtIndexes(row 3 == count) rejects",
+                    IllegalArgumentException.class, () -> tvRows.hideRowsAtIndexes(set3, 0));
+            TestKit.expectThrows("unhideRowsAtIndexes(row 3 == count) rejects",
+                    IllegalArgumentException.class, () -> tvRows.unhideRowsAtIndexes(set3, 0));
+
             // NSScrollView.h:49 types contentView as NSClipView; a plain NSView aborted
             // ("-[NSView documentView]: unrecognized selector"). Enforcement is the Java
             // signature, so assert the signature itself: with the old NSView parameter
@@ -713,6 +730,10 @@ public final class AuditRegressionTest {
             TestKit.expectThrows("NSToolbar.insertItemWithItemIdentifier(NULL id, 0) rejects",
                     IllegalArgumentException.class,
                     () -> tb2.insertItemWithItemIdentifier((MemorySegment) null, 0));
+            // Exercises Bounds.nonNull's address()==0 branch (the Java-null branch is above).
+            TestKit.expectThrows("NSToolbar.insertItemWithItemIdentifier(MemorySegment.NULL, 0) rejects",
+                    IllegalArgumentException.class,
+                    () -> tb2.insertItemWithItemIdentifier(MemorySegment.NULL, 0));
         } catch (Throwable t) {
             TestKit.check(false, "nonnull-object guard block threw: " + t);
         }

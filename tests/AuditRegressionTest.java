@@ -1406,6 +1406,33 @@ public final class AuditRegressionTest {
             TestKit.check(false, "NUL-name block threw: " + t);
         }
 
+        // --- 8ap. NSResponder action footguns are guarded, not documented ---
+        // Measured intent: a plain NSView does not implement performTextFinderAction:,
+        // showWritingTools: or newWindowForTab:, and performAction: forwards an arbitrary
+        // selector, so any of them could abort with an unrecognized selector.
+        try {
+            NSView plainResponder = NSView.create(new NSRect(0, 0, 50, 50), (v, d) -> {});
+            TestKit.expectThrows("performTextFinderAction on a plain view reports unimplemented",
+                    IllegalStateException.class,
+                    () -> plainResponder.performTextFinderAction(null));
+            TestKit.expectThrows("showWritingTools on a plain view reports unimplemented",
+                    IllegalStateException.class, () -> plainResponder.showWritingTools(null));
+            TestKit.expectThrows("newWindowForTab on a plain view reports unimplemented",
+                    IllegalStateException.class, () -> plainResponder.newWindowForTab(null));
+            TestKit.expectThrows("performAction with an unimplemented selector rejects",
+                    IllegalStateException.class,
+                    () -> plainResponder.performAction("noSuchAction:", null));
+            // insertText: is a selector a plain NSView really implements (verified: both
+            // respondsToSelector: and a nil-sender call with exit 0), so the guard must let it
+            // through — this is the over-tightening half of the check.
+            TestKit.check(plainResponder.respondsToSelector(ObjC.sel("insertText:")),
+                    "a plain NSView implements insertText: (guard precondition)");
+            TestKit.noThrow("performAction with an implemented selector still works",
+                    () -> plainResponder.performAction("insertText:", null));
+        } catch (Throwable t) {
+            TestKit.check(false, "responder action-guard block threw: " + t);
+        }
+
         // --- 8z. type-confusion guards on the raw collection-view setters ---
         // AppKit does NOT raise a type error here, it either asserts isKindOfClass: or
         // messages the object: setCollectionViewLayout: with a plain NSView raised

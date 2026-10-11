@@ -235,6 +235,38 @@ public final class AuditRegressionTest {
             TestKit.check(wideOut.byteSize() == 8, "an 8-byte out slot is the accepted width");
         }
 
+        // --- 8e. parallel-collection counts and the insert bound ---
+        // Mismatched counts are not range errors: AppKit raises NSInvalidArgumentException
+        // ("count of array (1) differs from count of index set (2)", verified) and the
+        // JVM aborts before the Java guard can report anything.
+        try {
+            nsui.NSArray one = nsui.NSArray.arrayWithObject(nsui.NSString.of("x"));
+            nsui.NSArray two = nsui.NSArray.mutableArray();
+            two.addObject(nsui.NSString.of("x"));
+            two.addObject(nsui.NSString.of("y"));
+            nsui.NSIndexSet twoIndexes = nsui.NSIndexSet.indexSetWithIndexesInRange(new nsui.NSRange(0, 2));
+            TestKit.expectThrows("insertObjectsAtIndexes rejects mismatched counts",
+                    IllegalArgumentException.class, () -> two.insertObjectsAtIndexes(one, twoIndexes));
+            TestKit.expectThrows("replaceObjectsAtIndexes rejects mismatched counts",
+                    IllegalArgumentException.class, () -> two.replaceObjectsAtIndexes(twoIndexes, one));
+            TestKit.expectThrows("dictionaryWithObjectsForKeys rejects mismatched counts",
+                    IllegalArgumentException.class, () -> nsui.NSDictionary.dictionaryWithObjectsForKeys(one, two));
+            // The insert indexes are positions in the RESULT array, so the contiguous tail
+            // {n, n+1} is legal natively (verified: {2,3} into a 2-element array yields 4).
+            // The old count()+1 bound rejected it; it must stay accepted.
+            nsui.NSArray tail = nsui.NSArray.mutableArray();
+            tail.addObject(nsui.NSString.of("p"));
+            tail.addObject(nsui.NSString.of("q"));
+            nsui.NSArray rs = nsui.NSArray.mutableArray();
+            rs.addObject(nsui.NSString.of("r"));
+            rs.addObject(nsui.NSString.of("s"));
+            tail.insertObjectsAtIndexes(rs, nsui.NSIndexSet.indexSetWithIndexesInRange(new nsui.NSRange(2, 2)));
+            TestKit.check(tail.count() == 4 && "s".equals(ObjC.toString(tail.objectAtIndex(3))),
+                    "insertObjectsAtIndexes accepts the legal tail {2,3} (count=" + tail.count() + ")");
+        } catch (Throwable t) {
+            TestKit.check(false, "collection count-guard block threw: " + t);
+        }
+
         // --- 9. value and layer struct round-trips ---
         try {
             NSValue v = NSValue.valueWithPoint(new NSPoint(3, 4));

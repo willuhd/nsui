@@ -54,6 +54,15 @@ final class Bounds {
         }
     }
 
+    /// Two parallel counts must agree. A mismatch is not a range error: AppKit raises
+    /// `NSInvalidArgumentException` ("count of array (1) differs from count of index
+    /// set (2)"), which aborts the JVM, so it is pre-validated here.
+    static void equalCounts(long a, long b, String what) {
+        if (a != b) {
+            throw new IllegalArgumentException(what + ": count mismatch (" + a + " vs " + b + ")");
+        }
+    }
+
     /// `range` must be non-null and lie inside `[0, count]`.
     static void range(NSRange range, long count, String what) {
         if (range == null) {

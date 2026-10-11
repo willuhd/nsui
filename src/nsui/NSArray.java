@@ -512,7 +512,12 @@ public final class NSArray extends NSObject {
     public void insertObjectsAtIndexes(NSArray objects, NSIndexSet indexes) {
         ensureInit();
         if (objects == null || indexes == null) throw new IllegalArgumentException("insertObjects:atIndexes: null");
-        Bounds.indexSet(indexes, count() + 1, "insertObjects:atIndexes:");
+        long k = indexes.count();
+        Bounds.equalCounts(objects.count(), k, "insertObjects:atIndexes: (objects vs indexes)");
+        // The indexes are positions in the RESULT array, so the largest legal index is
+        // count + k - 1 (verified natively: {2,3} into a 2-element array yields 4
+        // elements, while {3,4} raises). indexSet rejects last >= bound, so pass count + k.
+        Bounds.indexSet(indexes, count() + k, "insertObjects:atIndexes:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.ID));
             h.invokeExact(peer, ObjC.sel("insertObjects:atIndexes:"), objects.peer(), indexes.peer());
@@ -533,6 +538,12 @@ public final class NSArray extends NSObject {
     public void replaceObjectsAtIndexes(NSIndexSet indexes, NSArray objects) {
         ensureInit();
         if (indexes == null || objects == null) throw new IllegalArgumentException("replaceObjectsAtIndexes: null");
+        // Replacement cannot grow the array, so the receiver's count() is the right bound
+        // (verified: indexes {1,2} into a 2-element array raises "range {1, 2} extends
+        // beyond bounds [0 .. 1]"), but the two counts must still be equal or AppKit
+        // raises NSInvalidArgumentException and the JVM aborts.
+        Bounds.equalCounts(objects.count(), indexes.count(),
+                "replaceObjectsAtIndexes:withObjects: (objects vs indexes)");
         Bounds.indexSet(indexes, count(), "replaceObjectsAtIndexes:withObjects:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.ID));

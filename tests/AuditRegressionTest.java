@@ -1289,6 +1289,39 @@ public final class AuditRegressionTest {
             TestKit.check(false, "self/ancestor cycle block threw: " + t);
         }
 
+        // --- 8al. selectors nothing implements (NSText.setAttributedString:, NSMenu.submenuAction:) ---
+        // Both were reachable aborts: NSText.create(frame) hands back a Java NSText over an
+        // NSTextView peer, so the BASE setAttributedString: (unimplemented by NSText AND
+        // NSTextView) was the one dispatched; NSMenu answers NO to submenuAction: on this host.
+        try {
+            nsui.NSAttributedString as = nsui.NSAttributedString.create("hello");
+            nsui.NSText baseText = nsui.NSText.create(new NSRect(0, 0, 100, 60));
+            TestKit.noThrow("NSText.setAttributedString(attr) works via textStorage",
+                    () -> baseText.setAttributedString(as));
+            TestKit.check("hello".equals(baseText.string()),
+                    "the attributed string landed in the text (got " + baseText.string() + ")");
+            TestKit.expectThrows("NSText.setAttributedString(null) rejects",
+                    IllegalArgumentException.class, () -> baseText.setAttributedString(null));
+            nsui.NSTextView tvAs = nsui.NSTextView.create(new NSRect(0, 0, 100, 60));
+            TestKit.noThrow("NSTextView.setAttributedString(attr) still works",
+                    () -> tvAs.setAttributedString(as));
+            TestKit.check("hello".equals(tvAs.string()),
+                    "NSTextView's attributed string landed too (got " + tvAs.string() + ")");
+            NSMenu subMenu = NSMenu.createWithTitle("m");
+            boolean hasSubmenuAction = (boolean) ObjC.handle(
+                    nsui.objc.Sig.of(nsui.objc.Sig.Ret.BOOL, nsui.objc.Sig.Arg.ID))
+                    .invokeExact(subMenu.peer(), ObjC.sel("respondsToSelector:"),
+                            ObjC.sel("submenuAction:"));
+            if (hasSubmenuAction) {
+                TestKit.probe("submenuAction: IS implemented on this host (guard not exercised)");
+            } else {
+                TestKit.expectThrows("NSMenu.submenuAction() reports unimplemented instead of aborting",
+                        IllegalStateException.class, () -> subMenu.submenuAction(null));
+            }
+        } catch (Throwable t) {
+            TestKit.check(false, "unimplemented-selector block threw: " + t);
+        }
+
         // --- 8z. type-confusion guards on the raw collection-view setters ---
         // AppKit does NOT raise a type error here, it either asserts isKindOfClass: or
         // messages the object: setCollectionViewLayout: with a plain NSView raised

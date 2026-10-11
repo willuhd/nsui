@@ -744,9 +744,17 @@ ensureInit(); ObjC.msgSendVoidBool(peer, Sels.setAllowsContextMenuPlugIns, flag)
                 (MemorySegment) (items == null ? MemorySegment.NULL : items.peer()));
     }
 
-    /// submenuAction:.
+    /// submenuAction: — NOT implemented by NSMenu on this system.
+    ///
+    /// The SDK declares it in an NSMenu category, but a real NSMenu answers NO to
+    /// respondsToSelector: (verified on this host), so sending it aborts with an unrecognized
+    /// selector. Guarded like the neighbouring showsSearchField accessors rather than left to
+    /// fault at the call site.
     public void submenuAction(MemorySegment sender) {
         ensureInit();
+        if (!respondsTo("submenuAction:")) {
+            throw new IllegalStateException("submenuAction: is not implemented by NSMenu on this system");
+        }
         ObjC.msgSendVoidId(peer, Sels.submenuAction,
                 (MemorySegment) (sender == null ? MemorySegment.NULL : sender));
     }

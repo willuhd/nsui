@@ -514,8 +514,24 @@ public class NSText extends NSView {
     public NSAttributedString attributedString() {
         return NSAttributedString.wrap(ObjC.msgSendId(peer, ObjC.sel("attributedString")));
     }
+    /// [text setAttributedString:] — route through the peak's textStorage.
+    ///
+    /// Neither NSText nor NSTextView implements `setAttributedString:` (verified:
+    /// respondsToSelector: is false on both), so sending it aborts with an unrecognized
+    /// selector. NSTextView previously papered over this in an override, but
+    /// NSText.create(frame) hands back a Java NSText over an NSTextView peer, so the BASE
+    /// method was the one dispatched and it aborted. The working logic lives here now; the
+    /// NSTextView override just delegates.
     public void setAttributedString(NSAttributedString s) {
-        ObjC.msgSendVoidId(peer, ObjC.sel("setAttributedString:"), (MemorySegment) (s == null ? MemorySegment.NULL : s.peer()));
+        ensureInit();
+        Bounds.nonNull(s, "setAttributedString: (attributed string)");
+        MemorySegment storage = ObjC.msgSendId(peer, ObjC.sel("textStorage"));
+        if (storage != null && storage.address() != 0) {
+            ObjC.msgSendVoidId(storage, ObjC.sel("setAttributedString:"), s.peer());
+            return;
+        }
+        throw new IllegalStateException("setAttributedString: this NSText has no textStorage; "
+                + "AppKit implements the selector only on NSTextStorage-backed text objects");
     }
     public NSMutableAttributedString textStorageTyped() {
         MemorySegment p = ObjC.msgSendId(peer, ObjC.sel("textStorage"));

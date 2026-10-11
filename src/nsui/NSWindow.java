@@ -2749,9 +2749,15 @@ ensureInit(); return ObjC.msgSendBool(peer, Sels.hasDynamicDepthLimit); }
     }
 
     /// [window addTabbedWindow:ordered:] (macOS 10.12+) — `ordered`: -1/0/1.
+    ///
+    /// The window is REQUIRED: the native side raises NSInvalidArgumentException
+    /// ("-[__NSArrayM insertObject:atIndex:]: object cannot be nil", verified, exit 134) for
+    /// nil, so it is rejected here with a named IAE. (This used to `return` silently, which
+    /// suppressed the caller's error; nil is not a documented way to clear a tab group —
+    /// there is no such operation.)
     public void addTabbedWindow(NSWindow window, long ordered) {
         ensureInit();
-        if (window == null) return;
+        Bounds.nonNull(window, "addTabbedWindow:ordered:");
         try {
             H.hVoidIdInt().invokeExact(peer, Sels.addTabbedWindow_ordered, window.peer(), ordered);
         } catch (Throwable t) {

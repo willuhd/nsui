@@ -46,11 +46,17 @@ final class Bounds {
     /// `index` must be `>= 0`, with no upper bound.
     ///
     /// For APIs where the upper bound cannot be established from Java without a false
-    /// rejection: `NSToolbar`'s item indexes are checked natively against an internal
-    /// `_currentItems` array that `-items` does not reliably report (after a successful
-    /// `insertItemWithItemIdentifier:atIndex:` on a windowless toolbar, `-items` still
-    /// returns an empty array, so validating against it rejected a legal call). Negative
-    /// indexes raise natively for the same methods, so they are the safe half to check.
+    /// rejection. `NSToolbar` is the worked example: its assertions are
+    /// `0 <= index <= [_currentItems count]` (insert) and `0 <= index < [_currentItems count]`
+    /// (remove), but the realized count is not usable as a Java-side bound. An item inserted
+    /// with an identifier AppKit does not realize leaves the toolbar empty, and whether
+    /// `removeItemAtIndex:0` then succeeds or aborts depends on that unrealized state — it
+    /// succeeds when nothing queried the toolbar in between and aborts after an
+    /// `items()`/`itemIdentifiers()` query, even though both states report a count of 0.
+    /// `-items` does track `_currentItems` in every state measured; the two states simply
+    /// look identical from Java, so any count-based bound either rejects the legal order or
+    /// misses the abort. Negative indexes raise natively in both states, so that half is the
+    /// safe one to check. See the NSToolbar block comment for the full measurement.
     static void nonNegative(long index, String what) {
         if (index < 0) {
             throw new IllegalArgumentException(what + ": index " + index + " must be >= 0");

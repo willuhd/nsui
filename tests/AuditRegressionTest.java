@@ -1018,6 +1018,40 @@ public final class AuditRegressionTest {
             TestKit.check(false, "split-view holding-priority block threw: " + t);
         }
 
+        // --- 8ab. NSStackView priorities: floated shapes + arranged-view membership ---
+        // Six methods were omitted for missing Sig shapes; the shapes are registered now.
+        // Measured: both visibility accessors abort for a view that is not an ARRANGED
+        // subview (a plain addSubview: view aborts too), while priority values 0/-5 and
+        // orientations 0,1,2,9 are all tolerated.
+        try {
+            nsui.NSStackView stk = nsui.NSStackView.create(new NSRect(0, 0, 200, 100));
+            NSView arranged = NSView.create(new NSRect(0, 0, 50, 50), (v, d) -> {});
+            NSView stranger = NSView.create(new NSRect(0, 0, 50, 50), (v, d) -> {});
+            stk.addArrangedSubview(arranged);
+            TestKit.noThrow("setVisibilityPriorityForView(500, arranged) is legal",
+                    () -> stk.setVisibilityPriorityForView(500.0f, arranged));
+            TestKit.check(stk.visibilityPriorityForView(arranged) == 500.0f,
+                    "visibility priority round-trips (got " + stk.visibilityPriorityForView(arranged) + ")");
+            TestKit.expectThrows("visibilityPriorityForView(stranger) rejects (not arranged)",
+                    IllegalArgumentException.class, () -> stk.visibilityPriorityForView(stranger));
+            TestKit.expectThrows("setVisibilityPriorityForView(500, stranger) rejects",
+                    IllegalArgumentException.class, () -> stk.setVisibilityPriorityForView(500.0f, stranger));
+            TestKit.noThrow("setVisibilityPriorityForView(0, arranged) is tolerated",
+                    () -> stk.setVisibilityPriorityForView(0.0f, arranged));
+            TestKit.noThrow("setHuggingPriorityForOrientation(250, 0) is legal",
+                    () -> stk.setHuggingPriorityForOrientation(250.0f, 0));
+            TestKit.check(Math.abs(stk.huggingPriorityForOrientation(0) - 250.0f) < 0.01f,
+                    "hugging priority round-trips (got " + stk.huggingPriorityForOrientation(0) + ")");
+            TestKit.noThrow("setHuggingPriorityForOrientation(250, 9) is tolerated (orientation unvalidated)",
+                    () -> stk.setHuggingPriorityForOrientation(250.0f, 9));
+            TestKit.noThrow("setClippingResistancePriorityForOrientation(250, 0) is legal",
+                    () -> stk.setClippingResistancePriorityForOrientation(250.0f, 0));
+            TestKit.check(Math.abs(stk.clippingResistancePriorityForOrientation(0) - 250.0f) < 0.01f,
+                    "clipping priority round-trips (got " + stk.clippingResistancePriorityForOrientation(0) + ")");
+        } catch (Throwable t) {
+            TestKit.check(false, "stack-view priority block threw: " + t);
+        }
+
         // --- 8z. type-confusion guards on the raw collection-view setters ---
         // AppKit does NOT raise a type error here, it either asserts isKindOfClass: or
         // messages the object: setCollectionViewLayout: with a plain NSView raised

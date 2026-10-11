@@ -276,6 +276,8 @@ public final class Sig {
         of(Ret.FLOAT), of(Ret.VOID, Arg.FLOAT),
         of(Ret.FLOAT, Arg.INT),                             // NSSplitView holdingPriorityForSubviewAtIndex:
         of(Ret.VOID, Arg.FLOAT, Arg.INT),                   // NSSplitView setHoldingPriority:forSubviewAtIndex:
+        of(Ret.FLOAT, Arg.ID),                              // NSStackView visibilityPriorityForView:
+        of(Ret.VOID, Arg.FLOAT, Arg.ID),                    // NSStackView setVisibilityPriority:forView:
         // --- nsui3 Window/App/Graphics extensions (append-only) ---
         of(Ret.VOID, Arg.RECT, Arg.DOUBLE),                 // NSGradient drawInRect:angle:
         of(Ret.ID, Arg.ID, Arg.BOOL),                       // NSGraphicsContext graphicsContextWithCGContext:flipped:

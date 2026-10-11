@@ -531,6 +531,12 @@ public final class DelegateProxy {
     ///
     /// If an external owner holds a retain, the +1 release does not deallocate and the
     /// object stops dispatching (its holder is gone) — detach and drop other owners first.
+    ///
+    /// RESIDUAL HAZARD (unchanged by this method): the registry key is the raw native
+    /// address, so a caller that keeps a disposed MemorySegment and disposes it again after
+    /// the allocator has re-used that address for a NEW proxy would release the new one.
+    /// Do not retain a peer past its dispose; a generation token would be needed to make
+    /// that safe, which this signature does not carry.
     public static synchronized void dispose(MemorySegment instance) {
         if (instance == null || instance.address() == 0) return;
         if (REGISTRY.remove(instance.address()) == null) return;   // atomic claim; not ours / already disposed

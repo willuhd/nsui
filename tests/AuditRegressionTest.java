@@ -1593,6 +1593,21 @@ public final class AuditRegressionTest {
             TestKit.check(false, "sheet-cycle block threw: " + t);
         }
 
+        // --- 8aw. NSMenu.removeItem needs a member item (foreign -> 134) ---
+        try {
+            NSMenu rm = NSMenu.createWithTitle("rm");
+            nsui.NSMenuItem member = rm.addItemWithTitle("m", "", "");
+            NSMenu foreignHost = NSMenu.createWithTitle("other");
+            nsui.NSMenuItem foreignItem = foreignHost.addItemWithTitle("f", "", "");
+            TestKit.expectThrows("removeItem(foreign item) rejects (native abort)",
+                    IllegalArgumentException.class, () -> rm.removeItem(foreignItem));
+            TestKit.noThrow("removeItem(member) is legal", () -> rm.removeItem(member));
+            TestKit.expectThrows("removeItem(same item twice) rejects",
+                    IllegalArgumentException.class, () -> rm.removeItem(member));
+        } catch (Throwable t) {
+            TestKit.check(false, "removeItem block threw: " + t);
+        }
+
         // --- 8z. type-confusion guards on the raw collection-view setters ---
         // AppKit does NOT raise a type error here, it either asserts isKindOfClass: or
         // messages the object: setCollectionViewLayout: with a plain NSView raised

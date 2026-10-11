@@ -486,6 +486,27 @@ public final class AuditRegressionTest {
             TestKit.check(false, "correction/guard block threw: " + t);
         }
 
+        // --- 8l. DelegateProxy.dispose reclaims a registered instance ---
+        // Before dispose existed, the only removal was the ObjC dealloc hook, which can
+        // never run because nothing releases the alloc/init +1 and every delegate/target
+        // property is weak — so each proxy leaked for the life of the process.
+        try {
+            int regBefore = DelegateProxy.registrySize();
+            MemorySegment disposable = DelegateProxy.actionTarget("disposeProbe:", sender -> {});
+            TestKit.check(DelegateProxy.registrySize() == regBefore + 1,
+                    "actionTarget registers one entry (before=" + regBefore
+                            + ", after=" + DelegateProxy.registrySize() + ")");
+            DelegateProxy.dispose(disposable);
+            TestKit.check(DelegateProxy.registrySize() == regBefore,
+                    "dispose reclaims the registry entry (got " + DelegateProxy.registrySize() + ")");
+            DelegateProxy.dispose(disposable);
+            TestKit.check(DelegateProxy.registrySize() == regBefore, "dispose is idempotent");
+            DelegateProxy.dispose(MemorySegment.NULL);
+            TestKit.check(DelegateProxy.registrySize() == regBefore, "dispose(NULL) is a no-op");
+        } catch (Throwable t) {
+            TestKit.check(false, "DelegateProxy.dispose block threw: " + t);
+        }
+
         // --- 9. value and layer struct round-trips ---
         try {
             NSValue v = NSValue.valueWithPoint(new NSPoint(3, 4));

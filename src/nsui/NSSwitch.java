@@ -9,6 +9,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import nsui.objc.NsuiForeign;
 import nsui.objc.ObjC;
+import nsui.objc.Scratch;
 import nsui.objc.Sig;
 import static nsui.objc.Sig.Arg;
 import static nsui.objc.Sig.Ret;
@@ -71,13 +72,22 @@ public final class NSSwitch extends NSControl {
 
     /// FFM upcall target: `-(void)dealloc` — evict fallback maps, then chain `[super dealloc]`.
     /// Public for NsuiFeature native-image registration.
+    ///
+    /// `ObjC.superStruct` allocates from the thread-local scratch tier (Scratch.allocInput);
+    /// the turn keeps a thread that never pumps events from spilling it into the immortal
+    /// global arena, matching NSView.deallocImpl / DelegateProxy.dispatchDealloc.
     public static void deallocImpl(MemorySegment self, MemorySegment sel) {
         mixedFallback.remove(self.address());
         stateFallback.remove(self.address());
         MemorySegment superClass = ObjC.classGetSuperclass(switchClass);
         if (superClass == null || superClass.address() == 0) return;
-        MemorySegment superStruct = ObjC.superStruct(self, superClass);
-        ObjC.msgSendSuperVoid(superStruct, sel);
+        Scratch.beginTurn();
+        try {
+            MemorySegment superStruct = ObjC.superStruct(self, superClass);
+            ObjC.msgSendSuperVoid(superStruct, sel);
+        } finally {
+            Scratch.endTurn();
+        }
     }
 
     /// `NSSwitch.h` declares only `state` (covered below); target/action come from

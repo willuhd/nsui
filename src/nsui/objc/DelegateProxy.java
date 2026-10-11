@@ -259,8 +259,17 @@ public final class DelegateProxy {
     /// selector gets a lie about its real shape. Documented, not fixed: the alternative requires
     /// per-selector signature tables.
     static MemorySegment dispatchSignature(MemorySegment self, MemorySegment selCmd, MemorySegment aSelector) {
-        return ObjC.msgSendIdId(ObjC.cls("NSMethodSignature"), ObjC.sel("signatureWithObjCTypes:"),
-                ObjC.cstring("v@:@"));
+        // ObjC.cstring allocates from the thread-local scratch tier (Scratch.allocInput);
+        // without a turn on a thread that never pumps events the allocation eventually
+        // spills into the immortal global arena. Every other dispatcher opens a turn —
+        // this one and NSSwitch.deallocImpl were the two the previous sweep missed.
+        Scratch.beginTurn();
+        try {
+            return ObjC.msgSendIdId(ObjC.cls("NSMethodSignature"), ObjC.sel("signatureWithObjCTypes:"),
+                    ObjC.cstring("v@:@"));
+        } finally {
+            Scratch.endTurn();
+        }
     }
 
     /// FFM upcall target: `-(void)forwardInvocation:(NSInvocation *)anInvocation` — swallow it.
@@ -479,6 +488,25 @@ public final class DelegateProxy {
     /// Number of live delegate/action instances (diagnostics/tests).
     public static int registrySize() {
         return REGISTRY.size();
+    }
+
+    /// Release a proxy built by `delegate(...)`/`actionTarget(...)`: drop its dispatch
+    /// holder and balance the `alloc/init` +1, so the ObjC object deallocates and its
+    /// native memory, the Holder's maps and every captured closure are reclaimed.
+    ///
+    /// Without this the entry lives for the life of the process (the dealloc hook is the
+    /// only other removal, and nothing else ever releases the +1), which is the leak the
+    /// registry was previously stuck with.
+    ///
+    /// CONTRACT: detach the proxy from AppKit first (`setDelegate(null)`,
+    /// `setDataSource(null)`, `setTarget(null)`, `unregisterDraggedTypes`, ...). Delegate,
+    /// data-source and target properties are weak, so a late message normally lands on nil;
+    /// any assign/unsafe property would instead be a use-after-free. Idempotent: disposing
+    /// an unknown or already-disposed instance is a no-op.
+    public static void dispose(MemorySegment instance) {
+        if (instance == null || instance.address() == 0) return;
+        if (REGISTRY.remove(instance.address()) == null) return;
+        ObjC.msgSendVoid(instance, ObjC.sel("release"));
     }
 
     /// Number of runtime ObjC class pairs created so far (diagnostics/tests). One per

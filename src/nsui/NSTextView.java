@@ -510,7 +510,15 @@ public class NSTextView extends NSText {
             // live textStorage (an NSMutableAttributedString) let a caller mutate the
             // view's contents through what looks like a getter.
             MemorySegment snapshot = ObjC.msgSendId(p, ObjC.sel("copy"));
-            return NSAttributedString.wrap(snapshot != null && snapshot.address() != 0 ? snapshot : p);
+            if (snapshot != null && snapshot.address() != 0) {
+                // `copy` is +1 and this is a GETTER: left owned it leaked a full text-storage
+                // copy per call. Hand it to the caller's autorelease pool like every other
+                // factory result here, so a loop over this getter is pool-drained. The
+                // snapshot is pool-scoped: call keepAlive() if it must outlive the pool.
+                ObjC.msgSendVoid(snapshot, ObjC.sel("autorelease"));
+                return NSAttributedString.wrap(snapshot);
+            }
+            return NSAttributedString.wrap(p);
         }
         return super.attributedString();
     }

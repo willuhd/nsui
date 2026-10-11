@@ -39,7 +39,6 @@ public class NSLayoutConstraint extends NSObject {
     private static MethodHandle hConstraintWithItem; // (Class, SEL, id, int, int, id, int, double, double) -> id
     private static MethodHandle hIsActive;          // (id, SEL) -> BOOL
     private static MethodHandle hSetActive;         // (id, SEL, BOOL) -> void
-    private static MethodHandle hPriority;          // (id, SEL) -> float? actually float, but use double sig? Use float harness? We'll use float via DOUBLE shim if needed
     private static MethodHandle hConstant;
     private static MethodHandle hSetConstant;
 

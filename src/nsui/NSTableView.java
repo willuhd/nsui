@@ -257,7 +257,7 @@ public class NSTableView extends NSView {
     }
 
     // ---- cached handles, resolved once lazily at runtime (never in a static initializer) ----
-    private record Handles(MethodHandle hVoidId, MethodHandle hVoid, MethodHandle hInt, MethodHandle hVoidBool, MethodHandle hVoidDouble, MethodHandle hDouble, MethodHandle hId, MethodHandle hVoidIdBool, MethodHandle hVoidInt, MethodHandle hEdit, MethodHandle hBoolInt, MethodHandle hIdId, MethodHandle hVoidIdId, MethodHandle hVoidIntInt, MethodHandle hIntId, MethodHandle hIdInt, MethodHandle hIdIntBool, MethodHandle hIdIdId, MethodHandle hSize, MethodHandle hVoidSize, MethodHandle hIdRect, MethodHandle hVoidIdInt) {}
+    private record Handles(MethodHandle hVoidId, MethodHandle hVoid, MethodHandle hInt, MethodHandle hVoidBool, MethodHandle hVoidDouble, MethodHandle hDouble, MethodHandle hId, MethodHandle hVoidIdBool, MethodHandle hVoidInt, MethodHandle hEdit, MethodHandle hIdId, MethodHandle hVoidIdId, MethodHandle hVoidIntInt, MethodHandle hIntId, MethodHandle hIdIntBool, MethodHandle hIdIdId, MethodHandle hSize, MethodHandle hVoidSize, MethodHandle hIdRect, MethodHandle hVoidIdInt) {}
     private static volatile Handles H;
 
     protected NSTableView(MemorySegment peer) {
@@ -283,12 +283,10 @@ public class NSTableView extends NSView {
                 ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.BOOL)),
                 ObjC.handle(Sig.of(Ret.VOID, Arg.INT)),
                 ObjC.handle(Sig.of(Ret.VOID, Arg.INT, Arg.INT, Arg.ID, Arg.BOOL)),
-                ObjC.handle(Sig.of(Ret.BOOL, Arg.INT)),
                 ObjC.handle(Sig.of(Ret.ID, Arg.ID)),
                 ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.ID)),
                 ObjC.handle(Sig.of(Ret.VOID, Arg.INT, Arg.INT)),
                 ObjC.handle(Sig.of(Ret.INT, Arg.ID)),
-                ObjC.handle(Sig.of(Ret.ID, Arg.INT)),
                 ObjC.handle(Sig.of(Ret.ID, Arg.INT, Arg.BOOL)),
                 ObjC.handle(Sig.of(Ret.ID, Arg.ID, Arg.ID)),
                 ObjC.handle(Sig.of(Ret.SIZE)),

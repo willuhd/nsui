@@ -20,9 +20,9 @@ import static nsui.objc.Sig.Ret;
 /// (rangeOfComposedCharacterSequenceAtIndex: is implemented below — of(RANGE,INT) is now
 /// registered);
 /// commonPrefixWithString:options: and descriptionWithLocale:indent: (need of(ID,ID,INT),
-/// not in Sig); stringByPaddingToLength:withString:startingAtIndex: (needs
-/// of(ID,INT,ID,INT), not in Sig); stringByReplacingOccurrencesOfString:...options:range:
-/// (needs of(ID,ID,ID,INT,RANGE), not in Sig); initWithData:encoding: (needs
+/// not in Sig); (compare:options:, stringByPaddingToLength:withString:startingAtIndex: and
+/// stringByReplacingOccurrencesOfString:options:range: are implemented below — their shapes
+/// are registered); initWithData:encoding: (needs
 /// of(ID,ID,INT), not in Sig — bridge via toByteArray + stringWithBytes:length:encoding:);
 /// +string (name clashes with instance string(); covered by of("")); other init* (covered by
 /// of()/stringWithString:/stringWithUTF8Bytes, except initWithBytes:length:encoding:/
@@ -600,6 +600,82 @@ public final class NSString extends NSObject {
     public NSRange rangeOfString(String searchString, long options, NSRange range) {
         if (searchString == null) return new NSRange(NSRange.NOT_FOUND, 0);
         return rangeOfString(of(searchString), options, range);
+    }
+
+    /// [string compare:options:] — NSComparisonResult with compare options; unknown option
+    /// bits are ignored natively (verified: 1<<30 returns normally), so the mask is unchecked.
+    public long compare(NSString other, long options) {
+        ensureInit();
+        if (other == null) return 1;   // nil compares as greater, matching compare:
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.INT, Arg.ID, Arg.INT));
+            return (long) h.invokeExact(peer, ObjC.sel("compare:options:"), other.peer(), options);
+        } catch (Throwable t) {
+            throw new RuntimeException("compare:options: failed", t);
+        }
+    }
+
+    /// [string compare:options:] with a Java string.
+    public long compare(String other, long options) {
+        return other == null ? 1 : compare(of(other), options);
+    }
+
+    /// [string stringByPaddingToLength:withString:startingAtIndex:] — pad (or truncate) to a
+    /// length, cycling through `padString` from `startingAtIndex`.
+    ///
+    /// `padString` is required (nil aborts) and `newLength` must be >= 0: it is an NSUInteger,
+    /// so a negative Java value becomes NSUIntegerMax and AppKit aborts with NSMallocException
+    /// "Out of memory" trying to build that string (verified, exit 134). Lengths 0, 2 and 5 are
+    /// all fine (0 and 2 truncate). `startingAtIndex` is only validated by AppKit when padding
+    /// actually happens (newLength > length()): measured, newLength 5 with start 2 on a
+    /// 2-character pad aborts while newLength 2 (<= length) with start 5 returns.
+    public NSString stringByPaddingToLength(long newLength, NSString padString, long startingAtIndex) {
+        ensureInit();
+        Bounds.nonNull(padString, "stringByPaddingToLength:withString:startingAtIndex: (padString)");
+        if (newLength < 0) {
+            throw new IllegalArgumentException("stringByPaddingToLength:withString:startingAtIndex: "
+                    + "negative newLength " + newLength + " would be NSUIntegerMax natively (NSMallocException)");
+        }
+        if (newLength > length() && (startingAtIndex < 0 || startingAtIndex >= padString.length())) {
+            throw new IllegalArgumentException("stringByPaddingToLength:withString:startingAtIndex: "
+                    + "startingAtIndex " + startingAtIndex + " out of bounds (pad string length "
+                    + padString.length() + ")");
+        }
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.INT, Arg.ID, Arg.INT));
+            MemorySegment r = (MemorySegment) h.invokeExact(peer,
+                    ObjC.sel("stringByPaddingToLength:withString:startingAtIndex:"),
+                    newLength, padString.peer(), startingAtIndex);
+            return NSString.wrap(r);
+        } catch (Throwable t) {
+            throw new RuntimeException("stringByPaddingToLength:withString:startingAtIndex: failed", t);
+        }
+    }
+
+    /// [string stringByReplacingOccurrencesOfString:withString:options:range:] — replace within
+    /// a subrange. Both strings are required (a nil search OR replacement aborts) and the range
+    /// follows the usual loc+len <= length rule (verified: {3,0} is legal, {0,5} and {2,2} abort).
+    public NSString stringByReplacingOccurrencesOfString(NSString target, NSString replacement,
+            long options, NSRange range) {
+        ensureInit();
+        Bounds.nonNull(target, "stringByReplacingOccurrencesOfString:withString:options:range: (target)");
+        Bounds.nonNull(replacement, "stringByReplacingOccurrencesOfString:withString:options:range: (replacement)");
+        Bounds.range(range, length(), "stringByReplacingOccurrencesOfString:withString:options:range:");
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.ID, Arg.ID, Arg.INT, Arg.RANGE));
+            MemorySegment r = (MemorySegment) h.invokeExact(peer,
+                    ObjC.sel("stringByReplacingOccurrencesOfString:withString:options:range:"),
+                    target.peer(), replacement.peer(), options, range.toSegment());
+            return NSString.wrap(r);
+        } catch (Throwable t) {
+            throw new RuntimeException("stringByReplacingOccurrencesOfString:withString:options:range: failed", t);
+        }
+    }
+
+    /// stringByReplacingOccurrencesOfString:... with Java strings.
+    public NSString stringByReplacingOccurrencesOfString(String target, String replacement,
+            long options, NSRange range) {
+        return stringByReplacingOccurrencesOfString(of(target), of(replacement), options, range);
     }
 
     /// rangeOfString:options: with a Java search string.

@@ -252,7 +252,19 @@ public final class RunSuite {
                 failed++;
                 failedList.append(" ").append(o.name);
             } else {
-                passed++;
+                // A test that exits 0 without ever printing a verdict must not pass silently.
+                // TestKit.end() prints "RESULT:" and every real test either uses it or prints its
+                // own (CoreAnimStressTest); TestKit.skip exits 2 and is handled above. Observed
+                // failure mode: a new test that called check(false, ...) but forgot end() was
+                // reported PASSED while its log contained FAIL lines.
+                if (!readText(finalLogsDir, o.name).contains("RESULT:")) {
+                    System.out.println("FAIL: " + o.name + " exited 0 without a RESULT line "
+                            + "(it did not signal completion, so its verdict is unknown)");
+                    failed++;
+                    failedList.append(" ").append(o.name);
+                } else {
+                    passed++;
+                }
             }
         }
         System.out.println("----------------------------------------");
@@ -310,6 +322,15 @@ public final class RunSuite {
             return;
         }
         System.out.println("ALL TESTS PASSED");
+    }
+
+    /// The test's log text, or "" when the log is missing/unreadable.
+    private static String readText(String dir, String test) {
+        try {
+            return Files.readString(Path.of(dir, test + ".log"));
+        } catch (IOException e) {
+            return "";
+        }
     }
 
     /// Leading integer of a "RESULT: N ..." summary line (0 when there is none).

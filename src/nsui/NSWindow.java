@@ -2544,10 +2544,13 @@ ensureInit(); return ObjC.msgSendBool(peer, Sels.hasDynamicDepthLimit); }
     }
 
     /// [window displayLinkWithTarget:selector:] — display-synced callback source.
-    /// `selector` is a no-arg selector name on `target` (e.g. `"tick:"`).
+    /// `selector` is a no-arg selector name on `target` (e.g. `"tick:"`); it is required.
     /// Invalidate the link when done.
+    /// The link is a `+0` (autoreleased) factory result: add it to a run loop before the
+    /// current autorelease pool drains — the run loop retains it — or `keepAlive()` it.
     public CADisplayLink displayLinkWithTarget(NSObject target, String selector) {
         ensureInit();
+        Bounds.nonNull(selector, "displayLinkWithTarget:selector: (selector)");
         try {
             MemorySegment link = (MemorySegment) H.hIdIdId().invokeExact(peer,
                     Sels.displayLinkWithTarget_selector,

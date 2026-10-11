@@ -554,6 +554,13 @@ public final class AuditRegressionTest {
             nsui.MTLSamplerDescriptor sd = nsui.MTLSamplerDescriptor.create();
             TestKit.expectThrows("MTLSamplerDescriptor.setLabel(null) reports the Metal assertion",
                     IllegalArgumentException.class, () -> sd.setLabel(null));
+
+            // The display-link factories take a required selector; a NULL SEL used to be
+            // handed to the runtime (or NPE'd in ObjC.sel) instead of being reported.
+            NSView dlView = NSView.create(new NSRect(0, 0, 20, 20), (c, d) -> {});
+            TestKit.expectThrows("NSView.displayLink(NULL selector) rejects",
+                    IllegalArgumentException.class,
+                    () -> dlView.displayLink(MemorySegment.NULL, MemorySegment.NULL));
         } catch (Throwable t) {
             TestKit.check(false, "nil-legality correction block threw: " + t);
         }

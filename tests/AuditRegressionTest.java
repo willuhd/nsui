@@ -597,25 +597,22 @@ public final class AuditRegressionTest {
             TestKit.check(false, "smart* range-guard block threw: " + t);
         }
 
-        // --- 8o. NSToolbar item indexes abort natively out of range ---
-        // removeItemAtIndex: asserts 0 <= index < count and insertItemWithItemIdentifier:
-        // atIndex: asserts 0 <= index <= count (verified, exit 134 for the violations).
+        // --- 8o. NSToolbar item indexes: only the negative half is validated ---
+        // Native assertions are 0 <= index < count (remove) and 0 <= index <= count
+        // (insert), but -items does not reliably report that count on a windowless toolbar
+        // (it stays empty after a successful insert), so an upper-bound check here rejected
+        // a legal call and PanelMenuToolbarTest caught it. A negative index raises natively
+        // (verified, exit 134).
         try {
             nsui.NSToolbar tb = nsui.NSToolbar.create("round4toolbar");
-            MemorySegment tbItems = tb.items();
-            TestKit.check(tbItems == null || tbItems.address() == 0
-                            || nsui.NSArray.wrap(tbItems).count() == 0,
-                    "fresh toolbar reports no items");
-            TestKit.expectThrows("NSToolbar.removeItemAtIndex(0) on an empty toolbar rejects",
-                    IllegalArgumentException.class, () -> tb.removeItemAtIndex(0));
-            TestKit.expectThrows("NSToolbar.insertItemWithItemIdentifier(x, 1) on an empty toolbar rejects",
+            TestKit.expectThrows("NSToolbar.removeItemAtIndex(-1) rejects",
+                    IllegalArgumentException.class, () -> tb.removeItemAtIndex(-1));
+            TestKit.expectThrows("NSToolbar.insertItemWithItemIdentifier(x, -1) rejects",
                     IllegalArgumentException.class,
-                    () -> tb.insertItemWithItemIdentifier("NSToolbarFlexibleSpaceItem", 1));
+                    () -> tb.insertItemWithItemIdentifier("NSToolbarFlexibleSpaceItem", -1));
             TestKit.noThrow("NSToolbar.insertItemWithItemIdentifier(…, 0) is legal",
                     () -> tb.insertItemWithItemIdentifier("NSToolbarFlexibleSpaceItem", 0));
-            TestKit.expectThrows("NSToolbar.removeItemAtIndex(1) with one item rejects",
-                    IllegalArgumentException.class, () -> tb.removeItemAtIndex(1));
-            TestKit.noThrow("NSToolbar.removeItemAtIndex(0) with one item is legal",
+            TestKit.noThrow("NSToolbar.removeItemAtIndex(0) after an insert is legal",
                     () -> tb.removeItemAtIndex(0));
         } catch (Throwable t) {
             TestKit.check(false, "NSToolbar index-guard block threw: " + t);

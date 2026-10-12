@@ -653,6 +653,7 @@ public class NSTextView extends NSText {
 
     /// [textView setConstrainedFrameSize:] — size within min/max constraints.
     public void setConstrainedFrameSize(NSSize desiredSize) {
+        Bounds.notNaN(desiredSize, "setConstrainedFrameSize:");
         ensureInit();
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.SIZE));

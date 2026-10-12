@@ -591,6 +591,7 @@ public class CALayer extends NSObject {
 
     /// [layer setBounds:]
     public void setBounds(NSRect bounds) {
+        Bounds.notNaN(bounds, "setBounds:");
         ensureInit();
         try {
             handles.hSetRect().invokeExact(peer, Sels.setBounds, bounds.toSegment());

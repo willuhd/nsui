@@ -1879,8 +1879,10 @@ public final class AuditRegressionTest {
             gsv.addArrangedSubview(NSView.create(new NSRect(0, 0, 100, 100), (v, d) -> {}));
             TestKit.expectThrows("NSSplitView.setPosition(NaN) rejects",
                     IllegalArgumentException.class, () -> gsv.setPosition(nan, 0));
-            TestKit.expectThrows("NSSplitView.setPosition(infinity) rejects (native raises)",
-                    IllegalArgumentException.class, () -> gsv.setPosition(Double.POSITIVE_INFINITY, 0));
+            // CORRECTED (verifier): INFINITY is ACCEPTED by the native divider setter (exit 0); only
+            // NaN traps. The earlier version of this assertion pinned an over-tight guard.
+            TestKit.noThrow("NSSplitView.setPosition(infinity) is accepted (native exit 0)",
+                    () -> gsv.setPosition(Double.POSITIVE_INFINITY, 0));
             // Over-tightening protection: AppKit ACCEPTS infinity in the view/window geometry
             // setters and NaN in min/max size, so those must still go through.
             TestKit.noThrow("setFrame with an INFINITY rect is still accepted (native exit 0)",
@@ -2016,6 +2018,72 @@ public final class AuditRegressionTest {
             TestKit.noThrow("a small count still works", () -> sc2.setSegmentCount(3));
         } catch (Throwable t) {
             TestKit.check(false, "segment-count cap block threw: " + t);
+        }
+
+        // --- 8bi. the rest of the NaN trap/abort surface (verifier-listed, re-probed here) ---
+        // Each of these was measured raw (one process each): 133 = SIGTRAP, 134 = ObjC abort.
+        // The tolerated counterparts are pinned too, so the guards cannot over-tighten.
+        try {
+            double nan = Double.NaN;
+            NSRect nr = new NSRect(nan, nan, nan, nan);
+            NSPoint np = new NSPoint(nan, nan);
+            NSSize ns = new NSSize(nan, nan);
+            NSView nv = NSView.create(new NSRect(0, 0, 100, 100), (v, d) -> {});
+            TestKit.expectThrows("setBoundsOrigin(NaN) rejects (native 133)",
+                    IllegalArgumentException.class, () -> nv.setBoundsOrigin(np));
+            TestKit.expectThrows("translateOriginToPoint(NaN) rejects (native 133)",
+                    IllegalArgumentException.class, () -> nv.translateOriginToPoint(np));
+            TestKit.expectThrows("scaleUnitSquareToSize(NaN) rejects (native 133)",
+                    IllegalArgumentException.class, () -> nv.scaleUnitSquareToSize(ns));
+            TestKit.expectThrows("adjustScroll(NaN) rejects (native 133)",
+                    IllegalArgumentException.class, () -> nv.adjustScroll(nr));
+            TestKit.expectThrows("dataWithPDFInsideRect(NaN) rejects (native 133)",
+                    IllegalArgumentException.class, () -> nv.dataWithPDFInsideRect(nr));
+            TestKit.expectThrows("dataWithEPSInsideRect(NaN) rejects (native 133)",
+                    IllegalArgumentException.class, () -> nv.dataWithEPSInsideRect(nr));
+            TestKit.expectThrows("writePDFInsideRect:toPasteboard:(NaN) rejects (native 133)",
+                    IllegalArgumentException.class,
+                    () -> nv.writePDFInsideRectToPasteboard(nr, nsui.NSPasteboard.generalPasteboard()));
+            TestKit.expectThrows("addCursorRect:cursor:(NaN) rejects (native 134)",
+                    IllegalArgumentException.class,
+                    () -> nv.addCursorRect(nr, nsui.NSCursor.arrowCursor()));
+            nsui.NSBox nbox = nsui.NSBox.create(new NSRect(0, 0, 100, 100));
+            TestKit.expectThrows("NSBox.setFrameFromContentFrame(NaN) rejects (native 133)",
+                    IllegalArgumentException.class, () -> nbox.setFrameFromContentFrame(nr));
+            TestKit.expectThrows("NSBox.setContentViewMargins(NaN) rejects (native 133)",
+                    IllegalArgumentException.class, () -> nbox.setContentViewMargins(ns));
+            nsui.NSTextView ntv = nsui.NSTextView.create(new NSRect(0, 0, 100, 60));
+            TestKit.expectThrows("NSTextView.setConstrainedFrameSize(NaN) rejects (native 133)",
+                    IllegalArgumentException.class, () -> ntv.setConstrainedFrameSize(ns));
+            NSWindow nwin = TestKit.hiddenWindow(120, 80);
+            TestKit.expectThrows("NSWindow.dataWithPDFInsideRect(NaN) rejects (native 133)",
+                    IllegalArgumentException.class, () -> nwin.dataWithPDFInsideRect(nr));
+            TestKit.expectThrows("NSWindow.create(NaN contentRect) rejects (native 134)",
+                    IllegalArgumentException.class,
+                    () -> NSWindow.create(nr, 15L, 2L, false));
+            TestKit.expectThrows("NSPanel.create(NaN contentRect) rejects (native 134)",
+                    IllegalArgumentException.class,
+                    () -> nsui.NSPanel.create(nr, 15L, 2L, false));
+            nsui.CALayer nl2 = nsui.CALayer.create();
+            TestKit.expectThrows("CALayer.setBounds(NaN) rejects (native 134)",
+                    IllegalArgumentException.class, () -> nl2.setBounds(nr));
+            nsui.NSPopover npop = nsui.NSPopover.create();
+            TestKit.expectThrows("NSPopover.setPositioningRect(NaN) rejects (native 134)",
+                    IllegalArgumentException.class, () -> npop.setPositioningRect(nr));
+            nsui.CAScrollLayer ncl = nsui.CAScrollLayer.create();
+            TestKit.expectThrows("CAScrollLayer.scrollToPoint(NaN) rejects (native 134)",
+                    IllegalArgumentException.class, () -> ncl.scrollToPoint(np));
+            // Tolerated counterparts: valid geometry must still go through.
+            TestKit.noThrow("valid geometry still works after the guards",
+                    () -> { nv.setBoundsOrigin(new NSPoint(1, 2));
+                            nv.translateOriginToPoint(new NSPoint(1, 1));
+                            nv.scaleUnitSquareToSize(new NSSize(2, 2));
+                            nv.adjustScroll(new NSRect(0, 0, 10, 10));
+                            nv.dataWithPDFInsideRect(new NSRect(0, 0, 10, 10));
+                            nbox.setContentViewMargins(new NSSize(2, 2));
+                            nl2.setBounds(new NSRect(0, 0, 10, 10)); });
+        } catch (Throwable t) {
+            TestKit.check(false, "extended NaN block threw: " + t);
         }
 
         // --- 8z. type-confusion guards on the raw collection-view setters ---

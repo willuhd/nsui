@@ -112,6 +112,7 @@ public final class NSPopover extends NSObject {
     /// showRelativeToRect:ofView:preferredEdge:
     /// edge: 0=minX 1=minY 2=maxX 3=maxY (NSRectEdge)
     public void showRelativeToRect(NSRect rect, NSView view, long edge) {
+        Bounds.notNaN(rect, "showRelativeToRect:ofView:preferredEdge:");
         ensureInit();
         try {
             MemorySegment vp = (view == null ? MemorySegment.NULL : view.peer());
@@ -346,6 +347,7 @@ public final class NSPopover extends NSObject {
     }
     /// setPositioningRect:.
     public void setPositioningRect(NSRect rect) {
+        Bounds.notNaN(rect, "setPositioningRect:");
         ensureInit();
         if (rect == null) return;
         try { ObjC.handle(Sig.of(Ret.VOID, Arg.RECT)).invokeExact(peer, ObjC.sel("setPositioningRect:"), rect.toSegment()); }

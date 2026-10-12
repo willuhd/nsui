@@ -667,6 +667,7 @@ public class NSWindow extends NSResponder {
     /// Main thread only; the window is created with released-when-closed disabled
     /// (matches the test-suite convention) so the Java wrapper stays valid.
     public static NSWindow create(NSRect contentRect, long styleMask, long backingStoreType, boolean defer) {
+        Bounds.notNaN(contentRect, "NSWindow.create (contentRect)");
         ObjC.requireMainThread("NSWindow.create");
         ensureInit();
         Bounds.nonNull(contentRect, "NSWindow.create (contentRect)");   // named IAE, not a bare NPE
@@ -686,6 +687,7 @@ public class NSWindow extends NSResponder {
     /// "settings / utility" panel. Panels also support the behavior properties
     /// `setHidesOnDeactivate` and `setBecomesKeyOnlyIfNeeded`.
     public static NSWindow createPanel(NSRect contentRect, long styleMask, long backingStoreType, boolean defer) {
+        Bounds.notNaN(contentRect, "NSWindow.createPanel (contentRect)");
         ObjC.requireMainThread("NSWindow.createPanel");
         ensureInit();
         Bounds.nonNull(contentRect, "NSWindow.createPanel (contentRect)");   // named IAE, not a bare NPE
@@ -2565,6 +2567,7 @@ ensureInit(); return ObjC.msgSendBool(peer, Sels.hasDynamicDepthLimit); }
 
     /// [window dataWithEPSInsideRect:] — EPS snapshot of `rect`.
     public NSData dataWithEPSInsideRect(NSRect rect) {
+        Bounds.notNaN(rect, "dataWithEPSInsideRect:");
         ensureInit();
         try {
             MemorySegment d = (MemorySegment) H.hIdRect().invokeExact(peer,
@@ -2577,6 +2580,7 @@ ensureInit(); return ObjC.msgSendBool(peer, Sels.hasDynamicDepthLimit); }
 
     /// [window dataWithPDFInsideRect:] — PDF snapshot of `rect`.
     public NSData dataWithPDFInsideRect(NSRect rect) {
+        Bounds.notNaN(rect, "dataWithPDFInsideRect:");
         ensureInit();
         try {
             MemorySegment d = (MemorySegment) H.hIdRect().invokeExact(peer,

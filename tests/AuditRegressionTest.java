@@ -2204,6 +2204,35 @@ public final class AuditRegressionTest {
             TestKit.check(false, "guard-coverage block threw: " + t);
         }
 
+        // --- 8bl. CoreAnimation accepts NaN: pin it so a future AppKit-style guard can't over-tighten --
+        // Raw probes (exit 0 for every one): CALayer setTransform:/setOpacity:/setZPosition:/
+        // setShadowOffset:/setDuration:/setSpeed:, CAGradientLayer setStartPoint:/setEndPoint:,
+        // CAEmitterLayer setEmitterPosition:, CABasicAnimation setDuration:. This contrasts with the
+        // AppKit view/window geometry, which traps — so the CA wrappers must stay unguarded.
+        try {
+            double nan = Double.NaN;
+            nsui.CALayer l3 = nsui.CALayer.create();
+            nsui.CATransform3D nanT = nsui.CATransform3D.make(nan, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
+            TestKit.noThrow("CALayer.setTransform(NaN) is accepted (CA tolerates NaN)",
+                    () -> l3.setTransform(nanT));
+            TestKit.noThrow("CALayer.setOpacity(NaN) is accepted",
+                    () -> l3.setOpacity(nan));
+            TestKit.noThrow("CALayer.setZPosition(NaN) is accepted",
+                    () -> l3.setZPosition(nan));
+            TestKit.noThrow("CALayer.setShadowOffset(NaN) is accepted",
+                    () -> l3.setShadowOffset(new NSSize(nan, nan)));
+            TestKit.noThrow("CALayer.setDuration(NaN) is accepted",
+                    () -> l3.setDuration(nan));
+            nsui.CAGradientLayer gl3 = nsui.CAGradientLayer.create();
+            TestKit.noThrow("CAGradientLayer.setStartPoint(NaN) is accepted",
+                    () -> gl3.setStartPoint(new NSPoint(nan, nan)));
+            nsui.CAAnimation a3 = nsui.CAAnimation.animationWithKeyPath("opacity");
+            TestKit.noThrow("CAAnimation.setDuration(NaN) is accepted",
+                    () -> a3.setDuration(nan));
+        } catch (Throwable t) {
+            TestKit.check(false, "CA NaN-tolerance block threw: " + t);
+        }
+
         // --- 8z. type-confusion guards on the raw collection-view setters ---
         // AppKit does NOT raise a type error here, it either asserts isKindOfClass: or
         // messages the object: setCollectionViewLayout: with a plain NSView raised

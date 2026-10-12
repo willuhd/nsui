@@ -47,6 +47,13 @@ final class Bounds {
     /// NSSlider/NSProgressIndicator setMinValue:, NSPopover setContentSize:, the convert* family,
     /// the drawing APIs that take a rect for CACHING or hit-testing, alpha and magnification,
     /// NSEdgeInsets-based insets, and every enum setter probed with an out-of-range value.
+    ///
+    /// CoreAnimation is the notable CONTRAST and is deliberately left unguarded: CALayer
+    /// setTransform:/setOpacity:/setZPosition:/setShadowOffset:/setDuration:/setSpeed:,
+    /// CAGradientLayer setStartPoint:/setEndPoint:, CAEmitterLayer setEmitterPosition: and
+    /// CABasicAnimation setDuration: all ACCEPT NaN (measured exit 0), so a NaN policy copied
+    /// from AppKit into the CA wrappers would be over-tight. NSPasteboard likewise accepts nil for
+    /// every type/key argument probed.
     public static void notNaN(NSRect r, String what) {
         if (r == null) throw new IllegalArgumentException(what + ": null rect");
         if (Double.isNaN(r.x()) || Double.isNaN(r.y())

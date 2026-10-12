@@ -85,13 +85,22 @@ Every accessor whose documentation names a macOS version of 11 or later is guard
 returns that API's "absent" default and the setter is a no-op. The guard pattern to copy is
 `NSButton.setTintProminence:`/`borderShape` (macOS 26 selectors, no-op / 0 when absent).
 
-This is enforced by `tests/VersionGuardScanTest`, which scans `src/nsui` for a version-annotated
-method with no presence check and fails the suite if one appears (82 annotated methods today,
-0 unguarded). A small allowlist inside that test covers prose that merely looks like a version —
-an NSEventType number, an `NSWindowStyleMask` bit — and every entry states why. Because the scan
-keys on the annotation adjacent to a method, a version named only in a section header can escape
-it; the name-based twin checks in `AuditRegressionTest` cover that case, and neither scan
-replaces the other.
+This is enforced by `tests/VersionGuardScanTest`, which fails the suite when a version-gated
+accessor has no presence check. It works in three layers, and the README states them because the
+first two are partial by construction:
+
+1. a per-method scan of `src/nsui` for a method whose own documentation names a version
+   (~81 methods today, 0 unguarded);
+2. `SECTION_GATED`, an explicit list of the methods whose version appears only in a section
+   header (`// ---- WritingTools (macOS 15+) ----`) or in a sibling's doc, which the per-method
+   scan cannot attribute — 8 entries today, each asserted to have a guard. A new version-gated
+   method under such a header must be added here by hand;
+3. `ALLOW`, for prose that merely looks like a version (an NSEventType number, an
+   `NSWindowStyleMask` bit). One entry today, and the test asserts every entry is actually
+   exercised, so a stale suppression fails instead of exempting a method forever.
+
+Neither the scanner nor `AuditRegressionTest`'s name-based twin checks can see a section-header
+version automatically; layer 2 is the manual cover for that, which is why it is listed.
 
 A `try`/`catch` around the send is NOT a guard, and was the source of a real bug here: an
 unrecognized selector raises an ObjC exception that terminates the process (measured, exit 134)

@@ -394,6 +394,23 @@ class ObjCRuntime:
             return m, "inst"
         return self.libobjc.class_getClassMethod(cls, sel), "class"
 
+    def has_method(self, cls_name, selector, want_class=None):
+        """Whether the runtime class (or a conformer, for a protocol) implements the selector.
+
+        Lookup only: no realization, so nothing is allocated and no +alloc side effect can run.
+        That makes it safe to ask about any class in a scan, which `encoding()` is not.
+        """
+        cls = self.get_class(cls_name)
+        sel = self.libobjc.sel_registerName(selector.encode("utf-8"))
+        if cls:
+            m, _kind = self._lookup(cls, sel, want_class)
+            return bool(m)
+        for cand in self.protocol_conforming_classes(cls_name):
+            m, _kind = self._lookup(cand, sel, want_class)
+            if m:
+                return True
+        return False
+
     def _concrete(self, name):
         """R1: the class object that actually receives `name`'s messages.
 

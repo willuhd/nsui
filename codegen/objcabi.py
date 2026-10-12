@@ -23,9 +23,17 @@ QUAL = "rnNoOoRV"
 
 # Sig.Ret / Sig.Arg universe (the shape vocabulary is read from Sig.java by gen.py).
 RETS = ("VOID", "ID", "INT", "BOOL", "DOUBLE", "RECT", "POINT", "SIZE", "FLOAT",
-        "RANGE", "TRANSFORM3D", "BYTE", "EDGEINSETS")
+        "RANGE", "TRANSFORM3D", "BYTE", "EDGEINSETS", "INT32", "SHORT")
 ARGS = ("ID", "INT", "BOOL", "DOUBLE", "RECT", "POINT", "SIZE", "FLOAT", "RANGE",
-        "REGION", "TRANSFORM3D", "MTLVIEWPORT", "MTLSCISSORRECT", "BYTE", "EDGEINSETS")
+        "REGION", "TRANSFORM3D", "MTLVIEWPORT", "MTLSCISSORRECT", "BYTE", "EDGEINSETS",
+        "INT32", "SHORT")
+
+# R1 opt-out: class names whose +alloc must never be sent during concrete-class
+# realization.  A side-effecting allocator (singleton, shared instance, an object that
+# needs -init arguments) would be observable, so those names are excluded here and the
+# named class object is used unchanged.  Empty by default: every class is realizable
+# until matrix evidence moves a name into this set.
+REALIZE_OPT_OUT = frozenset()
 
 
 # --------------------------------------------------------------------- encoding
@@ -93,8 +101,16 @@ def abi(t):
         return "BOOL"
     if t in ("c", "C"):
         return "BYTE"
-    if t in ("q", "Q", "i", "I", "l", "L", "s", "S"):
+    if t in ("q", "Q", "l", "L"):
         return "INT"
+    if t in ("i", "I"):
+        return "INT32"
+    if t in ("s", "S"):
+        return "SHORT"
+    if t.startswith("["):
+        # A fixed-size C array ([2f], [16C]) is a value type, never a scalar: it is
+        # passed by pointer in the ABI this bridge models, exactly like an id.
+        return "ID"
     if t.startswith("{"):
         return struct_kind(t)
     return "OTHER"
@@ -259,6 +275,15 @@ class ObjCRuntime:
         self.libobjc.class_getClassMethod.argtypes = [ctypes.c_void_p, ctypes.c_void_p]
         self.libobjc.method_getTypeEncoding.restype = ctypes.c_char_p
         self.libobjc.method_getTypeEncoding.argtypes = [ctypes.c_void_p]
+        # R1: object_getClass(instance) names the concrete class; objc_msgSend sends +alloc.
+        self.libobjc.object_getClass.restype = ctypes.c_void_p
+        self.libobjc.object_getClass.argtypes = [ctypes.c_void_p]
+        self.libobjc.objc_msgSend.restype = ctypes.c_void_p
+        self.libobjc.objc_msgSend.argtypes = [ctypes.c_void_p, ctypes.c_void_p]
+        self._sel_alloc = self.libobjc.sel_registerName(b"alloc")
+        self._concrete_cache = {}
+        self._instances = []            # keeps realized instances alive (never -init)
+        self.realize_opt_out = set(REALIZE_OPT_OUT)
         self.loaded = {}
         for fw in frameworks:
             self.load_framework(fw)
@@ -277,17 +302,58 @@ class ObjCRuntime:
     def get_class(self, name):
         return self.libobjc.objc_getClass(name.encode("utf-8"))
 
+    def _lookup(self, cls, sel):
+        """(method, 'inst'|'class') for cls, or (None, _). class_get*Method walks
+        the superclass chain, so a concrete subclass also reports inherited methods."""
+        m = self.libobjc.class_getInstanceMethod(cls, sel)
+        if m:
+            return m, "inst"
+        return self.libobjc.class_getClassMethod(cls, sel), "class"
+
+    def _concrete(self, name):
+        """R1: the class object that actually receives `name`'s messages.
+
+        objc_getClass returns the class *named by the header*.  For the Metal
+        descriptor family that object is an abstract shell: the implementations live on
+        a private concrete subclass (e.g. MTLStencilDescriptorInternal), so every lookup
+        on the named class misses.  Realize it once by sending +alloc with objc_msgSend
+        and reading object_getClass() of the returned instance.
+
+        The instance is never sent -init, is kept in self._instances for the lifetime of
+        this runtime, and the result is cached per class name: exactly one leaked alloc
+        per class for the process lifetime.  Names in realize_opt_out (and classes whose
+        metaclass does not implement +alloc) resolve to the named class unchanged.
+        """
+        if name in self._concrete_cache:
+            return self._concrete_cache[name]
+        cls = self.get_class(name)
+        if not cls:
+            return None
+        if name in self.realize_opt_out:
+            return cls
+        if not self.libobjc.class_getClassMethod(cls, self._sel_alloc):
+            return cls                     # never send +alloc where it is not implemented
+        instance = self.libobjc.objc_msgSend(cls, self._sel_alloc)
+        if instance:
+            self._instances.append(instance)
+            concrete = self.libobjc.object_getClass(instance)
+            if concrete:
+                cls = concrete
+        self._concrete_cache[name] = cls
+        return cls
+
     def encoding(self, cls_name, selector):
         """(encoding_string, 'inst'|'class') or (None, reason)."""
         cls = self.get_class(cls_name)
         if not cls:
             return None, "no-class"
         sel = self.libobjc.sel_registerName(selector.encode("utf-8"))
-        m = self.libobjc.class_getInstanceMethod(cls, sel)
-        kind = "inst"
+        m, kind = self._lookup(cls, sel)
         if not m:
-            m = self.libobjc.class_getClassMethod(cls, sel)
-            kind = "class"
+            # Only a miss reaches the realization, so no existing resolution changes.
+            concrete = self._concrete(cls_name)
+            if concrete and concrete != cls:
+                m, kind = self._lookup(concrete, sel)
         if not m:
             return None, "no-method"
         enc = self.libobjc.method_getTypeEncoding(m)

@@ -188,8 +188,12 @@ public final class CATransaction {
     }
 
     /// Number of completion bodies still awaiting their block (diagnostics/tests).
-    /// Two transactions with a pending completion hold one body each; a body
-    /// superseded within its own transaction is never delivered and stays counted.
+    ///
+    /// CORRECTED: this used to say a superseded body "is never delivered and stays counted".
+    /// Measured (setCompletionBlock(A) then setCompletionBlock(B) in one transaction): A runs
+    /// IMMEDIATELY when it is replaced, B runs at commit, and the pending count is 0 afterwards —
+    /// which is what setCompletionBlock's own javadoc already said. A replaced body is delivered
+    /// (early), never dropped and never left counted.
     public static int pendingCompletionCount() {
         return BODIES.size();
     }

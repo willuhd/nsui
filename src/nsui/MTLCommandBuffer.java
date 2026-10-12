@@ -33,10 +33,16 @@ public final class MTLCommandBuffer extends NSObject {
     }
 
     /// commit — submit (async return).
-    /// commit — call it EXACTLY ONCE per command buffer. A second commit aborts natively
-    /// (addScheduledHandler assertion, exit 134 with API validation on; undefined behaviour
-    /// without it), and so does waitUntilCompleted before any commit. Both would need per-buffer
-    /// state, which this wrapper deliberately does not keep, so the preconditions are documented.
+    /// commit — call it EXACTLY ONCE per command buffer, after every encoder it owns is ended.
+    ///
+    /// Measured, all fatal and all needing per-buffer state this wrapper deliberately does not keep
+    /// (so they are documented rather than guarded):
+    ///   - a second commit aborts ("addScheduledHandler ... after commit call", exit 134);
+    ///   - committing while an encoder is still open aborts ("encoding in progress", exit 134);
+    ///   - waitUntilCompleted BEFORE any commit does not abort but HANGS indefinitely (blocked past
+    ///     60 s), which is worse than the assertion;
+    ///   - without MTL_DEBUG_LAYER the first two still abort (different internal assertions), so the
+    ///     "undefined behaviour without validation" hedge understates them.
     public void commit() {
         ObjC.msgSendVoid(peer, ObjC.sel("commit"));
     }

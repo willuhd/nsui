@@ -23,8 +23,13 @@ public final class MTLBuffer extends NSObject {
         return ObjC.msgSendLong(peer, ObjC.sel("length"));
     }
 
-    /// contents — CPU-visible pointer to the buffer's storage, sized to
-    /// length(). Writable for shared/managed storage; null when the buffer is private.
+    /// contents — pointer to the buffer's storage, sized to length().
+    ///
+    /// CORRECTED: this used to claim "null when the buffer is private". Measured on a
+    /// MTLResourceStorageModePrivate buffer: the pointer is NON-NULL (with a correct byteSize) even
+    /// though the storage is not CPU-accessible, and MTLBuffer.h makes no null-for-private promise.
+    /// So a non-null result does NOT mean the storage is CPU-writable — only shared/managed buffers
+    /// may be read or written through it; private storage must be filled via a blit or the GPU.
     public MemorySegment contents() {
         MemorySegment p = ObjC.msgSendId(peer, ObjC.sel("contents"));
         if (p == null || p.address() == 0) return null;

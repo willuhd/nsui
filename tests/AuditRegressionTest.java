@@ -498,6 +498,17 @@ public final class AuditRegressionTest {
                     IllegalArgumentException.class, () -> st.edited(0, new nsui.NSRange(100, 1), 0));
             TestKit.noThrow("NSTextStorage.edited in-range still works",
                     () -> st.edited(0, new nsui.NSRange(0, 3), 0));
+            // `edited:` takes PRE-edit coordinates: after deleting {1,3} from "abcde" (length 2,
+            // delta -3) the native method accepts {1,3}, and an earlier guard that used the
+            // post-edit length rejected that legal call. The invalid case is still rejected.
+            nsui.NSTextStorage est = nsui.NSTextStorage.create("abcde");
+            est.replaceCharactersInRangeWithString(new nsui.NSRange(1, 3), "");
+            TestKit.check(est.length() == 2, "storage shortened to 2 before edited()");
+            TestKit.noThrow("edited() accepts a PRE-edit range after a deletion",
+                    () -> est.edited(0, new nsui.NSRange(1, 3), -3));
+            nsui.NSTextStorage est2 = nsui.NSTextStorage.create("abc");
+            TestKit.expectThrows("edited() still rejects a range beyond the pre-edit length",
+                    IllegalArgumentException.class, () -> est2.edited(0, new nsui.NSRange(5, 1), 1));
 
             NSWindow bw = TestKit.hiddenWindow(160, 120);
             TestKit.expectThrows("NSWindow.setContentBorderThicknessForEdge(NSMinXEdge) rejects",

@@ -30,7 +30,8 @@ public final class NSTextContainer extends NSObject {
 
     private static synchronized void ensureInitLocked() {
         if (handles != null) return;
-        // initWithContainerSize: is (ID,SIZE) which is not directly in vocab, but we resolve via handle;
+        // initWithContainerSize: is (ID,SIZE) — it IS in the vocabulary (Sig.of(Ret.ID, Arg.SIZE)),
+        // so the handle below resolves directly; the old comment claimed otherwise;
         // if shape missing, handle will throw at call time — fallback path uses init+setContainerSize.
         MethodHandle tmp_hInitSize = null;
         try { tmp_hInitSize = ObjC.handle(Sig.of(Ret.ID, Arg.SIZE)); } catch (Exception ignored) { tmp_hInitSize = null; }

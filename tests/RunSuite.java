@@ -288,11 +288,11 @@ public final class RunSuite {
         int partials = 0;
         int testSkips = 0;
         for (int k = 0; k < tests.size(); k++) {
-            String text;
-            try {
-                text = Files.readString(Path.of(finalLogsDir, tests.get(k) + ".log"));
-            } catch (IOException e) {
-                System.out.println("NOTE: no log for " + tests.get(k) + " (" + e + ")");
+            // readText never throws (it decodes bytes leniently and returns "" on failure), so an
+            // empty result is the only "no log" signal here.
+            String text = readText(finalLogsDir, tests.get(k));
+            if (text.isEmpty()) {
+                System.out.println("NOTE: no log for " + tests.get(k));
                 continue;
             }
             for (String line : text.split("\n")) {
@@ -342,6 +342,7 @@ public final class RunSuite {
             String rest = t.substring("RESULT:".length()).trim();
             if (rest.startsWith("FAIL")) return true;
             if (rest.matches("\\d+\\s+FAILURE.*")) return true;
+            if (rest.matches("\\d+\\s+of\\s+\\d+\\s+assertions\\s+FAILED.*")) return true;
         }
         return false;
     }

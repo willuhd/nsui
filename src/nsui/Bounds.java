@@ -48,12 +48,14 @@ final class Bounds {
     /// the drawing APIs that take a rect for CACHING or hit-testing, alpha and magnification,
     /// NSEdgeInsets-based insets, and every enum setter probed with an out-of-range value.
     ///
-    /// CoreAnimation is the notable CONTRAST and is deliberately left unguarded: CALayer
-    /// setTransform:/setOpacity:/setZPosition:/setShadowOffset:/setDuration:/setSpeed:,
-    /// CAGradientLayer setStartPoint:/setEndPoint:, CAEmitterLayer setEmitterPosition: and
-    /// CABasicAnimation setDuration: all ACCEPT NaN (measured exit 0), so a NaN policy copied
-    /// from AppKit into the CA wrappers would be over-tight. NSPasteboard likewise accepts nil for
-    /// every type/key argument probed.
+    /// CoreAnimation splits, which is why it must not be treated as one policy: its GEOMETRY
+    /// setters behave like AppKit and ARE guarded (CALayer setFrame:/setPosition:/setBounds: and
+    /// CAScrollLayer scrollToPoint: abort on NaN — see the list above), while its transform/opacity/
+    /// timing/effect setters ACCEPT NaN (measured exit 0: CALayer setTransform:/setOpacity:/
+    /// setZPosition:/setShadowOffset:/setDuration:/setSpeed:, CAGradientLayer setStartPoint:/
+    /// setEndPoint:, CAEmitterLayer setEmitterPosition:, CABasicAnimation setDuration:). So the CA
+    /// geometry guards are correct and must stay, and copying them onto the tolerance side would be
+    /// over-tight. NSPasteboard likewise accepts nil for every type/key argument probed.
     public static void notNaN(NSRect r, String what) {
         if (r == null) throw new IllegalArgumentException(what + ": null rect");
         if (Double.isNaN(r.x()) || Double.isNaN(r.y())

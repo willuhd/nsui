@@ -245,6 +245,8 @@ def check_f6():
 
     This is a generator conformance gap, not a shipped flaw: the guard the generator adds rejects
     input the shipped API accepts, so the generated wrapper is stricter than the one it replaces.
+    gen.py now consults the same baseline and skips those guards (reported as GUARD-SKIPPED), so
+    these findings stay as the record of the discrepancy rather than as pending emissions.
     """
     baseline = shipped_baseline()
     findings = []

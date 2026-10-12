@@ -257,9 +257,17 @@ public final class RunSuite {
                 // own (CoreAnimStressTest); TestKit.skip exits 2 and is handled above. Observed
                 // failure mode: a new test that called check(false, ...) but forgot end() was
                 // reported PASSED while its log contained FAIL lines.
-                if (!readText(finalLogsDir, o.name).contains("RESULT:")) {
+                String log = readText(finalLogsDir, o.name);
+                if (!log.contains("RESULT:")) {
                     System.out.println("FAIL: " + o.name + " exited 0 without a RESULT line "
                             + "(it did not signal completion, so its verdict is unknown)");
+                    failed++;
+                    failedList.append(" ").append(o.name);
+                } else if (reportsFailure(log)) {
+                    // Belt and braces: a hand-rolled test could print a failure verdict and still
+                    // System.exit(0). The verdict is the test's own statement of what happened, so
+                    // it wins over the exit code.
+                    System.out.println("FAIL: " + o.name + " exited 0 but its log reports a failure verdict");
                     failed++;
                     failedList.append(" ").append(o.name);
                 } else {
@@ -324,10 +332,30 @@ public final class RunSuite {
         System.out.println("ALL TESTS PASSED");
     }
 
+    /// True when any RESULT line states a failure: "RESULT: N FAILURE(S)" (TestKit.end) or
+    /// "RESULT: FAIL (...)" (the hand-rolled tests). "ALL PASS", "PASS (...)", "PARTIAL PASS",
+    /// "N CASE SKIP(S)" and "N PROBE(S)" are not failures.
+    private static boolean reportsFailure(String log) {
+        for (String line : log.split("\n")) {
+            String t = line.trim();
+            if (!t.startsWith("RESULT:")) continue;
+            String rest = t.substring("RESULT:".length()).trim();
+            if (rest.startsWith("FAIL")) return true;
+            if (rest.matches("\\d+\\s+FAILURE.*")) return true;
+        }
+        return false;
+    }
+
     /// The test's log text, or "" when the log is missing/unreadable.
+    ///
+    /// Decoded as ISO-8859-1 on purpose: the log is a byte stream from another process, and a
+    /// stray non-UTF-8 byte would make readString throw MalformedInputException — which would look
+    /// like "no RESULT line" and fail a passing test. Latin-1 maps every byte, so the RESULT
+    /// lines (ASCII) always survive.
     private static String readText(String dir, String test) {
         try {
-            return Files.readString(Path.of(dir, test + ".log"));
+            return new String(Files.readAllBytes(Path.of(dir, test + ".log")),
+                    java.nio.charset.StandardCharsets.ISO_8859_1);
         } catch (IOException e) {
             return "";
         }

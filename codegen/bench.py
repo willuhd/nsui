@@ -19,6 +19,7 @@ Stdlib only, like the generator. Snapshots live in codegen/work/<sha>/ and are d
 import argparse
 import json
 import os
+import platform
 import re
 import shutil
 import subprocess
@@ -155,6 +156,7 @@ def snapshot(commit, keep=False):
 def bench_matrix(classes, commit=None, frameworks=("AppKit", "QuartzCore", "Foundation", "Metal"),
                  run_gates=False, gate_filter="Signature", out_json=None, out_md=None):
     """Bench many classes and summarise conformance. This is the automation entry point."""
+    meta = {"sdk": sdk_path(), "os": host_os(), "codegen_version": generator_version()}
     rows = []
     for cls in classes:
         try:
@@ -164,40 +166,84 @@ def bench_matrix(classes, commit=None, frameworks=("AppKit", "QuartzCore", "Foun
             r = {"class": cls, "error": str(exc)}
         c = r.get("comparison") or {}
         shipped, generated = c.get("methods_current"), c.get("methods_generated")
-        rows.append({
+        # Coverage is a ratio of the raw shipped/generated public method sets, clamped to 100%:
+        # a class the generator never touched has no comparison at all and must not read as
+        # conformant, and a class that gains methods cannot report >100%.
+        coverage = c.get("coverage")
+        if coverage is not None:
+            coverage = round(min(100.0, coverage), 1)
+        elif shipped and generated is not None:
+            coverage = round(min(100.0, 100.0 * generated / shipped), 1)
+        row = {
             "class": cls,
             "snapshot": r.get("snapshot"),
+            "status": r.get("status"),
             "generated": bool(r.get("generated")),
+            "applied": r.get("applied"),
+            "apply_detail": r.get("apply_detail"),
             "gate": r.get("gate_passed"),
+            "gate_detail": r.get("gate_detail"),
             "methods_shipped": shipped,
             "methods_generated": generated,
-            "coverage": (round(100.0 * generated / shipped, 1)
-                         if shipped and generated is not None else None),
+            "methods_comparable": c.get("methods_comparable"),
+            "methods_missing": c.get("methods_missing") or [],
+            "methods_extra": c.get("methods_extra") or [],
+            "methods_policy_excluded": c.get("methods_policy_excluded") or [],
+            "coverage": coverage,
+            "conformant": conformant(c, r.get("generated")),
             "features_missing": c.get("features_missing") or {},
+            "skips": r.get("skips") or {},
+            "generator_sizes": r.get("generator_sizes"),
+            "vocab_size": r.get("vocab_size"),
             "error": r.get("error"),
-        })
+        }
+        row.update(meta)
+        rows.append(row)
     rows.sort(key=lambda x: (x["coverage"] if x["coverage"] is not None else -1))
+    measured = [r for r in rows if r["coverage"] is not None]
+    dropped = [r for r in rows if r["coverage"] is None]
+    total_skips = {}
+    for r in rows:
+        for reason, n in r["skips"].items():
+            total_skips[reason] = total_skips.get(reason, 0) + n
     if out_json:
         with open(out_json, "w") as fh:
-            json.dump(rows, fh, indent=2, sort_keys=True)
+            json.dump({"meta": dict(meta, classes_requested=len(rows),
+                                    classes_measured=len(measured),
+                                    classes_dropped=[r["class"] for r in dropped]),
+                       "skips": total_skips,
+                       "rows": rows}, fh, indent=2, sort_keys=True)
     if out_md:
         with open(out_md, "w") as fh:
             fh.write("# CodeGen conformance matrix\n\n")
             fh.write("Generated from `codegen/bench.py --matrix`; each row takes a snapshot of the\n")
             fh.write("commit before the class existed, generates it, applies the patch and compares\n")
             fh.write("the method set and guard features against the shipped wrapper.\n\n")
-            fh.write("| class | snapshot | gen | coverage | missing features |\n|---|---|---|---|---|\n")
+            fh.write("sdk=%s  os=%s  CodeGen %s\n\n"
+                     % (meta["sdk"] or "-", meta["os"], meta["codegen_version"] or "-"))
+            fh.write("| class | snapshot | gen | shipped | generated | coverage | missing | extra "
+                     "| missing features |\n|---|---|---|---|---|---|---|---|---|\n")
             for r in rows:
                 cov = "n/a" if r["coverage"] is None else "%.1f%%" % r["coverage"]
                 miss = ", ".join("%s x%d" % (k, v) for k, v in sorted(r["features_missing"].items()))
-                fh.write("| %s | %s | %s | %s | %s |\n" % (r["class"], r["snapshot"] or "-",
-                                                          "yes" if r["generated"] else "NO", cov, miss or "-"))
-            tot = [r for r in rows if r["coverage"] is not None]
-            if tot:
-                avg = sum(r["coverage"] for r in tot) / len(tot)
-                full = sum(1 for r in tot if r["coverage"] >= 100 and not r["features_missing"])
-                fh.write("\n**%d classes: mean method coverage %.1f%%, %d fully conformant.**\n"
-                         % (len(tot), avg, full))
+                fh.write("| %s | %s | %s | %s | %s | %s | %d | %d | %s |\n"
+                         % (r["class"], r["snapshot"] or "-",
+                            "yes" if r["generated"] else "NO", r["methods_shipped"] if r["methods_shipped"] is not None else "-",
+                            r["methods_generated"] if r["methods_generated"] is not None else "-",
+                            cov, len(r["methods_missing"]), len(r["methods_extra"]), miss or "-"))
+            if measured:
+                avg = sum(r["coverage"] for r in measured) / len(measured)
+                full = sum(1 for r in measured if r["conformant"])
+                fh.write("\n**%d of %d classes measured: mean method coverage %.1f%%, "
+                         "%d fully conformant.**\n" % (len(measured), len(rows), avg, full))
+            if dropped:
+                fh.write("\nDropped (no measurable coverage, not averaged): %s\n"
+                         % ", ".join(r["class"] for r in dropped))
+            if total_skips:
+                fh.write("\n## Generator skip histogram (%d methods)\n\n"
+                         % sum(total_skips.values()))
+                for reason, n in sorted(total_skips.items(), key=lambda kv: (-kv[1], kv[0])):
+                    fh.write("* %d x %s\n" % (n, reason))
     return rows
 
 
@@ -229,45 +275,276 @@ def apply_patch(snap, patch):
 
 
 def run_gate(snap, gate_filter="Signature"):
-    """Run the snapshot's own conformance gate. The snapshot has tests.sh + tests/."""
+    """Run the snapshot's own conformance gate. The snapshot has tests.sh + tests/.
+
+    A gate that prints no PASSED/FAILED verdict, or that ran zero tests, is a failure: "nothing
+    was checked" must never read as "everything passed".
+    """
     if not os.path.exists(os.path.join(snap, "tests.sh")):
         return None, "snapshot has no tests.sh"
     p = run(["./tests.sh", gate_filter, "-j", "1"], cwd=snap, check=False)
     text = p.stdout + p.stderr
-    m = re.search(r"PASSED: (\d+)\s+FAILED: (\d+)", text)
-    verdict = m.group(0) if m else "no verdict"
     line = ""
     for ln in text.splitlines():
         if "call sites checked" in ln:
             line = ln.strip()
+    m = re.search(r"PASSED: (\d+)\s+FAILED: (\d+)", text)
+    if not m:
+        return False, "no verdict (tests.sh printed no PASSED/FAILED line)"
+    passed = int(m.group(1))
+    verdict = m.group(0)
+    if passed < 1:
+        return False, verdict + "  (zero tests ran; not a pass)"
     return p.returncode == 0, (verdict + ("  |  " + line if line else ""))
+
+
+# ----------------------------------------------------------------- generator provenance
+
+def parse_generator_sizes(text):
+    """The `class X (...): N generated, M skipped` line gen.py prints."""
+    m = re.search(r":\s*(\d+)\s+generated,\s*(\d+)\s+skipped", text)
+    if not m:
+        return None
+    return {"generated": int(m.group(1)), "skipped": int(m.group(2))}
+
+
+def parse_skips(text):
+    """{reason: count} for every SKIP the generator reported for this class.
+
+    Covers both the class-level `SKIP X: no @interface in ...` and the per-method
+    `    SKIP selector  [reason]` lines, so the matrix can aggregate why methods were dropped.
+    """
+    skips = {}
+    for line in text.splitlines():
+        m = (re.match(r"^\s+SKIP\s+\S+\s+\[(.+?)\]\s*$", line)
+             or re.match(r"^SKIP\s+\S+:\s+(.*\S)\s*$", line))
+        if m:
+            skips[m.group(1)] = skips.get(m.group(1), 0) + 1
+    return skips
+
+
+_VERSION = []
+
+
+def generator_version():
+    """The CodeGen version the runs used, read from gen.py (never hard-coded here)."""
+    if _VERSION:
+        return _VERSION[0]
+    version = None
+    try:
+        text = open(GEN, encoding="utf-8", errors="replace").read()
+        m = re.search(r'^VERSION\s*=\s*"([^"]+)"', text, re.M)
+        version = m.group(1) if m else None
+    except OSError:
+        pass
+    _VERSION.append(version)
+    return version
+
+
+def vocab_size(tree):
+    """Distinct Sig shapes the generator could render in `tree`, mirroring gen.load_vocabulary."""
+    path = os.path.join(tree, "src", "nsui", "objc", "Sig.java")
+    if not os.path.exists(path):
+        return None
+    text = open(path, encoding="utf-8", errors="replace").read()
+    pat = re.compile(r"of\(\s*Ret\.(\w+)\s*((?:,\s*Arg\.\w+\s*)*)\)")
+    return len({(m.group(1), tuple(re.findall(r"Arg\.(\w+)", m.group(2))))
+                for m in pat.finditer(text)})
+
+
+_SDK = []
+
+
+def sdk_path():
+    """gen.py's SDK discovery, cached; None when no SDK is installed."""
+    if _SDK:
+        return _SDK[0]
+    path = None
+    try:
+        p = subprocess.run(["xcrun", "--show-sdk-path"], capture_output=True, text=True)
+        cand = (p.stdout or "").strip()
+        if p.returncode == 0 and cand and os.path.isdir(cand):
+            path = cand
+    except Exception:
+        pass
+    if path is None:
+        for cand in ("/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",):
+            if os.path.isdir(cand):
+                path = cand
+                break
+    _SDK.append(path)
+    return path
+
+
+def host_os():
+    return platform.platform()
+
+
+# ----------------------------------------------------------------- generatability
+
+_IFACES = {}
+
+
+def sdk_interface(cls, frameworks):
+    """The framework whose public headers declare `@interface <cls>`, or None.
+
+    Mirrors gen.find_header's two conditions: a real `@interface` (a `@protocol`, a struct
+    typedef or a Java-only helper does not qualify) in one of the searched frameworks.
+    """
+    sdk = sdk_path()
+    if not sdk:
+        return None
+    pat = re.compile(r"@interface\s+" + re.escape(cls) + r"\s*(?:<[^>]*>\s*)?[:\n{]")
+    for fw in frameworks:
+        if fw not in _IFACES:
+            names = set()
+            root = os.path.join(sdk, "System", "Library", "Frameworks", fw + ".framework",
+                                "Headers")
+            if os.path.isdir(root):
+                for dirpath, _dirs, files in os.walk(root):
+                    for fn in sorted(files):
+                        if not fn.endswith(".h"):
+                            continue
+                        try:
+                            text = open(os.path.join(dirpath, fn), encoding="utf-8",
+                                        errors="replace").read()
+                        except OSError:
+                            continue
+                        for m in re.finditer(r"@interface\s+(\w+)", text):
+                            names.add(m.group(1))
+            _IFACES[fw] = names
+        if cls in _IFACES[fw]:
+            return fw
+    return None
+
+
+def is_generatable(cls, frameworks):
+    """Whether gen.py can plausibly render `cls`: a shipped wrapper the SDK declares.
+
+    A class whose snapshot exists is not enough — the shipped side must look like a generated
+    wrapper (a class with a `wrap(MemorySegment)` factory, not a record/helper) and the SDK must
+    declare `@interface <cls>` (protocols and structs can never be rendered).
+    """
+    path = os.path.join(REPO, "src", "nsui", cls + ".java")
+    if not os.path.exists(path):
+        return False, "no shipped wrapper"
+    text = open(path, encoding="utf-8", errors="replace").read()
+    if not re.search(r"^\s*(?:public\s+)?(?:final\s+)?class\s+%s\b" % re.escape(cls), text, re.M):
+        return False, "not a class (record/helper)"
+    if not re.search(r"static\s+%s\s+wrap\s*\(\s*MemorySegment" % re.escape(cls), text):
+        return False, "no wrap() factory"
+    fw = sdk_interface(cls, frameworks)
+    if not fw:
+        return False, "no @interface in the SDK"
+    return True, fw
+
+
+def select_generatable(limit, frameworks):
+    """The `limit` most recently born classes that gen.py can actually render.
+
+    Ranking by birth date alone puts Java-side helpers and records at the top; those rows then
+    report n/a and silently vanish from the mean. Returns (classes, dropped) where dropped names
+    every candidate that was passed over and why, so nothing is averaged silently.
+    """
+    born = []
+    for c in list_candidates():
+        sha = birth_commit("src/nsui/%s.java" % c["class"])
+        if sha:
+            born.append((git("log", "-1", "--format=%ct", sha).stdout.strip(), c["class"]))
+    born.sort(reverse=True)
+    picked, dropped = [], []
+    for _ts, cls in born:
+        if len(picked) >= limit:
+            break
+        ok, why = is_generatable(cls, frameworks)
+        if ok:
+            picked.append(cls)
+        else:
+            dropped.append("%s (%s)" % (cls, why))
+    return picked, dropped
 
 
 def count_features(text):
     return {k: len(re.findall(v, text)) for k, v in FEATURES.items()}
 
 
-def method_names(text):
-    """Public method names, so coverage can be compared between generated and shipped files."""
-    return set(re.findall(r"^\s*public\s+(?:static\s+)?[\w.<>\[\]]+\s+(\w+)\s*\(", text, re.M))
+def method_signatures(text):
+    """(name, arity) for every public method, so overloads don't collapse into one name.
+
+    `Bounds.notNaN` is four shipped methods; counting the name once hid three of them.
+    """
+    sigs = set()
+    for m in re.finditer(r"^\s*public\s+(?:static\s+)?[\w.<>\[\]]+\s+(\w+)\s*\(", text, re.M):
+        i = m.end() - 1                       # index of the opening paren
+        depth, j = 0, i
+        while j < len(text):
+            ch = text[j]
+            if ch in "([{":
+                depth += 1
+            elif ch in ")]}":
+                depth -= 1
+                if depth == 0:
+                    break
+            j += 1
+        sigs.add((m.group(1), _arity(text[i + 1:j])))
+    return sigs
 
 
-def compare(current_path, generated_path):
+def _arity(params):
+    """Top-level comma count of a parameter list (0 for `()`)."""
+    params = params.strip()
+    if not params:
+        return 0
+    depth, n = 0, 1
+    for ch in params:
+        if ch in "([{<":
+            depth += 1
+        elif ch in ")]}>":
+            depth -= 1
+        elif ch == "," and depth == 0:
+            n += 1
+    return n
+
+
+def compare(current_path, generated_path, cls=None):
     cur = open(current_path).read() if os.path.exists(current_path) else ""
     gen = open(generated_path).read() if os.path.exists(generated_path) else ""
     cur_f, gen_f = count_features(cur), count_features(gen)
-    cur_m, gen_m = method_names(cur), method_names(gen)
+    cur_all, gen_all = method_signatures(cur), method_signatures(gen)
+    # The generator deliberately never emits the hand-written `public static <C> create()`
+    # factory, so a shipped create() is a policy difference, not a coverage miss: drop it from
+    # the set comparison. The raw shipped/generated counts stay raw so the ratio remains
+    # comparable with earlier runs, and the exclusion is reported, never silent.
+    policy_excluded = []
+    if (cls and ("create", 0) in cur_all
+            and re.search(r"public\s+static\s+%s\s+create\s*\(\s*\)" % re.escape(cls), cur)):
+        policy_excluded = ["create"]
+    excluded = {("create", 0)} if policy_excluded else set()
+    cur_m, gen_m = cur_all - excluded, gen_all - excluded
     return {
         "lines_current": len(cur.splitlines()),
         "lines_generated": len(gen.splitlines()),
-        "methods_current": len(cur_m),
-        "methods_generated": len(gen_m),
-        "methods_missing": sorted(cur_m - gen_m),
-        "methods_extra": sorted(gen_m - cur_m),
+        "methods_current": len(cur_all),
+        "methods_generated": len(gen_all),
+        "methods_comparable": len(cur_m),
+        "methods_missing": sorted(n for n, _a in cur_m - gen_m),
+        "methods_extra": sorted(n for n, _a in gen_m - cur_m),
+        "methods_policy_excluded": policy_excluded,
+        "coverage": (round(min(100.0, 100.0 * len(gen_all) / len(cur_all)), 1)
+                     if cur_all else None),
         "feature_current": cur_f,
         "feature_generated": gen_f,
         "features_missing": {k: cur_f[k] - gen_f[k] for k in cur_f if cur_f[k] > gen_f.get(k, 0)},
     }
+
+
+def conformant(comparison, generated):
+    """Conformant means the generator ran and the method/feature sets are the shipped ones."""
+    return bool(generated and comparison
+                and not comparison.get("methods_missing")
+                and not comparison.get("methods_extra")
+                and not comparison.get("features_missing"))
+
 
 
 def bench_class(cls, commit=None, frameworks=("AppKit", "QuartzCore", "Foundation"),
@@ -284,19 +561,29 @@ def bench_class(cls, commit=None, frameworks=("AppKit", "QuartzCore", "Foundatio
         commit = git("rev-parse", added + "^").stdout.strip()
     snap = snapshot(commit, keep=keep)
     reset_snapshot(snap)
+    # The "snapshot before the class existed" premise is checked, not assumed: a snapshot that
+    # already contains src/nsui/<C>.java can only produce a stale copy, and diffing that copy
+    # against itself is how a class the generator never touched read as FULL CONFORMANCE.
+    if os.path.exists(os.path.join(snap, rel)):
+        return {"class": cls, "snapshot": commit[:8], "status": "snapshot-contains-class",
+                "detail": ("%s is already present at snapshot %s; a snapshot that contains the "
+                           "class cannot measure generation" % (rel, commit[:8]))}
     os.makedirs(REPORTS, exist_ok=True)
     patch = os.path.join(REPORTS, "bench-%s-%s.patch" % (cls, commit[:8]))
     g = generate(snap, [cls], frameworks, patch)
     result = {"class": cls, "snapshot": commit[:8], "generator_rc": g.returncode,
               "generator_out": (g.stdout or "").strip().splitlines()[-3:],
+              "generator_sizes": parse_generator_sizes(g.stdout or ""),
+              "skips": parse_skips(g.stdout or ""),
+              "vocab_size": vocab_size(snap),
               "patch_bytes": os.path.getsize(patch) if os.path.exists(patch) else 0}
     ok, detail = apply_patch(snap, patch)
     result["applied"] = ok
-    result["apply_detail"] = detail if not ok else ""
+    result["apply_detail"] = detail          # recorded on success too: "empty patch" must show
     gen_path = os.path.join(snap, rel)
-    result["generated"] = os.path.exists(gen_path)
+    result["generated"] = ok and os.path.exists(gen_path)
     if result["generated"]:
-        result["comparison"] = compare(os.path.join(REPO, rel), gen_path)
+        result["comparison"] = compare(os.path.join(REPO, rel), gen_path, cls=cls)
     if run_gates and result["generated"]:
         passed, gdetail = run_gate(snap, gate_filter)
         result["gate_passed"] = passed
@@ -331,14 +618,13 @@ def main():
 
     if args.matrix:
         classes = list(args.classes)
+        passed_over = []
         if args.top:
-            born = []
-            for c in list_candidates():
-                sha = birth_commit("src/nsui/%s.java" % c["class"])
-                if sha:
-                    born.append((git("log", "-1", "--format=%ct", sha).stdout.strip(), c["class"]))
-            born.sort(reverse=True)
-            classes = [c for _, c in born[:args.top]]
+            # Rank by generatability, not by birth date: a helper/record/protocol that happens to
+            # be recent cannot be rendered, and letting it report n/a silently shrank the mean.
+            classes, passed_over = select_generatable(args.top, frameworks)
+            for entry in passed_over:
+                print("dropped %s" % entry)
         if not classes:
             ap.error("--matrix needs --class ... or --top N")
         os.makedirs(REPORTS, exist_ok=True)
@@ -347,14 +633,22 @@ def main():
                             out_json=os.path.join(REPORTS, "matrix.json"),
                             out_md=os.path.join(REPORTS, "matrix.md"))
         for r in rows:
-            cov = "n/a" if r["coverage"] is None else "%.1f%%" % r["coverage"]
+            if r["coverage"] is None:
+                continue                              # named below, never averaged silently
+            cov = "%.1f%%" % r["coverage"]
             print("%-40s coverage %-7s gate=%s %s"
                   % (r["class"], cov, r["gate"], "ERROR: " + r["error"] if r["error"] else ""))
         done = [r for r in rows if r["coverage"] is not None]
+        no_cov = [r for r in rows if r["coverage"] is None]
+        if no_cov:
+            print("dropped %d classes with no measurable coverage: %s"
+                  % (len(no_cov), ", ".join(r["class"] for r in no_cov)))
         if done:
-            print("\n%d classes: mean coverage %.1f%%  fully conformant %d"
-                  % (len(done), sum(r["coverage"] for r in done) / len(done),
-                     sum(1 for r in done if r["coverage"] >= 100 and not r["features_missing"])))
+            print("\n%d of %d classes measured: mean coverage %.1f%%  fully conformant %d"
+                  % (len(done), len(rows), sum(r["coverage"] for r in done) / len(done),
+                     sum(1 for r in done if r["conformant"])))
+        else:
+            print("\n0 of %d classes measured: no coverage to average" % len(rows))
         print("wrote %s/matrix.{json,md}" % REPORTS)
         return 0
 
@@ -366,26 +660,39 @@ def main():
         r["seconds"] = round(time.time() - t0, 1)
         results.append(r)
         print("\n=== %s (snapshot %s) ===" % (r["class"], r.get("snapshot", "?")))
-        if r.get("status") in ("no-birth-commit", "no-such-class"):
-            print("  " + r["detail"])
+        if r.get("status") in ("no-birth-commit", "no-such-class", "snapshot-contains-class"):
+            print("  status=%s  %s" % (r["status"], r.get("detail", "")))
             continue
         print("  generator rc=%s  patch=%s bytes  applied=%s  generated=%s  %ss"
               % (r.get("generator_rc"), r.get("patch_bytes"), r.get("applied"),
                  r.get("generated"), r.get("seconds")))
+        if r.get("apply_detail"):
+            print("  apply_detail: %s" % r["apply_detail"])
         if r.get("gate_passed") is not None:
             print("  gate: %s  %s" % ("PASS" if r["gate_passed"] else "FAIL", r.get("gate_detail", "")))
         c = r.get("comparison")
         if c:
-            print("  methods: shipped %d vs generated %d   lines: %d vs %d"
+            print("  methods: shipped %d vs generated %d   lines: %d vs %d   coverage %s"
                   % (c["methods_current"], c["methods_generated"],
-                     c["lines_current"], c["lines_generated"]))
+                     c["lines_current"], c["lines_generated"],
+                     "n/a" if c["coverage"] is None else "%.1f%%" % c["coverage"]))
+            if c["methods_policy_excluded"]:
+                print("  policy-excluded (not counted as a miss): %s"
+                      % ", ".join(c["methods_policy_excluded"]))
             if c["methods_missing"]:
                 print("  MISSING methods (%d): %s" % (len(c["methods_missing"]),
                                                       ", ".join(c["methods_missing"][:12])))
+            if c["methods_extra"]:
+                print("  EXTRA methods (%d): %s" % (len(c["methods_extra"]),
+                                                    ", ".join(c["methods_extra"][:12])))
             if c["features_missing"]:
                 print("  MISSING guards/features: %s" % json.dumps(c["features_missing"], sort_keys=True))
-            if not c["methods_missing"] and not c["features_missing"]:
+            if not c["methods_missing"] and not c["methods_extra"] and not c["features_missing"]:
                 print("  FULL CONFORMANCE: same method set and no missing guard features")
+        elif r.get("generated") is False:
+            print("  not generated: %s" % (", ".join("%d x %s" % (v, k) for k, v in
+                                                     sorted((r.get("skips") or {}).items()))
+                                           or "no output"))
 
     if args.json:
         with open(args.json, "w") as fh:

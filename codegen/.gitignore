@@ -1,5 +1,10 @@
-# Generated scratch: snapshots, extracted commits, bench output. Recreated on demand by bench.py.
+# CodeGen scratch. Only the generator (gen.py, hdrs.py, objcabi.py) and the reusable
+# conformance harness (bench.py) are tracked; everything below is transient output.
 work/
-reports/*.json
+reports/
+summary*.txt
+proposed*.patch
+survey.*
+.patchscratch/
 __pycache__/
 *.pyc

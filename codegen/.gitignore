@@ -1,0 +1,5 @@
+# Generated scratch: snapshots, extracted commits, bench output. Recreated on demand by bench.py.
+work/
+reports/*.json
+__pycache__/
+*.pyc

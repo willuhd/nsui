@@ -1,0 +1,451 @@
+#!/usr/bin/env python3
+"""hdrs.py - a stdlib-only reader for the Objective-C declaration subset that
+appears in a macOS SDK public header: @interface / @protocol / @property /
+instance and class methods.
+
+It is deliberately a *lexer*, not a C parser: it strips comments and availability
+macros, then splits an interface body into top-level ;-terminated statements,
+tracking (), [], {} nesting so multiline declarations and block types survive.
+Every declaration keeps its raw text and source line, so the generator can always
+show what it read and fall back to hand-written code when it does not understand.
+
+What it does NOT do (on purpose): typedef/enum body semantics, C function
+declarations, macro expansion, categories' inherited members, or struct layout.
+"""
+from __future__ import annotations
+
+import re
+
+# Availability / attribute macros removed before declaration parsing. Both the
+# NAME(...) and bare NAME forms are handled by strip_macros().
+MACROS = (
+    "API_AVAILABLE", "API_DEPRECATED", "API_DEPRECATED_WITH_REPLACEMENT",
+    "API_UNAVAILABLE", "API_UNAVAILABLE_MACCATALYST", "API_TO_BE_DEPRECATED",
+    "NS_SWIFT_NAME", "NS_SWIFT_UI_ACTOR", "NS_SWIFT_ASYNC", "NS_SWIFT_ASYNC_NAME",
+    "NS_REFINED_FOR_SWIFT", "NS_DESIGNATED_INITIALIZER", "NS_UNAVAILABLE",
+    "NS_REQUIRES_SUPER", "NS_RETURNS_RETAINED", "NS_RETURNS_NOT_RETAINED",
+    "NS_RETURNS_INNER_POINTER", "NS_NOESCAPE", "NS_CONSUMES_SELF",
+    "NS_HEADER_AUDIT_BEGIN", "NS_HEADER_AUDIT_END", "DEPRECATED_ATTRIBUTE",
+    "UNAVAILABLE_ATTRIBUTE", "CF_RETURNS_RETAINED", "CF_RETURNS_NOT_RETAINED",
+    "CF_RELEASES_ARGUMENT", "NS_FORMAT_FUNCTION", "NS_FORMAT_ARGUMENT",
+    "NS_DIRECT", "OBJC_ARC_UNAVAILABLE", "__attribute__",
+    # bare attributes seen in the SDK (found by scanning the headers):
+    "NS_SWIFT_NONISOLATED", "NS_SWIFT_SENDABLE", "NS_SWIFT_BRIDGED_TYPEDEF",
+    "NS_SWIFT_UNAVAILABLE", "NS_PROTOCOL_REQUIRES_EXPLICIT_IMPLEMENTATION",
+    "NSIMAGE_UNAVAILABLE_MACCATALYST", "NS_TYPED_ENUM",
+    "NS_TYPED_EXTENSIBLE_ENUM", "NS_EXTENSIBLE_STRING_ENUM", "NS_OPTIONS",
+    "API_UNAVAILABLE_BEGIN_MACCATALYST", "APPKIT_API_UNAVAILABLE_BEGIN_MACCATALYST",
+    "CA_EXTERN_C_BEGIN", "CA_EXTERN_C_END",
+)
+_MACRO_RE = re.compile(r"\b(" + "|".join(re.escape(m) for m in MACROS) + r")\b")
+
+# NOTE: a blanket all-caps sweep is NOT safe here: property and parameter names
+# are sometimes all caps (NSURL *URL, PDF, TIFF), and a commentary attribute list
+# would silently delete them. Only the curated attribute names above are stripped.
+
+
+class Decl:
+    """One method or property accessor ready to be ABI-checked."""
+
+    __slots__ = ("owner", "kind", "is_class", "selector", "ret_raw", "params",
+                 "nullable", "deprecated", "unavailable", "raw", "line",
+                 "declared_in", "property", "multiline")
+
+    def __init__(self, **kw):
+        for k in self.__slots__:
+            setattr(self, k, kw.get(k))
+
+    def __repr__(self):
+        return "<%s %s %s>" % ("+" if self.is_class else "-", self.selector,
+                               "property" if self.property else "")
+
+
+class Param:
+    __slots__ = ("type_raw", "name", "is_block", "is_out", "is_generic", "nullable")
+
+    def __init__(self, type_raw="", name="", is_block=False, is_out=False,
+                 is_generic=False, nullable=False):
+        self.type_raw = type_raw
+        self.name = name
+        self.is_block = is_block
+        self.is_out = is_out
+        self.is_generic = is_generic
+        self.nullable = nullable
+
+    def __repr__(self):
+        return "Param(%r,%r,block=%s,out=%s)" % (self.type_raw, self.name,
+                                                 self.is_block, self.is_out)
+
+
+class Interface:
+    __slots__ = ("kind", "name", "superclass", "category", "protocols", "file",
+                 "line", "decls", "body")
+
+    def __init__(self, kind, name, superclass, category, protocols, file, line, body):
+        self.kind = kind              # interface | protocol | category
+        self.name = name              # ObjC class/protocol name
+        self.superclass = superclass
+        self.category = category      # set when this is a category
+        self.protocols = protocols
+        self.file = file
+        self.line = line
+        self.body = body
+        self.decls = []
+
+
+# ------------------------------------------------------------------ text level
+
+def strip_comments(text):
+    """Replace C and C++ comments with spaces, preserving offsets and lines."""
+    out = []
+    i = 0
+    n = len(text)
+    while i < n:
+        c = text[i]
+        if c == "/" and i + 1 < n and text[i + 1] == "*":
+            j = text.find("*/", i + 2)
+            j = n if j < 0 else j + 2
+            out.append(re.sub(r"[^\n]", " ", text[i:j]))
+            i = j
+        elif c == "/" and i + 1 < n and text[i + 1] == "/":
+            j = text.find("\n", i)
+            j = n if j < 0 else j
+            out.append(" " * (j - i))
+            i = j
+        elif c == '"':
+            j = i + 1
+            while j < n and text[j] != '"':
+                j += 2 if text[j] == "\\" else 1
+            out.append(text[i:min(j + 1, n)])
+            i = min(j + 1, n)
+        elif c == "#" and (i == 0 or text[i - 1] == "\n"):
+            # Preprocessor line: blank it, preserving the newline. #if/#else
+            # branches therefore BOTH survive, which is a known approximation
+            # (counted and reported by the survey).
+            j = text.find("\n", i)
+            j = n if j < 0 else j
+            out.append(" " * (j - i))
+            i = j
+        else:
+            out.append(c)
+            i += 1
+    return "".join(out)
+
+
+def match_balanced(s, start):
+    """Index just past the closer matching s[start] (one of ([{)."""
+    openers = "([{"
+    closers = ")]}"
+    c = s[start]
+    close = closers[openers.index(c)]
+    depth = 0
+    i = start
+    n = len(s)
+    while i < n:
+        d = s[i]
+        if d == c:
+            depth += 1
+        elif d == close:
+            depth -= 1
+            if depth == 0:
+                return i + 1
+        i += 1
+    return n
+
+
+def strip_macros(s):
+    out = []
+    i = 0
+    n = len(s)
+    while i < n:
+        m = _MACRO_RE.match(s, i)
+        if m:
+            j = m.end()
+            k = j
+            while k < n and s[k].isspace():
+                k += 1
+            if k < n and s[k] == "(":
+                i = match_balanced(s, k)
+            else:
+                i = j
+            out.append(" ")
+            continue
+        out.append(s[i])
+        i += 1
+    return "".join(out)
+
+
+def split_statements(body):
+    """Split an interface body into top-level ;-terminated statements."""
+    stmts = []
+    start = 0
+    depth = 0
+    i = 0
+    n = len(body)
+    while i < n:
+        c = body[i]
+        if c == '"':
+            j = i + 1
+            while j < n and body[j] != '"':
+                j += 2 if body[j] == "\\" else 1
+            i = min(j + 1, n)
+            continue
+        if c in "([{":
+            depth += 1
+        elif c in ")]}":
+            depth -= 1
+        elif c == ";" and depth <= 0:
+            stmts.append(body[start:i + 1])
+            start = i + 1
+        i += 1
+    return stmts
+
+
+def _line_of(text, pos):
+    return text.count("\n", 0, pos) + 1
+
+
+# ----------------------------------------------------------- declaration parse
+
+def _classify_param(type_raw, name, nullable):
+    t = type_raw
+    return Param(
+        type_raw=t,
+        name=name,
+        is_block="^" in t,
+        is_out=bool(re.search(r"\*\s*\*", t)),
+        is_generic="<" in t,
+        nullable=nullable,
+    )
+
+
+def _nullability(text):
+    t = text
+    if re.search(r"\bnullable\b|_Nullable", t):
+        return True
+    if re.search(r"\bnonnull\b|_Nonnull", t):
+        return False
+    return None
+
+
+def parse_method(stmt, owner, is_class, file, line, declared_in, in_protocol=False):
+    s = strip_macros(stmt).strip()
+    if not s or s[0] not in "+-":
+        return None
+    i = 1
+    while i < len(s) and s[i].isspace():
+        i += 1
+    if i >= len(s) or s[i] != "(":
+        return None
+    j = match_balanced(s, i)
+    ret_raw = s[i + 1:j - 1].strip()
+    rest = s[j:].strip()
+    if not rest:
+        return None
+    params = []
+    labels = []
+    k = 0
+    n = len(rest)
+    while k < n:
+        while k < n and rest[k].isspace():
+            k += 1
+        m = re.match(r"[A-Za-z_]\w*", rest[k:])
+        if not m:
+            break
+        label = m.group(0)
+        k += m.end()
+        while k < n and rest[k].isspace():
+            k += 1
+        if k >= n or rest[k] != ":":
+            labels.append(label)          # zero-argument selector
+            break
+        k += 1
+        while k < n and rest[k].isspace():
+            k += 1
+        if k >= n or rest[k] != "(":
+            break
+        j2 = match_balanced(rest, k)
+        ptype = rest[k + 1:j2 - 1].strip()
+        k = j2
+        while k < n and rest[k].isspace():
+            k += 1
+        m2 = re.match(r"[A-Za-z_]\w*", rest[k:])
+        pname = m2.group(0) if m2 else ""
+        if m2:
+            k += m2.end()
+        labels.append(label + ":")
+        params.append(_classify_param(ptype, pname, _nullability(ptype)))
+    selector = "".join(labels)
+    if not selector:
+        return None
+    d = Decl(owner=owner, kind="method", is_class=is_class, selector=selector,
+             ret_raw=ret_raw, params=params, nullable=_nullability(ret_raw),
+             deprecated=bool(re.search(r"API_DEPRECATED|DEPRECATED_ATTRIBUTE", stmt)),
+             unavailable=bool(re.search(r"NS_UNAVAILABLE", stmt)),
+             raw=" ".join(stmt.split()), line=line, declared_in=declared_in,
+             property=False, multiline=("\n" in stmt.strip()))
+    return d
+
+
+_PROP_RE = re.compile(r"@property\s*(?:\((.*?)\))?\s*(.*?);?\s*$", re.S)
+
+
+def parse_property(stmt, owner, file, line, declared_in):
+    head = strip_macros(stmt).strip()
+    if not head.startswith("@property"):
+        return [], None
+    m = _PROP_RE.match(head)
+    if not m:
+        return [], None
+    attrs = m.group(1) or ""
+    decl = (m.group(2) or "").strip()
+    attr_list = [a.strip() for a in attrs.split(",") if a.strip()]
+    is_class_prop = "class" in attr_list
+    readonly = "readonly" in attr_list
+    nullable = _nullability(attrs + " " + decl)
+    if decl.endswith(")"):
+        return [], None                    # block property: hand-written
+    m2 = re.match(r"^(.*?)([A-Za-z_]\w*)\s*$", decl)
+    if not m2:
+        return [], None
+    type_raw = m2.group(1).strip()
+    name = m2.group(2)
+    getter = name
+    setter = "set" + name[0].upper() + name[1:] + ":"
+    for a in attr_list:
+        if a.startswith("getter="):
+            getter = a.split("=", 1)[1].strip()
+        elif a.startswith("setter="):
+            setter = a.split("=", 1)[1].strip()
+    dep = bool(re.search(r"API_DEPRECATED|DEPRECATED_ATTRIBUTE", stmt))
+    unavail = bool(re.search(r"NS_UNAVAILABLE", stmt))
+    get = Decl(owner=owner, kind="property-get", is_class=is_class_prop,
+               selector=getter, ret_raw=type_raw, params=[],
+               nullable=nullable, deprecated=dep, unavailable=unavail,
+               raw=" ".join(stmt.split()),
+               line=line, declared_in=declared_in, property=name,
+               multiline=("\n" in stmt.strip()))
+    out = [get]
+    if not readonly:
+        prop = _classify_param(type_raw, name, nullable)
+        out.append(Decl(owner=owner, kind="property-set", is_class=is_class_prop,
+                        selector=setter, ret_raw="void", params=[prop],
+                        nullable=nullable, deprecated=dep, unavailable=unavail,
+                        raw=" ".join(stmt.split()), line=line,
+                        declared_in=declared_in, property=name,
+                        multiline=("\n" in stmt.strip())))
+    return out, name
+
+
+# --------------------------------------------------------------- file / framework
+
+_IFACE_RE = re.compile(r"@(interface|protocol|implementation)\s+([A-Za-z_]\w*)")
+
+
+def header_end(s, start):
+    """Index of the end of an @interface/@protocol header.
+
+    Stops at the first newline (at angle-bracket depth 0) whose line does not end
+    with ':' or ',', so a superclass/protocol list continued on the next line is
+    still part of the header. This keeps ': NSObject' out of the statement stream
+    (otherwise it swallows the first declaration of every class).
+    """
+    depth = 0
+    i = start
+    n = len(s)
+    while i < n:
+        c = s[i]
+        if c == "<":
+            depth += 1
+        elif c == ">":
+            if depth > 0:
+                depth -= 1
+        elif c == "{" and depth == 0:
+            return i
+        elif c == "\n" and depth == 0:
+            line = s[start:i].strip()
+            if not (line.endswith(":") or line.endswith(",")):
+                return i
+        i += 1
+    return n
+
+
+def parse_text(text, file="<text>", keep_private=False):
+    """All @interface/@protocol blocks in a header as Interface objects."""
+    clean = strip_comments(text)
+    out = []
+    pos = 0
+    n = len(clean)
+    while pos < n:
+        m = _IFACE_RE.search(clean, pos)
+        if not m:
+            break
+        hend = header_end(clean, m.end())
+        head = clean[m.end():hend]
+        if head.rstrip().endswith(";"):
+            pos = m.end()                    # forward declaration: @protocol X;
+            continue
+        end = clean.find("@end", hend)
+        if end < 0:
+            end = n
+        body = clean[hend:end]
+        kind = m.group(1)
+        name = m.group(2)
+        hm = re.match(r"^\s*(?::\s*([A-Za-z_]\w*))?\s*(?:\(\s*([A-Za-z_]\w*)\s*\))?", head)
+        superclass = hm.group(1) if hm else None
+        category = hm.group(2) if hm else None
+        protocols = re.findall(r"<\s*([A-Za-z_][\w\s,]*?)\s*>", head)
+        proto_list = [p.strip() for p in protocols[0].split(",")] if protocols else []
+        if kind == "implementation" and not keep_private:
+            pos = end + 4
+            continue
+        iface = Interface(kind, name, superclass, category, proto_list, file,
+                          _line_of(clean, m.start()), body)
+        _parse_body(iface, clean, m.end(), file)
+        out.append(iface)
+        pos = end + 4
+    return out
+
+
+def _parse_body(iface, clean, body_start, file):
+    for stmt in split_statements(iface.body):
+        s = stmt.strip()
+        if not s:
+            continue
+        s = re.sub(r"^@(optional|required|public|private|protected|package)\b", "",
+                   s).strip()
+        if not s:
+            continue
+        line = _line_of(clean, body_start + iface.body.find(stmt))
+        if s.startswith("@property"):
+            decls, _ = parse_property(s, iface.name, file, line, iface.name)
+            iface.decls.extend(decls)
+        elif s[0] in "+-":
+            d = parse_method(s, iface.name, s[0] == "+", file, line, iface.name,
+                             in_protocol=iface.kind == "protocol")
+            if d:
+                iface.decls.append(d)
+
+
+def parse_file(path):
+    with open(path, "r", encoding="utf-8", errors="replace") as fh:
+        return parse_text(fh.read(), path)
+
+
+def parse_framework(sdk, framework, include_categories=False):
+    """Every @interface/@protocol in a framework's public Headers/ directory."""
+    import os
+    root = os.path.join(sdk, "System", "Library", "Frameworks",
+                        framework + ".framework", "Headers")
+    if not os.path.isdir(root):
+        return []
+    ifaces = []
+    for dirpath, _dirs, files in os.walk(root):
+        for fn in sorted(files):
+            if not fn.endswith(".h"):
+                continue
+            for iface in parse_file(os.path.join(dirpath, fn)):
+                if iface.category and not include_categories:
+                    continue
+                ifaces.append(iface)
+    return ifaces

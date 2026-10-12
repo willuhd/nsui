@@ -190,11 +190,12 @@ def enumerate_cases(classes, frameworks):
     toolkit = gen.Toolkit(REPO)
     out = []
     for cls in classes:
-        surface = gen.collect_surface(cls, list(frameworks), sdk)
-        if surface is None:
+        planned = gen.plan_class(cls, list(frameworks), sdk, vocab, wrappers, rt, toolkit=toolkit)
+        if planned is None:
             continue
+        surface = planned["surface"]
         view_ish = _is_view_subclass(surface, frameworks, sdk)
-        plans = gen.build_plan(surface, rt, vocab, wrappers, cls, toolkit=toolkit)
+        plans = planned["plans"]          # post-rename: the names the generator will really emit
         # An index guard needs a bound. Rather than guess one, take a no-argument accessor the
         # class already declares whose name says it counts something (`numberOfItems`, `count`).
         counters = sorted((q.java_name for q in plans

@@ -511,6 +511,36 @@ def _arity(params):
     return n
 
 
+_INHERITED = {}
+
+
+def inherited_names(cls, src_dir=None):
+    """Method names the shipped superclass chain provides, so a subclass inherits them.
+
+    A generated subclass that no longer re-declares what its shipped parent declares has not lost
+    API: the call still resolves. Measuring without this counted inherited methods as missing
+    (CAPropertyAnimation.setKeyPath lives on CAAnimation).
+    """
+    src_dir = src_dir or os.path.join(REPO, "src", "nsui")
+    key = (src_dir, cls)
+    if key in _INHERITED:
+        return _INHERITED[key]
+    names = set()
+    cur, seen = cls, set()
+    while cur and cur not in seen:
+        seen.add(cur)
+        path = os.path.join(src_dir, cur + ".java")
+        if not os.path.exists(path):
+            break
+        text = open(path, encoding="utf-8", errors="replace").read()
+        if cur != cls:
+            names |= method_signatures(text)      # same (name, arity) tuples as the shipped set
+        m = re.search(r"^public class %s extends (\w+)" % re.escape(cur), text, re.M)
+        cur = m.group(1) if m else None
+    _INHERITED[key] = names
+    return names
+
+
 _SDK_NAMES = {}
 
 
@@ -552,7 +582,12 @@ def compare(current_path, generated_path, cls=None):
         policy_excluded = ["create"]
     excluded = {("create", 0)} if policy_excluded else set()
     cur_m, gen_m = cur_all - excluded, gen_all - excluded
-    missing = sorted(n for n, _a in cur_m - gen_m)
+    # walk the same tree the shipped file came from: a snapshot's superclass may not declare a
+    # method the current tree's does, and crediting the wrong chain would hide a real miss
+    inherited = inherited_names(cls, os.path.dirname(current_path)) if cls else set()
+    shipped_reachable = cur_m | inherited
+    generated_reachable = gen_m | inherited          # the generated class extends the same wrapper
+    missing = sorted(n for n, _a in shipped_reachable - generated_reachable)
     sdk_names = sdk_method_names(cls)
     missing_sdk = [n for n in missing if n in sdk_names]
     missing_local = [n for n in missing if n not in sdk_names]
@@ -565,13 +600,15 @@ def compare(current_path, generated_path, cls=None):
         "methods_missing": missing,
         "methods_missing_sdk": missing_sdk,        # the generator could reach these
         "methods_missing_local": missing_local,    # hand-written affordances the SDK never declares
-        "methods_extra": sorted(n for n, _a in gen_m - cur_m),
+        "methods_extra": sorted(n for n, _a in gen_m - cur_m - inherited),
         "methods_policy_excluded": policy_excluded,
         # Recall over the shipped names, not a ratio of totals: the old figure gave
         # MTLSamplerDescriptor 100% with 8 extras and a largely disjoint method set, and it
         # credited the policy-excluded create(), so 100% was unreachable for any class with one.
-        "methods_matched": len(cur_m & gen_m),
-        "coverage": (round(100.0 * len(cur_m & gen_m) / len(cur_m), 1) if cur_m else None),
+        "methods_matched": len(shipped_reachable & generated_reachable),
+        "methods_inherited": sorted(n for n, _a in inherited),
+        "coverage": (round(100.0 * len(shipped_reachable & generated_reachable)
+                            / len(shipped_reachable), 1) if shipped_reachable else None),
         "feature_current": cur_f,
         "feature_generated": gen_f,
         "features_missing": {k: cur_f[k] - gen_f[k] for k in cur_f if cur_f[k] > gen_f.get(k, 0)},

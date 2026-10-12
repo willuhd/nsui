@@ -302,9 +302,20 @@ class ObjCRuntime:
     def get_class(self, name):
         return self.libobjc.objc_getClass(name.encode("utf-8"))
 
-    def _lookup(self, cls, sel):
+    def _lookup(self, cls, sel, want_class=None):
         """(method, 'inst'|'class') for cls, or (None, _). class_get*Method walks
-        the superclass chain, so a concrete subclass also reports inherited methods."""
+        the superclass chain, so a concrete subclass also reports inherited methods.
+
+        `want_class` is the side the header declared. Both sides can exist for the same selector
+        (NSBundle declares +pathForResource:ofType:inDirectory: and a private -pathForResource:...),
+        and asking the instance side first made the generator drop 19 declared class methods as
+        "runtime has only inst". The declared side wins; the other is the fallback.
+        """
+        if want_class:
+            m = self.libobjc.class_getClassMethod(cls, sel)
+            if m:
+                return m, "class"
+            return self.libobjc.class_getInstanceMethod(cls, sel), "inst"
         m = self.libobjc.class_getInstanceMethod(cls, sel)
         if m:
             return m, "inst"
@@ -342,18 +353,18 @@ class ObjCRuntime:
         self._concrete_cache[name] = cls
         return cls
 
-    def encoding(self, cls_name, selector):
+    def encoding(self, cls_name, selector, want_class=None):
         """(encoding_string, 'inst'|'class') or (None, reason)."""
         cls = self.get_class(cls_name)
         if not cls:
             return None, "no-class"
         sel = self.libobjc.sel_registerName(selector.encode("utf-8"))
-        m, kind = self._lookup(cls, sel)
+        m, kind = self._lookup(cls, sel, want_class)
         if not m:
             # Only a miss reaches the realization, so no existing resolution changes.
             concrete = self._concrete(cls_name)
             if concrete and concrete != cls:
-                m, kind = self._lookup(concrete, sel)
+                m, kind = self._lookup(concrete, sel, want_class)
         if not m:
             return None, "no-method"
         enc = self.libobjc.method_getTypeEncoding(m)

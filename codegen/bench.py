@@ -166,14 +166,9 @@ def bench_matrix(classes, commit=None, frameworks=("AppKit", "QuartzCore", "Foun
             r = {"class": cls, "error": str(exc)}
         c = r.get("comparison") or {}
         shipped, generated = c.get("methods_current"), c.get("methods_generated")
-        # Coverage is a ratio of the raw shipped/generated public method sets, clamped to 100%:
-        # a class the generator never touched has no comparison at all and must not read as
-        # conformant, and a class that gains methods cannot report >100%.
+        # Recall over the shipped method names (see compare()); no clamp, no credit for extras.
+        # A class the generator never touched has no comparison and must not read as conformant.
         coverage = c.get("coverage")
-        if coverage is not None:
-            coverage = round(min(100.0, coverage), 1)
-        elif shipped and generated is not None:
-            coverage = round(min(100.0, 100.0 * generated / shipped), 1)
         row = {
             "class": cls,
             "snapshot": r.get("snapshot"),
@@ -186,11 +181,14 @@ def bench_matrix(classes, commit=None, frameworks=("AppKit", "QuartzCore", "Foun
             "methods_shipped": shipped,
             "methods_generated": generated,
             "methods_comparable": c.get("methods_comparable"),
+            "methods_matched": c.get("methods_matched"),
             "methods_missing": c.get("methods_missing") or [],
+            "methods_missing_sdk": c.get("methods_missing_sdk") or [],
+            "methods_missing_local": c.get("methods_missing_local") or [],
             "methods_extra": c.get("methods_extra") or [],
             "methods_policy_excluded": c.get("methods_policy_excluded") or [],
             "coverage": coverage,
-            "conformant": conformant(c, r.get("generated")),
+            "conformant": conformant(c, r.get("generated"), r.get("gate_passed")),
             "features_missing": c.get("features_missing") or {},
             "skips": r.get("skips") or {},
             "generator_sizes": r.get("generator_sizes"),
@@ -221,21 +219,28 @@ def bench_matrix(classes, commit=None, frameworks=("AppKit", "QuartzCore", "Foun
             fh.write("the method set and guard features against the shipped wrapper.\n\n")
             fh.write("sdk=%s  os=%s  CodeGen %s\n\n"
                      % (meta["sdk"] or "-", meta["os"], meta["codegen_version"] or "-"))
-            fh.write("| class | snapshot | gen | shipped | generated | coverage | missing | extra "
-                     "| missing features |\n|---|---|---|---|---|---|---|---|---|\n")
+            fh.write("| class | snapshot | gen | gate | shipped | generated | matched | recall "
+                     "| missing (sdk/local) | extra | missing features |\n"
+                     "|---|---|---|---|---|---|---|---|---|---|---|\n")
             for r in rows:
                 cov = "n/a" if r["coverage"] is None else "%.1f%%" % r["coverage"]
                 miss = ", ".join("%s x%d" % (k, v) for k, v in sorted(r["features_missing"].items()))
-                fh.write("| %s | %s | %s | %s | %s | %s | %d | %d | %s |\n"
+                gate = "not-run" if r["gate"] is None else ("pass" if r["gate"] else "FAIL")
+                fh.write("| %s | %s | %s | %s | %s | %s | %s | %s | %d (%d/%d) | %d | %s |\n"
                          % (r["class"], r["snapshot"] or "-",
-                            "yes" if r["generated"] else "NO", r["methods_shipped"] if r["methods_shipped"] is not None else "-",
+                            "yes" if r["generated"] else "NO", gate,
+                            r["methods_shipped"] if r["methods_shipped"] is not None else "-",
                             r["methods_generated"] if r["methods_generated"] is not None else "-",
-                            cov, len(r["methods_missing"]), len(r["methods_extra"]), miss or "-"))
+                            r.get("methods_matched") if r.get("methods_matched") is not None else "-",
+                            cov, len(r["methods_missing"]),
+                            len(r["methods_missing_sdk"]), len(r["methods_missing_local"]),
+                            len(r["methods_extra"]), miss or "-"))
             if measured:
                 avg = sum(r["coverage"] for r in measured) / len(measured)
                 full = sum(1 for r in measured if r["conformant"])
-                fh.write("\n**%d of %d classes measured: mean method coverage %.1f%%, "
-                         "%d fully conformant.**\n" % (len(measured), len(rows), avg, full))
+                fh.write("\n**%d of %d classes measured: mean recall of the shipped method "
+                         "names %.1f%%, %d fully conformant (recall, extras, guard features and a "
+                         "passing gate all clean).**\n" % (len(measured), len(rows), avg, full))
             if dropped:
                 fh.write("\nDropped (no measurable coverage, not averaged): %s\n"
                          % ", ".join(r["class"] for r in dropped))
@@ -506,6 +511,32 @@ def _arity(params):
     return n
 
 
+_SDK_NAMES = {}
+
+
+def sdk_method_names(cls, frameworks=("AppKit", "Foundation", "QuartzCore", "Metal")):
+    """Java method names the SDK declares for `cls` (protocol bodies included).
+
+    Without this split a missing name looks like a generator failure even when the SDK never
+    declared it and the shipped wrapper hand-wrote it (NSGestureRecognizer.addTarget, NSArray.toList).
+    """
+    if not cls:
+        return set()
+    if cls not in _SDK_NAMES:
+        names = set()
+        try:
+            import hdrs
+            import gen
+            surface = gen.collect_surface(cls, list(frameworks))
+            if surface is not None:
+                for decl in surface.decls:
+                    names.add(gen.java_method_name(decl.selector))
+        except Exception:
+            pass
+        _SDK_NAMES[cls] = names
+    return _SDK_NAMES[cls]
+
+
 def compare(current_path, generated_path, cls=None):
     cur = open(current_path).read() if os.path.exists(current_path) else ""
     gen = open(generated_path).read() if os.path.exists(generated_path) else ""
@@ -521,27 +552,42 @@ def compare(current_path, generated_path, cls=None):
         policy_excluded = ["create"]
     excluded = {("create", 0)} if policy_excluded else set()
     cur_m, gen_m = cur_all - excluded, gen_all - excluded
+    missing = sorted(n for n, _a in cur_m - gen_m)
+    sdk_names = sdk_method_names(cls)
+    missing_sdk = [n for n in missing if n in sdk_names]
+    missing_local = [n for n in missing if n not in sdk_names]
     return {
         "lines_current": len(cur.splitlines()),
         "lines_generated": len(gen.splitlines()),
         "methods_current": len(cur_all),
         "methods_generated": len(gen_all),
         "methods_comparable": len(cur_m),
-        "methods_missing": sorted(n for n, _a in cur_m - gen_m),
+        "methods_missing": missing,
+        "methods_missing_sdk": missing_sdk,        # the generator could reach these
+        "methods_missing_local": missing_local,    # hand-written affordances the SDK never declares
         "methods_extra": sorted(n for n, _a in gen_m - cur_m),
         "methods_policy_excluded": policy_excluded,
-        "coverage": (round(min(100.0, 100.0 * len(gen_all) / len(cur_all)), 1)
-                     if cur_all else None),
+        # Recall over the shipped names, not a ratio of totals: the old figure gave
+        # MTLSamplerDescriptor 100% with 8 extras and a largely disjoint method set, and it
+        # credited the policy-excluded create(), so 100% was unreachable for any class with one.
+        "methods_matched": len(cur_m & gen_m),
+        "coverage": (round(100.0 * len(cur_m & gen_m) / len(cur_m), 1) if cur_m else None),
         "feature_current": cur_f,
         "feature_generated": gen_f,
         "features_missing": {k: cur_f[k] - gen_f[k] for k in cur_f if cur_f[k] > gen_f.get(k, 0)},
     }
 
 
-def conformant(comparison, generated):
-    """Conformant means the generator ran and the method/feature sets are the shipped ones."""
+def conformant(comparison, generated, gate_passed=None):
+    """Conformant means: generated, no SDK-declared method missing, no extras, no missing guard
+    features, and — when a gate was run — a passing verdict.
+
+    A run with --no-gate cannot claim conformance: nothing compiled the result against the runtime.
+    """
+    if gate_passed is not True:
+        return False
     return bool(generated and comparison
-                and not comparison.get("methods_missing")
+                and not comparison.get("methods_missing_sdk")
                 and not comparison.get("methods_extra")
                 and not comparison.get("features_missing"))
 

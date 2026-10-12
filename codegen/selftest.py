@@ -44,11 +44,11 @@ SURFACE_BATCH = [
 # class -> minimum coverage; a drop below the recorded value is a regression.
 COVERAGE = {
     "MTLSamplerDescriptor": 100.0,
-    "MTLDepthStencilDescriptor": 91.7,
-    "NSOrderedSet": 100.0,
-    "NSGestureRecognizer": 91.9,
-    "NSArray": 69.8,        # C-array and NSError** parameters are skipped, not emitted raw
-    "NSViewController": 86.5,  # commitEditing…:contextInfo: takes void *
+    "MTLDepthStencilDescriptor": 100.0,
+    "NSOrderedSet": 89.3,
+    "NSGestureRecognizer": 90.3,
+    "NSArray": 47.2,        # recall: 25 of 53 shipped names, the rest hand-written affordances
+    "NSViewController": 84.3,
     "CAPropertyAnimation": 100.0,
 }
 

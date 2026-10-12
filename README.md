@@ -14,7 +14,7 @@ NSUI talks directly to the ObjC runtime. Every AppKit call is an `objc_msgSend` 
 
 ```bash
 ./build.sh          # compiles to out/classes
-./tests.sh          # full suite (75 tests); exit 0 unless a test FAILS
+./tests.sh          # full suite (76 tests); exit 0 unless a test FAILS
 ./tests.sh Bench    # run only matching tests (substring filter)
 ./tests.sh --strict-skips   # also fail when a test reports itself SKIPPED
 ```
@@ -24,6 +24,12 @@ cases (`TestKit.skipCase`), no-oracle probes (`TestKit.probe`) or a `PARTIAL PAS
 summary is counted PASSED, and the runner prints a `NOTE:` line with those totals so a
 green result cannot hide them. `TestKit.skip()` (setup impossible) exits 2, which the
 runner reports as SKIPPED and tolerates unless `--strict-skips` is given.
+
+The exit code is not taken on trust either: a test that exits 0 without printing a
+`RESULT:` verdict is FAILED (it did not signal completion), and a test whose log contains a
+failure verdict (`RESULT: FAIL …` / `RESULT: N FAILURE(S)`) is FAILED even if it exited 0.
+Logs are read as bytes, so a stray non-UTF-8 byte cannot turn a passing test into a false
+failure.
 Run `./tests.sh` from the repository root: two gates locate the sources through
 relative paths (`src/nsui`, `tests`), and although the runner now pins the child
 working directory, a bare `java nsui.tests.<Gate>` from elsewhere will skip rather

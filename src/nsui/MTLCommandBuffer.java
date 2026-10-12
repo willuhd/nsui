@@ -33,6 +33,10 @@ public final class MTLCommandBuffer extends NSObject {
     }
 
     /// commit — submit (async return).
+    /// commit — call it EXACTLY ONCE per command buffer. A second commit aborts natively
+    /// (addScheduledHandler assertion, exit 134 with API validation on; undefined behaviour
+    /// without it), and so does waitUntilCompleted before any commit. Both would need per-buffer
+    /// state, which this wrapper deliberately does not keep, so the preconditions are documented.
     public void commit() {
         ObjC.msgSendVoid(peer, ObjC.sel("commit"));
     }

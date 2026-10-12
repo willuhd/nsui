@@ -151,6 +151,27 @@ public final class MTLRenderCommandEncoder extends NSObject {
         }
     }
 
+    /// Metal's buffer-argument limits, measured with the API validation layer on:
+    ///   index  must be < 31  (so 0..30 are the valid slots; 31 aborts for BOTH the vertex and
+    ///           fragment stages — "index(31) must be < 31") — the same limit applies to the
+    ///           compute encoder's setBuffer:.
+    ///   offset must be < the buffer's length ("offset(16) must be < [buffer length](16)");
+    ///           offset 15 in a 16-byte buffer is accepted. A nil buffer unbinds the slot and
+    ///           takes no offset.
+    /// Both are stateless argument checks, so they are enforced here instead of leaving a caller
+    /// to discover them as an uncatchable assertion.
+    public static final long MAX_BUFFER_SLOTS = 31L;
+
+    private static void checkBufferArgs(MTLBuffer buffer, long offset, long index, String what) {
+        Bounds.index(index, MAX_BUFFER_SLOTS, what);
+        if (buffer == null) return;                       // nil unbinds; the offset is ignored
+        Bounds.nonNegative(offset, what + " (offset)");
+        if (offset >= buffer.length()) {
+            throw new IllegalArgumentException(what + ": offset " + offset
+                    + " must be < the buffer length (" + buffer.length() + ")");
+        }
+    }
+
     /// setVertexBytes:length:atIndex: — bytes are copied synchronously.
     ///
     /// Metal caps this call at 4096 bytes: with API validation enabled (MTL_DEBUG_LAYER=1) a
@@ -183,6 +204,7 @@ public final class MTLRenderCommandEncoder extends NSObject {
     /// setVertexBuffer:offset:atIndex: (nil unbinds the slot).
     public void setVertexBuffer(MTLBuffer buffer, long offset, long index) {
         ensureInit();
+        checkBufferArgs(buffer, offset, index, "setVertexBuffer:offset:atIndex:");
         try {
             handles.hVertexBuffer().invokeExact(peer, ObjC.sel("setVertexBuffer:offset:atIndex:"),
                     ObjC.nullablePeer(buffer), offset, index);
@@ -210,6 +232,7 @@ public final class MTLRenderCommandEncoder extends NSObject {
     /// setFragmentBuffer:offset:atIndex: (nil unbinds the slot).
     public void setFragmentBuffer(MTLBuffer buffer, long offset, long index) {
         ensureInit();
+        checkBufferArgs(buffer, offset, index, "setFragmentBuffer:offset:atIndex:");
         try {
             handles.hVertexBuffer().invokeExact(peer, ObjC.sel("setFragmentBuffer:offset:atIndex:"),
                     ObjC.nullablePeer(buffer), offset, index);
@@ -287,6 +310,10 @@ public final class MTLRenderCommandEncoder extends NSObject {
     }
 
     /// endEncoding.
+    /// endEncoding — call it EXACTLY ONCE per encoder. A second call aborts natively ("endEncoding"
+    /// assertion, exit 134 with API validation on; undefined behaviour without it). Guarding it
+    /// would need per-encoder state, which this wrapper deliberately does not keep, so the
+    /// precondition is documented instead.
     public void endEncoding() {
         ObjC.msgSendVoid(peer, ObjC.sel("endEncoding"));
     }

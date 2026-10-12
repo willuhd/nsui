@@ -2233,6 +2233,44 @@ public final class AuditRegressionTest {
             TestKit.check(false, "CA NaN-tolerance block threw: " + t);
         }
 
+        // --- 8bm. Metal buffer-argument limits (index < 31, offset < buffer length) ---
+        // Measured with MTL_DEBUG_LAYER=1 and a proper teardown (an un-ended encoder aborts on its
+        // own): vertex and fragment index 30 are accepted and 31 aborts with "index(31) must be
+        // < 31"; offset 15 in a 16-byte buffer is accepted and 16 aborts with "must be < [buffer
+        // length](16)". Bound artifacts of the first probes: an un-ended encoder aborted every case
+        // (masking the result) and one draft passed the value as the OFFSET argument.
+        try {
+            if (nsui.MTLDevice.systemDefault() != null) {
+                nsui.MTLDevice mdev = nsui.MTLDevice.systemDefault();
+                nsui.MTLBuffer mbuf = mdev.newBuffer(16L, 0L);
+                nsui.MTLTextureDescriptor mtd = nsui.MTLTextureDescriptor.texture2D(64L, 8, 8, false);
+                mtd.setUsage(4L);
+                nsui.MTLTexture mtex = mdev.newTexture(mtd);
+                nsui.MTLRenderPassDescriptor mpass = nsui.MTLRenderPassDescriptor.create();
+                mpass.colorAttachment(0).setTexture(mtex);
+                nsui.MTLRenderCommandEncoder menc = mdev.newCommandQueue().commandBuffer().renderEncoder(mpass);
+                TestKit.noThrow("setVertexBuffer(index 30) is accepted (native boundary)",
+                        () -> menc.setVertexBuffer(mbuf, 0L, 30L));
+                TestKit.expectThrows("setVertexBuffer(index 31) rejects (native 'must be < 31')",
+                        IllegalArgumentException.class, () -> menc.setVertexBuffer(mbuf, 0L, 31L));
+                TestKit.noThrow("setVertexBuffer(offset 15) is accepted (native boundary)",
+                        () -> menc.setVertexBuffer(mbuf, 15L, 0L));
+                TestKit.expectThrows("setVertexBuffer(offset = buffer length) rejects",
+                        IllegalArgumentException.class, () -> menc.setVertexBuffer(mbuf, 16L, 0L));
+                TestKit.expectThrows("setFragmentBuffer(index 31) rejects",
+                        IllegalArgumentException.class, () -> menc.setFragmentBuffer(mbuf, 0L, 31L));
+                TestKit.noThrow("setVertexBuffer(nil buffer) still unbinds with any index 0..30",
+                        () -> menc.setVertexBuffer(null, 0L, 5L));
+                menc.endEncoding();
+                TestKit.check(nsui.MTLRenderCommandEncoder.MAX_BUFFER_SLOTS == 31L,
+                        "the documented buffer-slot cap is 31");
+            } else {
+                TestKit.probe("no Metal device; buffer-argument guards checked by constant only");
+            }
+        } catch (Throwable t) {
+            TestKit.check(false, "Metal buffer-arg block threw: " + t);
+        }
+
         // --- 8z. type-confusion guards on the raw collection-view setters ---
         // AppKit does NOT raise a type error here, it either asserts isKindOfClass: or
         // messages the object: setCollectionViewLayout: with a plain NSView raised

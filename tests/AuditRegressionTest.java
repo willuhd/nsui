@@ -2360,6 +2360,36 @@ public final class AuditRegressionTest {
             TestKit.check(false, "encoder-slot block threw: " + t);
         }
 
+        // --- 8bo. MTLDevice buffer resource options (texture constants do NOT apply) ---
+        // Measured: newBuffer(256, 0|1|16|32) works; 2 and 3 abort ("Buffer Validation"), 48
+        // (Managed|Private) aborts. The texture constants are 0/1/2, so reusing STORAGE_PRIVATE (2)
+        // as a buffer option is exactly the trap the published RESOURCE_* constants exist to avoid.
+        try {
+            if (nsui.MTLDevice.systemDefault() != null) {
+                nsui.MTLDevice od = nsui.MTLDevice.systemDefault();
+                TestKit.check(nsui.MTLDevice.RESOURCE_STORAGE_SHARED == 0L
+                                && nsui.MTLDevice.RESOURCE_STORAGE_MANAGED == 16L
+                                && nsui.MTLDevice.RESOURCE_STORAGE_PRIVATE == 32L,
+                        "buffer RESOURCE_STORAGE_* are the buffer values 0/16/32");
+                TestKit.check(nsui.MTLTextureDescriptor.STORAGE_PRIVATE == 2L,
+                        "texture STORAGE_PRIVATE is 2 — not a legal buffer option");
+                TestKit.noThrow("newBuffer with RESOURCE_STORAGE_SHARED works",
+                        () -> od.newBuffer(256L, nsui.MTLDevice.RESOURCE_STORAGE_SHARED));
+                TestKit.noThrow("newBuffer with WRITE_COMBINED works",
+                        () -> od.newBuffer(256L, nsui.MTLDevice.RESOURCE_CACHE_MODE_WRITE_COMBINED));
+                TestKit.noThrow("newBuffer with RESOURCE_STORAGE_PRIVATE works",
+                        () -> od.newBuffer(256L, nsui.MTLDevice.RESOURCE_STORAGE_PRIVATE));
+                TestKit.expectThrows("newBuffer(2) rejects instead of aborting (texture constant trap)",
+                        IllegalArgumentException.class, () -> od.newBuffer(256L, 2L));
+                TestKit.expectThrows("newBuffer(MANAGED|PRIVATE) rejects",
+                        IllegalArgumentException.class, () -> od.newBuffer(256L, 48L));
+            } else {
+                TestKit.probe("no Metal device; buffer-option constants checked only");
+            }
+        } catch (Throwable t) {
+            TestKit.check(false, "buffer-options block threw: " + t);
+        }
+
         // --- 8z. type-confusion guards on the raw collection-view setters ---
         // AppKit does NOT raise a type error here, it either asserts isKindOfClass: or
         // messages the object: setCollectionViewLayout: with a plain NSView raised

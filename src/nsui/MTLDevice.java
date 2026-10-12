@@ -107,9 +107,35 @@ public final class MTLDevice extends NSObject {
         return MTLCommandQueue.wrap(ObjC.msgSendId(peer, ObjC.sel("newCommandQueue")));
     }
 
-    /// newBufferWithLength:options: — MTLResourceStorageModeShared (0) for
-    /// CPU-writable vertex/index buffers.
+    /// MTLResourceOptions STORAGE bits as the BUFFER API takes them.
+    ///
+    /// These are NOT the MTLTextureDescriptor.STORAGE_* values: textures use 0/1/2, buffers use
+    /// 0/16/32. Reusing the texture constant as a buffer option is a live trap — measured,
+    /// `newBuffer(256, 2)` aborts the process ("Buffer Validation", exit 134). The cache-mode bits
+    /// combine with the storage bits (0 or CACHE_MODE_WRITE_COMBINED).
+    public static final long RESOURCE_STORAGE_SHARED = 0L;
+    public static final long RESOURCE_STORAGE_MANAGED = 16L;
+    public static final long RESOURCE_STORAGE_PRIVATE = 32L;
+    public static final long RESOURCE_CACHE_MODE_DEFAULT = 0L;
+    public static final long RESOURCE_CACHE_MODE_WRITE_COMBINED = 1L;
+
+    /// newBufferWithLength:options: — use the RESOURCE_STORAGE_* constants above
+    /// (RESOURCE_STORAGE_SHARED for CPU-writable vertex/index buffers).
+    ///
+    /// The measured valid set on this host is {0, 1, 16, 32}; 2, 3 and 48 (Managed|Private) abort,
+    /// and so do the high bits probed (0x10000, 0x20000, 0x100000, 0x200000). Only the two
+    /// patterns that are invalid by construction are rejected here — a Managed|Private storage
+    /// combination and the unused cache-mode bit — because the high bits may become meaningful on a
+    /// later OS and refusing them pre-emptively would be over-tight.
     public MTLBuffer newBuffer(long length, long options) {
+        if ((options & 0x30L) == 0x30L) {
+            throw new IllegalArgumentException("newBuffer options " + options
+                    + " combine MANAGED and PRIVATE storage (0x30); pick one storage mode");
+        }
+        if ((options & 0x2L) != 0) {
+            throw new IllegalArgumentException("newBuffer options " + options
+                    + " set the unused cache-mode bit 0x2 (valid: 0 or 1)");
+        }
         ensureInit();
         try {
             MemorySegment b = (MemorySegment) handles.hBuffer().invokeExact(peer,

@@ -152,14 +152,6 @@ def _bad_expr(kind, badness):
     return _default_expr(kind)
 
 
-def collection_like(cls_name):
-    """Whether the toolkit's wrapper for a class offers count(), i.e. it behaves as a collection."""
-    path = os.path.join(REPO, "src", "nsui", cls_name + ".java")
-    if not os.path.exists(path):
-        return False
-    return bool(re.search(r"public (long|int) count\s*\(", open(path, errors="replace").read()))
-
-
 def _is_view_subclass(surface, frameworks, sdk, seen=None):
     seen = seen or set()
     name = surface.superclass
@@ -238,45 +230,42 @@ def enumerate_cases(classes, frameworks):
     return out
 
 
-def discover_bound(sel, plans, wrappers, extra_plans=None):
-    """(bound expression, setup line) for an index in `sel`, or (None, None).
+SHIPPED_INDEX_GUARD = re.compile(r'Bounds\.index\(\s*(\w+)\s*,\s*([^,]+?)\s*,\s*"([^"]+)"\s*\)')
 
-    A bound is a no-argument accessor whose name says it counts (`numberOfItems`, `count`,
-    `length`) and which returns a scalar. Failing that, a collection accessor is used when its name
-    carries the noun the index names (`removeItemAtIndex:` -> `items()`, `moveRowAt...` ->
-    `rows()`), because an unrelated collection's count would produce a guard that rejects valid
-    indices. Nothing is guessed when neither exists: the case is reported instead.
+
+def shipped_index_bounds(cls):
+    """{selector: {parameter name: bound expression}} from the shipped wrapper's own guards.
+
+    The corpus already encodes the bound each index needs (`numberOfColumns()` for a column index),
+    and a bound has to belong to the collection being indexed. Deriving one from count-like
+    accessors produced guards that rejected valid columns and let invalid ones abort natively.
     """
-    scalars = ("long", "int", "short", "byte", "uint32")
-    all_plans = list(plans) + list(extra_plans or [])     # an inherited counter still bounds it
-    counters = sorted((q.java_name for q in all_plans
-                       if not q.skip and not q.is_class and not q.params
-                       and q.ret_java in scalars
-                       and re.search(r"(?i)(count|numberof|length)", q.java_name)),
-                      key=lambda n: (len(n), n))
-    if counters:
-        return "%s()" % counters[0], None
-    m = re.search(r"([A-Z][A-Za-z]*?)At(?:Index|Row)|([A-Z][A-Za-z]*?)Index", sel or "")
-    run = next((g for g in (m.groups() if m else ()) if g), "")
-    if len(run) < 3:
-        return None, None
-    # Try the longest noun first (`SelectedTabViewItem` then `TabViewItem` then `Item`): the longer
-    # match is the more specific accessor, and a shorter one risks an unrelated collection.
-    parts = re.findall(r"[A-Z][a-z0-9]*", run)
-    nouns = ["".join(parts[i:]) for i in range(len(parts))]
-    for noun in nouns:
-        if len(noun) < 3:
-            continue
-        for q in sorted(all_plans, key=lambda x: x.java_name):
-            if q.skip or q.is_class or q.params:
-                continue
-            if noun.lower() not in q.java_name.lower() or q.ret_java not in wrappers:
-                continue
-            if not collection_like(q.ret_java):
-                continue
-            return ("__items == null ? 0 : __items.count()",
-                    "%s __items = %s();" % (q.ret_java, q.java_name))
-    return None, None
+    path = os.path.join(REPO, "src", "nsui", cls + ".java")
+    out = {}
+    if not os.path.exists(path):
+        return out
+    text = open(path, encoding="utf-8", errors="replace").read()
+    for m in SHIPPED_INDEX_GUARD.finditer(text):
+        out.setdefault(m.group(3), {})[m.group(1)] = m.group(2).strip()
+    return out
+
+
+def shipped_bound(cls, selector, param_name, param_index):
+    """The bound the shipped wrapper uses for this index parameter, or None.
+
+    Matched by name and then by position, because a shipped wrapper sometimes renames a header
+    parameter (scrollToPoint: takes `newOrigin` in the header, `point` in the wrapper). None means
+    the corpus has no guard for it, and inventing one is how wrong bounds got emitted.
+    """
+    bounds = shipped_index_bounds(cls).get(selector) or {}
+    if not bounds:
+        return None
+    if param_name in bounds:
+        return bounds[param_name]
+    names = list(bounds)
+    if isinstance(param_index, int) and param_index < len(names):
+        return bounds[names[param_index]]
+    return None
 
 
 def _cases_for_class(cls, plans, wrappers, recv_expr, ancestors=None, skip_cases=None):
@@ -293,19 +282,27 @@ def _cases_for_class(cls, plans, wrappers, recv_expr, ancestors=None, skip_cases
         if (cls, plan.decl.selector) in (skip_cases or set()):
             continue
         kinds = [(k, jt, nm) for k, jt, nm in plan.params]
-        bound, bound_setup = discover_bound(plan.decl.selector, plans, wrappers, ancestors)
+        bound = bound_setup = None
         objs = [i for i, (k, _j, _n) in enumerate(kinds)
                 if k in OBJECT_KINDS or k.startswith("typed:")]
         structs = [i for i, (k, _j, _n) in enumerate(kinds) if k in STRUCT_DEFAULTS]
+        # An index parameter is one whose name *is* an index: `indexType` is an enum, and guarding
+        # it with a collection's count rejected legal values.
+        def is_index(name):
+            n = name.lower()
+            if n != "index" and not n.endswith("index"):
+                return False
+            return not re.search(r"indextype|indexpath|indexset|indexrange|indexes|indexof", n)
+
         idx = [i for i, (k, _j, n) in enumerate(kinds)
-               if k in ("long", "int", "short", "byte", "uint32") and "index" in n.lower()]
+               if k in ("long", "int", "short", "byte", "uint32") and is_index(n)]
         wanted = []
         if len(objs) == 1:
             wanted.append((objs[0], "nil"))
         if len(structs) == 1 and STRUCT_DEFAULTS[kinds[structs[0]][0]][1]:
             wanted.append((structs[0], "nan"))
-        if idx and not objs and not structs:
-            wanted.append((idx[0], "index"))
+        for target in idx:                      # every index parameter, not just the first
+            wanted.append((target, "index"))
         for target, badness in wanted:
             args = [_bad_expr(k, badness) if i == target else _default_expr(k)
                     for i, (k, _j, _n) in enumerate(kinds)]
@@ -314,8 +311,12 @@ def _cases_for_class(cls, plans, wrappers, recv_expr, ancestors=None, skip_cases
                 "class": cls, "selector": plan.decl.selector,
                 "guard": {"nil": "nonNull", "nan": "notNaN", "index": "index"}[badness],
                 "param": kinds[target][2], "param_index": target, "badness": badness,
-                "bound": bound if badness == "index" else None,
-                "bound_setup": bound_setup if badness == "index" else None,
+                "bound": (shipped_bound(cls, plan.decl.selector, kinds[target][2], target)
+                          if badness == "index" else None),
+                "bound_setup": None,
+                # provenance: a bound is only as good as the guard it was read from, and every
+                # bound now comes from the shipped wrapper rather than from a guess
+                "bound_from": ("src/nsui/%s.java" % cls) if badness == "index" else None,
                 "method": plan.java_name, "arity": len(kinds),
                 "setup": ["%s recv = %s;" % (cls, recv_expr),
                           'if (recv == null) { System.out.println("NORECEIVER"); return; }'],
@@ -709,6 +710,9 @@ def enumerate_measure(repo, args):
         entry = {"class": case["class"], "selector": case["selector"], "param": case["param"],
                  "param_index": case["param_index"], "probe_id": case["id"],
                  "unguarded": r["verdict"]}
+        for field in ("bound", "bound_from"):
+            if case.get(field):
+                entry[field] = case[field]
         if r["verdict"] in ("objc-abort", "sigtrap", "sigill"):
             if case["badness"] == "nil":
                 entry["guards"] = ['Bounds.nonNull({p}, "%s");' % case["selector"]]

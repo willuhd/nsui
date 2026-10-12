@@ -14,32 +14,6 @@
     },
     {
       "class": "NSViewController",
-      "selector": "insertChildViewController:atIndex:",
-      "param": "index",
-      "unguarded": "objc-abort",
-      "setup": [
-        "NSArray __children = childViewControllers();"
-      ],
-      "guards": [
-        "Bounds.index({p}, __children == null ? 0 : __children.count(), \"insertChildViewController:atIndex:\");"
-      ],
-      "probe_id": "NSViewController.insertChildViewController:atIndex:5"
-    },
-    {
-      "class": "NSViewController",
-      "selector": "removeChildViewControllerAtIndex:",
-      "param": "index",
-      "unguarded": "objc-abort",
-      "setup": [
-        "NSArray __children = childViewControllers();"
-      ],
-      "guards": [
-        "Bounds.index({p}, __children == null ? 0 : __children.count(), \"removeChildViewControllerAtIndex:\");"
-      ],
-      "probe_id": "NSViewController.removeChildViewControllerAtIndex:0"
-    },
-    {
-      "class": "NSViewController",
       "selector": "presentViewControllerAsSheet:",
       "param": "viewController",
       "unguarded": "objc-abort",
@@ -47,16 +21,6 @@
         "Bounds.nonNull({p}, \"presentViewControllerAsSheet:\");"
       ],
       "probe_id": "NSViewController.presentViewControllerAsSheet:null"
-    },
-    {
-      "class": "NSMenu",
-      "selector": "itemAtIndex:",
-      "param": "index",
-      "unguarded": "objc-abort",
-      "guards": [
-        "Bounds.index({p}, numberOfItems(), \"itemAtIndex:\");"
-      ],
-      "probe_id": "NSMenu.itemAtIndex:3"
     },
     {
       "class": "NSMenu",
@@ -160,17 +124,6 @@
       "unguarded": "tolerated",
       "control": "the unguarded call survived, so no guard is emitted",
       "guards": []
-    },
-    {
-      "class": "NSMenu",
-      "selector": "removeItemAtIndex:",
-      "param": "index",
-      "param_index": 0,
-      "probe_id": "NSMenu.removeItemAtIndex.index",
-      "unguarded": "objc-abort",
-      "guards": [
-        "Bounds.index({p}, numberOfItems(), \"removeItemAtIndex:\");"
-      ]
     },
     {
       "class": "NSMenu",
@@ -1559,17 +1512,6 @@
     },
     {
       "class": "NSLayoutManager",
-      "selector": "removeTextContainerAtIndex:",
-      "param": "index",
-      "param_index": 0,
-      "probe_id": "NSLayoutManager.removeTextContainerAtIndex.index",
-      "unguarded": "objc-abort",
-      "guards": [
-        "Bounds.index({p}, numberOfGlyphs(), \"removeTextContainerAtIndex:\");"
-      ]
-    },
-    {
-      "class": "NSLayoutManager",
       "selector": "textContainerChangedGeometry:",
       "param": "container",
       "param_index": 0,
@@ -2820,17 +2762,6 @@
     },
     {
       "class": "MTLRenderPipelineDescriptor",
-      "selector": "setTessellationControlPointIndexType:",
-      "param": "tessellationControlPointIndexType",
-      "param_index": 0,
-      "probe_id": "MTLRenderPipelineDescriptor.setTessellationControlPointIndexType.index",
-      "unguarded": "objc-abort",
-      "guards": [
-        "Bounds.index({p}, sampleCount(), \"setTessellationControlPointIndexType:\");"
-      ]
-    },
-    {
-      "class": "MTLRenderPipelineDescriptor",
       "selector": "setBinaryArchives:",
       "param": "binaryArchives",
       "param_index": 0,
@@ -2951,17 +2882,6 @@
       "unguarded": "tolerated",
       "control": "the unguarded call survived, so no guard is emitted",
       "guards": []
-    },
-    {
-      "class": "NSArray",
-      "selector": "objectAtIndex:",
-      "param": "index",
-      "param_index": 0,
-      "probe_id": "NSArray.objectAtIndex.index",
-      "unguarded": "objc-abort",
-      "guards": [
-        "Bounds.index({p}, count(), \"objectAtIndex:\");"
-      ]
     },
     {
       "class": "NSArray",
@@ -3178,17 +3098,6 @@
       "unguarded": "objc-abort",
       "guards": [
         "Bounds.notNaN({p}, \"relativeLineToPoint:\");"
-      ]
-    },
-    {
-      "class": "NSBezierPath",
-      "selector": "elementAtIndex:",
-      "param": "index",
-      "param_index": 0,
-      "probe_id": "NSBezierPath.elementAtIndex.index",
-      "unguarded": "objc-abort",
-      "guards": [
-        "Bounds.index({p}, elementCount(), \"elementAtIndex:\");"
       ]
     },
     {
@@ -3563,17 +3472,6 @@
       "unguarded": "objc-abort",
       "guards": [
         "Bounds.nonNull({p}, \"deselectItemsAtIndexPaths:\");"
-      ]
-    },
-    {
-      "class": "NSCollectionView",
-      "selector": "itemAtIndex:",
-      "param": "index",
-      "param_index": 0,
-      "probe_id": "NSCollectionView.itemAtIndex.index",
-      "unguarded": "objc-abort",
-      "guards": [
-        "Bounds.index({p}, maxNumberOfRows(), \"itemAtIndex:\");"
       ]
     },
     {
@@ -4899,39 +4797,6 @@
     },
     {
       "class": "NSGridView",
-      "selector": "rowAtIndex:",
-      "param": "index",
-      "param_index": 0,
-      "probe_id": "NSGridView.rowAtIndex.index",
-      "unguarded": "objc-abort",
-      "guards": [
-        "Bounds.index({p}, numberOfRows(), \"rowAtIndex:\");"
-      ]
-    },
-    {
-      "class": "NSGridView",
-      "selector": "columnAtIndex:",
-      "param": "index",
-      "param_index": 0,
-      "probe_id": "NSGridView.columnAtIndex.index",
-      "unguarded": "objc-abort",
-      "guards": [
-        "Bounds.index({p}, numberOfRows(), \"columnAtIndex:\");"
-      ]
-    },
-    {
-      "class": "NSGridView",
-      "selector": "cellAtColumnIndex:rowIndex:",
-      "param": "columnIndex",
-      "param_index": 0,
-      "probe_id": "NSGridView.cellAtColumnIndexRowIndex.index",
-      "unguarded": "objc-abort",
-      "guards": [
-        "Bounds.index({p}, numberOfRows(), \"cellAtColumnIndex:rowIndex:\");"
-      ]
-    },
-    {
-      "class": "NSGridView",
       "selector": "cellForView:",
       "param": "view",
       "param_index": 0,
@@ -4962,28 +4827,6 @@
     },
     {
       "class": "NSGridView",
-      "selector": "moveRowAtIndex:toIndex:",
-      "param": "fromIndex",
-      "param_index": 0,
-      "probe_id": "NSGridView.moveRowAtIndexToIndex.index",
-      "unguarded": "objc-abort",
-      "guards": [
-        "Bounds.index({p}, numberOfRows(), \"moveRowAtIndex:toIndex:\");"
-      ]
-    },
-    {
-      "class": "NSGridView",
-      "selector": "removeRowAtIndex:",
-      "param": "index",
-      "param_index": 0,
-      "probe_id": "NSGridView.removeRowAtIndex.index",
-      "unguarded": "objc-abort",
-      "guards": [
-        "Bounds.index({p}, numberOfRows(), \"removeRowAtIndex:\");"
-      ]
-    },
-    {
-      "class": "NSGridView",
       "selector": "addColumnWithViews:",
       "param": "views",
       "param_index": 0,
@@ -5001,28 +4844,6 @@
       "unguarded": "tolerated",
       "control": "the unguarded call survived, so no guard is emitted",
       "guards": []
-    },
-    {
-      "class": "NSGridView",
-      "selector": "moveColumnAtIndex:toIndex:",
-      "param": "fromIndex",
-      "param_index": 0,
-      "probe_id": "NSGridView.moveColumnAtIndexToIndex.index",
-      "unguarded": "objc-abort",
-      "guards": [
-        "Bounds.index({p}, numberOfRows(), \"moveColumnAtIndex:toIndex:\");"
-      ]
-    },
-    {
-      "class": "NSGridView",
-      "selector": "removeColumnAtIndex:",
-      "param": "index",
-      "param_index": 0,
-      "probe_id": "NSGridView.removeColumnAtIndex.index",
-      "unguarded": "objc-abort",
-      "guards": [
-        "Bounds.index({p}, numberOfRows(), \"removeColumnAtIndex:\");"
-      ]
     },
     {
       "class": "NSHelpManager",
@@ -5793,17 +5614,6 @@
       "unguarded": "objc-abort",
       "guards": [
         "Bounds.nonNull({p}, \"removeRowsAtIndexes:withAnimation:\");"
-      ]
-    },
-    {
-      "class": "NSOutlineView",
-      "selector": "moveRowAtIndex:toIndex:",
-      "param": "oldIndex",
-      "param_index": 0,
-      "probe_id": "NSOutlineView.moveRowAtIndexToIndex.index",
-      "unguarded": "objc-abort",
-      "guards": [
-        "Bounds.index({p}, numberOfRows(), \"moveRowAtIndex:toIndex:\");"
       ]
     },
     {
@@ -7660,17 +7470,6 @@
     },
     {
       "class": "NSString",
-      "selector": "rangeOfComposedCharacterSequenceAtIndex:",
-      "param": "index",
-      "param_index": 0,
-      "probe_id": "NSString.rangeOfComposedCharacterSequenceAtIndex.index",
-      "unguarded": "objc-abort",
-      "guards": [
-        "Bounds.index({p}, length(), \"rangeOfComposedCharacterSequenceAtIndex:\");"
-      ]
-    },
-    {
-      "class": "NSString",
       "selector": "stringByAppendingString:",
       "param": "aString",
       "param_index": 0,
@@ -7746,17 +7545,6 @@
     },
     {
       "class": "NSTabView",
-      "selector": "selectTabViewItemAtIndex:",
-      "param": "index",
-      "param_index": 0,
-      "probe_id": "NSTabView.selectTabViewItemAtIndex.index",
-      "unguarded": "objc-abort",
-      "guards": [
-        "Bounds.index({p}, numberOfTabViewItems(), \"selectTabViewItemAtIndex:\");"
-      ]
-    },
-    {
-      "class": "NSTabView",
       "selector": "setFont:",
       "param": "font",
       "param_index": 0,
@@ -7829,17 +7617,6 @@
       "guards": []
     },
     {
-      "class": "NSTabView",
-      "selector": "tabViewItemAtIndex:",
-      "param": "index",
-      "param_index": 0,
-      "probe_id": "NSTabView.tabViewItemAtIndex.index",
-      "unguarded": "objc-abort",
-      "guards": [
-        "Bounds.index({p}, numberOfTabViewItems(), \"tabViewItemAtIndex:\");"
-      ]
-    },
-    {
       "class": "NSTabViewController",
       "selector": "setTabView:",
       "param": "tabView",
@@ -7858,20 +7635,6 @@
       "unguarded": "tolerated",
       "control": "the unguarded call survived, so no guard is emitted",
       "guards": []
-    },
-    {
-      "class": "NSTabViewController",
-      "selector": "setSelectedTabViewItemIndex:",
-      "param": "selectedTabViewItemIndex",
-      "param_index": 0,
-      "probe_id": "NSTabViewController.setSelectedTabViewItemIndex.index",
-      "unguarded": "objc-abort",
-      "setup": [
-        "NSArray __items = tabViewItems();"
-      ],
-      "guards": [
-        "Bounds.index({p}, __items == null ? 0 : __items.count(), \"setSelectedTabViewItemIndex:\");"
-      ]
     },
     {
       "class": "NSTabViewController",
@@ -8599,20 +8362,6 @@
     },
     {
       "class": "NSToolbar",
-      "selector": "removeItemAtIndex:",
-      "param": "index",
-      "param_index": 0,
-      "probe_id": "NSToolbar.removeItemAtIndex.index",
-      "unguarded": "objc-abort",
-      "setup": [
-        "NSSet __items = centeredItemIdentifiers();"
-      ],
-      "guards": [
-        "Bounds.index({p}, __items == null ? 0 : __items.count(), \"removeItemAtIndex:\");"
-      ]
-    },
-    {
-      "class": "NSToolbar",
       "selector": "removeItemWithItemIdentifier:",
       "param": "itemIdentifier",
       "param_index": 0,
@@ -9170,20 +8919,6 @@
       "unguarded": "objc-abort",
       "guards": [
         "Bounds.nonNull({p}, \"setSubtitle:\");"
-      ]
-    },
-    {
-      "class": "NSWindow",
-      "selector": "removeTitlebarAccessoryViewControllerAtIndex:",
-      "param": "index",
-      "param_index": 0,
-      "probe_id": "NSWindow.removeTitlebarAccessoryViewControllerAtIndex.index",
-      "unguarded": "objc-abort",
-      "setup": [
-        "NSArray __items = titlebarAccessoryViewControllers();"
-      ],
-      "guards": [
-        "Bounds.index({p}, __items == null ? 0 : __items.count(), \"removeTitlebarAccessoryViewControllerAtIndex:\");"
       ]
     },
     {
@@ -11327,17 +11062,6 @@
     },
     {
       "class": "NSXMLNode",
-      "selector": "childAtIndex:",
-      "param": "index",
-      "param_index": 0,
-      "probe_id": "NSXMLNode.childAtIndex.index",
-      "unguarded": "objc-abort",
-      "guards": [
-        "Bounds.index({p}, childCount(), \"childAtIndex:\");"
-      ]
-    },
-    {
-      "class": "NSXMLNode",
       "selector": "setURI:",
       "param": "URI",
       "param_index": 0,
@@ -11683,20 +11407,6 @@
     },
     {
       "class": "NSSplitViewItem",
-      "selector": "removeTopAlignedAccessoryViewControllerAtIndex:",
-      "param": "index",
-      "param_index": 0,
-      "probe_id": "NSSplitViewItem.removeTopAlignedAccessoryViewControllerAtIndex.index",
-      "unguarded": "objc-abort",
-      "setup": [
-        "NSArray __items = topAlignedAccessoryViewControllers();"
-      ],
-      "guards": [
-        "Bounds.index({p}, __items == null ? 0 : __items.count(), \"removeTopAlignedAccessoryViewControllerAtIndex:\");"
-      ]
-    },
-    {
-      "class": "NSSplitViewItem",
       "selector": "setBottomAlignedAccessoryViewControllers:",
       "param": "bottomAlignedAccessoryViewControllers",
       "param_index": 0,
@@ -11704,20 +11414,6 @@
       "unguarded": "tolerated",
       "control": "the unguarded call survived, so no guard is emitted",
       "guards": []
-    },
-    {
-      "class": "NSSplitViewItem",
-      "selector": "removeBottomAlignedAccessoryViewControllerAtIndex:",
-      "param": "index",
-      "param_index": 0,
-      "probe_id": "NSSplitViewItem.removeBottomAlignedAccessoryViewControllerAtIndex.index",
-      "unguarded": "objc-abort",
-      "setup": [
-        "NSArray __items = bottomAlignedAccessoryViewControllers();"
-      ],
-      "guards": [
-        "Bounds.index({p}, __items == null ? 0 : __items.count(), \"removeBottomAlignedAccessoryViewControllerAtIndex:\");"
-      ]
     },
     {
       "class": "NSScrubber",
@@ -11791,17 +11487,6 @@
     },
     {
       "class": "NSScrubber",
-      "selector": "scrollItemAtIndex:toAlignment:",
-      "param": "index",
-      "param_index": 0,
-      "probe_id": "NSScrubber.scrollItemAtIndexToAlignment.index",
-      "unguarded": "objc-abort",
-      "guards": [
-        "Bounds.index({p}, numberOfItems(), \"scrollItemAtIndex:toAlignment:\");"
-      ]
-    },
-    {
-      "class": "NSScrubber",
       "selector": "itemViewForItemAtIndex:",
       "param": "index",
       "param_index": 0,
@@ -11829,50 +11514,6 @@
       "unguarded": "tolerated",
       "control": "the unguarded call survived, so no guard is emitted",
       "guards": []
-    },
-    {
-      "class": "NSRuleEditor",
-      "selector": "subrowIndexesForRow:",
-      "param": "rowIndex",
-      "param_index": 0,
-      "probe_id": "NSRuleEditor.subrowIndexesForRow.index",
-      "unguarded": "objc-abort",
-      "guards": [
-        "Bounds.index({p}, numberOfRows(), \"subrowIndexesForRow:\");"
-      ]
-    },
-    {
-      "class": "NSRuleEditor",
-      "selector": "rowTypeForRow:",
-      "param": "rowIndex",
-      "param_index": 0,
-      "probe_id": "NSRuleEditor.rowTypeForRow.index",
-      "unguarded": "objc-abort",
-      "guards": [
-        "Bounds.index({p}, numberOfRows(), \"rowTypeForRow:\");"
-      ]
-    },
-    {
-      "class": "NSRuleEditor",
-      "selector": "parentRowForRow:",
-      "param": "rowIndex",
-      "param_index": 0,
-      "probe_id": "NSRuleEditor.parentRowForRow.index",
-      "unguarded": "objc-abort",
-      "guards": [
-        "Bounds.index({p}, numberOfRows(), \"parentRowForRow:\");"
-      ]
-    },
-    {
-      "class": "NSRuleEditor",
-      "selector": "removeRowAtIndex:",
-      "param": "rowIndex",
-      "param_index": 0,
-      "probe_id": "NSRuleEditor.removeRowAtIndex.index",
-      "unguarded": "objc-abort",
-      "guards": [
-        "Bounds.index({p}, numberOfRows(), \"removeRowAtIndex:\");"
-      ]
     },
     {
       "class": "NSRuleEditor",
@@ -12322,17 +11963,6 @@
     },
     {
       "class": "NSPickerTouchBarItem",
-      "selector": "imageAtIndex:",
-      "param": "index",
-      "param_index": 0,
-      "probe_id": "NSPickerTouchBarItem.imageAtIndex.index",
-      "unguarded": "objc-abort",
-      "guards": [
-        "Bounds.index({p}, numberOfOptions(), \"imageAtIndex:\");"
-      ]
-    },
-    {
-      "class": "NSPickerTouchBarItem",
       "selector": "setLabel:atIndex:",
       "param": "label",
       "param_index": 0,
@@ -12340,17 +11970,6 @@
       "unguarded": "objc-abort",
       "guards": [
         "Bounds.nonNull({p}, \"setLabel:atIndex:\");"
-      ]
-    },
-    {
-      "class": "NSPickerTouchBarItem",
-      "selector": "labelAtIndex:",
-      "param": "index",
-      "param_index": 0,
-      "probe_id": "NSPickerTouchBarItem.labelAtIndex.index",
-      "unguarded": "objc-abort",
-      "guards": [
-        "Bounds.index({p}, numberOfOptions(), \"labelAtIndex:\");"
       ]
     },
     {
@@ -12804,6 +12423,487 @@
       "probe_id": "NSWorkspaceOpenConfiguration.setAppleEvent.nil",
       "unguarded": "tolerated",
       "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSArray",
+      "selector": "objectAtIndex:",
+      "param": "index",
+      "param_index": 0,
+      "probe_id": "NSArray.objectAtIndex.index",
+      "unguarded": "objc-abort",
+      "needs_local_guard": "no count accessor on this class to bound the index; supply the guard statement in the evidence",
+      "guards": []
+    },
+    {
+      "class": "NSBezierPath",
+      "selector": "elementAtIndex:",
+      "param": "index",
+      "param_index": 0,
+      "probe_id": "NSBezierPath.elementAtIndex.index",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.index({p}, elementCount(), \"elementAtIndex:\");"
+      ],
+      "bound": "elementCount()",
+      "bound_from": "src/nsui/NSBezierPath.java"
+    },
+    {
+      "class": "NSCollectionView",
+      "selector": "itemAtIndex:",
+      "param": "index",
+      "param_index": 0,
+      "probe_id": "NSCollectionView.itemAtIndex.index",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.index({p}, numberOfItemsInSection(0), \"itemAtIndex:\");"
+      ],
+      "bound": "numberOfItemsInSection(0)",
+      "bound_from": "src/nsui/NSCollectionView.java"
+    },
+    {
+      "class": "NSGridView",
+      "selector": "rowAtIndex:",
+      "param": "index",
+      "param_index": 0,
+      "probe_id": "NSGridView.rowAtIndex.index",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.index({p}, numberOfRows(), \"rowAtIndex:\");"
+      ],
+      "bound": "numberOfRows()",
+      "bound_from": "src/nsui/NSGridView.java"
+    },
+    {
+      "class": "NSGridView",
+      "selector": "columnAtIndex:",
+      "param": "index",
+      "param_index": 0,
+      "probe_id": "NSGridView.columnAtIndex.index",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.index({p}, numberOfColumns(), \"columnAtIndex:\");"
+      ],
+      "bound": "numberOfColumns()",
+      "bound_from": "src/nsui/NSGridView.java"
+    },
+    {
+      "class": "NSGridView",
+      "selector": "cellAtColumnIndex:rowIndex:",
+      "param": "columnIndex",
+      "param_index": 0,
+      "probe_id": "NSGridView.cellAtColumnIndexRowIndex.index",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.index({p}, numberOfColumns(), \"cellAtColumnIndex:rowIndex:\");"
+      ],
+      "bound": "numberOfColumns()",
+      "bound_from": "src/nsui/NSGridView.java"
+    },
+    {
+      "class": "NSGridView",
+      "selector": "cellAtColumnIndex:rowIndex:",
+      "param": "rowIndex",
+      "param_index": 1,
+      "probe_id": "NSGridView.cellAtColumnIndexRowIndex.index",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.index({p}, numberOfRows(), \"cellAtColumnIndex:rowIndex:\");"
+      ],
+      "bound": "numberOfRows()",
+      "bound_from": "src/nsui/NSGridView.java"
+    },
+    {
+      "class": "NSGridView",
+      "selector": "insertRowAtIndex:withViews:",
+      "param": "index",
+      "param_index": 0,
+      "probe_id": "NSGridView.insertRowAtIndexWithViews.index",
+      "unguarded": "objc-abort",
+      "needs_local_guard": "no count accessor on this class to bound the index; supply the guard statement in the evidence",
+      "guards": []
+    },
+    {
+      "class": "NSGridView",
+      "selector": "moveRowAtIndex:toIndex:",
+      "param": "fromIndex",
+      "param_index": 0,
+      "probe_id": "NSGridView.moveRowAtIndexToIndex.index",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.index({p}, numberOfRows(), \"moveRowAtIndex:toIndex:\");"
+      ],
+      "bound": "numberOfRows()",
+      "bound_from": "src/nsui/NSGridView.java"
+    },
+    {
+      "class": "NSGridView",
+      "selector": "moveRowAtIndex:toIndex:",
+      "param": "toIndex",
+      "param_index": 1,
+      "probe_id": "NSGridView.moveRowAtIndexToIndex.index",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.index({p}, numberOfRows(), \"moveRowAtIndex:toIndex:\");"
+      ],
+      "bound": "numberOfRows()",
+      "bound_from": "src/nsui/NSGridView.java"
+    },
+    {
+      "class": "NSGridView",
+      "selector": "removeRowAtIndex:",
+      "param": "index",
+      "param_index": 0,
+      "probe_id": "NSGridView.removeRowAtIndex.index",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.index({p}, numberOfRows(), \"removeRowAtIndex:\");"
+      ],
+      "bound": "numberOfRows()",
+      "bound_from": "src/nsui/NSGridView.java"
+    },
+    {
+      "class": "NSGridView",
+      "selector": "insertColumnAtIndex:withViews:",
+      "param": "index",
+      "param_index": 0,
+      "probe_id": "NSGridView.insertColumnAtIndexWithViews.index",
+      "unguarded": "objc-abort",
+      "needs_local_guard": "no count accessor on this class to bound the index; supply the guard statement in the evidence",
+      "guards": []
+    },
+    {
+      "class": "NSGridView",
+      "selector": "moveColumnAtIndex:toIndex:",
+      "param": "fromIndex",
+      "param_index": 0,
+      "probe_id": "NSGridView.moveColumnAtIndexToIndex.index",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.index({p}, numberOfColumns(), \"moveColumnAtIndex:toIndex:\");"
+      ],
+      "bound": "numberOfColumns()",
+      "bound_from": "src/nsui/NSGridView.java"
+    },
+    {
+      "class": "NSGridView",
+      "selector": "moveColumnAtIndex:toIndex:",
+      "param": "toIndex",
+      "param_index": 1,
+      "probe_id": "NSGridView.moveColumnAtIndexToIndex.index",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.index({p}, numberOfColumns(), \"moveColumnAtIndex:toIndex:\");"
+      ],
+      "bound": "numberOfColumns()",
+      "bound_from": "src/nsui/NSGridView.java"
+    },
+    {
+      "class": "NSGridView",
+      "selector": "removeColumnAtIndex:",
+      "param": "index",
+      "param_index": 0,
+      "probe_id": "NSGridView.removeColumnAtIndex.index",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.index({p}, numberOfColumns(), \"removeColumnAtIndex:\");"
+      ],
+      "bound": "numberOfColumns()",
+      "bound_from": "src/nsui/NSGridView.java"
+    },
+    {
+      "class": "NSLayoutManager",
+      "selector": "removeTextContainerAtIndex:",
+      "param": "index",
+      "param_index": 0,
+      "probe_id": "NSLayoutManager.removeTextContainerAtIndex.index",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.index({p}, textContainers().size(), \"removeTextContainerAtIndex:\");"
+      ],
+      "bound": "textContainers().size()",
+      "bound_from": "src/nsui/NSLayoutManager.java"
+    },
+    {
+      "class": "NSLayoutManager",
+      "selector": "setCharacterIndex:forGlyphAtIndex:",
+      "param": "glyphIndex",
+      "param_index": 1,
+      "probe_id": "NSLayoutManager.setCharacterIndexForGlyphAtIndex.index",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSMenu",
+      "selector": "insertItem:atIndex:",
+      "param": "index",
+      "param_index": 1,
+      "probe_id": "NSMenu.insertItemAtIndex.index",
+      "unguarded": "objc-abort",
+      "needs_local_guard": "no count accessor on this class to bound the index; supply the guard statement in the evidence",
+      "guards": []
+    },
+    {
+      "class": "NSMenu",
+      "selector": "removeItemAtIndex:",
+      "param": "index",
+      "param_index": 0,
+      "probe_id": "NSMenu.removeItemAtIndex.index",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.index({p}, numberOfItems(), \"removeItemAtIndex:\");"
+      ],
+      "bound": "numberOfItems()",
+      "bound_from": "src/nsui/NSMenu.java"
+    },
+    {
+      "class": "NSMenu",
+      "selector": "itemAtIndex:",
+      "param": "index",
+      "param_index": 0,
+      "probe_id": "NSMenu.itemAtIndex.index",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.index({p}, numberOfItems(), \"itemAtIndex:\");"
+      ],
+      "bound": "numberOfItems()",
+      "bound_from": "src/nsui/NSMenu.java"
+    },
+    {
+      "class": "NSOutlineView",
+      "selector": "moveRowAtIndex:toIndex:",
+      "param": "oldIndex",
+      "param_index": 0,
+      "probe_id": "NSOutlineView.moveRowAtIndexToIndex.index",
+      "unguarded": "objc-abort",
+      "needs_local_guard": "no count accessor on this class to bound the index; supply the guard statement in the evidence",
+      "guards": []
+    },
+    {
+      "class": "NSOutlineView",
+      "selector": "moveRowAtIndex:toIndex:",
+      "param": "newIndex",
+      "param_index": 1,
+      "probe_id": "NSOutlineView.moveRowAtIndexToIndex.index",
+      "unguarded": "objc-abort",
+      "needs_local_guard": "no count accessor on this class to bound the index; supply the guard statement in the evidence",
+      "guards": []
+    },
+    {
+      "class": "NSPickerTouchBarItem",
+      "selector": "imageAtIndex:",
+      "param": "index",
+      "param_index": 0,
+      "probe_id": "NSPickerTouchBarItem.imageAtIndex.index",
+      "unguarded": "objc-abort",
+      "needs_local_guard": "no count accessor on this class to bound the index; supply the guard statement in the evidence",
+      "guards": []
+    },
+    {
+      "class": "NSPickerTouchBarItem",
+      "selector": "labelAtIndex:",
+      "param": "index",
+      "param_index": 0,
+      "probe_id": "NSPickerTouchBarItem.labelAtIndex.index",
+      "unguarded": "objc-abort",
+      "needs_local_guard": "no count accessor on this class to bound the index; supply the guard statement in the evidence",
+      "guards": []
+    },
+    {
+      "class": "NSRuleEditor",
+      "selector": "subrowIndexesForRow:",
+      "param": "rowIndex",
+      "param_index": 0,
+      "probe_id": "NSRuleEditor.subrowIndexesForRow.index",
+      "unguarded": "objc-abort",
+      "needs_local_guard": "no count accessor on this class to bound the index; supply the guard statement in the evidence",
+      "guards": []
+    },
+    {
+      "class": "NSRuleEditor",
+      "selector": "rowTypeForRow:",
+      "param": "rowIndex",
+      "param_index": 0,
+      "probe_id": "NSRuleEditor.rowTypeForRow.index",
+      "unguarded": "objc-abort",
+      "needs_local_guard": "no count accessor on this class to bound the index; supply the guard statement in the evidence",
+      "guards": []
+    },
+    {
+      "class": "NSRuleEditor",
+      "selector": "parentRowForRow:",
+      "param": "rowIndex",
+      "param_index": 0,
+      "probe_id": "NSRuleEditor.parentRowForRow.index",
+      "unguarded": "objc-abort",
+      "needs_local_guard": "no count accessor on this class to bound the index; supply the guard statement in the evidence",
+      "guards": []
+    },
+    {
+      "class": "NSRuleEditor",
+      "selector": "removeRowAtIndex:",
+      "param": "rowIndex",
+      "param_index": 0,
+      "probe_id": "NSRuleEditor.removeRowAtIndex.index",
+      "unguarded": "objc-abort",
+      "needs_local_guard": "no count accessor on this class to bound the index; supply the guard statement in the evidence",
+      "guards": []
+    },
+    {
+      "class": "NSScrubber",
+      "selector": "moveItemAtIndex:toIndex:",
+      "param": "newIndex",
+      "param_index": 1,
+      "probe_id": "NSScrubber.moveItemAtIndexToIndex.index",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSScrubber",
+      "selector": "scrollItemAtIndex:toAlignment:",
+      "param": "index",
+      "param_index": 0,
+      "probe_id": "NSScrubber.scrollItemAtIndexToAlignment.index",
+      "unguarded": "objc-abort",
+      "needs_local_guard": "no count accessor on this class to bound the index; supply the guard statement in the evidence",
+      "guards": []
+    },
+    {
+      "class": "NSSplitViewItem",
+      "selector": "removeTopAlignedAccessoryViewControllerAtIndex:",
+      "param": "index",
+      "param_index": 0,
+      "probe_id": "NSSplitViewItem.removeTopAlignedAccessoryViewControllerAtIndex.index",
+      "unguarded": "objc-abort",
+      "needs_local_guard": "no count accessor on this class to bound the index; supply the guard statement in the evidence",
+      "guards": []
+    },
+    {
+      "class": "NSSplitViewItem",
+      "selector": "removeBottomAlignedAccessoryViewControllerAtIndex:",
+      "param": "index",
+      "param_index": 0,
+      "probe_id": "NSSplitViewItem.removeBottomAlignedAccessoryViewControllerAtIndex.index",
+      "unguarded": "objc-abort",
+      "needs_local_guard": "no count accessor on this class to bound the index; supply the guard statement in the evidence",
+      "guards": []
+    },
+    {
+      "class": "NSString",
+      "selector": "rangeOfComposedCharacterSequenceAtIndex:",
+      "param": "index",
+      "param_index": 0,
+      "probe_id": "NSString.rangeOfComposedCharacterSequenceAtIndex.index",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.index({p}, length(), \"rangeOfComposedCharacterSequenceAtIndex:\");"
+      ],
+      "bound": "length()",
+      "bound_from": "src/nsui/NSString.java"
+    },
+    {
+      "class": "NSTabView",
+      "selector": "selectTabViewItemAtIndex:",
+      "param": "index",
+      "param_index": 0,
+      "probe_id": "NSTabView.selectTabViewItemAtIndex.index",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.index({p}, numberOfTabViewItems(), \"selectTabViewItemAtIndex:\");"
+      ],
+      "bound": "numberOfTabViewItems()",
+      "bound_from": "src/nsui/NSTabView.java"
+    },
+    {
+      "class": "NSTabView",
+      "selector": "tabViewItemAtIndex:",
+      "param": "index",
+      "param_index": 0,
+      "probe_id": "NSTabView.tabViewItemAtIndex.index",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.index({p}, numberOfTabViewItems(), \"tabViewItemAtIndex:\");"
+      ],
+      "bound": "numberOfTabViewItems()",
+      "bound_from": "src/nsui/NSTabView.java"
+    },
+    {
+      "class": "NSTabViewController",
+      "selector": "setSelectedTabViewItemIndex:",
+      "param": "selectedTabViewItemIndex",
+      "param_index": 0,
+      "probe_id": "NSTabViewController.setSelectedTabViewItemIndex.index",
+      "unguarded": "objc-abort",
+      "needs_local_guard": "no count accessor on this class to bound the index; supply the guard statement in the evidence",
+      "guards": []
+    },
+    {
+      "class": "NSToolbar",
+      "selector": "removeItemAtIndex:",
+      "param": "index",
+      "param_index": 0,
+      "probe_id": "NSToolbar.removeItemAtIndex.index",
+      "unguarded": "objc-abort",
+      "needs_local_guard": "no count accessor on this class to bound the index; supply the guard statement in the evidence",
+      "guards": []
+    },
+    {
+      "class": "NSViewController",
+      "selector": "insertChildViewController:atIndex:",
+      "param": "childViewController",
+      "param_index": 0,
+      "probe_id": "NSViewController.insertChildViewControllerAtIndex.nil",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.nonNull({p}, \"insertChildViewController:atIndex:\");"
+      ]
+    },
+    {
+      "class": "NSViewController",
+      "selector": "insertChildViewController:atIndex:",
+      "param": "index",
+      "param_index": 1,
+      "probe_id": "NSViewController.insertChildViewControllerAtIndex.index",
+      "unguarded": "objc-abort",
+      "needs_local_guard": "no count accessor on this class to bound the index; supply the guard statement in the evidence",
+      "guards": []
+    },
+    {
+      "class": "NSViewController",
+      "selector": "removeChildViewControllerAtIndex:",
+      "param": "index",
+      "param_index": 0,
+      "probe_id": "NSViewController.removeChildViewControllerAtIndex.index",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.index({p}, children == null ? 0 : children.count(), \"removeChildViewControllerAtIndex:\");"
+      ],
+      "bound": "children == null ? 0 : children.count()",
+      "bound_from": "src/nsui/NSViewController.java"
+    },
+    {
+      "class": "NSWindow",
+      "selector": "removeTitlebarAccessoryViewControllerAtIndex:",
+      "param": "index",
+      "param_index": 0,
+      "probe_id": "NSWindow.removeTitlebarAccessoryViewControllerAtIndex.index",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.index({p}, current == null ? 0 : current.count(), \"removeTitlebarAccessoryViewControllerAtIndex:\");"
+      ],
+      "bound": "current == null ? 0 : current.count()",
+      "bound_from": "src/nsui/NSWindow.java"
+    },
+    {
+      "class": "NSXMLNode",
+      "selector": "childAtIndex:",
+      "param": "index",
+      "param_index": 0,
+      "probe_id": "NSXMLNode.childAtIndex.index",
+      "unguarded": "objc-abort",
+      "needs_local_guard": "no count accessor on this class to bound the index; supply the guard statement in the evidence",
       "guards": []
     }
   ],

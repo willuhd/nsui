@@ -77,16 +77,22 @@ def collect_typedefs(sdk, frameworks):
 
 
 def expand_type(text, typedefs, depth=4):
-    """Replace leading typedef names by what they stand for, transitively."""
+    """Replace a leading typedef name by what it stands for, transitively.
+
+    A qualifier may precede the name (`nullable NSSpeechSynthesizerVoiceName`), and looking at the
+    first identifier made the lookup ask about `nullable` and give up, which left 217 declarations
+    typed as raw MemorySegment where the shipped wrapper uses String.
+    """
     t = text or ""
     for _ in range(depth):
-        m = re.search(r"[A-Za-z_]\w*", t)
+        m = re.search(r"(?:(?:nullable|nonnull|__kindof|const|volatile|inout|out|oneway|_Nullable"
+                      r"|_Nonnull|NS_REFINED_FOR_SWIFT)\s+)*([A-Za-z_]\w*)", t)
         if not m:
             break
-        base = typedefs.get(m.group(0))
+        base = typedefs.get(m.group(1))
         if not base:
             break
-        t = t[:m.start()] + base + t[m.end():]
+        t = t[:m.start(1)] + base + t[m.end(1):]
     return t
 
 

@@ -37,6 +37,8 @@ SURFACE_BATCH = [
     "NSSound", "NSItemProvider", "NSPathControlItem", "NSCollectionViewLayoutAttributes",
     "NSTextFinder", "NSSpeechSynthesizer", "NSWorkspace", "NSPDFPanel", "NSFileManager",
     "NSURL", "NSScrubber", "NSOutlineView", "NSTextField", "NSButton",
+    # protocol-backed surfaces: these were unreachable until @protocol bodies were accepted
+    "MTLDevice", "MTLTexture", "MTLRenderCommandEncoder", "MTLCommandQueue",
 ]
 
 # class -> minimum coverage; a drop below the recorded value is a regression.

@@ -8,13 +8,26 @@ carries no nullability annotation and NSViewController.h has no NS_ASSUME_NONNUL
 measured here, one child process per case, and recorded as evidence the generator consumes.
 
   python3 codegen/probe.py --repo . --out codegen/guard-evidence.json
-  python3 codegen/probe.py --repo /tmp/generated --baseline codegen/guard-evidence.json
+  python3 codegen/probe.py --enumerate <classes> --shipped-baseline codegen/shipped-baseline.json
+  python3 codegen/probe.py --enumerate <classes> --differential --out /tmp/diff.json
+
+`--differential` processes the classes in slices (20 by default): each class costs three
+measurements, and a 73-class invocation runs into the JVM's and the probe's limits, so the slicing
+is what makes a wide check usable. A slice that cannot be measured is named in the output rather
+than silently skipped.
+
+`--differential` measures each case three ways — against the shipped tree, against the generated
+tree with the guard evidence, and against the generated tree without it — so a rejection can be
+attributed. A guard is over-rejecting only when the shipped wrapper tolerates the call AND the
+generated wrapper rejects it only because of the evidence (STRICTER-GUARD); when the guard-free
+build rejects it too, the difference is in the generated body (STRICTER-BODY).
 
 Exit codes are read directly: 0 tolerated, 1 a Java exception (a guard fired), 134 uncaught ObjC
 exception, 133 SIGTRAP (NaN geometry), 132 SIGILL (self/ancestor cycle).
 """
 
 import argparse
+from collections import defaultdict
 import json
 import os
 import re
@@ -152,14 +165,6 @@ def _bad_expr(kind, badness):
     return _default_expr(kind)
 
 
-def collection_like(cls_name):
-    """Whether the toolkit's wrapper for a class offers count(), i.e. it behaves as a collection."""
-    path = os.path.join(REPO, "src", "nsui", cls_name + ".java")
-    if not os.path.exists(path):
-        return False
-    return bool(re.search(r"public (long|int) count\s*\(", open(path, errors="replace").read()))
-
-
 def _is_view_subclass(surface, frameworks, sdk, seen=None):
     seen = seen or set()
     name = surface.superclass
@@ -238,45 +243,42 @@ def enumerate_cases(classes, frameworks):
     return out
 
 
-def discover_bound(sel, plans, wrappers, extra_plans=None):
-    """(bound expression, setup line) for an index in `sel`, or (None, None).
+SHIPPED_INDEX_GUARD = re.compile(r'Bounds\.index\(\s*(\w+)\s*,\s*([^,]+?)\s*,\s*"([^"]+)"\s*\)')
 
-    A bound is a no-argument accessor whose name says it counts (`numberOfItems`, `count`,
-    `length`) and which returns a scalar. Failing that, a collection accessor is used when its name
-    carries the noun the index names (`removeItemAtIndex:` -> `items()`, `moveRowAt...` ->
-    `rows()`), because an unrelated collection's count would produce a guard that rejects valid
-    indices. Nothing is guessed when neither exists: the case is reported instead.
+
+def shipped_index_bounds(cls):
+    """{selector: {parameter name: bound expression}} from the shipped wrapper's own guards.
+
+    The corpus already encodes the bound each index needs (`numberOfColumns()` for a column index),
+    and a bound has to belong to the collection being indexed. Deriving one from count-like
+    accessors produced guards that rejected valid columns and let invalid ones abort natively.
     """
-    scalars = ("long", "int", "short", "byte", "uint32")
-    all_plans = list(plans) + list(extra_plans or [])     # an inherited counter still bounds it
-    counters = sorted((q.java_name for q in all_plans
-                       if not q.skip and not q.is_class and not q.params
-                       and q.ret_java in scalars
-                       and re.search(r"(?i)(count|numberof|length)", q.java_name)),
-                      key=lambda n: (len(n), n))
-    if counters:
-        return "%s()" % counters[0], None
-    m = re.search(r"([A-Z][A-Za-z]*?)At(?:Index|Row)|([A-Z][A-Za-z]*?)Index", sel or "")
-    run = next((g for g in (m.groups() if m else ()) if g), "")
-    if len(run) < 3:
-        return None, None
-    # Try the longest noun first (`SelectedTabViewItem` then `TabViewItem` then `Item`): the longer
-    # match is the more specific accessor, and a shorter one risks an unrelated collection.
-    parts = re.findall(r"[A-Z][a-z0-9]*", run)
-    nouns = ["".join(parts[i:]) for i in range(len(parts))]
-    for noun in nouns:
-        if len(noun) < 3:
-            continue
-        for q in sorted(all_plans, key=lambda x: x.java_name):
-            if q.skip or q.is_class or q.params:
-                continue
-            if noun.lower() not in q.java_name.lower() or q.ret_java not in wrappers:
-                continue
-            if not collection_like(q.ret_java):
-                continue
-            return ("__items == null ? 0 : __items.count()",
-                    "%s __items = %s();" % (q.ret_java, q.java_name))
-    return None, None
+    path = os.path.join(REPO, "src", "nsui", cls + ".java")
+    out = {}
+    if not os.path.exists(path):
+        return out
+    text = open(path, encoding="utf-8", errors="replace").read()
+    for m in SHIPPED_INDEX_GUARD.finditer(text):
+        out.setdefault(m.group(3), {})[m.group(1)] = m.group(2).strip()
+    return out
+
+
+def shipped_bound(cls, selector, param_name, param_index):
+    """The bound the shipped wrapper uses for this index parameter, or None.
+
+    Matched by name and then by position, because a shipped wrapper sometimes renames a header
+    parameter (scrollToPoint: takes `newOrigin` in the header, `point` in the wrapper). None means
+    the corpus has no guard for it, and inventing one is how wrong bounds got emitted.
+    """
+    bounds = shipped_index_bounds(cls).get(selector) or {}
+    if not bounds:
+        return None
+    if param_name in bounds:
+        return bounds[param_name]
+    names = list(bounds)
+    if isinstance(param_index, int) and param_index < len(names):
+        return bounds[names[param_index]]
+    return None
 
 
 def _cases_for_class(cls, plans, wrappers, recv_expr, ancestors=None, skip_cases=None):
@@ -293,19 +295,27 @@ def _cases_for_class(cls, plans, wrappers, recv_expr, ancestors=None, skip_cases
         if (cls, plan.decl.selector) in (skip_cases or set()):
             continue
         kinds = [(k, jt, nm) for k, jt, nm in plan.params]
-        bound, bound_setup = discover_bound(plan.decl.selector, plans, wrappers, ancestors)
+        bound = bound_setup = None
         objs = [i for i, (k, _j, _n) in enumerate(kinds)
                 if k in OBJECT_KINDS or k.startswith("typed:")]
         structs = [i for i, (k, _j, _n) in enumerate(kinds) if k in STRUCT_DEFAULTS]
+        # An index parameter is one whose name *is* an index: `indexType` is an enum, and guarding
+        # it with a collection's count rejected legal values.
+        def is_index(name):
+            n = name.lower()
+            if n != "index" and not n.endswith("index"):
+                return False
+            return not re.search(r"indextype|indexpath|indexset|indexrange|indexes|indexof", n)
+
         idx = [i for i, (k, _j, n) in enumerate(kinds)
-               if k in ("long", "int", "short", "byte", "uint32") and "index" in n.lower()]
+               if k in ("long", "int", "short", "byte", "uint32") and is_index(n)]
         wanted = []
         if len(objs) == 1:
             wanted.append((objs[0], "nil"))
         if len(structs) == 1 and STRUCT_DEFAULTS[kinds[structs[0]][0]][1]:
             wanted.append((structs[0], "nan"))
-        if idx and not objs and not structs:
-            wanted.append((idx[0], "index"))
+        for target in idx:                      # every index parameter, not just the first
+            wanted.append((target, "index"))
         for target, badness in wanted:
             args = [_bad_expr(k, badness) if i == target else _default_expr(k)
                     for i, (k, _j, _n) in enumerate(kinds)]
@@ -314,8 +324,12 @@ def _cases_for_class(cls, plans, wrappers, recv_expr, ancestors=None, skip_cases
                 "class": cls, "selector": plan.decl.selector,
                 "guard": {"nil": "nonNull", "nan": "notNaN", "index": "index"}[badness],
                 "param": kinds[target][2], "param_index": target, "badness": badness,
-                "bound": bound if badness == "index" else None,
-                "bound_setup": bound_setup if badness == "index" else None,
+                "bound": (shipped_bound(cls, plan.decl.selector, kinds[target][2], target)
+                          if badness == "index" else None),
+                "bound_setup": None,
+                # provenance: a bound is only as good as the guard it was read from, and every
+                # bound now comes from the shipped wrapper rather than from a guess
+                "bound_from": ("src/nsui/%s.java" % cls) if badness == "index" else None,
                 "method": plan.java_name, "arity": len(kinds),
                 "setup": ["%s recv = %s;" % (cls, recv_expr),
                           'if (recv == null) { System.out.println("NORECEIVER"); return; }'],
@@ -324,7 +338,7 @@ def _cases_for_class(cls, plans, wrappers, recv_expr, ancestors=None, skip_cases
     return out
 
 
-def generated_shadow(repo, classes):
+def generated_shadow(repo, classes, use_evidence=True):
     """Generate `classes` into a scratch copy and compile only those files into a shadow dir.
 
     The generated files are compiled against the shipped tree's classes and prepended to the
@@ -346,6 +360,10 @@ def generated_shadow(repo, classes):
         cmd += ["--class", c]
     for fw in ("AppKit", "Foundation", "QuartzCore", "Metal"):
         cmd += ["--framework", fw]
+    if not use_evidence:
+        # The recorded `unguarded` verdict only reproduces when the shadow really is unguarded: the
+        # documented run re-emitted the guard from the same evidence and so could never falsify it.
+        cmd += ["--guard-evidence", os.path.join(scratch, "no-evidence.json")]   # absent by design
     r = subprocess.run(cmd, capture_output=True, text=True)
     if r.returncode != 0:
         sys.stderr.write("generation failed:\n" + (r.stdout + r.stderr)[-1500:])
@@ -524,6 +542,8 @@ def build_probe(repo, cases, shadow=None, shipped=None, generated=False, chunk=1
         classes = "%s:%s" % (shadow, classes)
     for cls in ([] if shadow else {c["class"] for c in cases}):
         path = os.path.join(repo, "src", "nsui", cls + ".java")
+        if not os.path.exists(path):
+            continue                       # a class the tree does not have: nothing to extend
         text = open(path, encoding="utf-8", errors="replace").read()
         if "static " + cls + " create(" in text:
             continue
@@ -540,45 +560,51 @@ def build_probe(repo, cases, shadow=None, shipped=None, generated=False, chunk=1
     open(base, "w", encoding="utf-8").write(PROBE_HELPERS)
     out = os.path.join(work, "out")
     os.makedirs(out, exist_ok=True)
-    dropped = 0
-    for _attempt in range(6):
-        sources, mapping, layout = [base], [], []
-        for ci in range(0, len(cases), chunk):
-            group = cases[ci:ci + chunk]
-            name = "GuardProbe%d" % (ci // chunk)
-            path = os.path.join(pkg, name + ".java")
-            text, ranges = _chunk_source(name, group, generated)
-            open(path, "w", encoding="utf-8").write(text)
-            sources.append(path)
-            mapping.extend((name, li) for li in range(len(group)))
-            layout.append((name, path, ci, ranges))
-        p = subprocess.run([JAVAC, "-cp", "%s:%s" % (SVM_JAR, classes), "-d", out] + sources,
+    p = subprocess.run([JAVAC, "-cp", "%s:%s" % (SVM_JAR, classes), "-d", out, base],
+                       capture_output=True, text=True)
+    if p.returncode != 0:
+        sys.stderr.write("probe: the shared base did not compile:\n" + (p.stdout + p.stderr)[-800:])
+        return None, None, None, None
+    # Each group is compiled on its own and, when it does not compile, bisected until the offending
+    # cases are isolated. Relying on javac's error list instead was fragile: it is truncated (about
+    # 100 errors per file), so a large group needed many retries and a wide run could exhaust them
+    # and give up with nothing measured.
+    counter = [0]
+    dropped = [0]
+
+    def compile_group(group):
+        name = "GuardProbe%d" % counter[0]
+        counter[0] += 1
+        path = os.path.join(pkg, name + ".java")
+        text, _ranges = _chunk_source(name, group, generated)
+        open(path, "w", encoding="utf-8").write(text)
+        p = subprocess.run([JAVAC, "-cp", "%s:%s:%s" % (SVM_JAR, classes, out), "-d", out, path],
                            capture_output=True, text=True)
         if p.returncode == 0:
-            if dropped:
-                print("probe: dropped %d candidate(s) that do not compile against the tree" % dropped)
-            return out, classes, mapping, cases
-        # A synthesized call can disagree with the real signature in ways name and arity do not
-        # reveal (a struct where a peer is expected, a String where a MemorySegment is). Drop the
-        # cases javac rejected and rebuild, rather than failing the whole run.
-        errs = {}
-        for m in re.finditer(r"(GuardProbe\d+)\.java:(\d+): error:", p.stdout + p.stderr):
-            errs.setdefault(m.group(1), set()).add(int(m.group(2)))
-        bad = set()
-        for name, _path, offset, ranges in layout:
-            for ln in errs.get(name, ()):
-                for li, (lo, hi) in enumerate(ranges):
-                    if lo <= ln <= hi:
-                        bad.add(offset + li)
-        if not bad:
-            sys.stderr.write("probe compile failed:\n" + (p.stdout + p.stderr)[-1500:])
-            return None, None, None, None
-        dropped += len(bad)
-        cases = [c for i, c in enumerate(cases) if i not in bad]
-        if not cases:
-            return None, None, None, None
-    return None, None, None, None
+            return group, [(name, i) for i in range(len(group))]
+        try:
+            os.remove(path)
+        except OSError:
+            pass
+        if len(group) == 1:
+            dropped[0] += 1
+            return [], []
+        mid = len(group) // 2
+        k1, m1 = compile_group(group[:mid])
+        k2, m2 = compile_group(group[mid:])
+        return k1 + k2, m1 + m2
 
+    kept, mapping = [], []
+    for ci in range(0, len(cases), chunk):
+        group_kept, group_mapping = compile_group(cases[ci:ci + chunk])
+        kept.extend(group_kept)
+        mapping.extend(group_mapping)
+    if dropped[0]:
+        print("probe: dropped %d candidate(s) that do not compile against the tree" % dropped[0])
+    if not kept:
+        sys.stderr.write("probe: no candidate survived the compile\n")
+        return None, None, None, None
+    return out, classes, mapping, kept
 
 def filter_cases(cases, scratch):
     """Keep only candidates whose method exists with that arity in the generated file.
@@ -612,10 +638,10 @@ def filter_cases(cases, scratch):
     return out
 
 
-def run_cases(repo, cases, timeout=25, generated=None):
+def run_cases(repo, cases, timeout=25, generated=None, use_evidence=True):
     shadow = shipped = None
     if generated:
-        shadow, shipped, scratch = generated_shadow(repo, generated)
+        shadow, shipped, scratch = generated_shadow(repo, generated, use_evidence=use_evidence)
         if shadow is None:
             return None
         cases = filter_cases(cases, scratch)
@@ -676,6 +702,96 @@ def merge_evidence(src, path):
     return 0
 
 
+STRICTER = ("objc-abort", "sigtrap", "sigill")
+
+
+def _differential_slice(repo, args, classes):
+    """The buckets for one slice of classes; None when a measurement could not be taken."""
+    cases = enumerate_cases(classes, args.frameworks)
+    shipped_cases = filter_cases(cases, repo)
+    if not shipped_cases:
+        print("no candidate exists in the shipped tree for %s" % ", ".join(classes))
+        return None
+    shipped = run_cases(repo, shipped_cases, timeout=args.timeout)
+    if shipped is None:
+        print("the shipped measurement could not be taken for %s" % ", ".join(classes))
+        return None
+    generated = run_cases(repo, cases, timeout=args.timeout, generated=classes)
+    if generated is None:
+        print("the guarded measurement could not be taken for %s" % ", ".join(classes))
+        return None
+    measured_ids = {r["id"] for r in generated}
+    bare = run_cases(repo, [c for c in cases if c["id"] in measured_ids], timeout=args.timeout,
+                     generated=classes, use_evidence=False)
+    if bare is None:
+        print("the guard-free measurement could not be taken for %s" % ", ".join(classes))
+        return None
+    by_id = {r["id"]: r for r in generated}
+    bare_by_id = {r["id"]: r for r in bare}
+    buckets = defaultdict(list)
+    for r in shipped:
+        g = by_id.get(r["id"])
+        if g is None:
+            continue
+        s_v, g_v = r["verdict"], g["verdict"]
+        if s_v == "tolerated" and g_v != "tolerated":
+            b = bare_by_id.get(r["id"], {}).get("verdict")
+            buckets["STRICTER-GUARD" if b == "tolerated" else "STRICTER-BODY"].append(
+                (r["id"], s_v, g_v))
+        elif s_v in STRICTER and g_v in STRICTER:
+            buckets["STILL-ABORTS"].append((r["id"], s_v, g_v))
+        elif s_v in STRICTER or s_v == "java-exception":
+            if g_v == "tolerated":
+                buckets["LOOSER"].append((r["id"], s_v, g_v))
+            else:
+                buckets["fixed"].append((r["id"], s_v, g_v))
+        else:
+            buckets["unchanged-tolerated"].append((r["id"], s_v, g_v))
+    return buckets
+
+
+def differential(repo, args):
+    """Attribute every rejection: measure the shipped tree, the guarded tree and the bare tree.
+
+    A slice is processed at a time because each class costs three measurements and a very wide
+    invocation runs into the JVM's and the probe's limits: twenty classes complete, seventy-three
+    did not, and the slice size is what makes a wide check usable.
+    """
+    classes = args.enumerate or []
+    if not classes:
+        print("--differential needs at least one class")
+        return 2
+    slice_size = getattr(args, "slice", 20) or 20
+    buckets = defaultdict(list)
+    failed = []
+    for i in range(0, len(classes), slice_size):
+        chunk = classes[i:i + slice_size]
+        print("-- differential slice %d/%d: %s"
+              % (i // slice_size + 1, (len(classes) + slice_size - 1) // slice_size,
+                 ", ".join(chunk)))
+        part = _differential_slice(repo, args, chunk)
+        if part is None:
+            failed.append(chunk)
+            continue
+        for key, items in part.items():
+            buckets[key].extend(items)
+    for name in ("fixed", "unchanged-tolerated", "STRICTER-GUARD", "STRICTER-BODY",
+                 "STILL-ABORTS", "LOOSER"):
+        print("%-22s %4d" % (name, len(buckets.get(name, []))))
+    # Only a guard that over-rejects and a case that still aborts are defects. STRICTER-BODY and
+    # LOOSER are conformance differences in the generated body, reported but not failures.
+    bad = len(buckets.get("STRICTER-GUARD", [])) + len(buckets.get("STILL-ABORTS", []))
+    for name in ("STRICTER-GUARD", "STRICTER-BODY", "STILL-ABORTS", "LOOSER"):
+        for cid, s_v, g_v in buckets.get(name, [])[:12]:
+            print("   %-14s %-56s shipped=%-13s generated=%s" % (name, cid, s_v, g_v))
+    if failed:
+        print("slices that could not be measured: %s" % "; ".join(", ".join(c) for c in failed))
+    if args.out:
+        json.dump({k: v for k, v in buckets.items()}, open(args.out, "w"), indent=2)
+        print("wrote " + args.out)
+    return 1 if (bad or failed) else 0
+
+
 def enumerate_measure(repo, args):
     """Measure derived candidates and record the aborts as evidence the generator can use."""
     classes = args.enumerate or []
@@ -684,7 +800,8 @@ def enumerate_measure(repo, args):
         return 2
     cases = enumerate_cases(classes, args.frameworks)
     print("candidates: %d over %d class(es)" % (len(cases), len(classes)))
-    results = run_cases(repo, cases, timeout=args.timeout, generated=classes)
+    results = run_cases(repo, cases, timeout=args.timeout, generated=classes,
+                        use_evidence=not args.no_evidence)
     if results is None:
         return 2
     # Match by id, never by position: run_cases drops candidates that do not compile, and zipping
@@ -708,7 +825,10 @@ def enumerate_measure(repo, args):
             continue
         entry = {"class": case["class"], "selector": case["selector"], "param": case["param"],
                  "param_index": case["param_index"], "probe_id": case["id"],
-                 "unguarded": r["verdict"]}
+                 "badness": case.get("badness"), "unguarded": r["verdict"]}
+        for field in ("bound", "bound_from"):
+            if case.get(field):
+                entry[field] = case[field]
         if r["verdict"] in ("objc-abort", "sigtrap", "sigill"):
             if case["badness"] == "nil":
                 entry["guards"] = ['Bounds.nonNull({p}, "%s");' % case["selector"]]
@@ -775,6 +895,15 @@ def main():
                     help="measure the derived candidates against the SHIPPED tree and record each "
                          "case's verdict there, so a generated-aborts/shipped-tolerates pair is "
                          "visible instead of being reported as a flaw in the shipped wrapper")
+    ap.add_argument("--slice", type=int, default=20,
+                    help="with --differential: classes per slice (20 measured to work; 73 does not)")
+    ap.add_argument("--differential", action="store_true",
+                    help="with --enumerate: measure each case against the shipped tree AND the "
+                         "guarded generated tree, then report where the generated wrapper is "
+                         "stricter than the shipped one, still aborts, or has become looser")
+    ap.add_argument("--no-evidence", action="store_true",
+                    help="with --enumerate: generate the shadow WITHOUT the guard evidence, so a "
+                         "recorded unguarded verdict can be reproduced and falsified")
     ap.add_argument("--record-all", action="store_true",
                     help="with --enumerate: record every measured verdict, including calls that "
                          "already fail safely, so a verification run can classify all of them")
@@ -796,6 +925,8 @@ def main():
     repo = os.path.abspath(args.repo)
     if args.strip_guards is not None:
         repo = strip_guards(repo, args.strip_guards)
+    if args.differential:
+        return differential(repo, args)
     if args.shipped_baseline:
         cases = enumerate_cases(args.enumerate or [], args.frameworks)
         # the shipped class may not declare the generated name or arity, so validate here too

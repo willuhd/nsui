@@ -12,8 +12,10 @@ import nsui.objc.ObjC;
 /// Shared test primitives for the nsui suite.
 ///
 /// Deliberately dependency-free (no JUnit, no JMH): every test is a plain
-/// `main()` in its own JVM. This file holds the boilerplate that used to
-/// be copy-pasted into all 51 tests, in four groups:
+/// `main()` in its own JVM. This file holds the boilerplate that used to be
+/// copy-pasted into every test (the suite is 76 files today — the count is
+/// deliberately not repeated here, because it went stale once already), in
+/// four groups:
 ///
 /// - **Reporting** (`check` + failure count + `end`) — the
 /// "boolean thing". One counter per JVM; call `end()` exactly once

@@ -54,15 +54,21 @@ public final class MTLTexture extends NSObject {
     /// format outside a six-entry list.) Values are MTLPixelFormat (MTLPixelFormat.h).
     private static long bytesPerPixel(long format) {
         return switch ((int) format) {
-            case 1, 10, 12, 13, 14, 253 -> 1;                    // A8Unorm; R8*; Stencil8
-            case 20, 22, 23, 24, 25, 30, 32, 33, 34, 250 -> 2;   // R16*; RG8*; Depth16Unorm
+            case 1, 10, 11, 12, 13, 14, 253 -> 1;                // A8Unorm; R8*; R8Unorm_sRGB(11); Stencil8
+            case 20, 22, 23, 24, 25, 30, 31, 32, 33, 34, 250 -> 2;   // R16*; RG8*; RG8Unorm_sRGB(31); Depth16Unorm
             case 53, 54, 55, 60, 62, 63, 64, 65,
                  70, 71, 72, 73, 74, 80, 81,
-                 90, 91, 92, 93, 252, 255, 261, 262 -> 4;        // R32*; RG16*; RGBA8*; BGRA8*; 10/11-bit; Depth32/24+stencil; X*_Stencil8
+                 90, 91, 92, 93, 94, 252, 255, 261, 262 -> 4;   // +BGR10A2Unorm(94); R32*; RG16*; RGBA8*; BGRA8*; Depth32/24+stencil; X*_Stencil8
             case 103, 104, 105, 110, 112, 113, 114, 115, 260 -> 8; // RG32*; RGBA16*; Depth32Float_Stencil8
             case 123, 124, 125 -> 16;                            // RGBA32*
             default -> -1;                                       // compressed / unknown -> reject
         };
+    }
+
+    /// mipmapLevelCount — how many mip levels this texture has (1 when it is not mipmapped).
+    public long mipmapLevelCount() {
+        ensureInit();
+        return ObjC.msgSendLong(peer, ObjC.sel("mipmapLevelCount"));
     }
 
     /// getBytes:bytesPerRow:fromRegion:mipmapLevel: into a Java array.
@@ -82,6 +88,14 @@ public final class MTLTexture extends NSObject {
                     + region.z() + " depth=" + region.depth());
         }
         if (level < 0) throw new IllegalArgumentException("mipmap level must be >= 0, got " + level);
+        // A level beyond the texture's mip count is NOT an abort natively — it silently returns
+        // zeros (measured: a 4-level 8x8 texture answers level 9 with 0,0,0,0) — so it is rejected
+        // here as silent data corruption rather than left to look like a legitimately empty read.
+        long mipCount = mipmapLevelCount();
+        if (level >= mipCount) {
+            throw new IllegalArgumentException("mipmap level " + level + " >= mipmapLevelCount "
+                    + mipCount + " (native returns zeros instead of failing)");
+        }
         // Bounds come from THIS mip level, not the base level (and level >= 32 would
         // overflow a Java shift, so clamp it).
         long tw = level >= 32 ? 1 : Math.max(1, width() >> (int) level);
@@ -135,6 +149,14 @@ public final class MTLTexture extends NSObject {
                     + region.z() + " depth=" + region.depth());
         }
         if (level < 0) throw new IllegalArgumentException("mipmap level must be >= 0, got " + level);
+        // A level beyond the texture's mip count is NOT an abort natively — it silently returns
+        // zeros (measured: a 4-level 8x8 texture answers level 9 with 0,0,0,0) — so it is rejected
+        // here as silent data corruption rather than left to look like a legitimately empty read.
+        long mipCount = mipmapLevelCount();
+        if (level >= mipCount) {
+            throw new IllegalArgumentException("mipmap level " + level + " >= mipmapLevelCount "
+                    + mipCount + " (native returns zeros instead of failing)");
+        }
         // Bounds come from THIS mip level, not the base level (and level >= 32 would
         // overflow a Java shift, so clamp it).
         long tw = level >= 32 ? 1 : Math.max(1, width() >> (int) level);

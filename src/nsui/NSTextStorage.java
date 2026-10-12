@@ -183,8 +183,16 @@ public class NSTextStorage extends NSMutableAttributedString {
     /// Range or index out of bounds", verified, exit 134) and aborts the JVM.
     /// (invalidateAttributesInRange:/ensureAttributesAreFixedInRange: tolerate an
     /// out-of-range value natively, so they deliberately have no guard.)
+    /// edited:range:changeInLength: — call it after mutating the storage.
+    ///
+    /// `range` is in PRE-edit coordinates, so it is bounded against `length() - delta`, not against
+    /// the current length. Measured: after deleting {1,3} from "abcde" (length 2, delta -3) the
+    /// native method ACCEPTS {1,3} — an earlier version of this guard used the post-edit length and
+    /// rejected that legal call, while still rejecting the genuinely invalid {5,1} on a 3-character
+    /// storage (which aborts natively).
     public void edited(long editedMask, NSRange range, long delta) {
-        Bounds.range(range, length(), "edited:range:changeInLength:");
+        long preEditLength = Math.max(0L, length() - delta);
+        Bounds.range(range, preEditLength, "edited:range:changeInLength:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.INT, Arg.RANGE, Arg.INT));
             h.invokeExact(peer, ObjC.sel("edited:range:changeInLength:"), editedMask, range.toSegment(), delta);

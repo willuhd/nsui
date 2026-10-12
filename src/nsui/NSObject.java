@@ -234,8 +234,12 @@ public class NSObject {
 
     /// `[receiver valueForKey:key]` — KVC read (nil key returns nil).
     /// `NSDictionary` looks the key up (keys starting with `@` go to super) and
-    /// `NSArray` maps the key over its elements; other classes raise a catchable
-    /// `NSUnknownKeyException` for unknown keys.
+    /// `NSArray` maps the key over its elements.
+    ///
+    /// CORRECTED: an unknown key raises NSUnknownKeyException, and that exception is NOT catchable
+    /// here — it terminates the process (measured: "terminating due to uncaught exception"), exactly
+    /// as nsui.objc.Exceptions documents for every uncaught ObjC exception. The old javadoc called it
+    /// "catchable", which invited callers to treat a typo'd key as a recoverable error.
     public MemorySegment valueForKey(MemorySegment key) {
         ensureInit();
         if (key == null || key.address() == 0) return null;

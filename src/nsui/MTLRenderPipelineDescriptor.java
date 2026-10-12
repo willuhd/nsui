@@ -12,7 +12,8 @@ import static nsui.objc.Sig.Ret;
 /// Built once per pipeline (long-lived).
 public final class MTLRenderPipelineDescriptor extends NSObject {
 
-    /// MTLMaxColorAttachments (MTLDevice.h) — maximum color attachment slots.
+    /// Maximum color attachment slots (8, the value the API validates against). There is no
+    /// SDK constant named MTLMaxColorAttachments; the number is measured from the native assertion.
     public static final long MAX_COLOR_ATTACHMENTS = 8;
 
     private record Handles(MethodHandle hAt) {}

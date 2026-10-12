@@ -190,11 +190,12 @@ def enumerate_cases(classes, frameworks):
     toolkit = gen.Toolkit(REPO)
     out = []
     for cls in classes:
-        surface = gen.collect_surface(cls, list(frameworks), sdk)
-        if surface is None:
+        planned = gen.plan_class(cls, list(frameworks), sdk, vocab, wrappers, rt, toolkit=toolkit)
+        if planned is None:
             continue
+        surface = planned["surface"]
         view_ish = _is_view_subclass(surface, frameworks, sdk)
-        plans = gen.build_plan(surface, rt, vocab, wrappers, cls, toolkit=toolkit)
+        plans = planned["plans"]          # post-rename: the names the generator will really emit
         # An index guard needs a bound. Rather than guess one, take a no-argument accessor the
         # class already declares whose name says it counts something (`numberOfItems`, `count`).
         counters = sorted((q.java_name for q in plans
@@ -202,6 +203,18 @@ def enumerate_cases(classes, frameworks):
                            and re.search(r"(?i)(count|numberof)", q.java_name)),
                           key=lambda n: (len(n), n))
         bound = ("%s()" % counters[0]) if counters else None
+        if view_ish:
+            recv_expr = '%s.wrap(ObjC.newView("%s", new NSRect(0, 0, 10, 10)))' % (cls, cls)
+        else:
+            recv_expr = '%s.wrap(init0("%s"))' % (cls, cls)
+        # Building the receiver can itself abort ([[NSWindow alloc] init] raises), and an abort
+        # there would be recorded against every method of the class. The baseline case measures
+        # construction alone; if it fails, the whole class is dropped from the evidence.
+        out.append({
+            "id": "%s.__baseline" % cls, "class": cls, "baseline": True, "guard": "none",
+            "setup": ["%s recv = %s;" % (cls, recv_expr)],
+            "call": 'System.out.println(recv == null ? "NORECEIVER" : "RECEIVER-OK");',
+        })
         for plan in plans:
             if plan.skip or plan.is_class or len(plan.params) > 4:
                 continue
@@ -221,16 +234,14 @@ def enumerate_cases(classes, frameworks):
             for target, badness in wanted:
                 args = [_bad_expr(k, badness) if i == target else _default_expr(k)
                         for i, (k, _j, _n) in enumerate(kinds)]
-                if view_ish:
-                    recv = '%s.wrap(ObjC.newView("%s", new NSRect(0, 0, 10, 10)))' % (cls, cls)
-                else:
-                    recv = '%s.wrap(init0("%s"))' % (cls, cls)
+                recv = recv_expr
                 out.append({
                     "id": "%s.%s.%s" % (cls, plan.java_name, badness),
                     "class": cls, "selector": plan.decl.selector,
                     "guard": {"nil": "nonNull", "nan": "notNaN", "index": "index"}[badness],
                     "param": kinds[target][2], "param_index": target, "badness": badness,
                     "bound": bound if badness == "index" else None,
+                    "method": plan.java_name, "arity": len(kinds),
                     "setup": ["%s recv = %s;" % (cls, recv),
                               'if (recv == null) { System.out.println("NORECEIVER"); return; }'],
                     "call": "recv.%s(%s);" % (plan.java_name, ", ".join(args)),
@@ -345,15 +356,91 @@ def tree_classes(repo):
     return out
 
 
-def build_probe(repo, cases, shadow=None, shipped=None, generated=False):
-    """Write and compile the probe; the shipped create() factories are re-added when the tree is
-    generated, because the generator does not emit them."""
+PROBE_HELPERS = """package nsui;
+
+import java.lang.foreign.MemorySegment;
+import nsui.objc.ObjC;
+import nsui.objc.Sig;
+import static nsui.objc.Sig.Arg;
+import static nsui.objc.Sig.Ret;
+
+/// Shared by the chunked probes: a receiver built from the runtime, because a generated wrapper
+/// carries no factory (plain init returns nil for the controller and view classes, so the real
+/// initializers go through handles whose shape the tree already has). The cases live in
+/// GuardProbeN classes because a JVM method is capped at 64 KB and a bulk scan has hundreds.
+public abstract class GuardProbeBase {
+    static {
+        ObjC.init();
+        try { ObjC.ensureFramework(\"AppKit\"); } catch (Throwable ignored) {}
+    }
+
+    static MemorySegment init0(String cls) {
+        MemorySegment p = ObjC.msgSendId(ObjC.cls(cls), ObjC.sel(\"alloc\"));
+        return ObjC.msgSendId(p, ObjC.sel(\"init\"));
+    }
+
+    static MemorySegment init1(String cls, String sel) {
+        MemorySegment p = ObjC.msgSendId(ObjC.cls(cls), ObjC.sel(\"alloc\"));
+        return ObjC.msgSendIdId(p, ObjC.sel(sel), ObjC.nsstring(\"\"));
+    }
+
+    static MemorySegment init2(String cls, String sel) {
+        MemorySegment p = ObjC.msgSendId(ObjC.cls(cls), ObjC.sel(\"alloc\"));
+        try {
+            java.lang.invoke.MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.ID, Arg.ID));
+            return (MemorySegment) h.invokeExact(p, ObjC.sel(sel), MemorySegment.NULL,
+                                                MemorySegment.NULL);
+        } catch (Throwable t) { throw new RuntimeException(t); }
+    }
+
+    static MemorySegment init3(String cls, String sel) {
+        MemorySegment p = ObjC.msgSendId(ObjC.cls(cls), ObjC.sel(\"alloc\"));
+        try {
+            java.lang.invoke.MethodHandle h =
+                ObjC.handle(Sig.of(Ret.ID, Arg.ID, Arg.ID, Arg.ID));
+            return (MemorySegment) h.invokeExact(p, ObjC.sel(sel), ObjC.nsstring(\"Item\"),
+                                                MemorySegment.NULL, ObjC.nsstring(\"\"));
+        } catch (Throwable t) { throw new RuntimeException(t); }
+    }
+}
+"""
+
+
+def _chunk_source(name, cases, generated):
+    body = ["package nsui;", "",
+            "import java.lang.foreign.MemorySegment;",
+            "import nsui.objc.ObjC;",
+            "import nsui.objc.Sig;",
+            "import static nsui.objc.Sig.Arg;",
+            "import static nsui.objc.Sig.Ret;", "",
+            "public final class %s extends GuardProbeBase {" % name,
+            "    public static void main(String[] argv) {",
+            "        int which = Integer.parseInt(argv[0]);", "        switch (which) {"]
+    for i, c in enumerate(cases):
+        body.append("        case %d: {" % i)
+        for line in c["setup"]:
+            body.append("            " + line)
+        call = (c.get("call_gen") or c["call"]) if generated else c["call"]
+        body.append("            " + call)
+        body.append('            System.out.println("TOLERATED");')
+        body.append("            return;")
+        body.append("        }")
+    body += ["        default: return;", "        }", "    }", "}", ""]
+    return "\n".join(body)
+
+
+def build_probe(repo, cases, shadow=None, shipped=None, generated=False, chunk=120):
+    """Write and compile the probes, split across classes so no method exceeds the JVM limit.
+
+    Returns (probe_classes_dir, tree_classes, mapping) where mapping[i] is the (class, local index)
+    that runs case i.
+    """
     work = tempfile.mkdtemp(prefix="cgprobe-")
     pkg = os.path.join(work, "nsui")
     os.makedirs(pkg, exist_ok=True)
     classes = shipped or tree_classes(repo)
     if classes is None:
-        return None, None
+        return None, None, None
     if shadow:
         classes = "%s:%s" % (shadow, classes)
     for cls in ([] if shadow else {c["class"] for c in cases}):
@@ -361,97 +448,85 @@ def build_probe(repo, cases, shadow=None, shipped=None, generated=False):
         text = open(path, encoding="utf-8", errors="replace").read()
         if "static " + cls + " create(" in text:
             continue
-        shipped = os.path.join(REPO, "src", "nsui", cls + ".java")
-        if not os.path.exists(shipped):
+        shipped_path = os.path.join(REPO, "src", "nsui", cls + ".java")
+        if not os.path.exists(shipped_path):
             continue
-        ship = open(shipped, encoding="utf-8", errors="replace").read()
+        ship = open(shipped_path, encoding="utf-8", errors="replace").read()
         m = re.search(r"\n(    /// [^\n]*\n)*    public static %s create\([^)]*\) \{.*?\n    \}\n"
                       % re.escape(cls), ship, re.S)
         if m:
             text = text.replace("\n    /// Wrap an id as", m.group(0) + "\n    /// Wrap an id as", 1)
             open(path, "w", encoding="utf-8").write(text)
-            p = subprocess.run([JAVAC, "-cp", SVM_JAR, "-d", classes, path],
-                               capture_output=True, text=True)
-            if p.returncode != 0:
-                sys.stderr.write("re-adding create() failed for %s\n%s\n"
-                                 % (cls, (p.stdout + p.stderr)[-500:]))
-    body = ["package nsui;", "",
-            "import java.lang.foreign.MemorySegment;",
-            "import nsui.objc.ObjC;",
-            "import nsui.objc.Sig;",
-            "import static nsui.objc.Sig.Arg;",
-            "import static nsui.objc.Sig.Ret;", "",
-            "public final class GuardProbe {",
-            "    static {",
-            "        ObjC.init();",
-            "        try { ObjC.ensureFramework(\"AppKit\"); } catch (Throwable ignored) {}",
-            "    }", "",
-            "    /// Receivers built from the runtime, because a generated wrapper carries no factory:",
-            "    /// plain init returns nil for the controller and view classes, so the real",
-            "    /// initializers are used through handles whose shape the tree already has.",
-            "    static MemorySegment init1(String cls, String sel) {",
-            "        MemorySegment p = ObjC.msgSendId(ObjC.cls(cls), ObjC.sel(\"alloc\"));",
-            "        return ObjC.msgSendIdId(p, ObjC.sel(sel), ObjC.nsstring(\"\"));",
-            "    }",
-            "    static MemorySegment init0(String cls) {",
-            "        MemorySegment p = ObjC.msgSendId(ObjC.cls(cls), ObjC.sel(\"alloc\"));",
-            "        return ObjC.msgSendId(p, ObjC.sel(\"init\"));",
-            "    }",
-            "    static MemorySegment init3(String cls, String sel) {",
-            "        MemorySegment p = ObjC.msgSendId(ObjC.cls(cls), ObjC.sel(\"alloc\"));",
-            "        try {",
-            "            java.lang.invoke.MethodHandle h =",
-            "                ObjC.handle(Sig.of(Ret.ID, Arg.ID, Arg.ID, Arg.ID));",
-            "            return (MemorySegment) h.invokeExact(p, ObjC.sel(sel), ObjC.nsstring(\"Item\"),",
-            "                                                MemorySegment.NULL, ObjC.nsstring(\"\"));",
-            "        } catch (Throwable t) { throw new RuntimeException(t); }",
-            "    }",
-            "    static MemorySegment init2(String cls, String sel) {",
-            "        MemorySegment p = ObjC.msgSendId(ObjC.cls(cls), ObjC.sel(\"alloc\"));",
-            "        try {",
-            "            java.lang.invoke.MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.ID, Arg.ID));",
-            "            return (MemorySegment) h.invokeExact(p, ObjC.sel(sel), MemorySegment.NULL,",
-            "                                                MemorySegment.NULL);",
-            "        } catch (Throwable t) { throw new RuntimeException(t); }",
-            "    }", "",
-            "    public static void main(String[] argv) {",
-            "        int which = Integer.parseInt(argv[0]);", "        switch (which) {"]
-    for i, c in enumerate(cases):
-        body.append("        case %d: {" % i)
-        for line in c["setup"]:
-            body.append("            " + line)
-        body.append("            " + (c.get("call_gen") or c["call"]) if generated else "            " + c["call"])
-        body.append("            System.out.println(\"TOLERATED\");")
-        body.append("            return;")
-        body.append("        }")
-    body += ["        default: return;", "        }", "    }", "}", ""]
-    src = os.path.join(pkg, "GuardProbe.java")
-    open(src, "w", encoding="utf-8").write("\n".join(body))
+    sources = []
+    base = os.path.join(pkg, "GuardProbeBase.java")
+    open(base, "w", encoding="utf-8").write(PROBE_HELPERS)
+    sources.append(base)
+    mapping = []
+    for ci in range(0, len(cases), chunk):
+        group = cases[ci:ci + chunk]
+        name = "GuardProbe%d" % (ci // chunk)
+        path = os.path.join(pkg, name + ".java")
+        open(path, "w", encoding="utf-8").write(_chunk_source(name, group, generated))
+        sources.append(path)
+        mapping.extend((name, li) for li in range(len(group)))
     out = os.path.join(work, "out")
     os.makedirs(out, exist_ok=True)
-    p = subprocess.run([JAVAC, "-cp", "%s:%s" % (SVM_JAR, classes), "-d", out, src],
+    p = subprocess.run([JAVAC, "-cp", "%s:%s" % (SVM_JAR, classes), "-d", out] + sources,
                        capture_output=True, text=True)
     if p.returncode != 0:
-        sys.stderr.write("probe compile failed:\n" + (p.stdout + p.stderr)[-3000:])
-        return None, None
-    return out, classes
+        sys.stderr.write("probe compile failed:\n" + (p.stdout + p.stderr)[-2000:])
+        return None, None, None
+    return out, classes, mapping
+
+
+def filter_cases(cases, scratch):
+    """Keep only candidates whose method exists with that arity in the generated file.
+
+    A synthesized call can disagree with what the generator emitted (a renamed method, a reshaped
+    parameter list); dropping those here keeps one bad candidate from failing the whole run, and
+    they are reported as skipped rather than measured wrongly.
+    """
+    cache, out, dropped = {}, [], 0
+    for c in cases:
+        if c.get("baseline"):
+            out.append(c)           # always kept: it measures the receiver, not a method
+            continue
+        path = os.path.join(scratch, "src", "nsui", c["class"] + ".java")
+        if path not in cache:
+            cache[path] = open(path, encoding="utf-8", errors="replace").read() \
+                if os.path.exists(path) else ""
+        m = re.search(r"public\s+[\w.<>\[\]]+\s+%s\s*\(([^)]*)\)" % re.escape(c["method"]),
+                      cache[path])
+        if not m or (0 if not m.group(1).strip() else m.group(1).count(",") + 1) != c["arity"]:
+            dropped += 1
+            continue
+        out.append(c)
+    if dropped:
+        print("probe: skipped %d candidate(s) the generated class does not declare" % dropped)
+    return out
 
 
 def run_cases(repo, cases, timeout=25, generated=None):
     shadow = shipped = None
     if generated:
-        shadow, shipped, _scratch = generated_shadow(repo, generated)
+        shadow, shipped, scratch = generated_shadow(repo, generated)
         if shadow is None:
             return None
-    probe_out, classes = build_probe(repo, cases, shadow=shadow, shipped=shipped,
-                                     generated=bool(generated))
+        cases = filter_cases(cases, scratch)
+        if not cases:
+            print("probe: no candidate survived validation against the generated class")
+            return None
+    probe_out, classes, mapping = build_probe(repo, cases, shadow=shadow, shipped=shipped,
+                                              generated=bool(generated))
     if probe_out is None:
         return None
     results = []
     for i, c in enumerate(cases):
+        probe_class, local = mapping[i]
         try:
             p = subprocess.run([JAVA, "-XstartOnFirstThread", "--enable-native-access=ALL-UNNAMED",
-                                "-cp", "%s:%s" % (probe_out, classes), "nsui.GuardProbe", str(i)],
+                                "-cp", "%s:%s" % (probe_out, classes),
+                                "nsui." + probe_class, str(local)],
                                capture_output=True, text=True, timeout=timeout)
             rc, text = p.returncode, (p.stdout + p.stderr)
         except subprocess.TimeoutExpired as exc:
@@ -468,6 +543,31 @@ def run_cases(repo, cases, timeout=25, generated=None):
     return results
 
 
+def merge_evidence(src, path):
+    """Fold a previous enumeration's cases into the evidence file, upgrading weaker entries."""
+    entries = json.load(open(src))["cases"]
+    existing = json.load(open(path)) if os.path.exists(path) else {"cases": []}
+    cases = existing.get("cases", [])
+    by_key = {(c.get("class"), c.get("selector"), c.get("param"), c.get("unguarded")): i
+              for i, c in enumerate(cases)}
+    added = replaced = 0
+    for e in entries:
+        key = (e.get("class"), e.get("selector"), e.get("param"), e.get("unguarded"))
+        i = by_key.get(key)
+        if i is None:
+            by_key[key] = len(cases)
+            cases.append(e)
+            added += 1
+        elif e.get("guards") and not cases[i].get("guards"):
+            cases[i] = e
+            replaced += 1
+    existing["cases"] = cases
+    json.dump(existing, open(path, "w"), indent=2)
+    print("merged %d new case(s), upgraded %d into %s (%d total)" % (added, replaced, path,
+                                                                     len(cases)))
+    return 0
+
+
 def enumerate_measure(repo, args):
     """Measure derived candidates and record the aborts as evidence the generator can use."""
     classes = args.enumerate or []
@@ -479,10 +579,23 @@ def enumerate_measure(repo, args):
     results = run_cases(repo, cases, timeout=args.timeout, generated=classes)
     if results is None:
         return 2
+    # Match by id, never by position: run_cases drops candidates that do not compile, and zipping
+    # positionally then attributed every later result to the wrong case.
+    by_id = {r["id"]: r for r in results}
+    bad_receivers = {c["class"] for c in cases if c.get("baseline")
+                     and by_id.get(c["id"], {}).get("verdict") != "tolerated"}
+    if bad_receivers:
+        print("dropping %d class(es) whose receiver cannot be built: %s"
+              % (len(bad_receivers), ", ".join(sorted(bad_receivers))[:120]))
     entries = []
     counts = {}
-    for case, r in zip(cases, results):
+    for case in cases:
+        r = by_id.get(case["id"])
+        if r is None:
+            continue                     # dropped before it could be measured
         counts[r["verdict"]] = counts.get(r["verdict"], 0) + 1
+        if case.get("baseline") or case["class"] in bad_receivers:
+            continue
         if r["verdict"] == "no-receiver":
             continue
         entry = {"class": case["class"], "selector": case["selector"], "param": case["param"],
@@ -545,6 +658,9 @@ def main():
     ap.add_argument("--enumerate", nargs="*", metavar="CLASS", default=None,
                     help="derive bad-argument candidates from the generator's plans for these "
                          "classes, measure them, and record what aborts")
+    ap.add_argument("--merge-from", metavar="FILE",
+                    help="merge an earlier enumeration JSON into the evidence file instead of "
+                         "measuring again")
     ap.add_argument("--merge", action="store_true",
                     help="with --enumerate: merge the findings into the evidence file instead of "
                          "replacing it")
@@ -560,6 +676,9 @@ def main():
     repo = os.path.abspath(args.repo)
     if args.strip_guards is not None:
         repo = strip_guards(repo, args.strip_guards)
+    if args.merge_from:
+        return merge_evidence(args.merge_from, args.out or os.path.join(REPO, "codegen",
+                                                                       "guard-evidence.json"))
     if args.enumerate is not None:
         return enumerate_measure(repo, args)
     if not (args.generated or args.strip_guards is not None) and not args.baseline and not args.out:

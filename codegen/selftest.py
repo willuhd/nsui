@@ -45,10 +45,10 @@ SURFACE_BATCH = [
 COVERAGE = {
     "MTLSamplerDescriptor": 100.0,
     "MTLDepthStencilDescriptor": 100.0,
-    "NSOrderedSet": 89.3,
-    "NSGestureRecognizer": 90.3,
+    "NSOrderedSet": 93.6,
+    "NSGestureRecognizer": 92.6,
     "NSArray": 47.2,        # recall: 25 of 53 shipped names, the rest hand-written affordances
-    "NSViewController": 84.3,
+    "NSViewController": 88.6,
     "CAPropertyAnimation": 100.0,
 }
 

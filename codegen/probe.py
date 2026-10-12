@@ -152,6 +152,14 @@ def _bad_expr(kind, badness):
     return _default_expr(kind)
 
 
+def collection_like(cls_name):
+    """Whether the toolkit's wrapper for a class offers count(), i.e. it behaves as a collection."""
+    path = os.path.join(REPO, "src", "nsui", cls_name + ".java")
+    if not os.path.exists(path):
+        return False
+    return bool(re.search(r"public (long|int) count\s*\(", open(path, errors="replace").read()))
+
+
 def _is_view_subclass(surface, frameworks, sdk, seen=None):
     seen = seen or set()
     name = surface.superclass
@@ -188,64 +196,131 @@ def enumerate_cases(classes, frameworks):
     wrappers = gen.load_wrappers(os.path.join(REPO, "src", "nsui"))
     rt = objcabi.ObjCRuntime(list(frameworks))
     toolkit = gen.Toolkit(REPO)
+    # Cases a previous verification proved unattributable (a guard on the argument does not stop
+    # the abort, so the abort is environmental) are not derived again: they would keep coming back
+    # as "new" findings that cannot be acted on.
+    skip_cases = set()
+    try:
+        ev = json.load(open(os.path.join(HERE, "guard-evidence.json")))
+        for item in ev.get("unattributable", []):
+            skip_cases.add((item.get("class"), item.get("selector")))
+    except (OSError, ValueError):
+        pass
     out = []
     for cls in classes:
         planned = gen.plan_class(cls, list(frameworks), sdk, vocab, wrappers, rt, toolkit=toolkit)
         if planned is None:
             continue
         surface = planned["surface"]
-        view_ish = _is_view_subclass(surface, frameworks, sdk)
-        plans = planned["plans"]          # post-rename: the names the generator will really emit
-        # An index guard needs a bound. Rather than guess one, take a no-argument accessor the
-        # class already declares whose name says it counts something (`numberOfItems`, `count`).
-        counters = sorted((q.java_name for q in plans
-                           if not q.skip and not q.is_class and not q.params
-                           and re.search(r"(?i)(count|numberof)", q.java_name)),
-                          key=lambda n: (len(n), n))
-        bound = ("%s()" % counters[0]) if counters else None
-        if view_ish:
+        plans = planned["plans"]      # post-rename: the names the generator will really emit
+        if _is_view_subclass(surface, frameworks, sdk):
             recv_expr = '%s.wrap(ObjC.newView("%s", new NSRect(0, 0, 10, 10)))' % (cls, cls)
         else:
             recv_expr = '%s.wrap(init0("%s"))' % (cls, cls)
         # Building the receiver can itself abort ([[NSWindow alloc] init] raises), and an abort
-        # there would be recorded against every method of the class. The baseline case measures
+        # there would be recorded against every method of the class. The baseline measures
         # construction alone; if it fails, the whole class is dropped from the evidence.
         out.append({
             "id": "%s.__baseline" % cls, "class": cls, "baseline": True, "guard": "none",
             "setup": ["%s recv = %s;" % (cls, recv_expr)],
             "call": 'System.out.println(recv == null ? "NORECEIVER" : "RECEIVER-OK");',
         })
-        for plan in plans:
-            if plan.skip or plan.is_class or len(plan.params) > 4:
+        ancestors = []
+        parent = surface.superclass
+        while parent and len(ancestors) < 6:
+            planned_parent = gen.plan_class(parent, list(frameworks), sdk, vocab, wrappers, rt,
+                                            toolkit=toolkit)
+            if planned_parent is None:
+                break
+            ancestors.extend(planned_parent["plans"])
+            parent = planned_parent["surface"].superclass
+        out.extend(_cases_for_class(cls, plans, wrappers, recv_expr, ancestors, skip_cases))
+    return out
+
+
+def discover_bound(sel, plans, wrappers, extra_plans=None):
+    """(bound expression, setup line) for an index in `sel`, or (None, None).
+
+    A bound is a no-argument accessor whose name says it counts (`numberOfItems`, `count`,
+    `length`) and which returns a scalar. Failing that, a collection accessor is used when its name
+    carries the noun the index names (`removeItemAtIndex:` -> `items()`, `moveRowAt...` ->
+    `rows()`), because an unrelated collection's count would produce a guard that rejects valid
+    indices. Nothing is guessed when neither exists: the case is reported instead.
+    """
+    scalars = ("long", "int", "short", "byte", "uint32")
+    all_plans = list(plans) + list(extra_plans or [])     # an inherited counter still bounds it
+    counters = sorted((q.java_name for q in all_plans
+                       if not q.skip and not q.is_class and not q.params
+                       and q.ret_java in scalars
+                       and re.search(r"(?i)(count|numberof|length)", q.java_name)),
+                      key=lambda n: (len(n), n))
+    if counters:
+        return "%s()" % counters[0], None
+    m = re.search(r"([A-Z][A-Za-z]*?)At(?:Index|Row)|([A-Z][A-Za-z]*?)Index", sel or "")
+    run = next((g for g in (m.groups() if m else ()) if g), "")
+    if len(run) < 3:
+        return None, None
+    # Try the longest noun first (`SelectedTabViewItem` then `TabViewItem` then `Item`): the longer
+    # match is the more specific accessor, and a shorter one risks an unrelated collection.
+    parts = re.findall(r"[A-Z][a-z0-9]*", run)
+    nouns = ["".join(parts[i:]) for i in range(len(parts))]
+    for noun in nouns:
+        if len(noun) < 3:
+            continue
+        for q in sorted(all_plans, key=lambda x: x.java_name):
+            if q.skip or q.is_class or q.params:
                 continue
-            kinds = [(k, jt, nm) for k, jt, nm in plan.params]
-            objs = [i for i, (k, _j, _n) in enumerate(kinds) if k in OBJECT_KINDS
-                    or k.startswith("typed:")]
-            structs = [i for i, (k, _j, _n) in enumerate(kinds) if k in STRUCT_DEFAULTS]
-            idx = [i for i, (k, _j, n) in enumerate(kinds)
-                   if k in ("long", "int", "short", "byte", "uint32") and "index" in n.lower()]
-            wanted = []
-            if len(objs) == 1:
-                wanted.append((objs[0], "nil"))
-            if len(structs) == 1 and STRUCT_DEFAULTS[kinds[structs[0]][0]][1]:
-                wanted.append((structs[0], "nan"))
-            if idx and not objs and not structs:
-                wanted.append((idx[0], "index"))
-            for target, badness in wanted:
-                args = [_bad_expr(k, badness) if i == target else _default_expr(k)
-                        for i, (k, _j, _n) in enumerate(kinds)]
-                recv = recv_expr
-                out.append({
-                    "id": "%s.%s.%s" % (cls, plan.java_name, badness),
-                    "class": cls, "selector": plan.decl.selector,
-                    "guard": {"nil": "nonNull", "nan": "notNaN", "index": "index"}[badness],
-                    "param": kinds[target][2], "param_index": target, "badness": badness,
-                    "bound": bound if badness == "index" else None,
-                    "method": plan.java_name, "arity": len(kinds),
-                    "setup": ["%s recv = %s;" % (cls, recv),
-                              'if (recv == null) { System.out.println("NORECEIVER"); return; }'],
-                    "call": "recv.%s(%s);" % (plan.java_name, ", ".join(args)),
-                })
+            if noun.lower() not in q.java_name.lower() or q.ret_java not in wrappers:
+                continue
+            if not collection_like(q.ret_java):
+                continue
+            return ("__items == null ? 0 : __items.count()",
+                    "%s __items = %s();" % (q.ret_java, q.java_name))
+    return None, None
+
+
+def _cases_for_class(cls, plans, wrappers, recv_expr, ancestors=None, skip_cases=None):
+    """Nil/NaN/index candidates for one class, one bad argument per call.
+
+    A nil case needs exactly one object parameter, a NaN case exactly one geometry parameter, and
+    an index case a parameter that names an index with every other parameter a scalar — so the
+    abort can only be that argument's doing. Other parameters get benign defaults.
+    """
+    out = []
+    for plan in plans:
+        if plan.skip or plan.is_class or len(plan.params) > 4:
+            continue
+        if (cls, plan.decl.selector) in (skip_cases or set()):
+            continue
+        kinds = [(k, jt, nm) for k, jt, nm in plan.params]
+        bound, bound_setup = discover_bound(plan.decl.selector, plans, wrappers, ancestors)
+        objs = [i for i, (k, _j, _n) in enumerate(kinds)
+                if k in OBJECT_KINDS or k.startswith("typed:")]
+        structs = [i for i, (k, _j, _n) in enumerate(kinds) if k in STRUCT_DEFAULTS]
+        idx = [i for i, (k, _j, n) in enumerate(kinds)
+               if k in ("long", "int", "short", "byte", "uint32") and "index" in n.lower()]
+        wanted = []
+        if len(objs) == 1:
+            wanted.append((objs[0], "nil"))
+        if len(structs) == 1 and STRUCT_DEFAULTS[kinds[structs[0]][0]][1]:
+            wanted.append((structs[0], "nan"))
+        if idx and not objs and not structs:
+            wanted.append((idx[0], "index"))
+        for target, badness in wanted:
+            args = [_bad_expr(k, badness) if i == target else _default_expr(k)
+                    for i, (k, _j, _n) in enumerate(kinds)]
+            out.append({
+                "id": "%s.%s.%s" % (cls, plan.java_name, badness),
+                "class": cls, "selector": plan.decl.selector,
+                "guard": {"nil": "nonNull", "nan": "notNaN", "index": "index"}[badness],
+                "param": kinds[target][2], "param_index": target, "badness": badness,
+                "bound": bound if badness == "index" else None,
+                "bound_setup": bound_setup if badness == "index" else None,
+                "method": plan.java_name, "arity": len(kinds),
+                "setup": ["%s recv = %s;" % (cls, recv_expr),
+                          'if (recv == null) { System.out.println("NORECEIVER"); return; }'],
+                "call": "recv.%s(%s);" % (plan.java_name, ", ".join(args)),
+            })
     return out
 
 
@@ -407,6 +482,7 @@ public abstract class GuardProbeBase {
 
 
 def _chunk_source(name, cases, generated):
+    """(source text, [(first_line, last_line)] per case), one class per chunk of cases."""
     body = ["package nsui;", "",
             "import java.lang.foreign.MemorySegment;",
             "import nsui.objc.ObjC;",
@@ -416,7 +492,9 @@ def _chunk_source(name, cases, generated):
             "public final class %s extends GuardProbeBase {" % name,
             "    public static void main(String[] argv) {",
             "        int which = Integer.parseInt(argv[0]);", "        switch (which) {"]
+    ranges = []
     for i, c in enumerate(cases):
+        first = len(body) + 1
         body.append("        case %d: {" % i)
         for line in c["setup"]:
             body.append("            " + line)
@@ -425,8 +503,9 @@ def _chunk_source(name, cases, generated):
         body.append('            System.out.println("TOLERATED");')
         body.append("            return;")
         body.append("        }")
+        ranges.append((first, len(body)))
     body += ["        default: return;", "        }", "    }", "}", ""]
-    return "\n".join(body)
+    return "\n".join(body), ranges
 
 
 def build_probe(repo, cases, shadow=None, shipped=None, generated=False, chunk=120):
@@ -440,7 +519,7 @@ def build_probe(repo, cases, shadow=None, shipped=None, generated=False, chunk=1
     os.makedirs(pkg, exist_ok=True)
     classes = shipped or tree_classes(repo)
     if classes is None:
-        return None, None, None
+        return None, None, None, None
     if shadow:
         classes = "%s:%s" % (shadow, classes)
     for cls in ([] if shadow else {c["class"] for c in cases}):
@@ -457,26 +536,48 @@ def build_probe(repo, cases, shadow=None, shipped=None, generated=False, chunk=1
         if m:
             text = text.replace("\n    /// Wrap an id as", m.group(0) + "\n    /// Wrap an id as", 1)
             open(path, "w", encoding="utf-8").write(text)
-    sources = []
     base = os.path.join(pkg, "GuardProbeBase.java")
     open(base, "w", encoding="utf-8").write(PROBE_HELPERS)
-    sources.append(base)
-    mapping = []
-    for ci in range(0, len(cases), chunk):
-        group = cases[ci:ci + chunk]
-        name = "GuardProbe%d" % (ci // chunk)
-        path = os.path.join(pkg, name + ".java")
-        open(path, "w", encoding="utf-8").write(_chunk_source(name, group, generated))
-        sources.append(path)
-        mapping.extend((name, li) for li in range(len(group)))
     out = os.path.join(work, "out")
     os.makedirs(out, exist_ok=True)
-    p = subprocess.run([JAVAC, "-cp", "%s:%s" % (SVM_JAR, classes), "-d", out] + sources,
-                       capture_output=True, text=True)
-    if p.returncode != 0:
-        sys.stderr.write("probe compile failed:\n" + (p.stdout + p.stderr)[-2000:])
-        return None, None, None
-    return out, classes, mapping
+    dropped = 0
+    for _attempt in range(6):
+        sources, mapping, layout = [base], [], []
+        for ci in range(0, len(cases), chunk):
+            group = cases[ci:ci + chunk]
+            name = "GuardProbe%d" % (ci // chunk)
+            path = os.path.join(pkg, name + ".java")
+            text, ranges = _chunk_source(name, group, generated)
+            open(path, "w", encoding="utf-8").write(text)
+            sources.append(path)
+            mapping.extend((name, li) for li in range(len(group)))
+            layout.append((name, path, ci, ranges))
+        p = subprocess.run([JAVAC, "-cp", "%s:%s" % (SVM_JAR, classes), "-d", out] + sources,
+                           capture_output=True, text=True)
+        if p.returncode == 0:
+            if dropped:
+                print("probe: dropped %d candidate(s) that do not compile against the tree" % dropped)
+            return out, classes, mapping, cases
+        # A synthesized call can disagree with the real signature in ways name and arity do not
+        # reveal (a struct where a peer is expected, a String where a MemorySegment is). Drop the
+        # cases javac rejected and rebuild, rather than failing the whole run.
+        errs = {}
+        for m in re.finditer(r"(GuardProbe\d+)\.java:(\d+): error:", p.stdout + p.stderr):
+            errs.setdefault(m.group(1), set()).add(int(m.group(2)))
+        bad = set()
+        for name, _path, offset, ranges in layout:
+            for ln in errs.get(name, ()):
+                for li, (lo, hi) in enumerate(ranges):
+                    if lo <= ln <= hi:
+                        bad.add(offset + li)
+        if not bad:
+            sys.stderr.write("probe compile failed:\n" + (p.stdout + p.stderr)[-1500:])
+            return None, None, None, None
+        dropped += len(bad)
+        cases = [c for i, c in enumerate(cases) if i not in bad]
+        if not cases:
+            return None, None, None, None
+    return None, None, None, None
 
 
 def filter_cases(cases, scratch):
@@ -488,13 +589,18 @@ def filter_cases(cases, scratch):
     """
     cache, out, dropped = {}, [], 0
     for c in cases:
-        if c.get("baseline"):
-            out.append(c)           # always kept: it measures the receiver, not a method
-            continue
         path = os.path.join(scratch, "src", "nsui", c["class"] + ".java")
         if path not in cache:
             cache[path] = open(path, encoding="utf-8", errors="replace").read() \
                 if os.path.exists(path) else ""
+        if c.get("baseline"):
+            # A baseline is kept only for a class that was really generated: its setup names the
+            # class, so a skipped class would make the probe reference something that does not exist.
+            if cache[path]:
+                out.append(c)
+            else:
+                dropped += 1
+            continue
         m = re.search(r"public\s+[\w.<>\[\]]+\s+%s\s*\(([^)]*)\)" % re.escape(c["method"]),
                       cache[path])
         if not m or (0 if not m.group(1).strip() else m.group(1).count(",") + 1) != c["arity"]:
@@ -516,8 +622,8 @@ def run_cases(repo, cases, timeout=25, generated=None):
         if not cases:
             print("probe: no candidate survived validation against the generated class")
             return None
-    probe_out, classes, mapping = build_probe(repo, cases, shadow=shadow, shipped=shipped,
-                                              generated=bool(generated))
+    probe_out, classes, mapping, cases = build_probe(repo, cases, shadow=shadow, shipped=shipped,
+                                                     generated=bool(generated))
     if probe_out is None:
         return None
     results = []
@@ -552,6 +658,8 @@ def merge_evidence(src, path):
               for i, c in enumerate(cases)}
     added = replaced = 0
     for e in entries:
+        if e.get("verification") or e.get("baseline") or e.get("unguarded") == "java-exception":
+            continue                       # a verification row, not evidence to emit from
         key = (e.get("class"), e.get("selector"), e.get("param"), e.get("unguarded"))
         i = by_key.get(key)
         if i is None:
@@ -607,6 +715,8 @@ def enumerate_measure(repo, args):
             elif case["badness"] == "nan":
                 entry["guards"] = ['Bounds.notNaN({p}, "%s");' % case["selector"]]
             elif case.get("bound"):
+                if case.get("bound_setup"):
+                    entry["setup"] = [case["bound_setup"]]
                 entry["guards"] = ['Bounds.index({p}, %s, "%s");' % (case["bound"],
                                                                     case["selector"])]
             else:
@@ -616,6 +726,9 @@ def enumerate_measure(repo, args):
         elif r["verdict"] == "tolerated":
             entry["control"] = "the unguarded call survived, so no guard is emitted"
             entry["guards"] = []
+        elif args.record_all:
+            entry["guards"] = []
+            entry["verification"] = True      # measured safe; not evidence to emit from
         else:
             continue          # already fails safely in Java; nothing to record or emit
         entries.append(entry)
@@ -658,6 +771,13 @@ def main():
     ap.add_argument("--enumerate", nargs="*", metavar="CLASS", default=None,
                     help="derive bad-argument candidates from the generator's plans for these "
                          "classes, measure them, and record what aborts")
+    ap.add_argument("--shipped-baseline", metavar="PATH",
+                    help="measure the derived candidates against the SHIPPED tree and record each "
+                         "case's verdict there, so a generated-aborts/shipped-tolerates pair is "
+                         "visible instead of being reported as a flaw in the shipped wrapper")
+    ap.add_argument("--record-all", action="store_true",
+                    help="with --enumerate: record every measured verdict, including calls that "
+                         "already fail safely, so a verification run can classify all of them")
     ap.add_argument("--merge-from", metavar="FILE",
                     help="merge an earlier enumeration JSON into the evidence file instead of "
                          "measuring again")
@@ -676,6 +796,23 @@ def main():
     repo = os.path.abspath(args.repo)
     if args.strip_guards is not None:
         repo = strip_guards(repo, args.strip_guards)
+    if args.shipped_baseline:
+        cases = enumerate_cases(args.enumerate or [], args.frameworks)
+        # the shipped class may not declare the generated name or arity, so validate here too
+        cases = filter_cases(cases, repo)
+        if not cases:
+            print("no candidate exists in the shipped tree")
+            return 2
+        results = run_cases(repo, cases, timeout=args.timeout)      # no shadow: the shipped tree
+        if results is None:
+            return 2
+        verdicts = {r["id"]: r["verdict"] for r in results}
+        json.dump({"measured_with": "codegen/probe.py --shipped-baseline (the shipped wrappers)",
+                   "verdicts": verdicts}, open(args.shipped_baseline, "w"), indent=2)
+        from collections import Counter
+        print("shipped baseline: %d case(s) %s" % (len(verdicts),
+                                                   dict(Counter(verdicts.values()))))
+        return 0
     if args.merge_from:
         return merge_evidence(args.merge_from, args.out or os.path.join(REPO, "codegen",
                                                                        "guard-evidence.json"))

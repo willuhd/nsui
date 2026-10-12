@@ -761,13 +761,19 @@ public final class NSString extends NSObject {
     }
 
     /// stringByAppendingString:.
+    ///
+    /// A nil argument is treated as the empty string and the receiver is returned, which is what
+    /// appending nothing means — the same tolerance `arrayByAddingObjectsFromArray(nil)` uses in
+    /// NSArray. AppKit itself aborts on a nil argument (measured, exit 134), so the tolerance is
+    /// deliberate and documented rather than an accident.
     public NSString stringByAppendingString(NSString other) {
         ensureInit();
         if (other == null) return wrap(peer);
         return wrap(ObjC.msgSendIdId(peer, Sels.stringByAppendingString, other.peer()));
     }
 
-    /// stringByAppendingString: with a Java string.
+    /// stringByAppendingString: with a Java string. A null argument appends nothing (see the
+    /// NSString overload).
     public NSString stringByAppendingString(String other) {
         if (other == null) return wrap(peer);
         return stringByAppendingString(of(other));

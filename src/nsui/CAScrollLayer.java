@@ -46,6 +46,7 @@ public class CAScrollLayer extends CALayer {
 
     /// scrollToPoint:.
     public void scrollToPoint(NSPoint p) {
+        Bounds.notNaN(p, "scrollToPoint:");
         try {
             handles.hScrollPoint().invokeExact(peer, ObjC.sel("scrollToPoint:"), p.toSegment());
         } catch (Throwable t) {

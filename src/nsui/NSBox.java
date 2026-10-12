@@ -172,6 +172,7 @@ public final class NSBox extends NSView {
 
     /// [box setContentViewMargins:].
     public void setContentViewMargins(NSSize margins) {
+        Bounds.notNaN(margins, "setContentViewMargins:");
         try {
             hSetSize.invokeExact(peer, ObjC.sel("setContentViewMargins:"), margins.toSegment());
         } catch (Throwable t) {
@@ -289,6 +290,7 @@ public final class NSBox extends NSView {
 
     /// [box setFrameFromContentFrame:] — resize the box so its content area equals the rect.
     public void setFrameFromContentFrame(NSRect contentFrame) {
+        Bounds.notNaN(contentFrame, "setFrameFromContentFrame:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.RECT));
             h.invokeExact(peer, ObjC.sel("setFrameFromContentFrame:"), contentFrame.toSegment());

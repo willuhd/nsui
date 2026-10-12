@@ -653,6 +653,7 @@ public class NSTextView extends NSText {
 
     /// [textView setConstrainedFrameSize:] — size within min/max constraints.
     public void setConstrainedFrameSize(NSSize desiredSize) {
+        Bounds.notNaN(desiredSize, "setConstrainedFrameSize:");
         ensureInit();
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.SIZE));
@@ -1970,30 +1971,35 @@ public class NSTextView extends NSText {
     /// [textView isWritingToolsActive] (readonly).
     public boolean isWritingToolsActive() {
         ensureInit();
+        if (!respondsToSelector(Sels.isWritingToolsActive)) return false;   // macOS 15+
         return ObjC.msgSendBool(peer, Sels.isWritingToolsActive);
     }
 
     /// [textView writingToolsBehavior] -> NSWritingToolsBehavior (long).
     public long writingToolsBehavior() {
         ensureInit();
+        if (!respondsToSelector(Sels.writingToolsBehavior)) return 0L;   // macOS 15+
         return ObjC.msgSendLong(peer, Sels.writingToolsBehavior);
     }
 
     /// [textView setWritingToolsBehavior:]
     public void setWritingToolsBehavior(long behavior) {
         ensureInit();
+        if (!respondsToSelector(Sels.setWritingToolsBehavior)) return;   // macOS 15+
         ObjC.msgSendVoidLong(peer, Sels.setWritingToolsBehavior, behavior);
     }
 
     /// [textView allowedWritingToolsResultOptions] -> NSWritingToolsResultOptions (long).
     public long allowedWritingToolsResultOptions() {
         ensureInit();
+        if (!respondsToSelector(Sels.allowedWritingToolsResultOptions)) return 0L;   // macOS 15+
         return ObjC.msgSendLong(peer, Sels.allowedWritingToolsResultOptions);
     }
 
     /// [textView setAllowedWritingToolsResultOptions:]
     public void setAllowedWritingToolsResultOptions(long options) {
         ensureInit();
+        if (!respondsToSelector(Sels.setAllowedWritingToolsResultOptions)) return;   // macOS 15+
         ObjC.msgSendVoidLong(peer, Sels.setAllowedWritingToolsResultOptions, options);
     }
 

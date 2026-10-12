@@ -44,6 +44,7 @@ public class NSPanel extends NSWindow {
     /// class, with the AppKit-default backing store (`buffered`). Add
     /// `utilityWindow` (16) to `styleMask` for the classic floating palette look.
     public static NSPanel create(NSRect contentRect, long styleMask, boolean defer) {
+        Bounds.notNaN(contentRect, "NSPanel.create (contentRect)");
         return create(contentRect, styleMask, NSWindow.BackingStoreType.buffered.value, defer);
     }
 
@@ -56,6 +57,7 @@ public class NSPanel extends NSWindow {
     ///   user closes would then be deallocated while this wrapper still holds its
     ///   peer (use-after-free on the next message).
     public static NSPanel create(NSRect contentRect, long styleMask, long backingStoreType, boolean defer) {
+        Bounds.notNaN(contentRect, "NSPanel.create (contentRect)");
         ObjC.requireMainThread("NSPanel.create");
         Bounds.nonNull(contentRect, "NSPanel.create (contentRect)");   // named IAE, not a bare NPE
         MemorySegment panel = ObjC.msgSendId(ObjC.cls("NSPanel"), ObjC.sel("alloc"));

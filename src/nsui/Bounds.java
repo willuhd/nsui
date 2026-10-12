@@ -16,24 +16,37 @@ final class Bounds {
 
     private Bounds() {}
 
-    /// Reject NaN geometry, which AppKit TRAPS on (SIGTRAP, exit 133) in the layout setters.
+    /// Reject NaN geometry, which AppKit TRAPS on (SIGTRAP, exit 133) or aborts on (exit 134).
     ///
-    /// Measured with standalone receivers: a NaN in any component of
-    /// NSView setFrame:/setFrameOrigin:/setFrameSize:/setBounds:/setBoundsSize:/scrollPoint:/
-    /// scrollRectToVisible:, NSClipView scrollToPoint:, NSWindow setFrame:display:/
-    /// setContentSize: and initWithFrame: (every view factory) traps the process (SIGTRAP, 133);
-    /// NSWindow setFrameOrigin:/setFrameTopLeftPoint:, CALayer setFrame:/setPosition:/setBounds:
-    /// and NSSplitView setPosition:ofDividerAtIndex: raise NSInvalidArgumentException instead.
-    /// INFINITY is TOLERATED by the view/window geometry setters (measured exit 0), so only NaN
-    /// is rejected here — over-rejecting INF would refuse a value AppKit accepts. Deliberately
-    /// NOT guarded, because AppKit tolerates NaN there (all measured exit 0): setMinSize:/
-    /// setMaxSize:/setAspectRatio:/setContentMinSize:/setResizeIncrements:,
+    /// Measured one process per probe. NaN anywhere in the argument kills the process in:
+    ///   NSView   setFrame:/setFrameOrigin:/setFrameSize:/setBounds:/setBoundsSize:/setBoundsOrigin:/
+    ///            translateOriginToPoint:/scaleUnitSquareToSize:/adjustScroll:/
+    ///            scrollPoint:/scrollRectToVisible:/dataWithPDFInsideRect:/dataWithEPSInsideRect:/
+    ///            writePDFInsideRect:toPasteboard:  (traps)
+    ///            cacheDisplayInRect:toBitmapImageRep:/addCursorRect:cursor:  (aborts)
+    ///   NSClipView scrollToPoint:, NSBox setFrameFromContentFrame:/setContentViewMargins:,
+    ///            NSTextView setConstrainedFrameSize:  (trap)
+    ///   NSWindow setFrame:display:/setContentSize:/dataWithPDFInsideRect:/dataWithEPSInsideRect:
+    ///            (trap; setFrame:display: was also seen aborting on an offscreen window, so the
+    ///            exact signal is receiver-state dependent) and initWithContentRect: via
+    ///            NSWindow.create/createPanel/NSPanel.create (abort)
+    ///   CALayer  setFrame:/setPosition:/setBounds:  (abort)
+    ///   NSPopover setPositioningRect:/showRelativeToRect:ofView:preferredEdge:,
+    ///            CAScrollLayer scrollToPoint:  (abort)
+    ///   NSSplitView setPosition:ofDividerAtIndex:  (traps when the view has real dividers)
+    ///
+    /// INFINITY is TOLERATED by all of the view/window geometry setters (measured exit 0) and by
+    /// NSSplitView's divider setter, so only NaN is rejected here — over-rejecting INF would refuse
+    /// a value AppKit accepts (an earlier version of the split-view guard did exactly that).
+    ///
+    /// Deliberately NOT guarded, because AppKit tolerates NaN there (all measured exit 0):
+    /// setMinSize:/setMaxSize:/setAspectRatio:/setContentMinSize:/setResizeIncrements:,
     /// setNeedsDisplayInRect:, displayRect:, setKeyboardFocusRingNeedsDisplayInRect:, hitTest:,
-    /// NSScrollView setContentInsets:, backingAlignedRect:options:, the convert* family, alpha
-    /// and magnification, NSTableColumn.setWidth:, NSSlider/NSProgressIndicator setMinValue:.
-    /// (NSSplitView's single-argument setPosition:, which DOES abort without a divider, is not
-    /// reachable: this toolkit only ever sends setPosition:ofDividerAtIndex:, which is tolerant
-    /// for any index, measured.)
+    /// NSScrollView setContentInsets:, backingAlignedRect:options:, NSFont systemFontOfSize:,
+    /// NSTableColumn.setWidth:, NSTableView setRowHeight:/setIntercellSpacing:,
+    /// NSSlider/NSProgressIndicator setMinValue:, NSPopover setContentSize:, the convert* family,
+    /// the drawing APIs that take a rect for CACHING or hit-testing, alpha and magnification,
+    /// NSEdgeInsets-based insets, and every enum setter probed with an out-of-range value.
     public static void notNaN(NSRect r, String what) {
         if (r == null) throw new IllegalArgumentException(what + ": null rect");
         if (Double.isNaN(r.x()) || Double.isNaN(r.y())
@@ -61,12 +74,14 @@ final class Bounds {
         }
     }
 
-    /// Reject NaN and +/-INFINITY: NSSplitView.setPosition: raises for both (measured exit 134),
-    /// unlike the view/window geometry setters, which accept INFINITY.
-    public static void finite(double value, String what) {
-        if (!Double.isFinite(value)) {
-            throw new IllegalArgumentException(what + ": value " + value
-                    + " is not finite (AppKit raises for NaN and infinity here)");
+    /// See notNaN(NSRect,String) — the bare-double form used by the split-view divider position.
+    ///
+    /// NaN TRAPS there (SIGTRAP, exit 133, measured with two real subviews) while INFINITY is
+    /// ACCEPTED (exit 0). An earlier version of this helper rejected both, which was over-tight:
+    /// it refused a value AppKit takes.
+    public static void notNaN(double value, String what) {
+        if (Double.isNaN(value)) {
+            throw new IllegalArgumentException(what + ": value is NaN (AppKit traps on NaN geometry)");
         }
     }
 

@@ -1472,6 +1472,7 @@ public class NSView extends NSResponder {
 
     /// [view cacheDisplayInRect:toBitmapImageRep:] — render into a rep.
     public void cacheDisplayInRectToBitmapImageRep(NSRect rect, NSBitmapImageRep rep) {
+        Bounds.notNaN(rect, "cacheDisplayInRect:toBitmapImageRep:");
         ensureInit();
         try {
             H.hCacheDisplay().invokeExact(peer, Sels.cacheDisplayInRect_toBitmapImageRep, rect.toSegment(), (MemorySegment)(rep == null ? MemorySegment.NULL : rep.peer()));
@@ -1691,6 +1692,7 @@ public class NSView extends NSResponder {
 
     /// [view setBoundsOrigin:].
     public void setBoundsOrigin(NSPoint origin) {
+        Bounds.notNaN(origin, "setBoundsOrigin:");
         ensureInit();
         try {
             H.hSetPoint().invokeExact(peer, Sels.setBoundsOrigin, origin.toSegment());
@@ -1712,6 +1714,7 @@ public class NSView extends NSResponder {
 
     /// [view translateOriginToPoint:].
     public void translateOriginToPoint(NSPoint point) {
+        Bounds.notNaN(point, "translateOriginToPoint:");
         ensureInit();
         try {
             H.hSetPoint().invokeExact(peer, Sels.translateOriginToPoint, point.toSegment());
@@ -1722,6 +1725,7 @@ public class NSView extends NSResponder {
 
     /// [view scaleUnitSquareToSize:].
     public void scaleUnitSquareToSize(NSSize size) {
+        Bounds.notNaN(size, "scaleUnitSquareToSize:");
         ensureInit();
         try {
             H.hSetSize().invokeExact(peer, Sels.scaleUnitSquareToSize, size.toSegment());
@@ -1963,6 +1967,7 @@ public class NSView extends NSResponder {
 
     /// [view adjustScroll:] — constrain a proposed visible rect.
     public NSRect adjustScroll(NSRect rect) {
+        Bounds.notNaN(rect, "adjustScroll:");
         ensureInit();
         try {
             return NSRect.fromSegment((MemorySegment) H.hConvBacking().invokeExact(ObjC.structSlot(), peer, Sels.adjustScroll, rect.toSegment()));
@@ -2563,6 +2568,7 @@ public class NSView extends NSResponder {
 
     /// [view dataWithEPSInsideRect:] — EPS snapshot data.
     public NSData dataWithEPSInsideRect(NSRect rect) {
+        Bounds.notNaN(rect, "dataWithEPSInsideRect:");
         ensureInit();
         try {
             MemorySegment d = (MemorySegment) H.hIdRect().invokeExact(peer, Sels.dataWithEPSInsideRect, rect.toSegment());
@@ -2574,6 +2580,7 @@ public class NSView extends NSResponder {
 
     /// [view dataWithPDFInsideRect:] — PDF snapshot data.
     public NSData dataWithPDFInsideRect(NSRect rect) {
+        Bounds.notNaN(rect, "dataWithPDFInsideRect:");
         ensureInit();
         try {
             MemorySegment d = (MemorySegment) H.hIdRect().invokeExact(peer, Sels.dataWithPDFInsideRect, rect.toSegment());
@@ -2596,6 +2603,7 @@ public class NSView extends NSResponder {
 
     /// [view writePDFInsideRect:toPasteboard:].
     public void writePDFInsideRectToPasteboard(NSRect rect, NSPasteboard pasteboard) {
+        Bounds.notNaN(rect, "writePDFInsideRect:toPasteboard:");
         ensureInit();
         Bounds.nonNull(pasteboard, "writePDFInsideRect:toPasteboard:");
         try {
@@ -2735,6 +2743,7 @@ public class NSView extends NSResponder {
 
     /// [view addCursorRect:cursor:].
     public void addCursorRect(NSRect rect, NSCursor cursor) {
+        Bounds.notNaN(rect, "addCursorRect:cursor:");
         ensureInit();
         Bounds.nonNull(cursor, "addCursorRect:cursor:");
         try {

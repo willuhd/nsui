@@ -143,6 +143,7 @@ public final class NSSplitView extends NSView {
     /// @param dividerIndex index of the divider (0 .. subviewCount-2)
     public void setPositionOfDividerAtIndex(double position, long dividerIndex) {
         ensureInit();
+        Bounds.notNaN(position, "setPosition:ofDividerAtIndex:");   // NaN TRAPS; INFINITY is accepted
         try {
             hSetPosition.invokeExact(peer, ObjC.sel("setPosition:ofDividerAtIndex:"), position, dividerIndex);
         } catch (Throwable t) {
@@ -153,7 +154,7 @@ public final class NSSplitView extends NSView {
     /// Alias matching the ObjC selector spelling: `setPosition:ofDividerAtIndex:`.
     /// Delegates to `setPositionOfDividerAtIndex`.
     public void setPosition(double position, long dividerIndex) {
-        Bounds.finite(position, "setPosition:ofDividerAtIndex:");
+        Bounds.notNaN(position, "setPosition:ofDividerAtIndex:");   // NaN traps; INFINITY is accepted
         setPositionOfDividerAtIndex(position, dividerIndex);
     }
 

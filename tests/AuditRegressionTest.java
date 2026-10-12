@@ -1936,6 +1936,88 @@ public final class AuditRegressionTest {
             TestKit.check(false, "default-correction block threw: " + t);
         }
 
+        // --- 8bf. two more NaN trap paths found by extending the probe surface ---
+        // Raw probe: scrollRectToVisible:(NaN) and NSClipView.scrollToPoint:(NaN) BOTH trap
+        // (exit 133), while displayRect:, setKeyboardFocusRingNeedsDisplayInRect:, hitTest:,
+        // NSScrollView.setContentInsets: and backingAlignedRect:options: tolerate NaN (exit 0).
+        try {
+            double nan = Double.NaN;
+            NSView snv = NSView.create(new NSRect(0, 0, 100, 100), (v, d) -> {});
+            TestKit.expectThrows("scrollRectToVisible(NaN) rejects instead of trapping",
+                    IllegalArgumentException.class,
+                    () -> snv.scrollRectToVisible(new NSRect(nan, nan, nan, nan)));
+            TestKit.noThrow("scrollRectToVisible(valid) still works",
+                    () -> snv.scrollRectToVisible(new NSRect(0, 0, 10, 10)));
+            nsui.NSClipView clip = nsui.NSClipView.create(new NSRect(0, 0, 100, 100));
+            TestKit.expectThrows("NSClipView.scrollToPoint(NaN) rejects instead of trapping",
+                    IllegalArgumentException.class,
+                    () -> clip.scrollToPoint(new NSPoint(nan, nan)));
+            TestKit.noThrow("NSClipView.scrollToPoint(valid) still works",
+                    () -> clip.scrollToPoint(new NSPoint(0, 0)));
+            // Tolerated natively: must NOT be rejected (over-tightening protection).
+            TestKit.noThrow("setNeedsDisplayInRect(NaN) is still accepted (native exit 0)",
+                    () -> snv.setNeedsDisplayInRect(new NSRect(nan, nan, nan, nan)));
+            TestKit.noThrow("hitTest(NaN point) is still accepted (native exit 0)",
+                    () -> snv.hitTest(new NSPoint(nan, nan)));
+        } catch (Throwable t) {
+            TestKit.check(false, "extra NaN path block threw: " + t);
+        }
+
+        // --- 8bg. INDIRECT cycles: the walks catch cases that HANG natively ---
+        // Raw probes with a 15 s watchdog: w1.addChildWindow(w2); w2.addChildWindow(w1) never
+        // returns, and the same for a menu whose submenu is made its own supermenu. The walks
+        // (parentWindow / supermenu / superview) reject both — verified here, since until now only
+        // the self-cases were tested.
+        try {
+            NSWindow cyc1 = TestKit.hiddenWindow(120, 80);
+            NSWindow cyc2 = TestKit.hiddenWindow(120, 80);
+            cyc1.addChildWindow(cyc2, 1);
+            TestKit.check(cyc2.parentWindow() != null && cyc2.parentWindow().peer() != null
+                            && cyc1.peer() != null
+                            && cyc2.parentWindow().peer().address() == cyc1.peer().address(),
+                    "parentWindow reflects the child attachment (guard precondition)");
+            TestKit.expectThrows("indirect child-window cycle rejects instead of hanging",
+                    IllegalArgumentException.class, () -> cyc2.addChildWindow(cyc1, 1));
+            cyc1.removeChildWindow(cyc2);
+
+            NSMenu cmA = NSMenu.createWithTitle("A");
+            NSMenu cmB = NSMenu.createWithTitle("B");
+            nsui.NSMenuItem cmIa = cmA.addItemWithTitle("ia", "", "");
+            nsui.NSMenuItem cmIb = cmB.addItemWithTitle("ib", "", "");
+            cmA.setSubmenu(cmIa, cmB);
+            TestKit.check(cmB.supermenu() != null && cmB.supermenu().peer() != null
+                            && cmA.peer() != null
+                            && cmB.supermenu().peer().address() == cmA.peer().address(),
+                    "supermenu reflects the submenu attachment (guard precondition)");
+            TestKit.expectThrows("indirect submenu cycle rejects instead of hanging",
+                    IllegalArgumentException.class, () -> cmB.setSubmenu(cmIb, cmA));
+
+            nsui.NSStackView sOuter = nsui.NSStackView.create(new NSRect(0, 0, 200, 100));
+            nsui.NSStackView sInner = nsui.NSStackView.create(new NSRect(0, 0, 100, 50));
+            sOuter.addArrangedSubview(sInner);
+            TestKit.expectThrows("stack ancestor cycle rejects (native faults/hangs)",
+                    IllegalArgumentException.class, () -> sInner.addArrangedSubview(sOuter));
+        } catch (Throwable t) {
+            TestKit.check(false, "indirect-cycle block threw: " + t);
+        }
+
+        // --- 8bh. NSSegmentedControl.setSegmentCount cap (native max 2048) ---
+        // Raw probe: 2048 accepted, 2049 aborts with "index (2049) beyond bounds (2048)".
+        try {
+            nsui.NSSegmentedControl sc2 = nsui.NSSegmentedControl.create(new NSRect(0, 0, 200, 24));
+            TestKit.check(nsui.NSSegmentedControl.MAX_SEGMENTS == 2048L,
+                    "the documented segment cap is 2048");
+            TestKit.noThrow("setSegmentCount(2048) is accepted (native boundary)",
+                    () -> sc2.setSegmentCount(2048));
+            TestKit.expectThrows("setSegmentCount(2049) rejects instead of aborting",
+                    IllegalArgumentException.class, () -> sc2.setSegmentCount(2049));
+            TestKit.expectThrows("setSegmentCount(-1) rejects",
+                    IllegalArgumentException.class, () -> sc2.setSegmentCount(-1));
+            TestKit.noThrow("a small count still works", () -> sc2.setSegmentCount(3));
+        } catch (Throwable t) {
+            TestKit.check(false, "segment-count cap block threw: " + t);
+        }
+
         // --- 8z. type-confusion guards on the raw collection-view setters ---
         // AppKit does NOT raise a type error here, it either asserts isKindOfClass: or
         // messages the object: setCollectionViewLayout: with a plain NSView raised

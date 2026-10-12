@@ -93,6 +93,7 @@ public class NSClipView extends NSView {
     /// [clip scrollToPoint:]
     public void scrollToPoint(NSPoint point) {
         ensureInit();
+        Bounds.notNaN(point, "scrollToPoint:");   // NaN here TRAPS (measured exit 133)
         try {
             handles.hVoidPoint().invokeExact(peer, ObjC.sel("scrollToPoint:"), point.toSegment());
         } catch (Throwable t) {

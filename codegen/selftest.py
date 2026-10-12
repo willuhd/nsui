@@ -217,6 +217,51 @@ def check_enumerated_guards():
           "; ".join("%s %s" % (c["selector"], c["unguarded"]) for c in broken)[:140])
 
 
+def check_rotating_verification():
+    """Re-measure a rotating slice of the evidence and fail on any regression.
+
+    The full sweep takes minutes, so a few classes are verified on every run instead: classes are
+    ordered by how many measured aborts their evidence holds, and the slice advances with the
+    clock, so the whole set is covered over successive runs.
+    """
+    ev = json.load(open(os.path.join(HERE, "guard-evidence.json")))["cases"]
+    counts = {}
+    for c in ev:
+        if c.get("unguarded") in ("objc-abort", "sigtrap", "sigill"):
+            counts[c["class"]] = counts.get(c["class"], 0) + 1
+    ranked = [c for c, _n in sorted(counts.items(), key=lambda kv: (-kv[1], kv[0]))]
+    if not ranked:
+        check("verification: the evidence holds aborts to verify", False, "none recorded")
+        return
+    import time
+    start = int(time.time() // 3600) % len(ranked)
+    sample = [ranked[(start + i) % len(ranked)] for i in range(min(4, len(ranked)))]
+    out = os.path.join(bench.REPORTS, "selftest-verify.json")
+    r = run([sys.executable, os.path.join(HERE, "probe.py"), "--enumerate"] + sample +
+            ["--record-all", "--out", out], timeout=1800)
+    if not os.path.exists(out):
+        check("verification: rotating sample measured", False, (r.stdout + r.stderr)[-160:])
+        return
+    import evidence_check
+    fresh, evidence = evidence_check.load(out), evidence_check.load(
+        os.path.join(HERE, "guard-evidence.json"))
+    bad, new_aborts = [], []
+    for cid, f in fresh.items():
+        e = evidence.get(cid)
+        if f.get("unguarded") in ("objc-abort", "sigtrap", "sigill"):
+            if e is None:
+                new_aborts.append(cid)        # new information, not a regression: the next
+            elif e.get("guards"):             # measurement folds it into the evidence
+                bad.append("%s GUARD-INEFFECTIVE" % cid)
+        elif e is not None and e.get("control") and f.get("unguarded") != "tolerated":
+            bad.append("%s CONTROL-CHANGED" % cid)
+    if new_aborts:
+        notes.append("rotating sample found %d new abort(s): %s"
+                     % (len(new_aborts), ", ".join(new_aborts)[:90]))
+    check("verification: rotating sample (%s) has no regression" % ", ".join(sample), not bad,
+          "; ".join(bad)[:150])
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--quick", action="store_true", help="skip the surface batch and history sweep")
@@ -229,6 +274,7 @@ def main():
         check_surface_batch()
         check_guards()
         check_enumerated_guards()
+        check_rotating_verification()
         check_early_sweep()
     for n in notes:
         print("note: " + n)

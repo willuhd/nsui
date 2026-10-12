@@ -45,8 +45,8 @@ COVERAGE = {
     "MTLDepthStencilDescriptor": 91.7,
     "NSOrderedSet": 100.0,
     "NSGestureRecognizer": 91.9,
-    "NSArray": 77.4,
-    "NSViewController": 88.5,
+    "NSArray": 69.8,        # C-array and NSError** parameters are skipped, not emitted raw
+    "NSViewController": 86.5,  # commitEditing…:contextInfo: takes void *
     "CAPropertyAnimation": 100.0,
 }
 

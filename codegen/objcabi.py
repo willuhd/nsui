@@ -75,6 +75,36 @@ def parse_one(e, i):
     return c, i + 1
 
 
+def parse_one_raw(e, i):
+    """parse_one, but a pointer stays a pointer: `^d`, `^@`, `^{_NSRange=QQ}`.
+
+    The ABI fold treats an object and a pointer alike (both one machine word), which is correct for
+    the call and wrong for deciding whether a parameter is an out slot.
+    """
+    n = len(e)
+    while i < n and (e[i] in QUAL or e[i].isdigit() or e[i] in "+-"):
+        i += 1
+    if i >= n:
+        return None, i
+    if e[i] == "^":
+        _, j = parse_one_raw(e, i + 1)
+        return e[i:j], j
+    return parse_one(e, i)
+
+
+def parse_types_raw(e):
+    """Raw token stream: scalars as written, pointers as `^…`, objects as ID/BLOCK."""
+    out = []
+    i = 0
+    while i < len(e):
+        t, j = parse_one_raw(e, i)
+        if t is None or j <= i:
+            break
+        out.append(t)
+        i = j
+    return out
+
+
 def parse_types(e):
     out = []
     i = 0

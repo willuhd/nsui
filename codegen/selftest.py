@@ -227,17 +227,43 @@ def check_rotating_verification():
     emission rules to the differential.
     """
     ev = json.load(open(os.path.join(HERE, "guard-evidence.json")))["cases"]
-    counts = {}
+    aborts = {}
+    cases_per_class = {}
     for c in ev:
+        cases_per_class[c["class"]] = cases_per_class.get(c["class"], 0) + 1
         if c.get("unguarded") in ("objc-abort", "sigtrap", "sigill"):
-            counts[c["class"]] = counts.get(c["class"], 0) + 1
-    ranked = [c for c, _n in sorted(counts.items(), key=lambda kv: (-kv[1], kv[0]))]
+            aborts[c["class"]] = aborts.get(c["class"], 0) + 1
+    ranked = sorted(aborts)
     if not ranked:
         check("verification: the evidence holds aborts to verify", False, "none recorded")
         return
-    import time
-    start = int(time.time() // 3600) % len(ranked)
-    sample = [ranked[(start + i) % len(ranked)] for i in range(min(4, len(ranked)))]
+    # Rotate around the name-sorted list, taking whole classes until a case budget is reached. One
+    # JVM per case means the budget is what bounds the time: sampling the class with the most
+    # aborts made this stage 246s of a 348s suite, while sampling a couple of aborts at a time left
+    # the corpus barely covered. The budget gives both, and the rotation covers every class in turn.
+    budget = 60
+    # Rotate per run, not per hour: several runs in one round would otherwise re-measure the same
+    # classes, and the rotation is what gives the corpus coverage over time.
+    state = os.path.join(bench.REPORTS, "selftest-rotation.json")
+    try:
+        offset = int(json.load(open(state)).get("offset", 0))
+    except (OSError, ValueError, AttributeError):
+        offset = 0
+    os.makedirs(bench.REPORTS, exist_ok=True)
+    json.dump({"offset": (offset + 1) % len(ranked)}, open(state, "w"))
+    start = offset % len(ranked)
+    sample, total = [], 0
+    for i in range(len(ranked)):
+        cls = ranked[(start + i) % len(ranked)]
+        n = cases_per_class.get(cls, 0)
+        if sample and total + n > budget:
+            continue
+        sample.append(cls)
+        total += n
+        if total >= budget // 2 and len(sample) >= 2:
+            break
+    if not sample:
+        sample = [ranked[start]]
     out = os.path.join(bench.REPORTS, "selftest-verify.json")
     r = run([sys.executable, os.path.join(HERE, "probe.py"), "--enumerate"] + sample +
             ["--no-evidence", "--record-all", "--out", out], timeout=1800)
@@ -245,7 +271,7 @@ def check_rotating_verification():
         check("verification: rotating sample measured", False, (r.stdout + r.stderr)[-160:])
         return
     fresh = {(c.get("id") or c.get("probe_id")): c for c in json.load(open(out))["cases"]}
-    wrong, unchecked = [], 0
+    wrong, checked, unchecked = [], 0, 0
     for c in ev:
         if c.get("unguarded") not in ("objc-abort", "sigtrap", "sigill"):
             continue
@@ -253,11 +279,14 @@ def check_rotating_verification():
         if f is None:
             unchecked += 1
             continue
+        checked += 1
         if f["unguarded"] not in ("objc-abort", "sigtrap", "sigill"):
             wrong.append("%s recorded %s, measured %s"
                          % (c["probe_id"], c["unguarded"], f["unguarded"]))
-    if unchecked:
-        notes.append("rotating sample: %d recorded abort(s) not derived this run" % unchecked)
+    # Say how much of the corpus this rotation actually re-measured, so a sample that checks very
+    # little is visible rather than looking like a pass.
+    notes.append("rotating sample: re-measured %d of %d recorded aborts (%d outside this sample)"
+                 % (checked, checked + unchecked, unchecked))
     check("verification: rotating sample (%s) reproduces its verdicts" % ", ".join(sample),
           not wrong, "; ".join(wrong)[:150])
 
@@ -286,15 +315,22 @@ def main():
     args = ap.parse_args()
     t0 = time.time()
     print("=== CodeGen self-test (version %s) ===" % __import__("gen").VERSION)
-    check_determinism()
-    check_coverage()
+    # Time each stage: the suite grew to several minutes and the cost was invisible, so a slow
+    # stage could not be told from a slow machine.
+    def timed(fn):
+        t = time.time()
+        fn()
+        print("    ... %-28s %5.1fs" % (fn.__name__, time.time() - t))
+
+    timed(check_determinism)
+    timed(check_coverage)
     if not args.quick:
-        check_surface_batch()
-        check_guards()
-        check_enumerated_guards()
-        check_rotating_verification()
-        check_flaw_patch()
-        check_early_sweep()
+        timed(check_surface_batch)
+        timed(check_guards)
+        timed(check_enumerated_guards)
+        timed(check_rotating_verification)
+        timed(check_flaw_patch)
+        timed(check_early_sweep)
     for n in notes:
         print("note: " + n)
     print("\n%d check(s) failed in %.1fs" % (len(failures), time.time() - t0))

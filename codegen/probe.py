@@ -815,19 +815,30 @@ def _differential_slice(repo, args, classes):
         if g is None or r["id"].endswith(".__baseline"):
             continue
         s_v, g_v = r["verdict"], g["verdict"]
-        if s_v == "tolerated" and g_v != "tolerated":
-            b = bare_by_id.get(r["id"], {}).get("verdict")
-            buckets["STRICTER-GUARD" if b == "tolerated" else "STRICTER-BODY"].append(
-                (r["id"], s_v, g_v))
-        elif s_v in STRICTER and g_v in STRICTER:
-            buckets["STILL-ABORTS"].append((r["id"], s_v, g_v))
-        elif s_v in STRICTER or s_v == "java-exception":
+        if s_v == "tolerated":
             if g_v == "tolerated":
+                buckets["unchanged-tolerated"].append((r["id"], s_v, g_v))
+            else:
+                b = bare_by_id.get(r["id"], {}).get("verdict")
+                buckets["STRICTER-GUARD" if b == "tolerated" else "STRICTER-BODY"].append(
+                    (r["id"], s_v, g_v))
+        elif s_v in STRICTER:                      # the shipped wrapper aborts on this call
+            if g_v in STRICTER:
+                buckets["STILL-ABORTS"].append((r["id"], s_v, g_v))
+            elif g_v == "java-exception":
+                buckets["fixed"].append((r["id"], s_v, g_v))
+            else:
+                buckets["LOOSER"].append((r["id"], s_v, g_v))
+        else:                                      # the shipped wrapper raises a Java exception
+            if g_v in STRICTER:
+                # The generated wrapper aborts where the shipped one raised a clear error: worse
+                # than the code it replaces. Counting this as "fixed" hid exactly the regression a
+                # rejected index bound causes.
+                buckets["LESS-SAFE"].append((r["id"], s_v, g_v))
+            elif g_v == "tolerated":
                 buckets["LOOSER"].append((r["id"], s_v, g_v))
             else:
-                buckets["fixed"].append((r["id"], s_v, g_v))
-        else:
-            buckets["unchanged-tolerated"].append((r["id"], s_v, g_v))
+                buckets["parity"].append((r["id"], s_v, g_v))
     if getattr(args, "merge_evidence", None):
         # Feed every case this slice measured from its guard-free build back into the evidence, so
         # the next generator run acts on it instead of the difference surviving in reports only.
@@ -864,13 +875,15 @@ def differential(repo, args):
             continue
         for key, items in part.items():
             buckets[key].extend(items)
-    for name in ("fixed", "unchanged-tolerated", "STRICTER-GUARD", "STRICTER-BODY",
-                 "STILL-ABORTS", "LOOSER"):
+    for name in ("fixed", "parity", "unchanged-tolerated", "STRICTER-GUARD", "STRICTER-BODY",
+                 "STILL-ABORTS", "LESS-SAFE", "LOOSER"):
         print("%-22s %4d" % (name, len(buckets.get(name, []))))
-    # Only a guard that over-rejects and a case that still aborts are defects. STRICTER-BODY and
-    # LOOSER are conformance differences in the generated body, reported but not failures.
-    bad = len(buckets.get("STRICTER-GUARD", [])) + len(buckets.get("STILL-ABORTS", []))
-    for name in ("STRICTER-GUARD", "STRICTER-BODY", "STILL-ABORTS", "LOOSER"):
+    # A guard that over-rejects, a case that still aborts, and a generated wrapper that aborts
+    # where the shipped one raised a clear error are defects. STRICTER-BODY and LOOSER are
+    # conformance differences, reported but not failures.
+    bad = (len(buckets.get("STRICTER-GUARD", [])) + len(buckets.get("STILL-ABORTS", []))
+           + len(buckets.get("LESS-SAFE", [])))
+    for name in ("STRICTER-GUARD", "STRICTER-BODY", "STILL-ABORTS", "LESS-SAFE", "LOOSER"):
         for cid, s_v, g_v in buckets.get(name, [])[:12]:
             print("   %-14s %-56s shipped=%-13s generated=%s" % (name, cid, s_v, g_v))
     if failed:

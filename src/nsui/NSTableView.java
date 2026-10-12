@@ -1087,17 +1087,25 @@ public class NSTableView extends NSView {
     /// [table moveRowAtIndex:toIndex:] — BOTH indexes are bounded, for a measured reason that
     /// is about STATE, not about raising.
     ///
-    /// AppKit does not raise for an out-of-range destination (measured raw, guard bypassed, on
-    /// a 3-row view-based table: newIndex -1, 0, 3, 4, 50 all return), but it silently leaves
-    /// an extra NSTableRowView behind. Three repetitions of a move, subviews after each:
-    ///   (0,1) and (0,2) valid  -> 3, 3, 3        (stable)
-    ///   (0,4) and (0,-1)       -> 3, 4, 5        (grows)
-    ///   (0,3) == count         -> 3, 4, 4        (grows)
-    /// with numberOfRows() fixed at 3 throughout. `oldIndex` outside [0, count) raises instead
-    /// ("error inserting/removing/moving row 3 (numberOfRows: 2)", or
-    /// NSInternalInconsistencyException "a positive row should have been computed!" for -1).
-    /// So the safe set is 0..count-1 for BOTH indexes, which is what this validates — including
-    /// `count`, which an insert-style bound would have allowed.
+    /// AppKit does not RAISE for an out-of-range destination, but it silently leaks row views, so
+    /// both indexes are bounded to the only clean set. Measured raw (guard bypassed) on a 3-row
+    /// view-based table whose row views were materialized first; subviews after materialization and
+    /// after each of three moves of row 0:
+    ///
+    ///   target 1, 2 (valid)      -> 3, 3, 3, 3      stable
+    ///   target 3 (== count)      -> 3, 4, 4, 4      one leaked NSTableRowView
+    ///   target 4 (== count + 1)  -> 3, 4, 5, 5      two leaked
+    ///   target 50 and -1         -> 3, 4, 5, 6      one leaked per call
+    ///
+    /// with numberOfRows() fixed at 3 throughout, so the leak is unbounded for a repeated bad
+    /// destination. That is why `count` — which an insert-style bound WOULD allow, and which a
+    /// destination-only reading of the header arguably suggests — is rejected here too: it leaks.
+    /// (An earlier revision of this comment justified the stricter bound as "a nonsense destination
+    /// either way"; the leak is the actual reason, and AuditRegressionTest now measures it.)
+    ///
+    /// `oldIndex` outside [0, count) raises instead ("error inserting/removing/moving row 3
+    /// (numberOfRows: 2)", or NSInternalInconsistencyException "a positive row should have been
+    /// computed!" for -1), so it needs no such argument.
     public void moveRowAtIndex(long oldIndex, long newIndex) {
         long rows = numberOfRows();
         Bounds.index(oldIndex, rows, "moveRowAtIndex:toIndex: (oldIndex)");

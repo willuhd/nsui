@@ -754,7 +754,10 @@ def case_entry(case, verdict):
         entry["control"] = "the unguarded call survived, so no guard is emitted"
         entry["guards"] = []
     else:
-        return None                     # already fails safely in Java
+        # It fails safely in Java now (a fix landed), so this measurement supersedes an older abort
+        # verdict rather than leaving both in the file. The generator skips a verification entry.
+        entry["guards"] = []
+        entry["verification"] = True
     return entry
 
 
@@ -762,22 +765,25 @@ def merge_entries(path, entries):
     """Fold entries into an evidence file, adding new ones and upgrading guardless duplicates."""
     existing = json.load(open(path)) if os.path.exists(path) else {"cases": []}
     cases = existing.get("cases", [])
-    by_key = {(c.get("class"), c.get("selector"), c.get("param"), c.get("unguarded")): i
+    # Keyed on the case and its kind, not on the verdict: a later measurement of the same case is
+    # the better one, and keying on the verdict left a stale abort and a fresh tolerated side by
+    # side, so the generator emitted the same guard twice.
+    by_key = {(c.get("class"), c.get("selector"), c.get("param"), c.get("badness")): i
               for i, c in enumerate(cases)}
-    added = replaced = 0
+    added = superseded = 0
     for e in entries:
-        key = (e["class"], e["selector"], e.get("param"), e.get("unguarded"))
+        key = (e["class"], e["selector"], e.get("param"), e.get("badness"))
         i = by_key.get(key)
         if i is None:
             by_key[key] = len(cases)
             cases.append(e)
             added += 1
-        elif e.get("guards") and not cases[i].get("guards"):
+        else:
             cases[i] = e
-            replaced += 1
+            superseded += 1
     existing["cases"] = cases
     json.dump(existing, open(path, "w"), indent=2)
-    return added, replaced, len(cases)
+    return added, superseded, len(cases)
 
 
 def _differential_slice(repo, args, classes):
@@ -921,23 +927,24 @@ def enumerate_measure(repo, args):
     if args.merge and os.path.exists(path):
         existing = json.load(open(path))
         old_cases = existing.get("cases", [])
-        by_key = {(c.get("class"), c.get("selector"), c.get("param"), c.get("unguarded")): i
+        by_key = {(c.get("class"), c.get("selector"), c.get("param"), c.get("badness")): i
                   for i, c in enumerate(old_cases)}
         added = replaced = 0
         for e in entries:
-            key = (e["class"], e["selector"], e["param"], e["unguarded"])
+            if e.get("baseline"):
+                continue                       # scaffolding, not a case
+            key = (e.get("class"), e.get("selector"), e.get("param"), e.get("badness"))
             i = by_key.get(key)
             if i is None:
                 by_key[key] = len(old_cases)
                 old_cases.append(e)
                 added += 1
-            elif e.get("guards") and not old_cases[i].get("guards"):
-                # a case that could not be guarded before, but a discovered bound now allows it
+            else:
                 old_cases[i] = e
                 replaced += 1
         existing["cases"] = old_cases
         json.dump(existing, open(path, "w"), indent=2)
-        print("merged %d new case(s) and upgraded %d into %s (%d total)"
+        print("merged %d new case(s), superseded %d in %s (%d total)"
               % (added, replaced, path, len(old_cases)))
     else:
         json.dump({"measured_with": "codegen/probe.py --enumerate",

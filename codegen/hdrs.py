@@ -18,7 +18,92 @@ import re
 
 # Availability / attribute macros removed before declaration parsing. Both the
 # NAME(...) and bare NAME forms are handled by strip_macros().
+# A simple `typedef <base> <Name>;` maps a name to its underlying type so the generator can see
+# through it: 183 of these are string typedefs (`typedef NSString *NSImageName;`) whose members
+# otherwise degrade to raw MemorySegment. Complex typedefs (function pointers, blocks, NS_ENUM and
+# NS_OPTIONS bodies) are deliberately not collected — their declarations do not match.
+def _typedef_pairs(text):
+    """(name, underlying type) pairs from a header's text.
+
+    The declaration is scanned up to its `;` and its tokens are taken apart rather than matched
+    with one rigid pattern, because a name may be followed by arbitrary macro invocations:
+    `typedef NSString * NSImageName NS_SWIFT_BRIDGED_TYPEDEF API_AVAILABLE(ios(13.0));`.
+    Blocks, function pointers and enum/option bodies are skipped on purpose.
+    """
+    out = {}
+    for m in re.finditer(r"\btypedef\b([^;{}]*);", text):
+        body = m.group(1)
+        while "(" in body:                       # strip macro arguments, innermost first
+            body = re.sub(r"\([^()]*\)", " ", body)
+        if any(c in body for c in "^[]"):
+            continue
+        toks = body.split()
+        while len(toks) > 2 and re.fullmatch(r"[A-Z][A-Z0-9_]*", toks[-1]):
+            toks.pop()                           # trailing macro names are qualifiers, not the type
+        if len(toks) < 2:
+            continue
+        name = toks[-1]
+        stars = len(name) - len(name.lstrip("*"))   # `NSString *NSErrorDomain` glues the star on
+        name = name.lstrip("*")
+        base = " ".join(toks[:-1]).strip()
+        if stars:
+            base = (base + " " + "*" * stars).strip()
+        base = re.sub(r"^(struct|enum|union)\s+", "", base).strip()
+        if base and not name.startswith("_"):
+            out.setdefault(name, base)
+    return out
+
+
+def collect_typedefs(sdk, frameworks):
+    """{typedef name: underlying type text} for the frameworks given."""
+    import os
+    out = {}
+    for framework in frameworks:
+        root = os.path.join(sdk, "System", "Library", "Frameworks",
+                            framework + ".framework", "Headers")
+        if not os.path.isdir(root):
+            continue
+        for dirpath, _dirs, files in os.walk(root):
+            for fn in sorted(files):
+                if not fn.endswith(".h"):
+                    continue
+                try:
+                    text = strip_comments(open(os.path.join(dirpath, fn),
+                                               encoding="utf-8", errors="replace").read())
+                except OSError:
+                    continue
+                out.update(_typedef_pairs(text))
+    return out
+
+
+def expand_type(text, typedefs, depth=4):
+    """Replace leading typedef names by what they stand for, transitively."""
+    t = text or ""
+    for _ in range(depth):
+        m = re.search(r"[A-Za-z_]\w*", t)
+        if not m:
+            break
+        base = typedefs.get(m.group(0))
+        if not base:
+            break
+        t = t[:m.start()] + base + t[m.end():]
+    return t
+
+
+def apply_typedefs(ifaces, typedefs):
+    """Expand every parameter and return type in place, once per parsed framework."""
+    if not typedefs:
+        return ifaces
+    for iface in ifaces:
+        for decl in iface.decls:
+            decl.ret_raw = expand_type(decl.ret_raw, typedefs)
+            for par in decl.params:
+                par.type_raw = expand_type(par.type_raw, typedefs)
+    return ifaces
+
+
 MACROS = (
+    "IBOutlet", "IBAction", "inout", "out", "oneway", "bycopy", "byref",
     "API_AVAILABLE", "API_DEPRECATED", "API_DEPRECATED_WITH_REPLACEMENT",
     "API_UNAVAILABLE", "API_UNAVAILABLE_MACCATALYST", "API_TO_BE_DEPRECATED",
     "NS_SWIFT_NAME", "NS_SWIFT_UI_ACTOR", "NS_SWIFT_ASYNC", "NS_SWIFT_ASYNC_NAME",
@@ -277,7 +362,12 @@ def parse_method(stmt, owner, is_class, file, line, declared_in, in_protocol=Fal
         while k < n and rest[k].isspace():
             k += 1
         if k >= n or rest[k] != ":":
-            labels.append(label)          # zero-argument selector
+            # A label after a completed parameter list cannot be a zero-argument selector: only an
+            # attribute can sit there, and the SDK uses macros this list does not know
+            # (`… NS_SWIFT_UNAVAILABLE_FROM_ASYNC("x")`), which otherwise became part of the
+            # selector and made 54 real methods look absent from the runtime.
+            if not labels:
+                labels.append(label)      # a genuine zero-argument selector, e.g. `- (void)foo`
             break
         k += 1
         while k < n and rest[k].isspace():
@@ -319,7 +409,9 @@ def parse_property(stmt, owner, file, line, declared_in):
         return [], None
     attrs = m.group(1) or ""
     decl = (m.group(2) or "").strip()
-    attr_list = [a.strip() for a in attrs.split(",") if a.strip()]
+    # `getter = isBlendingEnabled` is as valid as `getter=isBlendingEnabled`; the SDK uses both and
+    # the spaced form silently lost the getter while the setter was still generated.
+    attr_list = [re.sub(r"\s*=\s*", "=", a.strip()) for a in attrs.split(",") if a.strip()]
     is_class_prop = "class" in attr_list
     readonly = "readonly" in attr_list
     nullable = _nullability(attrs + " " + decl)

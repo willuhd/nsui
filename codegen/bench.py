@@ -253,7 +253,7 @@ def reset_snapshot(snap):
     lines = open(marker).read().split()
     base = lines[1] if len(lines) > 1 else "HEAD"
     subprocess.run(["git", "reset", "--hard", "-q", base], cwd=snap, capture_output=True)
-    subprocess.run(["git", "clean", "-fdq", "-e", "out"], cwd=snap, capture_output=True)
+    subprocess.run(["git", "clean", "-fdq", "-e", "out", "-e", ".snapshot-complete"], cwd=snap, capture_output=True)
 
 
 def generate(snap, classes, frameworks, patch_out):

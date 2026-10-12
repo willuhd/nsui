@@ -2086,6 +2086,57 @@ public final class AuditRegressionTest {
             TestKit.check(false, "extended NaN block threw: " + t);
         }
 
+        // --- 8bj. the version-gated sites the annotation scan cannot see (verifier-listed) ---
+        // NSTextView's WritingTools section and NSPopUpButton's pull-down factories are macOS 15
+        // APIs whose version lives in a section header, not in each method's own doc — so the
+        // scan is blind to them and they were sent unconditionally.
+        try {
+            nsui.NSTextView wtv = nsui.NSTextView.create(new NSRect(0, 0, 120, 60));
+            if (wtv.respondsToSelector(ObjC.sel("writingToolsBehavior"))) {
+                wtv.setWritingToolsBehavior(0);
+                TestKit.check(wtv.writingToolsBehavior() == 0,
+                        "writingToolsBehavior round-trips (macOS 15+)");
+                wtv.setAllowedWritingToolsResultOptions(0);
+                TestKit.check(wtv.allowedWritingToolsResultOptions() == 0,
+                        "allowedWritingToolsResultOptions round-trips (macOS 15+)");
+                TestKit.noThrow("isWritingToolsActive is guarded but live (macOS 15+)",
+                        () -> wtv.isWritingToolsActive());
+            } else {
+                TestKit.probe("NSTextView writing-tools absent on this host");
+            }
+            NSMenu pdMenu = NSMenu.createWithTitle("pd");
+            boolean hasPullDown = (boolean) ObjC.handle(
+                    nsui.objc.Sig.of(nsui.objc.Sig.Ret.BOOL, nsui.objc.Sig.Arg.ID))
+                    .invokeExact(ObjC.cls("NSPopUpButton"), ObjC.sel("respondsToSelector:"),
+                            ObjC.sel("pullDownButtonWithTitle:menu:"));
+            if (hasPullDown) {
+                TestKit.noThrow("pullDownButtonWithTitle:menu: is guarded but live (macOS 15+)",
+                        () -> nsui.NSPopUpButton.pullDownButtonWithTitle("t", pdMenu));
+                nsui.NSImage pdImage = nsui.NSImage.imageNamed("NSApplicationIcon");
+                if (pdImage != null) {
+                    TestKit.noThrow("pullDownButtonWithTitle:image:menu: is guarded but live (macOS 15+)",
+                            () -> nsui.NSPopUpButton.pullDownButtonWithTitleImage("t", pdImage, pdMenu));
+                } else {
+                    TestKit.probe("no named NSImage available for the image factory");
+                }
+                // Measured: nil title/image/menu each abort; nil target/action are fine.
+                TestKit.expectThrows("pullDownButtonWithTitleImage(null image) rejects",
+                        IllegalArgumentException.class,
+                        () -> nsui.NSPopUpButton.pullDownButtonWithTitleImage("t", null, pdMenu));
+                TestKit.expectThrows("pullDownButtonWithTitle(null title) rejects",
+                        IllegalArgumentException.class,
+                        () -> nsui.NSPopUpButton.pullDownButtonWithTitle(null, pdMenu));
+                TestKit.noThrow("popUpButtonWithMenu(null target, null action) is still accepted",
+                        () -> nsui.NSPopUpButton.popUpButtonWithMenu(pdMenu, null, null));
+            } else {
+                TestKit.expectThrows("pullDownButtonWithTitle:menu: reports the macOS 15 requirement",
+                        IllegalStateException.class,
+                        () -> nsui.NSPopUpButton.pullDownButtonWithTitle("t", pdMenu));
+            }
+        } catch (Throwable t) {
+            TestKit.check(false, "section-header version block threw: " + t);
+        }
+
         // --- 8z. type-confusion guards on the raw collection-view setters ---
         // AppKit does NOT raise a type error here, it either asserts isKindOfClass: or
         // messages the object: setCollectionViewLayout: with a plain NSView raised

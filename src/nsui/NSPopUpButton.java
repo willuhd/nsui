@@ -85,19 +85,9 @@ public final class NSPopUpButton extends NSControl {
         // macOS 15+ class method: check the CLASS responds before sending, otherwise this aborts
         // with an unrecognized selector on an older host (the instance guard pattern does not
         // apply to a class factory).
-        try {
-            boolean responds = (boolean) ObjC.handle(Sig.of(Ret.BOOL, Arg.ID)).invokeExact(
-                    ObjC.cls("NSPopUpButton"), ObjC.sel("respondsToSelector:"),
-                    ObjC.sel("popUpButtonWithMenu:target:action:"));
-            if (!responds) {
-                throw new IllegalStateException("popUpButtonWithMenu:target:action: requires macOS 15+ "
-                        + "(use create(frame) + setMenu: on older systems)");
-            }
-        } catch (IllegalStateException e) {
-            throw e;
-        } catch (Throwable t) {
-            throw new RuntimeException("popUpButtonWithMenu:target:action: presence check failed", t);
-        }
+        requireClassSelector("popUpButtonWithMenu:target:action:", "popUpButtonWithMenu:target:action:");
+        // Measured: a nil MENU aborts, while nil target/action are accepted (a valid no-op button).
+        Bounds.nonNull(menu, "popUpButtonWithMenu:target:action: (menu)");
         try {
             MemorySegment m = (menu == null ? MemorySegment.NULL : menu.peer());
             MemorySegment t = (MemorySegment) (target == null ? MemorySegment.NULL : target);
@@ -110,9 +100,30 @@ public final class NSPopUpButton extends NSControl {
             throw new RuntimeException("popUpButtonWithMenu:target:action: failed", th);
         }
     }
+    /// macOS 15+ CLASS factories: ask the class object whether it responds, and report the
+    /// requirement by name when it does not (the instance guard pattern does not apply to a factory).
+    private static void requireClassSelector(String selector, String what) {
+        try {
+            boolean responds = (boolean) ObjC.handle(Sig.of(Ret.BOOL, Arg.ID)).invokeExact(
+                    ObjC.cls("NSPopUpButton"), ObjC.sel("respondsToSelector:"), ObjC.sel(selector));
+            if (!responds) {
+                throw new IllegalStateException(what + " requires macOS 15+ "
+                        + "(use create(frame) + setMenu: on older systems)");
+            }
+        } catch (IllegalStateException e) {
+            throw e;
+        } catch (Throwable t) {
+            throw new RuntimeException(what + " presence check failed", t);
+        }
+    }
+
     /// +pullDownButtonWithTitle:menu: — pull-down with title (usesItemFromMenu=NO).
     /// Shape (ID,ID,ID) is in the vocabulary (grep: of(Ret.ID, Arg.ID, Arg.ID)).
     public static NSPopUpButton pullDownButtonWithTitle(String title, NSMenu menu) {
+        requireClassSelector("pullDownButtonWithTitle:menu:", "pullDownButtonWithTitle:menu:");   // macOS 15+
+        // Measured: nil title OR nil menu aborts ("NSInternalInconsistencyException", exit 134).
+        Bounds.nonNull(title, "pullDownButtonWithTitle:menu: (title)");
+        Bounds.nonNull(menu, "pullDownButtonWithTitle:menu: (menu)");
         ensureInit();
         try {
             MemorySegment p = (MemorySegment) hFactory2.invokeExact(ObjC.cls("NSPopUpButton"),
@@ -128,6 +139,9 @@ public final class NSPopUpButton extends NSControl {
     /// +pullDownButtonWithImage:menu: — pull-down with image.
     /// Shape (ID,ID,ID) is in the vocabulary.
     public static NSPopUpButton pullDownButtonWithImage(NSImage image, NSMenu menu) {
+        requireClassSelector("pullDownButtonWithImage:menu:", "pullDownButtonWithImage:menu:");   // macOS 15+
+        Bounds.nonNull(image, "pullDownButtonWithImage:menu: (image)");   // nil image aborts (134)
+        Bounds.nonNull(menu, "pullDownButtonWithImage:menu: (menu)");
         ensureInit();
         try {
             MemorySegment p = (MemorySegment) hFactory2.invokeExact(ObjC.cls("NSPopUpButton"),
@@ -143,6 +157,11 @@ public final class NSPopUpButton extends NSControl {
     /// +pullDownButtonWithTitle:image:menu: — pull-down with title and image.
     /// Shape (ID,ID,ID,ID) is in the vocabulary.
     public static NSPopUpButton pullDownButtonWithTitleImage(String title, NSImage image, NSMenu menu) {
+        requireClassSelector("pullDownButtonWithTitle:image:menu:", "pullDownButtonWithTitle:image:menu:");   // macOS 15+
+        // All three are required: a nil title, image or menu each aborts (measured, exit 134).
+        Bounds.nonNull(title, "pullDownButtonWithTitle:image:menu: (title)");
+        Bounds.nonNull(image, "pullDownButtonWithTitle:image:menu: (image)");
+        Bounds.nonNull(menu, "pullDownButtonWithTitle:image:menu: (menu)");
         ensureInit();
         try {
             MemorySegment p = (MemorySegment) hFactory3.invokeExact(ObjC.cls("NSPopUpButton"),

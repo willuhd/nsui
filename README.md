@@ -41,7 +41,7 @@ Windows stay hidden unless a test proves it needs visibility; only NSEventTest a
 ButtonTest take key status. `tests/BenchTest.java` holds the hot-path benchmarks.
 `tests/SignatureConformanceTest.java` parses the wrapper sources and checks every declared
 `Sig` shape against the real runtime type encoding (`method_getTypeEncoding`) — with two
-caveats: 243 selectors it cannot resolve (Metal protocol/descriptor stubs, plus the two
+caveats: 244 selectors it cannot resolve (Metal protocol/descriptor stubs, plus the two
 NSIndexPath accessors NSCollectionView's move guard reads) are a counted
 baseline rather than a check, and unresolved entries are capped by a 15% share, so the
 resolution buckets are aggregate counts, not a per-name audit.

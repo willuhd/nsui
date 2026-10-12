@@ -2271,6 +2271,84 @@ public final class AuditRegressionTest {
             TestKit.check(false, "Metal buffer-arg block threw: " + t);
         }
 
+        // --- 8bn. the rest of Metal's argument-table limits, plus CA's timing index ---
+        // Verified raw (one process per case, MTL_DEBUG_LAYER=1, encoder ended before exit):
+        // sampler index 15 ok / 16 "must be < 16"; texture 127 ok / 128 "must be < 128";
+        // set*Bytes index 30 ok / 31 "must be < 31"; nil buffer with a nonzero offset aborts
+        // ("offset(999999) must be 0") even though a nil buffer is a legal unbind; setViewport with
+        // a NaN component aborts; drawIndexed's offset+count*size is checked against the buffer.
+        // CAMediaTimingFunction.controlPointAtIndex: 3 ok / 4 aborts.
+        try {
+            if (nsui.MTLDevice.systemDefault() != null) {
+                nsui.MTLDevice d2 = nsui.MTLDevice.systemDefault();
+                nsui.MTLBuffer b2 = d2.newBuffer(16L, 0L);
+                nsui.MTLTextureDescriptor td2 = nsui.MTLTextureDescriptor.texture2D(64L, 8, 8, false);
+                td2.setUsage(4L);
+                nsui.MTLTexture t2 = d2.newTexture(td2);
+                nsui.MTLRenderPassDescriptor rp2 = nsui.MTLRenderPassDescriptor.create();
+                rp2.colorAttachment(0).setTexture(t2);
+                nsui.MTLRenderCommandEncoder e2 = d2.newCommandQueue().commandBuffer().renderEncoder(rp2);
+                TestKit.noThrow("setVertexBytes(index 30) is accepted",
+                        () -> e2.setVertexBytes(new byte[16], 30L));
+                TestKit.expectThrows("setVertexBytes(index 31) rejects (native 'must be < 31')",
+                        IllegalArgumentException.class, () -> e2.setVertexBytes(new byte[16], 31L));
+                TestKit.expectThrows("setFragmentBytes(index 31) rejects",
+                        IllegalArgumentException.class, () -> e2.setFragmentBytes(new byte[16], 31L));
+                TestKit.noThrow("setVertexBuffer(nil, offset 0) still unbinds",
+                        () -> e2.setVertexBuffer(null, 0L, 5L));
+                TestKit.expectThrows("setVertexBuffer(nil, nonzero offset) rejects (native 'must be 0')",
+                        IllegalArgumentException.class, () -> e2.setVertexBuffer(null, 999999L, 3L));
+                TestKit.noThrow("setVertexSamplerState(index 15) is accepted",
+                        () -> e2.setVertexSamplerState(null, 15L));
+                TestKit.expectThrows("setVertexSamplerState(index 16) rejects (native 'must be < 16')",
+                        IllegalArgumentException.class, () -> e2.setVertexSamplerState(null, 16L));
+                TestKit.noThrow("setVertexTexture(index 127) is accepted",
+                        () -> e2.setVertexTexture(t2, 127L));
+                TestKit.expectThrows("setVertexTexture(index 128) rejects (native 'must be < 128')",
+                        IllegalArgumentException.class, () -> e2.setVertexTexture(t2, 128L));
+                TestKit.noThrow("setViewport(valid) is accepted",
+                        () -> e2.setViewport(nsui.MTLViewport.of(64, 64)));
+                TestKit.expectThrows("setViewport(NaN) rejects (native 'must not be infinite or NaN')",
+                        IllegalArgumentException.class,
+                        () -> e2.setViewport(new nsui.MTLViewport(Double.NaN, 0, 64, 64, 0, 1)));
+                TestKit.expectThrows("drawIndexed past the index buffer rejects",
+                        IllegalArgumentException.class, () -> e2.drawIndexed(5L, 1L, b2, 0L));
+                TestKit.expectThrows("drawIndexed with an invalid indexType rejects",
+                        IllegalArgumentException.class, () -> e2.drawIndexed(1L, 5L, b2, 0L));
+                TestKit.check(nsui.MTLRenderCommandEncoder.MAX_SAMPLER_SLOTS == 16L
+                                && nsui.MTLRenderCommandEncoder.MAX_TEXTURE_SLOTS == 128L,
+                        "the documented sampler/texture slot caps are 16 and 128");
+                e2.endEncoding();
+                TestKit.check(t2.mipmapLevelCount() >= 1L, "mipmapLevelCount is live (>= 1)");
+                // mip level beyond the texture's count: natively silent zeros, now rejected as
+                // silent data corruption (measured: a plain texture answers level 1 with 0,0,0,0).
+                TestKit.expectThrows("getBytes(level >= mipmapLevelCount) rejects instead of returning zeros",
+                        IllegalArgumentException.class,
+                        () -> t2.getBytes(4, nsui.MTLRegion.of2D(0, 0, 1, 1), t2.mipmapLevelCount()));
+                TestKit.noThrow("getBytes(level 0) still works",
+                        () -> t2.getBytes(4, nsui.MTLRegion.of2D(0, 0, 1, 1), 0));
+                // The three formats bytesPerPixel used to reject: create + read them back.
+                long[] srgbFormats = {11L, 31L, 94L};
+                for (long fmt : srgbFormats) {
+                    nsui.MTLTextureDescriptor fd = nsui.MTLTextureDescriptor.texture2D(fmt, 1, 1, false);
+                    fd.setUsage(4L);
+                    nsui.MTLTexture ft = d2.newTexture(fd);
+                    TestKit.noThrow("getBytes works for pixel format " + fmt + " (was 'unknown')",
+                            () -> ft.getBytes(fmt == 11L ? 1 : (fmt == 31L ? 2 : 4),
+                                    nsui.MTLRegion.of2D(0, 0, 1, 1), 0));
+                }
+            } else {
+                TestKit.probe("no Metal device; encoder slot guards checked by constants only");
+            }
+            nsui.CAMediaTimingFunction tf = nsui.CAMediaTimingFunction.functionWithName("linear");
+            TestKit.noThrow("controlPointAtIndex(3) is accepted (native boundary)",
+                    () -> tf.controlPointAtIndex(3));
+            TestKit.expectThrows("controlPointAtIndex(4) rejects (native aborts)",
+                    IllegalArgumentException.class, () -> tf.controlPointAtIndex(4));
+        } catch (Throwable t) {
+            TestKit.check(false, "encoder-slot block threw: " + t);
+        }
+
         // --- 8z. type-confusion guards on the raw collection-view setters ---
         // AppKit does NOT raise a type error here, it either asserts isKindOfClass: or
         // messages the object: setCollectionViewLayout: with a plain NSView raised

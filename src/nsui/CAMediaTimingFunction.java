@@ -66,6 +66,9 @@ public final class CAMediaTimingFunction extends NSObject {
 
     /// getControlPointAtIndex:values: — writes 2 floats into {x, y}.
     public float[] controlPointAtIndex(long index) {
+        // Bounds.index: 0..3 only. Measured: index 3 returns a point, index 4 aborts the
+        // process ("State engine terminated", exit 134).
+        Bounds.index(index, 4, "controlPointAtIndex:");
         MemorySegment out = Scratch.allocInput(8);
         try {
             handles.hGetPoint().invokeExact(peer, ObjC.sel("getControlPointAtIndex:values:"), index, out);

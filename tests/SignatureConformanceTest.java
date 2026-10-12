@@ -90,7 +90,12 @@ public final class SignatureConformanceTest {
     // the Metal protocol selectors. Both encodings were measured directly:
     // NSIndexPath -section and -item are "q16@0:8" (NSInteger), which is what msgSendLong
     // sends, so the two unresolvable call sites are correct rather than unknown.
-    private static final int NO_MATCH_BASELINE = 243;
+    /// Counted baseline of call sites whose selector has no statically visible runtime method —
+    /// overwhelmingly Metal protocol/descriptor stubs, which the gate cannot resolve against the
+    /// facade class even though the calls work at runtime. It is a RATCHET: a new entry must be
+    /// named here. 244 = 243 + MTLTexture.mipmapLevelCount, added with the mip-level guard and
+    /// verified live (4 for a mipmapped 8x8 texture, 1 for a plain one).
+    private static final int NO_MATCH_BASELINE = 244;
     private static final int OTHER_CAP = 0;
     private static final int VOID_IGNORED_CAP = 0;
     /// Integer-width disagreements (declared 64-bit INT vs real 32-bit `i`/`I`, or

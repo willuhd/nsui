@@ -131,6 +131,14 @@ public final class MTLRenderCommandEncoder extends NSObject {
 
     /// setViewport: — MTLViewport (6 doubles) passed BY VALUE.
     public void setViewport(MTLViewport viewport) {
+        // Measured: any NaN (or infinity) component aborts — "Viewport Validation viewport.originX
+        // must not be infinite or NaN" (exit 134). Negative width/height is tolerated.
+        Bounds.notNaN(viewport.originX(), "setViewport: (originX)");
+        Bounds.notNaN(viewport.originY(), "setViewport: (originY)");
+        Bounds.notNaN(viewport.width(), "setViewport: (width)");
+        Bounds.notNaN(viewport.height(), "setViewport: (height)");
+        Bounds.notNaN(viewport.znear(), "setViewport: (znear)");
+        Bounds.notNaN(viewport.zfar(), "setViewport: (zfar)");
         if (viewport == null) throw new IllegalArgumentException("viewport is null");
         ensureInit();
         try {
@@ -164,13 +172,29 @@ public final class MTLRenderCommandEncoder extends NSObject {
 
     private static void checkBufferArgs(MTLBuffer buffer, long offset, long index, String what) {
         Bounds.index(index, MAX_BUFFER_SLOTS, what);
-        if (buffer == null) return;                       // nil unbinds; the offset is ignored
         Bounds.nonNegative(offset, what + " (offset)");
+        if (buffer == null) {
+            // A nil buffer unbinds the slot, and Metal then REQUIRES offset 0: a nil buffer with a
+            // nonzero offset aborts ("offset(999999) must be 0", exit 134). An earlier version of
+            // this guard returned early for nil and its comment claimed the offset was ignored —
+            // measurably false.
+            if (offset != 0) {
+                throw new IllegalArgumentException(what + ": a nil (unbinding) buffer requires "
+                        + "offset 0, got " + offset);
+            }
+            return;
+        }
         if (offset >= buffer.length()) {
             throw new IllegalArgumentException(what + ": offset " + offset
                     + " must be < the buffer length (" + buffer.length() + ")");
         }
     }
+
+    /// Metal's per-stage sampler and texture slot counts, measured the same way (the assertion
+    /// names the bound): sampler indices are 0..15 ("index(16) must be < 16") and texture indices
+    /// are 0..127 ("index(128) must be < 128").
+    public static final long MAX_SAMPLER_SLOTS = 16L;
+    public static final long MAX_TEXTURE_SLOTS = 128L;
 
     /// setVertexBytes:length:atIndex: — bytes are copied synchronously.
     ///
@@ -190,6 +214,7 @@ public final class MTLRenderCommandEncoder extends NSObject {
     public void setVertexBytes(byte[] data, long index) {
         if (data == null || data.length == 0) throw new IllegalArgumentException("vertex data empty");
         checkSetBytesLength(data.length, "setVertexBytes:length:atIndex:");
+        Bounds.index(index, MAX_BUFFER_SLOTS, "setVertexBytes:length:atIndex:");   // index 31 aborts
         ensureInit();
         MemorySegment buf = nsui.objc.Scratch.allocInput(data.length);
         MemorySegment.copy(data, 0, buf, java.lang.foreign.ValueLayout.JAVA_BYTE, 0, data.length);
@@ -218,6 +243,7 @@ public final class MTLRenderCommandEncoder extends NSObject {
     public void setFragmentBytes(byte[] data, long index) {
         if (data == null || data.length == 0) throw new IllegalArgumentException("fragment data empty");
         checkSetBytesLength(data.length, "setFragmentBytes:length:atIndex:");
+        Bounds.index(index, MAX_BUFFER_SLOTS, "setFragmentBytes:length:atIndex:");   // index 31 aborts
         ensureInit();
         MemorySegment buf = nsui.objc.Scratch.allocInput(data.length);
         MemorySegment.copy(data, 0, buf, java.lang.foreign.ValueLayout.JAVA_BYTE, 0, data.length);
@@ -243,6 +269,7 @@ public final class MTLRenderCommandEncoder extends NSObject {
 
     /// setVertexTexture:atIndex: (nil unbinds the slot).
     public void setVertexTexture(MTLTexture texture, long index) {
+        Bounds.index(index, MAX_TEXTURE_SLOTS, "setVertexTexture:atIndex:");   // measured native slot limit
         ensureInit();
         try {
             handles.hObjIndex().invokeExact(peer, ObjC.sel("setVertexTexture:atIndex:"),
@@ -254,6 +281,7 @@ public final class MTLRenderCommandEncoder extends NSObject {
 
     /// setFragmentTexture:atIndex: (nil unbinds the slot).
     public void setFragmentTexture(MTLTexture texture, long index) {
+        Bounds.index(index, MAX_TEXTURE_SLOTS, "setFragmentTexture:atIndex:");   // measured native slot limit
         ensureInit();
         try {
             handles.hObjIndex().invokeExact(peer, ObjC.sel("setFragmentTexture:atIndex:"),
@@ -265,6 +293,7 @@ public final class MTLRenderCommandEncoder extends NSObject {
 
     /// setVertexSamplerState:atIndex: (nil unbinds the slot).
     public void setVertexSamplerState(MTLSamplerState sampler, long index) {
+        Bounds.index(index, MAX_SAMPLER_SLOTS, "setVertexSamplerState:atIndex:");   // measured native slot limit
         ensureInit();
         try {
             handles.hObjIndex().invokeExact(peer, ObjC.sel("setVertexSamplerState:atIndex:"),
@@ -276,6 +305,7 @@ public final class MTLRenderCommandEncoder extends NSObject {
 
     /// setFragmentSamplerState:atIndex: (nil unbinds the slot).
     public void setFragmentSamplerState(MTLSamplerState sampler, long index) {
+        Bounds.index(index, MAX_SAMPLER_SLOTS, "setFragmentSamplerState:atIndex:");   // measured native slot limit
         ensureInit();
         try {
             handles.hObjIndex().invokeExact(peer, ObjC.sel("setFragmentSamplerState:atIndex:"),
@@ -299,6 +329,28 @@ public final class MTLRenderCommandEncoder extends NSObject {
     /// drawIndexedPrimitives:indexCount:indexType:indexBuffer:indexBufferOffset:.
     public void drawIndexed(long indexCount, long indexType, MTLBuffer indexBuffer, long indexBufferOffset) {
         if (indexBuffer == null) throw new IllegalArgumentException("indexBuffer is null");
+        // Measured: the index range is validated against the buffer before the draw —
+        // "indexBufferOffset(0) + (indexCount(5)*4) must be <= [indexBuffer length](16)", exit 134
+        // — so an out-of-range draw is rejected here. (Drawing also requires a pipeline state and
+        // the draw call itself is stateful, which is why only the stateless part is guarded.)
+        Bounds.nonNegative(indexCount, "drawIndexedPrimitives:... (indexCount)");
+        Bounds.nonNegative(indexBufferOffset, "drawIndexedPrimitives:... (indexBufferOffset)");
+        if (indexType != INDEX_TYPE_UINT16 && indexType != INDEX_TYPE_UINT32) {
+            throw new IllegalArgumentException("indexType must be INDEX_TYPE_UINT16 (0) or "
+                    + "INDEX_TYPE_UINT32 (1), got " + indexType);
+        }
+        long indexSize = indexType == INDEX_TYPE_UINT32 ? 4L : 2L;
+        long needed;
+        try {
+            needed = Math.addExact(indexBufferOffset, Math.multiplyExact(indexCount, indexSize));
+        } catch (ArithmeticException e) {
+            throw new IllegalArgumentException("drawIndexedPrimitives: index range overflows a long");
+        }
+        if (needed > indexBuffer.length()) {
+            throw new IllegalArgumentException("drawIndexedPrimitives: offset " + indexBufferOffset
+                    + " + indexCount " + indexCount + "*" + indexSize + " needs " + needed
+                    + " bytes but the index buffer holds " + indexBuffer.length());
+        }
         ensureInit();
         try {
             handles.hDrawIndexed().invokeExact(peer,

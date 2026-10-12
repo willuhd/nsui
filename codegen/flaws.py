@@ -193,32 +193,74 @@ def check_f1(rt):
     return findings
 
 
-def check_f3():
-    """Measured aborts that the shipped wrapper does not guard."""
-    path = os.path.join(HERE, "guard-evidence.json")
+ABORTS = ("objc-abort", "sigtrap", "sigill")
+
+
+def shipped_baseline():
+    """{probe id: verdict measured against the SHIPPED wrappers} — codegen/shipped-baseline.json."""
+    path = os.path.join(HERE, "shipped-baseline.json")
     try:
-        cases = json.load(open(path))["cases"]
+        return json.load(open(path))["verdicts"]
     except (OSError, ValueError):
-        return []
+        return {}
+
+
+def case_method(case):
+    cid = case.get("probe_id") or ""
+    return cid.split(".")[1] if cid.count(".") >= 2 else None
+
+
+def check_f3():
+    """Cases where the shipped wrapper itself aborts on a bad argument.
+
+    The verdict comes from measuring the shipped code (codegen/shipped-baseline.json), not from
+    looking for a guard: a method can carry an inline check that does not fire, and the generator's
+    body is simpler than the shipped one, so "the generated call aborts" is not evidence about the
+    shipped wrapper. Only a measured shipped abort is.
+    """
+    baseline = shipped_baseline()
     findings = []
-    for case in cases:
-        if case.get("unguarded") not in ("objc-abort", "sigtrap", "sigill"):
+    for case in json.load(open(os.path.join(HERE, "guard-evidence.json")))["cases"]:
+        if case.get("unguarded") not in ABORTS:
             continue
         cls, sel = case.get("class"), case.get("selector")
-        wrapper = os.path.join(REPO, "src", "nsui", (cls or "") + ".java")
-        if not cls or not os.path.exists(wrapper):
+        if not cls or not os.path.exists(os.path.join(REPO, "src", "nsui", cls + ".java")):
             continue
-        text = open(wrapper, encoding="utf-8", errors="replace").read()
-        # a guard for this selector, or a nonNull/index/notNaN call naming the parameter
-        guarded = bool(re.search(r"Bounds\.\w+\([^;]*%s" % re.escape(sel), text)
-                       or re.search(r"Bounds\.(nonNull|notNaN)\(%s[,)]" % re.escape(case.get("param") or ""),
-                                    text))
-        if not guarded:
-            findings.append({"check": "F3", "class": cls, "selector": sel,
-                             "param": case.get("param"), "badness": case.get("unguarded"),
-                             "file": os.path.relpath(wrapper, REPO),
-                             "evidence": "measured %s with a bad %s and no guard in the shipped file"
-                                         % (case["unguarded"], case.get("badness") or case.get("param"))})
+        verdict = baseline.get(case.get("probe_id"))
+        if verdict not in ABORTS:
+            continue                       # shipped tolerates it: not a shipped flaw
+        findings.append({"check": "F3", "class": cls, "selector": sel,
+                         "param": case.get("param"), "badness": case.get("unguarded"),
+                         "shipped": verdict, "param_index": case.get("param_index"),
+                         "probe_id": case.get("probe_id"), "guards": case.get("guards") or [],
+                         "file": os.path.relpath(os.path.join(REPO, "src", "nsui", cls + ".java"),
+                                                 REPO),
+                         "evidence": "the shipped wrapper aborts (%s) on a bad %s"
+                                     % (verdict, case.get("param"))})
+    return findings
+
+
+def check_f6():
+    """Generated code that aborts where the shipped wrapper tolerates the same call.
+
+    This is a generator conformance gap, not a shipped flaw: the guard the generator adds rejects
+    input the shipped API accepts, so the generated wrapper is stricter than the one it replaces.
+    """
+    baseline = shipped_baseline()
+    findings = []
+    for case in json.load(open(os.path.join(HERE, "guard-evidence.json")))["cases"]:
+        if case.get("unguarded") not in ABORTS or not case.get("guards"):
+            continue
+        verdict = baseline.get(case.get("probe_id"))
+        if verdict is None or verdict in ABORTS:
+            continue
+        findings.append({"check": "F6", "class": case.get("class"), "selector": case.get("selector"),
+                         "param": case.get("param"), "generated": case.get("unguarded"),
+                         "shipped": verdict,
+                         "file": os.path.relpath(os.path.join(REPO, "src", "nsui",
+                                                              str(case.get("class")) + ".java"), REPO),
+                         "evidence": "generated aborts (%s) but the shipped wrapper tolerates it"
+                                     % case.get("unguarded")})
     return findings
 
 
@@ -247,11 +289,112 @@ def check_f4():
     return findings
 
 
+GATE_WINDOW = 1024          # tests/SignatureConformanceTest reads the encoding through this
+
+
+def check_f5(rt):
+    """Methods whose type encoding is longer than the gate's read window.
+
+    The gate does `e.reinterpret(1024).getString(0)`; a longer encoding has no terminator inside
+    that window, so the gate dies with IndexOutOfBoundsException instead of reporting the method.
+    NSOpenGLContext.CGLContextObj encodes its opaque struct inline at 2044 bytes, which aborted a
+    whole 389-class conformance run.
+    """
+    import ctypes
+    lib = rt.libobjc
+    lib.method_getTypeEncoding.restype = ctypes.c_void_p
+    lib.method_getTypeEncoding.argtypes = [ctypes.c_void_p]
+    findings = []
+    for cls, path in wrapper_files():
+        text = open(path, encoding="utf-8", errors="replace").read()
+        for side in (False, True):
+            for sel in set(SEL_CALL.findall(text)):
+                c = rt.get_class(cls)
+                if not c:
+                    continue
+                s = lib.sel_registerName(sel.encode())
+                m = lib.class_getClassMethod(c, s) if side else lib.class_getInstanceMethod(c, s)
+                if not m:
+                    continue
+                enc = lib.method_getTypeEncoding(m)
+                if not enc:
+                    continue
+                length = ctypes.string_at(enc, GATE_WINDOW * 4).find(b"\x00")
+                if length < 0 or length > GATE_WINDOW:
+                    findings.append({"check": "F5", "class": cls, "selector": sel,
+                                     "side": "class" if side else "inst",
+                                     "file": os.path.relpath(path, REPO),
+                                     "evidence": "type encoding is %s bytes; the signature gate reads "
+                                                 "%d, so it crashes rather than checking the method"
+                                                 % (length if length >= 0 else ">4096", GATE_WINDOW)})
+    return findings
+
+
+GUARD_AFTER = "ensureInit();"
+
+
+def _method_span(lines, name):
+    """(start, body_start, param_names) for the shipped method `name`, or None."""
+    for i, line in enumerate(lines):
+        m = re.match(r"\s*public\s+(?:static\s+)?[\w.<>\[\]]+\s+%s\s*\(([^)]*)\)" % re.escape(name),
+                     line)
+        if not m:
+            continue
+        params = [p.strip().split()[-1] if p.strip() else "" for p in m.group(1).split(",")]
+        for j in range(i, min(i + 8, len(lines))):
+            if lines[j].rstrip().endswith("{"):
+                return i, j, params
+    return None
+
+
+def proposed_patches():
+    """Reviewable diffs that add the guard each measured abort needs to the shipped wrapper.
+
+    src/ is never edited: a finding becomes a patch, and applying it in a scratch tree is what
+    verifies it, because the abort then disappears under codegen/probe.py.
+    """
+    import difflib
+    by_file = defaultdict(list)
+    for f in check_f3():
+        case_id = f.get("probe_id") or ""
+        method = case_id.split(".")[1] if case_id.count(".") >= 2 else None
+        if not method or not f.get("guards"):
+            continue          # an index case without a bound has no statement to insert
+        by_file[f["class"] + ".java"].append((method, f))
+    chunks = []
+    for name, edits in sorted(by_file.items()):
+        rel = os.path.join("src", "nsui", name)
+        path = os.path.join(REPO, rel)
+        original = open(path, encoding="utf-8", errors="replace").read().splitlines(keepends=True)
+        working = list(original)
+        for method, f in edits:
+            lines = [ln.rstrip("\n") for ln in working]
+            span = _method_span(lines, method)
+            if span is None:
+                continue
+            _start, body, params = span
+            idx = f.get("param_index")
+            pname = params[idx] if isinstance(idx, int) and idx < len(params) else (f.get("param") or "")
+            stmts = [g.replace("{p}", pname) for g in f["guards"]]
+            at = body + 1
+            if at < len(working) and GUARD_AFTER in working[at]:
+                at += 1
+            insert = ["        " + st + "\n" for st in stmts]
+            working = working[:at] + insert + working[at:]
+        if working != original:
+            chunks.append("".join(difflib.unified_diff(original, working, "a/" + rel, "b/" + rel, n=3)))
+    return "".join(chunks)
+
+
 def main():
     ap = argparse.ArgumentParser(description="Report flaws in the shipped wrappers")
-    ap.add_argument("--check", default="F1,F3,F4", help="comma-separated subset of F1,F3,F4")
+    ap.add_argument("--check", default="F1,F3,F4,F5,F6",
+                    help="comma-separated subset of F1,F3,F4,F5,F6")
     ap.add_argument("--json", help="write the findings as JSON")
     ap.add_argument("--limit", type=int, default=25, help="how many findings to print per check")
+    ap.add_argument("--patch", metavar="PATH",
+                    help="with F3: write a reviewable diff that adds the missing guard to the "
+                         "shipped wrapper (never applied automatically)")
     args = ap.parse_args()
     wanted = {c.strip().upper() for c in args.check.split(",") if c.strip()}
     out = []
@@ -261,6 +404,10 @@ def main():
         out += check_f3()
     if "F4" in wanted:
         out += check_f4()
+    if "F6" in wanted:
+        out += check_f6()
+    if "F5" in wanted:
+        out += check_f5(runtime())
     by_check = defaultdict(list)
     for f in out:
         by_check[f["check"]].append(f)
@@ -278,6 +425,10 @@ def main():
     if args.json:
         json.dump(out, open(args.json, "w"), indent=2)
         print("wrote " + args.json)
+    if args.patch:
+        text = proposed_patches()
+        open(args.patch, "w", encoding="utf-8").write(text)
+        print("\nproposed guard patch: %s (%d bytes)" % (args.patch, len(text)))
     return 0
 
 

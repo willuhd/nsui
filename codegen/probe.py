@@ -482,6 +482,7 @@ public abstract class GuardProbeBase {
 
 
 def _chunk_source(name, cases, generated):
+    """(source text, [(first_line, last_line)] per case), one class per chunk of cases."""
     body = ["package nsui;", "",
             "import java.lang.foreign.MemorySegment;",
             "import nsui.objc.ObjC;",
@@ -491,7 +492,9 @@ def _chunk_source(name, cases, generated):
             "public final class %s extends GuardProbeBase {" % name,
             "    public static void main(String[] argv) {",
             "        int which = Integer.parseInt(argv[0]);", "        switch (which) {"]
+    ranges = []
     for i, c in enumerate(cases):
+        first = len(body) + 1
         body.append("        case %d: {" % i)
         for line in c["setup"]:
             body.append("            " + line)
@@ -500,8 +503,9 @@ def _chunk_source(name, cases, generated):
         body.append('            System.out.println("TOLERATED");')
         body.append("            return;")
         body.append("        }")
+        ranges.append((first, len(body)))
     body += ["        default: return;", "        }", "    }", "}", ""]
-    return "\n".join(body)
+    return "\n".join(body), ranges
 
 
 def build_probe(repo, cases, shadow=None, shipped=None, generated=False, chunk=120):
@@ -515,7 +519,7 @@ def build_probe(repo, cases, shadow=None, shipped=None, generated=False, chunk=1
     os.makedirs(pkg, exist_ok=True)
     classes = shipped or tree_classes(repo)
     if classes is None:
-        return None, None, None
+        return None, None, None, None
     if shadow:
         classes = "%s:%s" % (shadow, classes)
     for cls in ([] if shadow else {c["class"] for c in cases}):
@@ -532,26 +536,48 @@ def build_probe(repo, cases, shadow=None, shipped=None, generated=False, chunk=1
         if m:
             text = text.replace("\n    /// Wrap an id as", m.group(0) + "\n    /// Wrap an id as", 1)
             open(path, "w", encoding="utf-8").write(text)
-    sources = []
     base = os.path.join(pkg, "GuardProbeBase.java")
     open(base, "w", encoding="utf-8").write(PROBE_HELPERS)
-    sources.append(base)
-    mapping = []
-    for ci in range(0, len(cases), chunk):
-        group = cases[ci:ci + chunk]
-        name = "GuardProbe%d" % (ci // chunk)
-        path = os.path.join(pkg, name + ".java")
-        open(path, "w", encoding="utf-8").write(_chunk_source(name, group, generated))
-        sources.append(path)
-        mapping.extend((name, li) for li in range(len(group)))
     out = os.path.join(work, "out")
     os.makedirs(out, exist_ok=True)
-    p = subprocess.run([JAVAC, "-cp", "%s:%s" % (SVM_JAR, classes), "-d", out] + sources,
-                       capture_output=True, text=True)
-    if p.returncode != 0:
-        sys.stderr.write("probe compile failed:\n" + (p.stdout + p.stderr)[-2000:])
-        return None, None, None
-    return out, classes, mapping
+    dropped = 0
+    for _attempt in range(6):
+        sources, mapping, layout = [base], [], []
+        for ci in range(0, len(cases), chunk):
+            group = cases[ci:ci + chunk]
+            name = "GuardProbe%d" % (ci // chunk)
+            path = os.path.join(pkg, name + ".java")
+            text, ranges = _chunk_source(name, group, generated)
+            open(path, "w", encoding="utf-8").write(text)
+            sources.append(path)
+            mapping.extend((name, li) for li in range(len(group)))
+            layout.append((name, path, ci, ranges))
+        p = subprocess.run([JAVAC, "-cp", "%s:%s" % (SVM_JAR, classes), "-d", out] + sources,
+                           capture_output=True, text=True)
+        if p.returncode == 0:
+            if dropped:
+                print("probe: dropped %d candidate(s) that do not compile against the tree" % dropped)
+            return out, classes, mapping, cases
+        # A synthesized call can disagree with the real signature in ways name and arity do not
+        # reveal (a struct where a peer is expected, a String where a MemorySegment is). Drop the
+        # cases javac rejected and rebuild, rather than failing the whole run.
+        errs = {}
+        for m in re.finditer(r"(GuardProbe\d+)\.java:(\d+): error:", p.stdout + p.stderr):
+            errs.setdefault(m.group(1), set()).add(int(m.group(2)))
+        bad = set()
+        for name, _path, offset, ranges in layout:
+            for ln in errs.get(name, ()):
+                for li, (lo, hi) in enumerate(ranges):
+                    if lo <= ln <= hi:
+                        bad.add(offset + li)
+        if not bad:
+            sys.stderr.write("probe compile failed:\n" + (p.stdout + p.stderr)[-1500:])
+            return None, None, None, None
+        dropped += len(bad)
+        cases = [c for i, c in enumerate(cases) if i not in bad]
+        if not cases:
+            return None, None, None, None
+    return None, None, None, None
 
 
 def filter_cases(cases, scratch):
@@ -596,8 +622,8 @@ def run_cases(repo, cases, timeout=25, generated=None):
         if not cases:
             print("probe: no candidate survived validation against the generated class")
             return None
-    probe_out, classes, mapping = build_probe(repo, cases, shadow=shadow, shipped=shipped,
-                                              generated=bool(generated))
+    probe_out, classes, mapping, cases = build_probe(repo, cases, shadow=shadow, shipped=shipped,
+                                                     generated=bool(generated))
     if probe_out is None:
         return None
     results = []
@@ -745,6 +771,10 @@ def main():
     ap.add_argument("--enumerate", nargs="*", metavar="CLASS", default=None,
                     help="derive bad-argument candidates from the generator's plans for these "
                          "classes, measure them, and record what aborts")
+    ap.add_argument("--shipped-baseline", metavar="PATH",
+                    help="measure the derived candidates against the SHIPPED tree and record each "
+                         "case's verdict there, so a generated-aborts/shipped-tolerates pair is "
+                         "visible instead of being reported as a flaw in the shipped wrapper")
     ap.add_argument("--record-all", action="store_true",
                     help="with --enumerate: record every measured verdict, including calls that "
                          "already fail safely, so a verification run can classify all of them")
@@ -766,6 +796,23 @@ def main():
     repo = os.path.abspath(args.repo)
     if args.strip_guards is not None:
         repo = strip_guards(repo, args.strip_guards)
+    if args.shipped_baseline:
+        cases = enumerate_cases(args.enumerate or [], args.frameworks)
+        # the shipped class may not declare the generated name or arity, so validate here too
+        cases = filter_cases(cases, repo)
+        if not cases:
+            print("no candidate exists in the shipped tree")
+            return 2
+        results = run_cases(repo, cases, timeout=args.timeout)      # no shadow: the shipped tree
+        if results is None:
+            return 2
+        verdicts = {r["id"]: r["verdict"] for r in results}
+        json.dump({"measured_with": "codegen/probe.py --shipped-baseline (the shipped wrappers)",
+                   "verdicts": verdicts}, open(args.shipped_baseline, "w"), indent=2)
+        from collections import Counter
+        print("shipped baseline: %d case(s) %s" % (len(verdicts),
+                                                   dict(Counter(verdicts.values()))))
+        return 0
     if args.merge_from:
         return merge_evidence(args.merge_from, args.out or os.path.join(REPO, "codegen",
                                                                        "guard-evidence.json"))

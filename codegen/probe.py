@@ -11,6 +11,11 @@ measured here, one child process per case, and recorded as evidence the generato
   python3 codegen/probe.py --enumerate <classes> --shipped-baseline codegen/shipped-baseline.json
   python3 codegen/probe.py --enumerate <classes> --differential --out /tmp/diff.json
 
+`--differential` processes the classes in slices (20 by default): each class costs three
+measurements, and a 73-class invocation runs into the JVM's and the probe's limits, so the slicing
+is what makes a wide check usable. A slice that cannot be measured is named in the output rather
+than silently skipped.
+
 `--differential` measures each case three ways — against the shipped tree, against the generated
 tree with the guard evidence, and against the generated tree without it — so a rejection can be
 attributed. A guard is over-rejecting only when the shipped wrapper tolerates the call AND the
@@ -555,47 +560,51 @@ def build_probe(repo, cases, shadow=None, shipped=None, generated=False, chunk=1
     open(base, "w", encoding="utf-8").write(PROBE_HELPERS)
     out = os.path.join(work, "out")
     os.makedirs(out, exist_ok=True)
-    dropped = 0
-    for _attempt in range(12):
-        sources, mapping, layout = [base], [], []
-        for ci in range(0, len(cases), chunk):
-            group = cases[ci:ci + chunk]
-            name = "GuardProbe%d" % (ci // chunk)
-            path = os.path.join(pkg, name + ".java")
-            text, ranges = _chunk_source(name, group, generated)
-            open(path, "w", encoding="utf-8").write(text)
-            sources.append(path)
-            mapping.extend((name, li) for li in range(len(group)))
-            layout.append((name, path, ci, ranges))
-        p = subprocess.run([JAVAC, "-cp", "%s:%s" % (SVM_JAR, classes), "-d", out] + sources,
+    p = subprocess.run([JAVAC, "-cp", "%s:%s" % (SVM_JAR, classes), "-d", out, base],
+                       capture_output=True, text=True)
+    if p.returncode != 0:
+        sys.stderr.write("probe: the shared base did not compile:\n" + (p.stdout + p.stderr)[-800:])
+        return None, None, None, None
+    # Each group is compiled on its own and, when it does not compile, bisected until the offending
+    # cases are isolated. Relying on javac's error list instead was fragile: it is truncated (about
+    # 100 errors per file), so a large group needed many retries and a wide run could exhaust them
+    # and give up with nothing measured.
+    counter = [0]
+    dropped = [0]
+
+    def compile_group(group):
+        name = "GuardProbe%d" % counter[0]
+        counter[0] += 1
+        path = os.path.join(pkg, name + ".java")
+        text, _ranges = _chunk_source(name, group, generated)
+        open(path, "w", encoding="utf-8").write(text)
+        p = subprocess.run([JAVAC, "-cp", "%s:%s:%s" % (SVM_JAR, classes, out), "-d", out, path],
                            capture_output=True, text=True)
         if p.returncode == 0:
-            if dropped:
-                print("probe: dropped %d candidate(s) that do not compile against the tree" % dropped)
-            return out, classes, mapping, cases
-        # A synthesized call can disagree with the real signature in ways name and arity do not
-        # reveal (a struct where a peer is expected, a String where a MemorySegment is). Drop the
-        # cases javac rejected and rebuild, rather than failing the whole run.
-        errs = {}
-        for m in re.finditer(r"(GuardProbe\d+)\.java:(\d+): error:", p.stdout + p.stderr):
-            errs.setdefault(m.group(1), set()).add(int(m.group(2)))
-        bad = set()
-        for name, _path, offset, ranges in layout:
-            for ln in errs.get(name, ()):
-                for li, (lo, hi) in enumerate(ranges):
-                    if lo <= ln <= hi:
-                        bad.add(offset + li)
-        if not bad:
-            sys.stderr.write("probe compile failed:\n" + (p.stdout + p.stderr)[-1500:])
-            return None, None, None, None
-        dropped += len(bad)
-        cases = [c for i, c in enumerate(cases) if i not in bad]
-        if not cases:
-            sys.stderr.write("probe: no candidate survived the compile\n")
-            return None, None, None, None
-    sys.stderr.write("probe: gave up after dropping candidates that do not compile\n")
-    return None, None, None, None
+            return group, [(name, i) for i in range(len(group))]
+        try:
+            os.remove(path)
+        except OSError:
+            pass
+        if len(group) == 1:
+            dropped[0] += 1
+            return [], []
+        mid = len(group) // 2
+        k1, m1 = compile_group(group[:mid])
+        k2, m2 = compile_group(group[mid:])
+        return k1 + k2, m1 + m2
 
+    kept, mapping = [], []
+    for ci in range(0, len(cases), chunk):
+        group_kept, group_mapping = compile_group(cases[ci:ci + chunk])
+        kept.extend(group_kept)
+        mapping.extend(group_mapping)
+    if dropped[0]:
+        print("probe: dropped %d candidate(s) that do not compile against the tree" % dropped[0])
+    if not kept:
+        sys.stderr.write("probe: no candidate survived the compile\n")
+        return None, None, None, None
+    return out, classes, mapping, kept
 
 def filter_cases(cases, scratch):
     """Keep only candidates whose method exists with that arity in the generated file.
@@ -696,43 +705,27 @@ def merge_evidence(src, path):
 STRICTER = ("objc-abort", "sigtrap", "sigill")
 
 
-def differential(repo, args):
-    """Measure the same cases against the shipped tree and the guarded generated tree.
-
-    This is the check that distinguishes a working guard from a guard that rejects valid input:
-    both raise a Java exception, but only the shipped tree knows which arguments the API accepts.
-    A generated wrapper that rejects something the shipped wrapper tolerates is stricter than the
-    code it replaces, and one that still aborts was not guarded at all.
-    """
-    classes = args.enumerate or []
-    if not classes:
-        print("--differential needs at least one class")
-        return 2
+def _differential_slice(repo, args, classes):
+    """The buckets for one slice of classes; None when a measurement could not be taken."""
     cases = enumerate_cases(classes, args.frameworks)
-    # The shipped tree only has the classes it has, so validate the candidates against it first:
-    # a call to a class that is not there cannot be compiled, let alone measured.
     shipped_cases = filter_cases(cases, repo)
     if not shipped_cases:
-        print("no candidate exists in the shipped tree")
-        return 2
+        print("no candidate exists in the shipped tree for %s" % ", ".join(classes))
+        return None
     shipped = run_cases(repo, shipped_cases, timeout=args.timeout)
     if shipped is None:
-        print("the shipped measurement could not be taken (see the probe diagnostics above)")
-        return 2
+        print("the shipped measurement could not be taken for %s" % ", ".join(classes))
+        return None
     generated = run_cases(repo, cases, timeout=args.timeout, generated=classes)
     if generated is None:
-        return 2
-    # A third measurement of the same classes generated WITHOUT the evidence separates a guard's
-    # doing from the body's: the generated body wraps a failed send in a Java exception, which is
-    # not the same as a guard rejecting an argument. It measures exactly the cases that survived
-    # the guarded run, so the three verdicts are always for the same call.
-    print("generated (guarded): %d case(s) measured" % len(generated))
+        print("the guarded measurement could not be taken for %s" % ", ".join(classes))
+        return None
     measured_ids = {r["id"] for r in generated}
     bare = run_cases(repo, [c for c in cases if c["id"] in measured_ids], timeout=args.timeout,
                      generated=classes, use_evidence=False)
     if bare is None:
-        print("the guard-free measurement could not be taken; the split needs all three")
-        return 2
+        print("the guard-free measurement could not be taken for %s" % ", ".join(classes))
+        return None
     by_id = {r["id"]: r for r in generated}
     bare_by_id = {r["id"]: r for r in bare}
     buckets = defaultdict(list)
@@ -754,20 +747,49 @@ def differential(repo, args):
                 buckets["fixed"].append((r["id"], s_v, g_v))
         else:
             buckets["unchanged-tolerated"].append((r["id"], s_v, g_v))
+    return buckets
+
+
+def differential(repo, args):
+    """Attribute every rejection: measure the shipped tree, the guarded tree and the bare tree.
+
+    A slice is processed at a time because each class costs three measurements and a very wide
+    invocation runs into the JVM's and the probe's limits: twenty classes complete, seventy-three
+    did not, and the slice size is what makes a wide check usable.
+    """
+    classes = args.enumerate or []
+    if not classes:
+        print("--differential needs at least one class")
+        return 2
+    slice_size = getattr(args, "slice", 20) or 20
+    buckets = defaultdict(list)
+    failed = []
+    for i in range(0, len(classes), slice_size):
+        chunk = classes[i:i + slice_size]
+        print("-- differential slice %d/%d: %s"
+              % (i // slice_size + 1, (len(classes) + slice_size - 1) // slice_size,
+                 ", ".join(chunk)))
+        part = _differential_slice(repo, args, chunk)
+        if part is None:
+            failed.append(chunk)
+            continue
+        for key, items in part.items():
+            buckets[key].extend(items)
     for name in ("fixed", "unchanged-tolerated", "STRICTER-GUARD", "STRICTER-BODY",
                  "STILL-ABORTS", "LOOSER"):
-        items = buckets.get(name, [])
-        print("%-22s %4d" % (name, len(items)))
+        print("%-22s %4d" % (name, len(buckets.get(name, []))))
     # Only a guard that over-rejects and a case that still aborts are defects. STRICTER-BODY and
     # LOOSER are conformance differences in the generated body, reported but not failures.
     bad = len(buckets.get("STRICTER-GUARD", [])) + len(buckets.get("STILL-ABORTS", []))
     for name in ("STRICTER-GUARD", "STRICTER-BODY", "STILL-ABORTS", "LOOSER"):
         for cid, s_v, g_v in buckets.get(name, [])[:12]:
             print("   %-14s %-56s shipped=%-13s generated=%s" % (name, cid, s_v, g_v))
+    if failed:
+        print("slices that could not be measured: %s" % "; ".join(", ".join(c) for c in failed))
     if args.out:
         json.dump({k: v for k, v in buckets.items()}, open(args.out, "w"), indent=2)
         print("wrote " + args.out)
-    return 1 if bad else 0
+    return 1 if (bad or failed) else 0
 
 
 def enumerate_measure(repo, args):
@@ -803,7 +825,7 @@ def enumerate_measure(repo, args):
             continue
         entry = {"class": case["class"], "selector": case["selector"], "param": case["param"],
                  "param_index": case["param_index"], "probe_id": case["id"],
-                 "unguarded": r["verdict"]}
+                 "badness": case.get("badness"), "unguarded": r["verdict"]}
         for field in ("bound", "bound_from"):
             if case.get(field):
                 entry[field] = case[field]
@@ -873,6 +895,8 @@ def main():
                     help="measure the derived candidates against the SHIPPED tree and record each "
                          "case's verdict there, so a generated-aborts/shipped-tolerates pair is "
                          "visible instead of being reported as a flaw in the shipped wrapper")
+    ap.add_argument("--slice", type=int, default=20,
+                    help="with --differential: classes per slice (20 measured to work; 73 does not)")
     ap.add_argument("--differential", action="store_true",
                     help="with --enumerate: measure each case against the shipped tree AND the "
                          "guarded generated tree, then report where the generated wrapper is "

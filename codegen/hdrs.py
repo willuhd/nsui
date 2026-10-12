@@ -404,7 +404,9 @@ def parse_property(stmt, owner, file, line, declared_in):
         return [], None
     attrs = m.group(1) or ""
     decl = (m.group(2) or "").strip()
-    attr_list = [a.strip() for a in attrs.split(",") if a.strip()]
+    # `getter = isBlendingEnabled` is as valid as `getter=isBlendingEnabled`; the SDK uses both and
+    # the spaced form silently lost the getter while the setter was still generated.
+    attr_list = [re.sub(r"\s*=\s*", "=", a.strip()) for a in attrs.split(",") if a.strip()]
     is_class_prop = "class" in attr_list
     readonly = "readonly" in attr_list
     nullable = _nullability(attrs + " " + decl)

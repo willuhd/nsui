@@ -374,10 +374,26 @@ def generated_shadow(repo, classes, use_evidence=True):
              if os.path.exists(os.path.join(scratch, "src", "nsui", c + ".java"))]
     if not files:
         return None, None, None
-    p = subprocess.run([JAVAC, "-cp", "%s:%s" % (SVM_JAR, shipped_classes), "-d", shadow] + files,
-                       capture_output=True, text=True)
-    if p.returncode != 0:
-        sys.stderr.write("generated classes did not compile:\n" + (p.stdout + p.stderr)[-1500:])
+    # Compile the generated classes one at a time. A batch fails whenever two of them reference each
+    # other in a way the shipped versions satisfied and the regenerated ones do not (a regenerated
+    # file does not carry the hand-written members its siblings call), and one such pair used to
+    # cost the whole slice its guarded measurement. A class that does not compile is removed from
+    # the scratch, so the candidate filter drops its cases and nothing references it.
+    failed = []
+    for path in files:
+        p = subprocess.run([JAVAC, "-cp", "%s:%s:%s" % (SVM_JAR, shipped_classes, shadow),
+                            "-d", shadow, path], capture_output=True, text=True)
+        if p.returncode != 0:
+            failed.append(os.path.basename(path)[:-5])
+            try:
+                os.remove(path)
+            except OSError:
+                pass
+    if failed:
+        print("probe: %d generated class(es) did not compile and were left shipped: %s"
+              % (len(failed), ", ".join(sorted(failed))[:120]))
+    if not os.listdir(shadow):
+        sys.stderr.write("probe: no generated class compiled\n")
         return None, None, None
     return shadow, shipped_classes, scratch
 
@@ -705,6 +721,65 @@ def merge_evidence(src, path):
 STRICTER = ("objc-abort", "sigtrap", "sigill")
 
 
+ABORT_VERDICTS = ("objc-abort", "sigtrap", "sigill")
+
+
+def case_entry(case, verdict):
+    """The evidence entry for a measured case, or None when there is nothing to record.
+
+    Shared by the enumeration and the differential so a case the differential measures can be fed
+    back: 22 of 24 residual differences existed only in the differential's own case set, so the
+    generator never saw them and never acted.
+    """
+    if case.get("baseline") or not case.get("selector"):
+        return None                     # a per-class baseline is scaffolding, not a case
+    entry = {"class": case["class"], "selector": case["selector"], "param": case.get("param"),
+             "param_index": case.get("param_index"), "probe_id": case["id"],
+             "badness": case.get("badness"), "unguarded": verdict}
+    if case.get("bound"):
+        entry["bound"] = case["bound"]
+        entry["bound_from"] = case.get("bound_from")
+    if verdict in ABORT_VERDICTS:
+        kind = case.get("badness")
+        if kind == "nil":
+            entry["guards"] = ['Bounds.nonNull({p}, "%s");' % case["selector"]]
+        elif kind == "nan":
+            entry["guards"] = ['Bounds.notNaN({p}, "%s");' % case["selector"]]
+        elif kind == "index" and case.get("bound"):
+            entry["guards"] = ['Bounds.index({p}, %s, "%s");' % (case["bound"], case["selector"])]
+        else:
+            entry["needs_local_guard"] = "the corpus does not bound this index"
+            entry["guards"] = []
+    elif verdict == "tolerated":
+        entry["control"] = "the unguarded call survived, so no guard is emitted"
+        entry["guards"] = []
+    else:
+        return None                     # already fails safely in Java
+    return entry
+
+
+def merge_entries(path, entries):
+    """Fold entries into an evidence file, adding new ones and upgrading guardless duplicates."""
+    existing = json.load(open(path)) if os.path.exists(path) else {"cases": []}
+    cases = existing.get("cases", [])
+    by_key = {(c.get("class"), c.get("selector"), c.get("param"), c.get("unguarded")): i
+              for i, c in enumerate(cases)}
+    added = replaced = 0
+    for e in entries:
+        key = (e["class"], e["selector"], e.get("param"), e.get("unguarded"))
+        i = by_key.get(key)
+        if i is None:
+            by_key[key] = len(cases)
+            cases.append(e)
+            added += 1
+        elif e.get("guards") and not cases[i].get("guards"):
+            cases[i] = e
+            replaced += 1
+    existing["cases"] = cases
+    json.dump(existing, open(path, "w"), indent=2)
+    return added, replaced, len(cases)
+
+
 def _differential_slice(repo, args, classes):
     """The buckets for one slice of classes; None when a measurement could not be taken."""
     cases = enumerate_cases(classes, args.frameworks)
@@ -731,7 +806,7 @@ def _differential_slice(repo, args, classes):
     buckets = defaultdict(list)
     for r in shipped:
         g = by_id.get(r["id"])
-        if g is None:
+        if g is None or r["id"].endswith(".__baseline"):
             continue
         s_v, g_v = r["verdict"], g["verdict"]
         if s_v == "tolerated" and g_v != "tolerated":
@@ -747,6 +822,14 @@ def _differential_slice(repo, args, classes):
                 buckets["fixed"].append((r["id"], s_v, g_v))
         else:
             buckets["unchanged-tolerated"].append((r["id"], s_v, g_v))
+    if getattr(args, "merge_evidence", None):
+        # Feed every case this slice measured from its guard-free build back into the evidence, so
+        # the next generator run acts on it instead of the difference surviving in reports only.
+        case_by_id = {c["id"]: c for c in cases}
+        entries = [e for e in (case_entry(case_by_id[r["id"]], r["verdict"]) for r in bare
+                               if r["id"] in case_by_id) if e]
+        added, replaced, total = merge_entries(args.merge_evidence, entries)
+        print("   evidence: +%d, upgraded %d (%d total)" % (added, replaced, total))
     return buckets
 
 
@@ -823,34 +906,15 @@ def enumerate_measure(repo, args):
             continue
         if r["verdict"] == "no-receiver":
             continue
-        entry = {"class": case["class"], "selector": case["selector"], "param": case["param"],
-                 "param_index": case["param_index"], "probe_id": case["id"],
-                 "badness": case.get("badness"), "unguarded": r["verdict"]}
-        for field in ("bound", "bound_from"):
-            if case.get(field):
-                entry[field] = case[field]
-        if r["verdict"] in ("objc-abort", "sigtrap", "sigill"):
-            if case["badness"] == "nil":
-                entry["guards"] = ['Bounds.nonNull({p}, "%s");' % case["selector"]]
-            elif case["badness"] == "nan":
-                entry["guards"] = ['Bounds.notNaN({p}, "%s");' % case["selector"]]
-            elif case.get("bound"):
-                if case.get("bound_setup"):
-                    entry["setup"] = [case["bound_setup"]]
-                entry["guards"] = ['Bounds.index({p}, %s, "%s");' % (case["bound"],
-                                                                    case["selector"])]
+        entry = case_entry(case, r["verdict"])
+        if entry is None:
+            if args.record_all:
+                entry = {"class": case["class"], "selector": case["selector"],
+                         "param": case["param"], "param_index": case.get("param_index"),
+                         "probe_id": case["id"], "badness": case.get("badness"),
+                         "unguarded": r["verdict"], "guards": [], "verification": True}
             else:
-                entry["needs_local_guard"] = ("no count accessor on this class to bound the index; "
-                                              "supply the guard statement in the evidence")
-                entry["guards"] = []
-        elif r["verdict"] == "tolerated":
-            entry["control"] = "the unguarded call survived, so no guard is emitted"
-            entry["guards"] = []
-        elif args.record_all:
-            entry["guards"] = []
-            entry["verification"] = True      # measured safe; not evidence to emit from
-        else:
-            continue          # already fails safely in Java; nothing to record or emit
+                continue      # already fails safely in Java; nothing to record or emit
         entries.append(entry)
     print("\nmeasured: %s" % ", ".join("%s=%d" % kv for kv in sorted(counts.items())))
     path = args.out or os.path.join(REPO, "codegen", "guard-evidence.json")
@@ -895,6 +959,10 @@ def main():
                     help="measure the derived candidates against the SHIPPED tree and record each "
                          "case's verdict there, so a generated-aborts/shipped-tolerates pair is "
                          "visible instead of being reported as a flaw in the shipped wrapper")
+    ap.add_argument("--merge-evidence", metavar="PATH",
+                    help="with --differential: fold every case measured from the guard-free build "
+                         "into this evidence file, so the difference is acted on rather than only "
+                         "reported")
     ap.add_argument("--slice", type=int, default=20,
                     help="with --differential: classes per slice (20 measured to work; 73 does not)")
     ap.add_argument("--differential", action="store_true",

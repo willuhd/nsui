@@ -2390,6 +2390,52 @@ public final class AuditRegressionTest {
             TestKit.check(false, "buffer-options block threw: " + t);
         }
 
+        // --- 8bp. moveRowAtIndex: the strict destination bound is PROVEN, not asserted ---
+        // The wrapper rejects destinations >= numberOfRows(). Native does not raise for them, so the
+        // strictness needs evidence: measured raw (guard bypassed), a 3-row view-based table with
+        // its row views materialized leaks an NSTableRowView for every such call — 3,4,4,4 for
+        // target 3 (== count), 3,4,5,5 for target 4, 3,4,5,6 for 50/-1 — while valid targets keep it
+        // at 3. That is the leak this bound prevents, and it is why `count` is rejected as well.
+        try {
+            java.lang.invoke.MethodHandle rawMove = ObjC.handle(
+                    nsui.objc.Sig.of(nsui.objc.Sig.Ret.VOID, nsui.objc.Sig.Arg.INT, nsui.objc.Sig.Arg.INT));
+            MemorySegment moveSel = ObjC.sel("moveRowAtIndex:toIndex:");
+            for (long target : new long[] {2L, 3L, 4L, 50L, -1L}) {
+                MemorySegment leakDs = DelegateProxy.delegate("NSObject", "NSUIMoveLeakDS" + target,
+                        java.util.Map.of(), java.util.Map.of(),
+                        java.util.Map.of("numberOfRowsInTableView:", s2 -> 3L),
+                        java.util.Map.of("tableView:viewForTableColumn:row:",
+                                (t2, c2, r2) -> NSView.create(new NSRect(0, 0, 10, 10), (v, d) -> {}).peer()),
+                        java.util.Map.of(), java.util.Map.of(), java.util.Map.of());
+                nsui.NSTableView lt = nsui.NSTableView.create(new NSRect(0, 0, 200, 120));
+                lt.addTableColumn(nsui.NSTableColumn.create("c"));
+                lt.setDataSource(leakDs);
+                lt.setDelegate(leakDs);
+                lt.reloadData();
+                lt.rowViewAtRow(0, true);            // materialize before measuring
+                lt.layoutSubtreeIfNeeded();
+                long before = tableSubviews(lt);
+                rawMove.invokeExact(lt.peer(), moveSel, 0L, target);
+                lt.layoutSubtreeIfNeeded();
+                long after = tableSubviews(lt);
+                if (target == 2L) {
+                    TestKit.check(before == 3 && after == 3,
+                            "a VALID moveRow destination keeps the row-view count stable ("
+                                    + before + "->" + after + ")");
+                    TestKit.noThrow("the wrapper still accepts the valid destination 2",
+                            () -> lt.moveRowAtIndex(0, 2L));
+                } else {
+                    TestKit.check(after > before,
+                            "an out-of-range destination leaks a row view (target " + target + ": "
+                                    + before + "->" + after + ") — which is what the guard prevents");
+                    TestKit.expectThrows("the wrapper rejects the leaking destination " + target,
+                            IllegalArgumentException.class, () -> lt.moveRowAtIndex(0, target));
+                }
+            }
+        } catch (Throwable t) {
+            TestKit.check(false, "moveRow leak block threw: " + t);
+        }
+
         // --- 8z. type-confusion guards on the raw collection-view setters ---
         // AppKit does NOT raise a type error here, it either asserts isKindOfClass: or
         // messages the object: setCollectionViewLayout: with a plain NSView raised
@@ -2477,4 +2523,10 @@ public final class AuditRegressionTest {
 
         TestKit.end();
     }
+    /// Row-view count of a table — the state signal `moveRowAtIndex:toIndex:` can corrupt.
+    private static long tableSubviews(nsui.NSTableView t) {
+        MemorySegment arr = ObjC.msgSendId(t.peer(), ObjC.sel("subviews"));
+        return arr == null || arr.address() == 0 ? -1 : ObjC.msgSendLong(arr, ObjC.sel("count"));
+    }
+
 }

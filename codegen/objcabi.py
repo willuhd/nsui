@@ -75,6 +75,36 @@ def parse_one(e, i):
     return c, i + 1
 
 
+def parse_one_raw(e, i):
+    """parse_one, but a pointer stays a pointer: `^d`, `^@`, `^{_NSRange=QQ}`.
+
+    The ABI fold treats an object and a pointer alike (both one machine word), which is correct for
+    the call and wrong for deciding whether a parameter is an out slot.
+    """
+    n = len(e)
+    while i < n and (e[i] in QUAL or e[i].isdigit() or e[i] in "+-"):
+        i += 1
+    if i >= n:
+        return None, i
+    if e[i] == "^":
+        _, j = parse_one_raw(e, i + 1)
+        return e[i:j], j
+    return parse_one(e, i)
+
+
+def parse_types_raw(e):
+    """Raw token stream: scalars as written, pointers as `^…`, objects as ID/BLOCK."""
+    out = []
+    i = 0
+    while i < len(e):
+        t, j = parse_one_raw(e, i)
+        if t is None or j <= i:
+            break
+        out.append(t)
+        i = j
+    return out
+
+
 def parse_types(e):
     out = []
     i = 0
@@ -267,6 +297,16 @@ class ObjCRuntime:
         self.libobjc = ctypes.CDLL("/usr/lib/libobjc.A.dylib")
         self.libobjc.objc_getClass.restype = ctypes.c_void_p
         self.libobjc.objc_getClass.argtypes = [ctypes.c_char_p]
+        # Every pointer-returning libobjc call needs an explicit restype: ctypes assumes c_int,
+        # which truncates a 64-bit pointer and segfaults the moment it is dereferenced.
+        self.libobjc.objc_getProtocol.restype = ctypes.c_void_p
+        self.libobjc.objc_getProtocol.argtypes = [ctypes.c_char_p]
+        self.libobjc.objc_getClassList.restype = ctypes.c_int
+        self.libobjc.objc_getClassList.argtypes = [ctypes.c_void_p, ctypes.c_int]
+        self.libobjc.class_conformsToProtocol.restype = ctypes.c_bool
+        self.libobjc.class_conformsToProtocol.argtypes = [ctypes.c_void_p, ctypes.c_void_p]
+        self.libobjc.class_getName.restype = ctypes.c_char_p
+        self.libobjc.class_getName.argtypes = [ctypes.c_void_p]
         self.libobjc.sel_registerName.restype = ctypes.c_void_p
         self.libobjc.sel_registerName.argtypes = [ctypes.c_char_p]
         self.libobjc.class_getInstanceMethod.restype = ctypes.c_void_p
@@ -282,6 +322,7 @@ class ObjCRuntime:
         self.libobjc.objc_msgSend.argtypes = [ctypes.c_void_p, ctypes.c_void_p]
         self._sel_alloc = self.libobjc.sel_registerName(b"alloc")
         self._concrete_cache = {}
+        self._protocol_cache = {}
         self._instances = []            # keeps realized instances alive (never -init)
         self.realize_opt_out = set(REALIZE_OPT_OUT)
         self.loaded = {}
@@ -302,13 +343,45 @@ class ObjCRuntime:
     def get_class(self, name):
         return self.libobjc.objc_getClass(name.encode("utf-8"))
 
+    def protocol_conforming_classes(self, name):
+        """Every loaded class that conforms to the protocol `name` (cached).
+
+        A protocol can have many implementations and they do not all implement every selector
+        (the class that answers first in the runtime's class list may be a stub), so resolution
+        walks them. Classes whose name contains the protocol's are tried first, which lands on
+        MTLToolsTexture for MTLTexture rather than an unrelated conformer.
+        """
+        if name in self._protocol_cache:
+            return self._protocol_cache[name]
+        out = []
+        proto = self.libobjc.objc_getProtocol(name.encode("utf-8"))
+        if proto:
+            total = self.libobjc.objc_getClassList(None, 0)
+            if total > 0:
+                buf = (ctypes.c_void_p * total)()
+                n = self.libobjc.objc_getClassList(buf, total)
+                for i in range(n):
+                    cls = buf[i]
+                    if cls and self.libobjc.class_conformsToProtocol(cls, proto):
+                        out.append(cls)
+            named = [(self.class_name(c), c) for c in out]
+            named.sort(key=lambda t: (name not in t[0], len(t[0]), t[0]))
+            out = [c for _n, c in named]
+        out = tuple(out)
+        self._protocol_cache[name] = out
+        return out
+
+    def class_name(self, cls):
+        n = self.libobjc.class_getName(cls)
+        return n.decode("utf-8", "replace") if n else ""
+
     def _lookup(self, cls, sel, want_class=None):
-        """(method, 'inst'|'class') for cls, or (None, _). class_get*Method walks
-        the superclass chain, so a concrete subclass also reports inherited methods.
+        """(method, 'inst'|'class') for cls, or (None, _). class_get*Method walks the superclass
+        chain, so a concrete subclass also reports inherited methods.
 
         `want_class` is the side the header declared. Both sides can exist for the same selector
-        (NSBundle declares +pathForResource:ofType:inDirectory: and a private -pathForResource:...),
-        and asking the instance side first made the generator drop 19 declared class methods as
+        (NSBundle declares +pathForResource:ofType:inDirectory: and a private instance method), and
+        asking the instance side first made the generator drop 19 declared class methods as
         "runtime has only inst". The declared side wins; the other is the fallback.
         """
         if want_class:
@@ -356,15 +429,23 @@ class ObjCRuntime:
     def encoding(self, cls_name, selector, want_class=None):
         """(encoding_string, 'inst'|'class') or (None, reason)."""
         cls = self.get_class(cls_name)
-        if not cls:
-            return None, "no-class"
         sel = self.libobjc.sel_registerName(selector.encode("utf-8"))
-        m, kind = self._lookup(cls, sel, want_class)
-        if not m:
-            # Only a miss reaches the realization, so no existing resolution changes.
-            concrete = self._concrete(cls_name)
-            if concrete and concrete != cls:
-                m, kind = self._lookup(concrete, sel, want_class)
+        if cls:
+            m, kind = self._lookup(cls, sel, want_class)
+            if not m:
+                # Only a miss reaches the realization, so no existing resolution changes.
+                concrete = self._concrete(cls_name)
+                if concrete and concrete != cls:
+                    m, kind = self._lookup(concrete, sel, want_class)
+        else:
+            # Not a class: a protocol-backed wrapper. Resolve on an implementation of it.
+            m, kind = None, None
+            for cand in self.protocol_conforming_classes(cls_name):
+                m, kind = self._lookup(cand, sel, want_class)
+                if m:
+                    break
+            if not m and not self.protocol_conforming_classes(cls_name):
+                return None, "no-class"
         if not m:
             return None, "no-method"
         enc = self.libobjc.method_getTypeEncoding(m)

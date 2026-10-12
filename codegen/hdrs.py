@@ -164,7 +164,7 @@ class Param:
 
 class Interface:
     __slots__ = ("kind", "name", "superclass", "category", "protocols", "file",
-                 "line", "decls", "body")
+                 "line", "decls", "body", "unparsed")
 
     def __init__(self, kind, name, superclass, category, protocols, file, line, body):
         self.kind = kind              # interface | protocol | category
@@ -176,6 +176,7 @@ class Interface:
         self.line = line
         self.body = body
         self.decls = []
+        self.unparsed = []          # statements no branch claimed; reported rather than dropped
 
 
 # ------------------------------------------------------------------ text level
@@ -577,7 +578,21 @@ def _parse_body(iface, clean, body_start, file):
                    s).strip()
         if not s:
             continue
+        # A preprocessor line is not a declaration and has no `;`, so `#pragma mark -` merged with
+        # the method after it and the pair was dropped. Strip directives before deciding.
+        if "#" in s:
+            s = "\n".join(ln for ln in s.splitlines() if not ln.lstrip().startswith("#")).strip()
+        if not s:
+            continue
         line = _line_of(clean, body_start + iface.body.find(stmt))
+        # An instance-variable block starts with `{` and `split_statements` cannot end a statement
+        # on it, so the block ran into the NEXT declaration and the combined text matched no branch:
+        # NSDatePicker's datePickerStyle() and NSPrintOperation's +printOperationWithView:printInfo:
+        # vanished with the class still reporting "0 skipped". Drop the block, keep the remainder.
+        while s.startswith("{"):
+            s = s[match_balanced(s, 0):].strip().lstrip(";").strip()
+        if not s:
+            continue
         if s.startswith("@property"):
             decls, _ = parse_property(s, iface.name, file, line, iface.name)
             iface.decls.extend(decls)
@@ -586,6 +601,8 @@ def _parse_body(iface, clean, body_start, file):
                              in_protocol=iface.kind == "protocol")
             if d:
                 iface.decls.append(d)
+        else:
+            iface.unparsed.append(" ".join(s.split())[:120])
 
 
 def parse_file(path):

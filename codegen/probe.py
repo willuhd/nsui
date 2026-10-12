@@ -374,10 +374,26 @@ def generated_shadow(repo, classes, use_evidence=True):
              if os.path.exists(os.path.join(scratch, "src", "nsui", c + ".java"))]
     if not files:
         return None, None, None
-    p = subprocess.run([JAVAC, "-cp", "%s:%s" % (SVM_JAR, shipped_classes), "-d", shadow] + files,
-                       capture_output=True, text=True)
-    if p.returncode != 0:
-        sys.stderr.write("generated classes did not compile:\n" + (p.stdout + p.stderr)[-1500:])
+    # Compile the generated classes one at a time. A batch fails whenever two of them reference each
+    # other in a way the shipped versions satisfied and the regenerated ones do not (a regenerated
+    # file does not carry the hand-written members its siblings call), and one such pair used to
+    # cost the whole slice its guarded measurement. A class that does not compile is removed from
+    # the scratch, so the candidate filter drops its cases and nothing references it.
+    failed = []
+    for path in files:
+        p = subprocess.run([JAVAC, "-cp", "%s:%s:%s" % (SVM_JAR, shipped_classes, shadow),
+                            "-d", shadow, path], capture_output=True, text=True)
+        if p.returncode != 0:
+            failed.append(os.path.basename(path)[:-5])
+            try:
+                os.remove(path)
+            except OSError:
+                pass
+    if failed:
+        print("probe: %d generated class(es) did not compile and were left shipped: %s"
+              % (len(failed), ", ".join(sorted(failed))[:120]))
+    if not os.listdir(shadow):
+        sys.stderr.write("probe: no generated class compiled\n")
         return None, None, None
     return shadow, shipped_classes, scratch
 

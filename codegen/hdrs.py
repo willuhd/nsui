@@ -362,7 +362,12 @@ def parse_method(stmt, owner, is_class, file, line, declared_in, in_protocol=Fal
         while k < n and rest[k].isspace():
             k += 1
         if k >= n or rest[k] != ":":
-            labels.append(label)          # zero-argument selector
+            # A label after a completed parameter list cannot be a zero-argument selector: only an
+            # attribute can sit there, and the SDK uses macros this list does not know
+            # (`… NS_SWIFT_UNAVAILABLE_FROM_ASYNC("x")`), which otherwise became part of the
+            # selector and made 54 real methods look absent from the runtime.
+            if not labels:
+                labels.append(label)      # a genuine zero-argument selector, e.g. `- (void)foo`
             break
         k += 1
         while k < n and rest[k].isspace():

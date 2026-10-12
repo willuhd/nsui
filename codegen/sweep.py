@@ -87,16 +87,16 @@ def is_generated(path):
         return False
 
 
-def generate(snap, classes, frameworks, batch=30):
+def generate(snap, classes, frameworks, batch=30, tag="sweep"):
     """Run the generator over the classes, in batches, collecting its summary lines."""
     lines = []
     rc_all = 0
     for i in range(0, len(classes), batch):
         chunk = classes[i:i + batch]
         cmd = [sys.executable, os.path.join(HERE, "gen.py"), "--repo", snap, "--apply",
-               "--patch-out", os.path.join(bench.REPORTS, "sweep.patch"),
-               "--summary-out", os.path.join(bench.REPORTS, "sweep-summary.txt"),
-               "--scratch", os.path.join(bench.WORK, "sweep-scratch")]
+               "--patch-out", os.path.join(bench.REPORTS, tag + ".patch"),
+               "--summary-out", os.path.join(bench.REPORTS, tag + "-summary.txt"),
+               "--scratch", os.path.join(bench.WORK, tag + "-scratch")]
         for c in chunk:
             cmd += ["--class", c]
         for f in frameworks:
@@ -144,16 +144,32 @@ def compile_snapshot(snap, include_gate):
 
 
 def run_gate(snap):
+    """Run the snapshot's own signature gate against the snapshot's compiled classes.
+
+    The gate reads Path.of("src", "nsui") relative to the process CWD, so it must run with the
+    snapshot as the working directory: from anywhere else it silently scanned the live tree and
+    every verdict it printed was about today's sources (the sweep audit caught this). A gate that
+    prints no verdict, or that ran zero assertions, is a failure, not a pass.
+    """
     out = os.path.join(bench.WORK, "sweep-classes")
     if not os.path.exists(os.path.join(out, "nsui", "tests", "SignatureConformanceTest.class")):
         return None
     p = subprocess.run([JAVA, "-XstartOnFirstThread", "--enable-native-access=ALL-UNNAMED",
                         "-cp", out, "nsui.tests.SignatureConformanceTest"],
-                       capture_output=True, text=True)
+                       capture_output=True, text=True, cwd=snap)
     text = p.stdout + p.stderr
     mismatches = [ln.strip() for ln in text.splitlines() if "MISMATCH" in ln]
     result = [ln.strip() for ln in text.splitlines() if ln.startswith("RESULT")]
-    return {"rc": p.returncode, "mismatches": mismatches, "result": result[-1] if result else "?"}
+    passed = re.search(r"PASSED:\s*(\d+)", text)
+    failed = re.search(r"FAILED:\s*(\d+)", text)
+    verdict = "no-verdict"
+    if passed and failed:
+        verdict = "PASS" if int(passed.group(1)) >= 1 and int(failed.group(1)) == 0 else "FAIL"
+    elif result:
+        verdict = "PASS" if "ALL PASS" in result[-1] else "FAIL"
+    return {"rc": p.returncode, "mismatches": mismatches,
+            "result": result[-1] if result else "no RESULT line", "verdict": verdict,
+            "tail": [ln for ln in text.splitlines() if ln.startswith(("FAIL", "PASS:", "RESULT"))][-10:]}
 
 
 def main():
@@ -195,7 +211,8 @@ def main():
 
     print("=== sweep %s (%s) ===" % (commit[:12], "vocab injected" if args.inject_vocab else "tree vocabulary"))
     print("missing wrappers at this commit: %d  generating: %d" % (len(classes_missing_at(snap)), len(classes)))
-    gen_rc, summary = generate(snap, classes, args.frameworks)
+    gen_rc, summary = generate(snap, classes, args.frameworks,
+                               tag="sweep-" + commit[:12])
     generated = sum(1 for ln in summary if ln.startswith("class "))
     skips = skip_histogram(summary)
     print("generator rc=%s  classes generated=%d  skip reasons=%d distinct" % (gen_rc, generated, len(skips)))
@@ -212,7 +229,10 @@ def main():
         print("   pre  %-46s %d" % (path, n))
     gate = run_gate(snap) if args.gate else None
     if gate:
-        print("gate rc=%s  %s  mismatches=%d" % (gate["rc"], gate["result"], len(gate["mismatches"])))
+        print("gate rc=%s  verdict=%s  %s  mismatches=%d"
+              % (gate["rc"], gate["verdict"], gate["result"], len(gate["mismatches"])))
+        for ln in gate.get("tail", []):
+            print("   " + ln[:120])
         for m in gate["mismatches"][:5]:
             print("   " + m[:120])
 
@@ -229,6 +249,10 @@ def main():
                    "skips": skips.most_common(), "gate": gate},
                   open(args.json, "w"), indent=2, sort_keys=True)
         print("wrote " + args.json)
+    if sum(gen_errors.values()):
+        return 1
+    if gate and gate["verdict"] not in ("PASS",):
+        return 1
     return 0
 
 

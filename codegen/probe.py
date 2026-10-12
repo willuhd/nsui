@@ -8,13 +8,21 @@ carries no nullability annotation and NSViewController.h has no NS_ASSUME_NONNUL
 measured here, one child process per case, and recorded as evidence the generator consumes.
 
   python3 codegen/probe.py --repo . --out codegen/guard-evidence.json
-  python3 codegen/probe.py --repo /tmp/generated --baseline codegen/guard-evidence.json
+  python3 codegen/probe.py --enumerate <classes> --shipped-baseline codegen/shipped-baseline.json
+  python3 codegen/probe.py --enumerate <classes> --differential --out /tmp/diff.json
+
+`--differential` measures each case three ways — against the shipped tree, against the generated
+tree with the guard evidence, and against the generated tree without it — so a rejection can be
+attributed. A guard is over-rejecting only when the shipped wrapper tolerates the call AND the
+generated wrapper rejects it only because of the evidence (STRICTER-GUARD); when the guard-free
+build rejects it too, the difference is in the generated body (STRICTER-BODY).
 
 Exit codes are read directly: 0 tolerated, 1 a Java exception (a guard fired), 134 uncaught ObjC
 exception, 133 SIGTRAP (NaN geometry), 132 SIGILL (self/ancestor cycle).
 """
 
 import argparse
+from collections import defaultdict
 import json
 import os
 import re
@@ -325,7 +333,7 @@ def _cases_for_class(cls, plans, wrappers, recv_expr, ancestors=None, skip_cases
     return out
 
 
-def generated_shadow(repo, classes):
+def generated_shadow(repo, classes, use_evidence=True):
     """Generate `classes` into a scratch copy and compile only those files into a shadow dir.
 
     The generated files are compiled against the shipped tree's classes and prepended to the
@@ -347,6 +355,10 @@ def generated_shadow(repo, classes):
         cmd += ["--class", c]
     for fw in ("AppKit", "Foundation", "QuartzCore", "Metal"):
         cmd += ["--framework", fw]
+    if not use_evidence:
+        # The recorded `unguarded` verdict only reproduces when the shadow really is unguarded: the
+        # documented run re-emitted the guard from the same evidence and so could never falsify it.
+        cmd += ["--guard-evidence", os.path.join(scratch, "no-evidence.json")]   # absent by design
     r = subprocess.run(cmd, capture_output=True, text=True)
     if r.returncode != 0:
         sys.stderr.write("generation failed:\n" + (r.stdout + r.stderr)[-1500:])
@@ -525,6 +537,8 @@ def build_probe(repo, cases, shadow=None, shipped=None, generated=False, chunk=1
         classes = "%s:%s" % (shadow, classes)
     for cls in ([] if shadow else {c["class"] for c in cases}):
         path = os.path.join(repo, "src", "nsui", cls + ".java")
+        if not os.path.exists(path):
+            continue                       # a class the tree does not have: nothing to extend
         text = open(path, encoding="utf-8", errors="replace").read()
         if "static " + cls + " create(" in text:
             continue
@@ -542,7 +556,7 @@ def build_probe(repo, cases, shadow=None, shipped=None, generated=False, chunk=1
     out = os.path.join(work, "out")
     os.makedirs(out, exist_ok=True)
     dropped = 0
-    for _attempt in range(6):
+    for _attempt in range(12):
         sources, mapping, layout = [base], [], []
         for ci in range(0, len(cases), chunk):
             group = cases[ci:ci + chunk]
@@ -577,7 +591,9 @@ def build_probe(repo, cases, shadow=None, shipped=None, generated=False, chunk=1
         dropped += len(bad)
         cases = [c for i, c in enumerate(cases) if i not in bad]
         if not cases:
+            sys.stderr.write("probe: no candidate survived the compile\n")
             return None, None, None, None
+    sys.stderr.write("probe: gave up after dropping candidates that do not compile\n")
     return None, None, None, None
 
 
@@ -613,10 +629,10 @@ def filter_cases(cases, scratch):
     return out
 
 
-def run_cases(repo, cases, timeout=25, generated=None):
+def run_cases(repo, cases, timeout=25, generated=None, use_evidence=True):
     shadow = shipped = None
     if generated:
-        shadow, shipped, scratch = generated_shadow(repo, generated)
+        shadow, shipped, scratch = generated_shadow(repo, generated, use_evidence=use_evidence)
         if shadow is None:
             return None
         cases = filter_cases(cases, scratch)
@@ -677,6 +693,83 @@ def merge_evidence(src, path):
     return 0
 
 
+STRICTER = ("objc-abort", "sigtrap", "sigill")
+
+
+def differential(repo, args):
+    """Measure the same cases against the shipped tree and the guarded generated tree.
+
+    This is the check that distinguishes a working guard from a guard that rejects valid input:
+    both raise a Java exception, but only the shipped tree knows which arguments the API accepts.
+    A generated wrapper that rejects something the shipped wrapper tolerates is stricter than the
+    code it replaces, and one that still aborts was not guarded at all.
+    """
+    classes = args.enumerate or []
+    if not classes:
+        print("--differential needs at least one class")
+        return 2
+    cases = enumerate_cases(classes, args.frameworks)
+    # The shipped tree only has the classes it has, so validate the candidates against it first:
+    # a call to a class that is not there cannot be compiled, let alone measured.
+    shipped_cases = filter_cases(cases, repo)
+    if not shipped_cases:
+        print("no candidate exists in the shipped tree")
+        return 2
+    shipped = run_cases(repo, shipped_cases, timeout=args.timeout)
+    if shipped is None:
+        print("the shipped measurement could not be taken (see the probe diagnostics above)")
+        return 2
+    generated = run_cases(repo, cases, timeout=args.timeout, generated=classes)
+    if generated is None:
+        return 2
+    # A third measurement of the same classes generated WITHOUT the evidence separates a guard's
+    # doing from the body's: the generated body wraps a failed send in a Java exception, which is
+    # not the same as a guard rejecting an argument. It measures exactly the cases that survived
+    # the guarded run, so the three verdicts are always for the same call.
+    print("generated (guarded): %d case(s) measured" % len(generated))
+    measured_ids = {r["id"] for r in generated}
+    bare = run_cases(repo, [c for c in cases if c["id"] in measured_ids], timeout=args.timeout,
+                     generated=classes, use_evidence=False)
+    if bare is None:
+        print("the guard-free measurement could not be taken; the split needs all three")
+        return 2
+    by_id = {r["id"]: r for r in generated}
+    bare_by_id = {r["id"]: r for r in bare}
+    buckets = defaultdict(list)
+    for r in shipped:
+        g = by_id.get(r["id"])
+        if g is None:
+            continue
+        s_v, g_v = r["verdict"], g["verdict"]
+        if s_v == "tolerated" and g_v != "tolerated":
+            b = bare_by_id.get(r["id"], {}).get("verdict")
+            buckets["STRICTER-GUARD" if b == "tolerated" else "STRICTER-BODY"].append(
+                (r["id"], s_v, g_v))
+        elif s_v in STRICTER and g_v in STRICTER:
+            buckets["STILL-ABORTS"].append((r["id"], s_v, g_v))
+        elif s_v in STRICTER or s_v == "java-exception":
+            if g_v == "tolerated":
+                buckets["LOOSER"].append((r["id"], s_v, g_v))
+            else:
+                buckets["fixed"].append((r["id"], s_v, g_v))
+        else:
+            buckets["unchanged-tolerated"].append((r["id"], s_v, g_v))
+    for name in ("fixed", "unchanged-tolerated", "STRICTER-GUARD", "STRICTER-BODY",
+                 "STILL-ABORTS", "LOOSER"):
+        items = buckets.get(name, [])
+        print("%-22s %4d" % (name, len(items)))
+    # Only a guard that over-rejects and a case that still aborts are defects. STRICTER-BODY and
+    # LOOSER are conformance differences in the generated body, reported but not failures.
+    bad = len(buckets.get("STRICTER-GUARD", [])) + len(buckets.get("STILL-ABORTS", []))
+    for name in ("STRICTER-GUARD", "STRICTER-BODY", "STILL-ABORTS", "LOOSER"):
+        for cid, s_v, g_v in buckets.get(name, [])[:12]:
+            print("   %-14s %-56s shipped=%-13s generated=%s" % (name, cid, s_v, g_v))
+    if args.out:
+        json.dump({k: v for k, v in buckets.items()}, open(args.out, "w"), indent=2)
+        print("wrote " + args.out)
+    return 1 if bad else 0
+
+
 def enumerate_measure(repo, args):
     """Measure derived candidates and record the aborts as evidence the generator can use."""
     classes = args.enumerate or []
@@ -685,7 +778,8 @@ def enumerate_measure(repo, args):
         return 2
     cases = enumerate_cases(classes, args.frameworks)
     print("candidates: %d over %d class(es)" % (len(cases), len(classes)))
-    results = run_cases(repo, cases, timeout=args.timeout, generated=classes)
+    results = run_cases(repo, cases, timeout=args.timeout, generated=classes,
+                        use_evidence=not args.no_evidence)
     if results is None:
         return 2
     # Match by id, never by position: run_cases drops candidates that do not compile, and zipping
@@ -779,6 +873,13 @@ def main():
                     help="measure the derived candidates against the SHIPPED tree and record each "
                          "case's verdict there, so a generated-aborts/shipped-tolerates pair is "
                          "visible instead of being reported as a flaw in the shipped wrapper")
+    ap.add_argument("--differential", action="store_true",
+                    help="with --enumerate: measure each case against the shipped tree AND the "
+                         "guarded generated tree, then report where the generated wrapper is "
+                         "stricter than the shipped one, still aborts, or has become looser")
+    ap.add_argument("--no-evidence", action="store_true",
+                    help="with --enumerate: generate the shadow WITHOUT the guard evidence, so a "
+                         "recorded unguarded verdict can be reproduced and falsified")
     ap.add_argument("--record-all", action="store_true",
                     help="with --enumerate: record every measured verdict, including calls that "
                          "already fail safely, so a verification run can classify all of them")
@@ -800,6 +901,8 @@ def main():
     repo = os.path.abspath(args.repo)
     if args.strip_guards is not None:
         repo = strip_guards(repo, args.strip_guards)
+    if args.differential:
+        return differential(repo, args)
     if args.shipped_baseline:
         cases = enumerate_cases(args.enumerate or [], args.frameworks)
         # the shipped class may not declare the generated name or arity, so validate here too

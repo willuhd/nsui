@@ -262,6 +262,24 @@ def check_rotating_verification():
           "; ".join(bad)[:150])
 
 
+def check_flaw_patch():
+    """The proposed guard patch must be emitted and apply cleanly to the current tree.
+
+    The tool never edits src/, so this is the check that its output is usable: a diff that does not
+    apply is worth nothing to the maintainer.
+    """
+    patch_path = os.path.join(bench.REPORTS, "selftest-guard.patch")
+    r = run([sys.executable, os.path.join(HERE, "flaws.py"), "--check", "F3", "--patch", patch_path])
+    if not os.path.exists(patch_path) or os.path.getsize(patch_path) == 0:
+        check("flaws: proposed guard patch emitted", False, (r.stdout + r.stderr)[-160:])
+        return
+    where = fresh_copy(os.path.join(bench.WORK, "selftest-patch"))
+    p = subprocess.run(["patch", "-p1", "--dry-run", "--quiet"], cwd=where,
+                       stdin=open(patch_path, "rb"), capture_output=True, text=True)
+    check("flaws: proposed guard patch applies cleanly", p.returncode == 0,
+          (p.stdout + p.stderr)[-140:].replace("\n", " "))
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--quick", action="store_true", help="skip the surface batch and history sweep")
@@ -275,6 +293,7 @@ def main():
         check_guards()
         check_enumerated_guards()
         check_rotating_verification()
+        check_flaw_patch()
         check_early_sweep()
     for n in notes:
         print("note: " + n)

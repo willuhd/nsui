@@ -241,7 +241,7 @@ def check_f3():
 
 
 def check_f6():
-    """Generated code that aborts where the shipped wrapper tolerates the same call.
+    """Generated code that guards an argument the shipped wrapper actually tolerates.
 
     This is a generator conformance gap, not a shipped flaw: the guard the generator adds rejects
     input the shipped API accepts, so the generated wrapper is stricter than the one it replaces.
@@ -254,8 +254,8 @@ def check_f6():
         if case.get("unguarded") not in ABORTS or not case.get("guards"):
             continue
         verdict = baseline.get(case.get("probe_id"))
-        if verdict is None or verdict in ABORTS:
-            continue
+        if verdict != "tolerated":
+            continue       # java-exception is not over-guarding: the shipped wrapper rejects too
         findings.append({"check": "F6", "class": case.get("class"), "selector": case.get("selector"),
                          "param": case.get("param"), "generated": case.get("unguarded"),
                          "shipped": verdict,

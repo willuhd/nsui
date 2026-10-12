@@ -1,0 +1,1846 @@
+{
+  "measured_with": "codegen/probe.py",
+  "how": "Each case was measured in its own child process against a tree whose guards were absent (a generated wrapper), and against the shipped tree. An unguarded call that aborts the process (SIGABRT 134 / SIGTRAP 133 / SIGILL 132) is evidence that the wrapper must reject the argument in Java instead. `guards` are the statements to emit, with {p} standing for the parameter's Java name; `setup` lines precede them. A case with no guards is a control: the unguarded call survives, so a guard there would reject input the shipped API accepts.",
+  "cases": [
+    {
+      "class": "NSViewController",
+      "selector": "addChildViewController:",
+      "param": "childViewController",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.nonNull({p}, \"addChildViewController:\");"
+      ],
+      "probe_id": "NSViewController.addChildViewController:null"
+    },
+    {
+      "class": "NSViewController",
+      "selector": "insertChildViewController:atIndex:",
+      "param": "index",
+      "unguarded": "objc-abort",
+      "setup": [
+        "NSArray __children = childViewControllers();"
+      ],
+      "guards": [
+        "Bounds.index({p}, __children == null ? 0 : __children.count(), \"insertChildViewController:atIndex:\");"
+      ],
+      "probe_id": "NSViewController.insertChildViewController:atIndex:5"
+    },
+    {
+      "class": "NSViewController",
+      "selector": "removeChildViewControllerAtIndex:",
+      "param": "index",
+      "unguarded": "objc-abort",
+      "setup": [
+        "NSArray __children = childViewControllers();"
+      ],
+      "guards": [
+        "Bounds.index({p}, __children == null ? 0 : __children.count(), \"removeChildViewControllerAtIndex:\");"
+      ],
+      "probe_id": "NSViewController.removeChildViewControllerAtIndex:0"
+    },
+    {
+      "class": "NSViewController",
+      "selector": "presentViewControllerAsSheet:",
+      "param": "viewController",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.nonNull({p}, \"presentViewControllerAsSheet:\");"
+      ],
+      "probe_id": "NSViewController.presentViewControllerAsSheet:null"
+    },
+    {
+      "class": "NSMenu",
+      "selector": "itemAtIndex:",
+      "param": "index",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.index({p}, numberOfItems(), \"itemAtIndex:\");"
+      ],
+      "probe_id": "NSMenu.itemAtIndex:3"
+    },
+    {
+      "class": "NSMenu",
+      "selector": "removeItem:",
+      "param": "item",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.nonNull({p}, \"removeItem:\");",
+        "if (indexOfItem({p}) < 0) {",
+        "    throw new IllegalArgumentException(\"removeItem: the item is not in this menu\");",
+        "}"
+      ],
+      "probe_id": "NSMenu.removeItem:foreign"
+    },
+    {
+      "class": "NSView",
+      "selector": "setFrame:",
+      "param": "frame",
+      "unguarded": "sigtrap",
+      "guards": [
+        "Bounds.notNaN({p}, \"setFrame:\");"
+      ],
+      "probe_id": "NSView.setFrame:NaN"
+    },
+    {
+      "class": "NSClipView",
+      "selector": "scrollToPoint:",
+      "param": "newOrigin",
+      "unguarded": "sigtrap",
+      "guards": [
+        "Bounds.notNaN({p}, \"scrollToPoint:\");"
+      ],
+      "param_index": 0,
+      "probe_id": "NSClipView.scrollToPoint:NaN"
+    },
+    {
+      "class": "NSView",
+      "selector": "addSubview:",
+      "param": "view",
+      "unguarded": "sigill",
+      "needs_local_guard": "the shipped wrapper uses a class-local requireNotSelfOrAncestor; Bounds has no cycle helper, so this case is reported rather than emitted",
+      "guards": [],
+      "probe_id": "NSView.addSubview:self"
+    },
+    {
+      "class": "NSView",
+      "selector": "addSubview:",
+      "param": "view",
+      "unguarded": "tolerated",
+      "control": "nil survives here in the unguarded tree (a different argument to the same selector), so no guard is emitted for nil",
+      "guards": [],
+      "probe_id": "NSView.addSubview:null"
+    },
+    {
+      "class": "NSMenu",
+      "selector": "setTitle:",
+      "param": "title",
+      "param_index": 0,
+      "probe_id": "NSMenu.setTitle.nil",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.nonNull({p}, \"setTitle:\");"
+      ]
+    },
+    {
+      "class": "NSMenu",
+      "selector": "popUpMenuPositioningItem:atLocation:inView:",
+      "param": "location",
+      "param_index": 1,
+      "probe_id": "NSMenu.popUpMenuPositioningItemAtLocationInView.nan",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSMenu",
+      "selector": "setSupermenu:",
+      "param": "supermenu",
+      "param_index": 0,
+      "probe_id": "NSMenu.setSupermenu.nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSMenu",
+      "selector": "insertItem:atIndex:",
+      "param": "newItem",
+      "param_index": 0,
+      "probe_id": "NSMenu.insertItemAtIndex.nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSMenu",
+      "selector": "addItem:",
+      "param": "newItem",
+      "param_index": 0,
+      "probe_id": "NSMenu.addItem.nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSMenu",
+      "selector": "removeItemAtIndex:",
+      "param": "index",
+      "param_index": 0,
+      "probe_id": "NSMenu.removeItemAtIndex.index",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.index({p}, numberOfItems(), \"removeItemAtIndex:\");"
+      ]
+    },
+    {
+      "class": "NSMenu",
+      "selector": "setItemArray:",
+      "param": "itemArray",
+      "param_index": 0,
+      "probe_id": "NSMenu.setItemArray.nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSMenu",
+      "selector": "indexOfItem:",
+      "param": "item",
+      "param_index": 0,
+      "probe_id": "NSMenu.indexOfItem.nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSMenu",
+      "selector": "indexOfItemWithTitle:",
+      "param": "title",
+      "param_index": 0,
+      "probe_id": "NSMenu.indexOfItemWithTitle.nil",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.nonNull({p}, \"indexOfItemWithTitle:\");"
+      ]
+    },
+    {
+      "class": "NSMenu",
+      "selector": "indexOfItemWithSubmenu:",
+      "param": "submenu",
+      "param_index": 0,
+      "probe_id": "NSMenu.indexOfItemWithSubmenu.nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSMenu",
+      "selector": "itemWithTitle:",
+      "param": "title",
+      "param_index": 0,
+      "probe_id": "NSMenu.itemWithTitle.nil",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.nonNull({p}, \"itemWithTitle:\");"
+      ]
+    },
+    {
+      "class": "NSMenu",
+      "selector": "performKeyEquivalent:",
+      "param": "event",
+      "param_index": 0,
+      "probe_id": "NSMenu.performKeyEquivalent.nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSMenu",
+      "selector": "itemChanged:",
+      "param": "item",
+      "param_index": 0,
+      "probe_id": "NSMenu.itemChanged.nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSMenu",
+      "selector": "performActionForItemAtIndex:",
+      "param": "index",
+      "param_index": 0,
+      "probe_id": "NSMenu.performActionForItemAtIndex.index",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSMenu",
+      "selector": "setFont:",
+      "param": "font",
+      "param_index": 0,
+      "probe_id": "NSMenu.setFont.nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSMenu",
+      "selector": "setSelectedItems:",
+      "param": "selectedItems",
+      "param_index": 0,
+      "probe_id": "NSMenu.setSelectedItems.nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSMenu",
+      "selector": "helpRequested:",
+      "param": "eventPtr",
+      "param_index": 0,
+      "probe_id": "NSMenu.helpRequested.nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSViewController",
+      "selector": "setTitle:",
+      "param": "title",
+      "param_index": 0,
+      "probe_id": "NSViewController.setTitle.nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSViewController",
+      "selector": "setView:",
+      "param": "view",
+      "param_index": 0,
+      "probe_id": "NSViewController.setView.nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSViewController",
+      "selector": "setPreferredContentSize:",
+      "param": "preferredContentSize",
+      "param_index": 0,
+      "probe_id": "NSViewController.setPreferredContentSize.nan",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSViewController",
+      "selector": "dismissViewController:",
+      "param": "viewController",
+      "param_index": 0,
+      "probe_id": "NSViewController.dismissViewController.nil",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.nonNull({p}, \"dismissViewController:\");"
+      ]
+    },
+    {
+      "class": "NSViewController",
+      "selector": "presentViewControllerAsModalWindow:",
+      "param": "viewController",
+      "param_index": 0,
+      "probe_id": "NSViewController.presentViewControllerAsModalWindow.nil",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.nonNull({p}, \"presentViewControllerAsModalWindow:\");"
+      ]
+    },
+    {
+      "class": "NSViewController",
+      "selector": "setChildViewControllers:",
+      "param": "childViewControllers",
+      "param_index": 0,
+      "probe_id": "NSViewController.setChildViewControllers.nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSViewController",
+      "selector": "preferredContentSizeDidChangeForViewController:",
+      "param": "viewController",
+      "param_index": 0,
+      "probe_id": "NSViewController.preferredContentSizeDidChangeForViewController.nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSViewController",
+      "selector": "viewWillTransitionToSize:",
+      "param": "newSize",
+      "param_index": 0,
+      "probe_id": "NSViewController.viewWillTransitionToSize.nan",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSViewController",
+      "selector": "setSourceItemView:",
+      "param": "sourceItemView",
+      "param_index": 0,
+      "probe_id": "NSViewController.setSourceItemView.nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSViewController",
+      "selector": "setPreferredScreenOrigin:",
+      "param": "preferredScreenOrigin",
+      "param_index": 0,
+      "probe_id": "NSViewController.setPreferredScreenOrigin.nan",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSView",
+      "selector": "setSubviews:",
+      "param": "subviews",
+      "param_index": 0,
+      "probe_id": "NSView.setSubviews.nil",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.nonNull({p}, \"setSubviews:\");"
+      ]
+    },
+    {
+      "class": "NSView",
+      "selector": "isDescendantOf:",
+      "param": "view",
+      "param_index": 0,
+      "probe_id": "NSView.isDescendantOf.nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSView",
+      "selector": "ancestorSharedWithView:",
+      "param": "view",
+      "param_index": 0,
+      "probe_id": "NSView.ancestorSharedWithView.nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSView",
+      "selector": "needsToDrawRect:",
+      "param": "rect",
+      "param_index": 0,
+      "probe_id": "NSView.needsToDrawRect.nan",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSView",
+      "selector": "viewWillMoveToWindow:",
+      "param": "newWindow",
+      "param_index": 0,
+      "probe_id": "NSView.viewWillMoveToWindow.nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSView",
+      "selector": "viewWillMoveToSuperview:",
+      "param": "newSuperview",
+      "param_index": 0,
+      "probe_id": "NSView.viewWillMoveToSuperview.nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSView",
+      "selector": "didAddSubview:",
+      "param": "subview",
+      "param_index": 0,
+      "probe_id": "NSView.didAddSubview.nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSView",
+      "selector": "willRemoveSubview:",
+      "param": "subview",
+      "param_index": 0,
+      "probe_id": "NSView.willRemoveSubview.nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSView",
+      "selector": "resizeSubviewsWithOldSize:",
+      "param": "oldSize",
+      "param_index": 0,
+      "probe_id": "NSView.resizeSubviewsWithOldSize.nan",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSView",
+      "selector": "resizeWithOldSuperviewSize:",
+      "param": "oldSize",
+      "param_index": 0,
+      "probe_id": "NSView.resizeWithOldSuperviewSize.nan",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSView",
+      "selector": "setFrameOrigin:",
+      "param": "newOrigin",
+      "param_index": 0,
+      "probe_id": "NSView.setFrameOrigin.nan",
+      "unguarded": "sigtrap",
+      "guards": [
+        "Bounds.notNaN({p}, \"setFrameOrigin:\");"
+      ]
+    },
+    {
+      "class": "NSView",
+      "selector": "setFrameSize:",
+      "param": "newSize",
+      "param_index": 0,
+      "probe_id": "NSView.setFrameSize.nan",
+      "unguarded": "sigtrap",
+      "guards": [
+        "Bounds.notNaN({p}, \"setFrameSize:\");"
+      ]
+    },
+    {
+      "class": "NSView",
+      "selector": "setBoundsOrigin:",
+      "param": "newOrigin",
+      "param_index": 0,
+      "probe_id": "NSView.setBoundsOrigin.nan",
+      "unguarded": "sigtrap",
+      "guards": [
+        "Bounds.notNaN({p}, \"setBoundsOrigin:\");"
+      ]
+    },
+    {
+      "class": "NSView",
+      "selector": "setBoundsSize:",
+      "param": "newSize",
+      "param_index": 0,
+      "probe_id": "NSView.setBoundsSize.nan",
+      "unguarded": "sigtrap",
+      "guards": [
+        "Bounds.notNaN({p}, \"setBoundsSize:\");"
+      ]
+    },
+    {
+      "class": "NSView",
+      "selector": "translateOriginToPoint:",
+      "param": "translation",
+      "param_index": 0,
+      "probe_id": "NSView.translateOriginToPoint.nan",
+      "unguarded": "sigtrap",
+      "guards": [
+        "Bounds.notNaN({p}, \"translateOriginToPoint:\");"
+      ]
+    },
+    {
+      "class": "NSView",
+      "selector": "scaleUnitSquareToSize:",
+      "param": "newUnitSize",
+      "param_index": 0,
+      "probe_id": "NSView.scaleUnitSquareToSize.nan",
+      "unguarded": "sigtrap",
+      "guards": [
+        "Bounds.notNaN({p}, \"scaleUnitSquareToSize:\");"
+      ]
+    },
+    {
+      "class": "NSView",
+      "selector": "setBounds:",
+      "param": "bounds",
+      "param_index": 0,
+      "probe_id": "NSView.setBounds.nan",
+      "unguarded": "sigtrap",
+      "guards": [
+        "Bounds.notNaN({p}, \"setBounds:\");"
+      ]
+    },
+    {
+      "class": "NSView",
+      "selector": "convertPoint:fromView:",
+      "param": "view",
+      "param_index": 1,
+      "probe_id": "NSView.convertPointFromView.nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSView",
+      "selector": "convertPoint:fromView:",
+      "param": "point",
+      "param_index": 0,
+      "probe_id": "NSView.convertPointFromView.nan",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSView",
+      "selector": "convertPoint:toView:",
+      "param": "view",
+      "param_index": 1,
+      "probe_id": "NSView.convertPointToView.nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSView",
+      "selector": "convertPoint:toView:",
+      "param": "point",
+      "param_index": 0,
+      "probe_id": "NSView.convertPointToView.nan",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSView",
+      "selector": "convertSize:fromView:",
+      "param": "view",
+      "param_index": 1,
+      "probe_id": "NSView.convertSizeFromView.nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSView",
+      "selector": "convertSize:fromView:",
+      "param": "size",
+      "param_index": 0,
+      "probe_id": "NSView.convertSizeFromView.nan",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSView",
+      "selector": "convertSize:toView:",
+      "param": "view",
+      "param_index": 1,
+      "probe_id": "NSView.convertSizeToView.nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSView",
+      "selector": "convertSize:toView:",
+      "param": "size",
+      "param_index": 0,
+      "probe_id": "NSView.convertSizeToView.nan",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSView",
+      "selector": "convertRect:fromView:",
+      "param": "view",
+      "param_index": 1,
+      "probe_id": "NSView.convertRectFromView.nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSView",
+      "selector": "convertRect:fromView:",
+      "param": "rect",
+      "param_index": 0,
+      "probe_id": "NSView.convertRectFromView.nan",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSView",
+      "selector": "convertRect:toView:",
+      "param": "view",
+      "param_index": 1,
+      "probe_id": "NSView.convertRectToView.nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSView",
+      "selector": "convertRect:toView:",
+      "param": "rect",
+      "param_index": 0,
+      "probe_id": "NSView.convertRectToView.nan",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSView",
+      "selector": "backingAlignedRect:options:",
+      "param": "rect",
+      "param_index": 0,
+      "probe_id": "NSView.backingAlignedRectOptions.nan",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.notNaN({p}, \"backingAlignedRect:options:\");"
+      ]
+    },
+    {
+      "class": "NSView",
+      "selector": "centerScanRect:",
+      "param": "rect",
+      "param_index": 0,
+      "probe_id": "NSView.centerScanRect.nan",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSView",
+      "selector": "convertPointToBacking:",
+      "param": "point",
+      "param_index": 0,
+      "probe_id": "NSView.convertPointToBacking.nan",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSView",
+      "selector": "convertPointFromBacking:",
+      "param": "point",
+      "param_index": 0,
+      "probe_id": "NSView.convertPointFromBacking.nan",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSView",
+      "selector": "convertSizeToBacking:",
+      "param": "size",
+      "param_index": 0,
+      "probe_id": "NSView.convertSizeToBacking.nan",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSView",
+      "selector": "convertSizeFromBacking:",
+      "param": "size",
+      "param_index": 0,
+      "probe_id": "NSView.convertSizeFromBacking.nan",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSView",
+      "selector": "convertRectToBacking:",
+      "param": "rect",
+      "param_index": 0,
+      "probe_id": "NSView.convertRectToBacking.nan",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSView",
+      "selector": "convertRectFromBacking:",
+      "param": "rect",
+      "param_index": 0,
+      "probe_id": "NSView.convertRectFromBacking.nan",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSView",
+      "selector": "convertPointToLayer:",
+      "param": "point",
+      "param_index": 0,
+      "probe_id": "NSView.convertPointToLayer.nan",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSView",
+      "selector": "convertPointFromLayer:",
+      "param": "point",
+      "param_index": 0,
+      "probe_id": "NSView.convertPointFromLayer.nan",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSView",
+      "selector": "convertSizeToLayer:",
+      "param": "size",
+      "param_index": 0,
+      "probe_id": "NSView.convertSizeToLayer.nan",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSView",
+      "selector": "convertSizeFromLayer:",
+      "param": "size",
+      "param_index": 0,
+      "probe_id": "NSView.convertSizeFromLayer.nan",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSView",
+      "selector": "convertRectToLayer:",
+      "param": "rect",
+      "param_index": 0,
+      "probe_id": "NSView.convertRectToLayer.nan",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSView",
+      "selector": "convertRectFromLayer:",
+      "param": "rect",
+      "param_index": 0,
+      "probe_id": "NSView.convertRectFromLayer.nan",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSView",
+      "selector": "setNeedsDisplayInRect:",
+      "param": "invalidRect",
+      "param_index": 0,
+      "probe_id": "NSView.setNeedsDisplayInRect.nan",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSView",
+      "selector": "lockFocusIfCanDrawInContext:",
+      "param": "context",
+      "param_index": 0,
+      "probe_id": "NSView.lockFocusIfCanDrawInContext.nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSView",
+      "selector": "displayRect:",
+      "param": "rect",
+      "param_index": 0,
+      "probe_id": "NSView.displayRect.nan",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSView",
+      "selector": "displayIfNeededInRect:",
+      "param": "rect",
+      "param_index": 0,
+      "probe_id": "NSView.displayIfNeededInRect.nan",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSView",
+      "selector": "displayRectIgnoringOpacity:",
+      "param": "rect",
+      "param_index": 0,
+      "probe_id": "NSView.displayRectIgnoringOpacity.nan",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSView",
+      "selector": "displayIfNeededInRectIgnoringOpacity:",
+      "param": "rect",
+      "param_index": 0,
+      "probe_id": "NSView.displayIfNeededInRectIgnoringOpacity.nan",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSView",
+      "selector": "drawRect:",
+      "param": "dirtyRect",
+      "param_index": 0,
+      "probe_id": "NSView.drawRect.nan",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSView",
+      "selector": "displayRectIgnoringOpacity:inContext:",
+      "param": "context",
+      "param_index": 1,
+      "probe_id": "NSView.displayRectIgnoringOpacityInContext.nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSView",
+      "selector": "displayRectIgnoringOpacity:inContext:",
+      "param": "rect",
+      "param_index": 0,
+      "probe_id": "NSView.displayRectIgnoringOpacityInContext.nan",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSView",
+      "selector": "bitmapImageRepForCachingDisplayInRect:",
+      "param": "rect",
+      "param_index": 0,
+      "probe_id": "NSView.bitmapImageRepForCachingDisplayInRect.nan",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSView",
+      "selector": "cacheDisplayInRect:toBitmapImageRep:",
+      "param": "bitmapImageRep",
+      "param_index": 1,
+      "probe_id": "NSView.cacheDisplayInRectToBitmapImageRep.nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSView",
+      "selector": "cacheDisplayInRect:toBitmapImageRep:",
+      "param": "rect",
+      "param_index": 0,
+      "probe_id": "NSView.cacheDisplayInRectToBitmapImageRep.nan",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSView",
+      "selector": "scrollPoint:",
+      "param": "point",
+      "param_index": 0,
+      "probe_id": "NSView.scrollPoint.nan",
+      "unguarded": "sigtrap",
+      "guards": [
+        "Bounds.notNaN({p}, \"scrollPoint:\");"
+      ]
+    },
+    {
+      "class": "NSView",
+      "selector": "scrollRectToVisible:",
+      "param": "rect",
+      "param_index": 0,
+      "probe_id": "NSView.scrollRectToVisible.nan",
+      "unguarded": "sigtrap",
+      "guards": [
+        "Bounds.notNaN({p}, \"scrollRectToVisible:\");"
+      ]
+    },
+    {
+      "class": "NSView",
+      "selector": "autoscroll:",
+      "param": "event",
+      "param_index": 0,
+      "probe_id": "NSView.autoscroll.nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSView",
+      "selector": "adjustScroll:",
+      "param": "newVisible",
+      "param_index": 0,
+      "probe_id": "NSView.adjustScroll.nan",
+      "unguarded": "sigtrap",
+      "guards": [
+        "Bounds.notNaN({p}, \"adjustScroll:\");"
+      ]
+    },
+    {
+      "class": "NSView",
+      "selector": "hitTest:",
+      "param": "point",
+      "param_index": 0,
+      "probe_id": "NSView.hitTest.nan",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSView",
+      "selector": "performKeyEquivalent:",
+      "param": "event",
+      "param_index": 0,
+      "probe_id": "NSView.performKeyEquivalent.nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSView",
+      "selector": "acceptsFirstMouse:",
+      "param": "event",
+      "param_index": 0,
+      "probe_id": "NSView.acceptsFirstMouse.nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSView",
+      "selector": "shouldDelayWindowOrderingForEvent:",
+      "param": "event",
+      "param_index": 0,
+      "probe_id": "NSView.shouldDelayWindowOrderingForEvent.nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSView",
+      "selector": "setLayer:",
+      "param": "layer",
+      "param_index": 0,
+      "probe_id": "NSView.setLayer.nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSView",
+      "selector": "setBackgroundFilters:",
+      "param": "backgroundFilters",
+      "param_index": 0,
+      "probe_id": "NSView.setBackgroundFilters.nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSView",
+      "selector": "setContentFilters:",
+      "param": "contentFilters",
+      "param_index": 0,
+      "probe_id": "NSView.setContentFilters.nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSView",
+      "selector": "setShadow:",
+      "param": "shadow",
+      "param_index": 0,
+      "probe_id": "NSView.setShadow.nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSView",
+      "selector": "menuForEvent:",
+      "param": "event",
+      "param_index": 0,
+      "probe_id": "NSView.menuForEvent.nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSView",
+      "selector": "setToolTip:",
+      "param": "toolTip",
+      "param_index": 0,
+      "probe_id": "NSView.setToolTip.nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSView",
+      "selector": "prepareContentInRect:",
+      "param": "rect",
+      "param_index": 0,
+      "probe_id": "NSView.prepareContentInRect.nan",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSView",
+      "selector": "setPreparedContentRect:",
+      "param": "preparedContentRect",
+      "param_index": 0,
+      "probe_id": "NSView.setPreparedContentRect.nan",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSView",
+      "selector": "addConstraint:",
+      "param": "constraint",
+      "param_index": 0,
+      "probe_id": "NSView.addConstraint.nil",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.nonNull({p}, \"addConstraint:\");"
+      ]
+    },
+    {
+      "class": "NSView",
+      "selector": "addConstraints:",
+      "param": "constraints",
+      "param_index": 0,
+      "probe_id": "NSView.addConstraints.nil",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.nonNull({p}, \"addConstraints:\");"
+      ]
+    },
+    {
+      "class": "NSView",
+      "selector": "removeConstraint:",
+      "param": "constraint",
+      "param_index": 0,
+      "probe_id": "NSView.removeConstraint.nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSView",
+      "selector": "removeConstraints:",
+      "param": "constraints",
+      "param_index": 0,
+      "probe_id": "NSView.removeConstraints.nil",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.nonNull({p}, \"removeConstraints:\");"
+      ]
+    },
+    {
+      "class": "NSView",
+      "selector": "alignmentRectForFrame:",
+      "param": "frame",
+      "param_index": 0,
+      "probe_id": "NSView.alignmentRectForFrame.nan",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSView",
+      "selector": "frameForAlignmentRect:",
+      "param": "alignmentRect",
+      "param_index": 0,
+      "probe_id": "NSView.frameForAlignmentRect.nan",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSView",
+      "selector": "setNextKeyView:",
+      "param": "nextKeyView",
+      "param_index": 0,
+      "probe_id": "NSView.setNextKeyView.nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSView",
+      "selector": "setKeyboardFocusRingNeedsDisplayInRect:",
+      "param": "rect",
+      "param_index": 0,
+      "probe_id": "NSView.setKeyboardFocusRingNeedsDisplayInRect.nan",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSView",
+      "selector": "writeEPSInsideRect:toPasteboard:",
+      "param": "pasteboard",
+      "param_index": 1,
+      "probe_id": "NSView.writeEPSInsideRectToPasteboard.nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSView",
+      "selector": "writeEPSInsideRect:toPasteboard:",
+      "param": "rect",
+      "param_index": 0,
+      "probe_id": "NSView.writeEPSInsideRectToPasteboard.nan",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSView",
+      "selector": "dataWithEPSInsideRect:",
+      "param": "rect",
+      "param_index": 0,
+      "probe_id": "NSView.dataWithEPSInsideRect.nan",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSView",
+      "selector": "writePDFInsideRect:toPasteboard:",
+      "param": "pasteboard",
+      "param_index": 1,
+      "probe_id": "NSView.writePDFInsideRectToPasteboard.nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSView",
+      "selector": "writePDFInsideRect:toPasteboard:",
+      "param": "rect",
+      "param_index": 0,
+      "probe_id": "NSView.writePDFInsideRectToPasteboard.nan",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSView",
+      "selector": "dataWithPDFInsideRect:",
+      "param": "rect",
+      "param_index": 0,
+      "probe_id": "NSView.dataWithPDFInsideRect.nan",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSView",
+      "selector": "drawPageBorderWithSize:",
+      "param": "borderSize",
+      "param_index": 0,
+      "probe_id": "NSView.drawPageBorderWithSize.nan",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSView",
+      "selector": "drawSheetBorderWithSize:",
+      "param": "borderSize",
+      "param_index": 0,
+      "probe_id": "NSView.drawSheetBorderWithSize.nan",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSView",
+      "selector": "registerForDraggedTypes:",
+      "param": "newTypes",
+      "param_index": 0,
+      "probe_id": "NSView.registerForDraggedTypes.nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSView",
+      "selector": "exitFullScreenModeWithOptions:",
+      "param": "options",
+      "param_index": 0,
+      "probe_id": "NSView.exitFullScreenModeWithOptions.nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSView",
+      "selector": "setGestureRecognizers:",
+      "param": "gestureRecognizers",
+      "param_index": 0,
+      "probe_id": "NSView.setGestureRecognizers.nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSView",
+      "selector": "addGestureRecognizer:",
+      "param": "gestureRecognizer",
+      "param_index": 0,
+      "probe_id": "NSView.addGestureRecognizer.nil",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.nonNull({p}, \"addGestureRecognizer:\");"
+      ]
+    },
+    {
+      "class": "NSView",
+      "selector": "removeGestureRecognizer:",
+      "param": "gestureRecognizer",
+      "param_index": 0,
+      "probe_id": "NSView.removeGestureRecognizer.nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSView",
+      "selector": "addTrackingArea:",
+      "param": "trackingArea",
+      "param_index": 0,
+      "probe_id": "NSView.addTrackingArea.nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSView",
+      "selector": "removeTrackingArea:",
+      "param": "trackingArea",
+      "param_index": 0,
+      "probe_id": "NSView.removeTrackingArea.nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSView",
+      "selector": "addCursorRect:cursor:",
+      "param": "object",
+      "param_index": 1,
+      "probe_id": "NSView.addCursorRectCursor.nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSView",
+      "selector": "addCursorRect:cursor:",
+      "param": "rect",
+      "param_index": 0,
+      "probe_id": "NSView.addCursorRectCursor.nan",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.notNaN({p}, \"addCursorRect:cursor:\");"
+      ]
+    },
+    {
+      "class": "NSView",
+      "selector": "removeCursorRect:cursor:",
+      "param": "object",
+      "param_index": 1,
+      "probe_id": "NSView.removeCursorRectCursor.nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSView",
+      "selector": "removeCursorRect:cursor:",
+      "param": "rect",
+      "param_index": 0,
+      "probe_id": "NSView.removeCursorRectCursor.nan",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.notNaN({p}, \"removeCursorRect:cursor:\");"
+      ]
+    },
+    {
+      "class": "NSView",
+      "selector": "convertPointToBase:",
+      "param": "point",
+      "param_index": 0,
+      "probe_id": "NSView.convertPointToBase.nan",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSView",
+      "selector": "convertPointFromBase:",
+      "param": "point",
+      "param_index": 0,
+      "probe_id": "NSView.convertPointFromBase.nan",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSView",
+      "selector": "convertSizeToBase:",
+      "param": "size",
+      "param_index": 0,
+      "probe_id": "NSView.convertSizeToBase.nan",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSView",
+      "selector": "convertSizeFromBase:",
+      "param": "size",
+      "param_index": 0,
+      "probe_id": "NSView.convertSizeFromBase.nan",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSView",
+      "selector": "convertRectToBase:",
+      "param": "rect",
+      "param_index": 0,
+      "probe_id": "NSView.convertRectToBase.nan",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSView",
+      "selector": "convertRectFromBase:",
+      "param": "rect",
+      "param_index": 0,
+      "probe_id": "NSView.convertRectFromBase.nan",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSView",
+      "selector": "performMnemonic:",
+      "param": "string",
+      "param_index": 0,
+      "probe_id": "NSView.performMnemonic.nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSClipView",
+      "selector": "setBackgroundColor:",
+      "param": "backgroundColor",
+      "param_index": 0,
+      "probe_id": "NSClipView.setBackgroundColor.nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSClipView",
+      "selector": "setDocumentView:",
+      "param": "documentView",
+      "param_index": 0,
+      "probe_id": "NSClipView.setDocumentView.nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSClipView",
+      "selector": "setDocumentCursor:",
+      "param": "documentCursor",
+      "param_index": 0,
+      "probe_id": "NSClipView.setDocumentCursor.nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSClipView",
+      "selector": "autoscroll:",
+      "param": "event",
+      "param_index": 0,
+      "probe_id": "NSClipView.autoscroll.nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSClipView",
+      "selector": "constrainBoundsRect:",
+      "param": "proposedBounds",
+      "param_index": 0,
+      "probe_id": "NSClipView.constrainBoundsRect.nan",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSClipView",
+      "selector": "constrainScrollPoint:",
+      "param": "newOrigin",
+      "param_index": 0,
+      "probe_id": "NSClipView.constrainScrollPoint.nan",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSLayoutManager",
+      "selector": "setTextStorage:",
+      "param": "textStorage",
+      "param_index": 0,
+      "probe_id": "NSLayoutManager.setTextStorage.nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSLayoutManager",
+      "selector": "replaceTextStorage:",
+      "param": "newTextStorage",
+      "param_index": 0,
+      "probe_id": "NSLayoutManager.replaceTextStorage.nil",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.nonNull({p}, \"replaceTextStorage:\");"
+      ]
+    },
+    {
+      "class": "NSLayoutManager",
+      "selector": "addTextContainer:",
+      "param": "container",
+      "param_index": 0,
+      "probe_id": "NSLayoutManager.addTextContainer.nil",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.nonNull({p}, \"addTextContainer:\");"
+      ]
+    },
+    {
+      "class": "NSLayoutManager",
+      "selector": "insertTextContainer:atIndex:",
+      "param": "container",
+      "param_index": 0,
+      "probe_id": "NSLayoutManager.insertTextContainerAtIndex.nil",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.nonNull({p}, \"insertTextContainer:atIndex:\");"
+      ]
+    },
+    {
+      "class": "NSLayoutManager",
+      "selector": "removeTextContainerAtIndex:",
+      "param": "index",
+      "param_index": 0,
+      "probe_id": "NSLayoutManager.removeTextContainerAtIndex.index",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.index({p}, numberOfGlyphs(), \"removeTextContainerAtIndex:\");"
+      ]
+    },
+    {
+      "class": "NSLayoutManager",
+      "selector": "textContainerChangedGeometry:",
+      "param": "container",
+      "param_index": 0,
+      "probe_id": "NSLayoutManager.textContainerChangedGeometry.nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSLayoutManager",
+      "selector": "textContainerChangedTextView:",
+      "param": "container",
+      "param_index": 0,
+      "probe_id": "NSLayoutManager.textContainerChangedTextView.nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSLayoutManager",
+      "selector": "ensureLayoutForTextContainer:",
+      "param": "container",
+      "param_index": 0,
+      "probe_id": "NSLayoutManager.ensureLayoutForTextContainer.nil",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.nonNull({p}, \"ensureLayoutForTextContainer:\");"
+      ]
+    },
+    {
+      "class": "NSLayoutManager",
+      "selector": "ensureLayoutForBoundingRect:inTextContainer:",
+      "param": "container",
+      "param_index": 1,
+      "probe_id": "NSLayoutManager.ensureLayoutForBoundingRectInTextContainer.nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSLayoutManager",
+      "selector": "ensureLayoutForBoundingRect:inTextContainer:",
+      "param": "bounds",
+      "param_index": 0,
+      "probe_id": "NSLayoutManager.ensureLayoutForBoundingRectInTextContainer.nan",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSLayoutManager",
+      "selector": "isValidGlyphIndex:",
+      "param": "glyphIndex",
+      "param_index": 0,
+      "probe_id": "NSLayoutManager.isValidGlyphIndex.index",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSLayoutManager",
+      "selector": "propertyForGlyphAtIndex:",
+      "param": "glyphIndex",
+      "param_index": 0,
+      "probe_id": "NSLayoutManager.propertyForGlyphAtIndex.index",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSLayoutManager",
+      "selector": "characterIndexForGlyphAtIndex:",
+      "param": "glyphIndex",
+      "param_index": 0,
+      "probe_id": "NSLayoutManager.characterIndexForGlyphAtIndex.index",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSLayoutManager",
+      "selector": "glyphIndexForCharacterAtIndex:",
+      "param": "charIndex",
+      "param_index": 0,
+      "probe_id": "NSLayoutManager.glyphIndexForCharacterAtIndex.index",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSLayoutManager",
+      "selector": "setTextContainer:forGlyphRange:",
+      "param": "container",
+      "param_index": 0,
+      "probe_id": "NSLayoutManager.setTextContainerForGlyphRange.nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSLayoutManager",
+      "selector": "setNotShownAttribute:forGlyphAtIndex:",
+      "param": "glyphIndex",
+      "param_index": 1,
+      "probe_id": "NSLayoutManager.setNotShownAttributeForGlyphAtIndex.index",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSLayoutManager",
+      "selector": "setDrawsOutsideLineFragment:forGlyphAtIndex:",
+      "param": "glyphIndex",
+      "param_index": 1,
+      "probe_id": "NSLayoutManager.setDrawsOutsideLineFragmentForGlyphAtIndex.index",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSLayoutManager",
+      "selector": "usedRectForTextContainer:",
+      "param": "container",
+      "param_index": 0,
+      "probe_id": "NSLayoutManager.usedRectForTextContainer.nil",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.nonNull({p}, \"usedRectForTextContainer:\");"
+      ]
+    },
+    {
+      "class": "NSLayoutManager",
+      "selector": "notShownAttributeForGlyphAtIndex:",
+      "param": "glyphIndex",
+      "param_index": 0,
+      "probe_id": "NSLayoutManager.notShownAttributeForGlyphAtIndex.index",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSLayoutManager",
+      "selector": "drawsOutsideLineFragmentForGlyphAtIndex:",
+      "param": "glyphIndex",
+      "param_index": 0,
+      "probe_id": "NSLayoutManager.drawsOutsideLineFragmentForGlyphAtIndex.index",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSLayoutManager",
+      "selector": "truncatedGlyphRangeInLineFragmentForGlyphAtIndex:",
+      "param": "glyphIndex",
+      "param_index": 0,
+      "probe_id": "NSLayoutManager.truncatedGlyphRangeInLineFragmentForGlyphAtIndex.index",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSLayoutManager",
+      "selector": "glyphRangeForTextContainer:",
+      "param": "container",
+      "param_index": 0,
+      "probe_id": "NSLayoutManager.glyphRangeForTextContainer.nil",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.nonNull({p}, \"glyphRangeForTextContainer:\");"
+      ]
+    },
+    {
+      "class": "NSLayoutManager",
+      "selector": "rangeOfNominallySpacedGlyphsContainingIndex:",
+      "param": "glyphIndex",
+      "param_index": 0,
+      "probe_id": "NSLayoutManager.rangeOfNominallySpacedGlyphsContainingIndex.index",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSLayoutManager",
+      "selector": "setTemporaryAttributes:forCharacterRange:",
+      "param": "attrs",
+      "param_index": 0,
+      "probe_id": "NSLayoutManager.setTemporaryAttributesForCharacterRange.nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSLayoutManager",
+      "selector": "addTemporaryAttributes:forCharacterRange:",
+      "param": "attrs",
+      "param_index": 0,
+      "probe_id": "NSLayoutManager.addTemporaryAttributesForCharacterRange.nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSLayoutManager",
+      "selector": "removeTemporaryAttribute:forCharacterRange:",
+      "param": "attrName",
+      "param_index": 0,
+      "probe_id": "NSLayoutManager.removeTemporaryAttributeForCharacterRange.nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSLayoutManager",
+      "selector": "defaultLineHeightForFont:",
+      "param": "theFont",
+      "param_index": 0,
+      "probe_id": "NSLayoutManager.defaultLineHeightForFont.nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSLayoutManager",
+      "selector": "defaultBaselineOffsetForFont:",
+      "param": "theFont",
+      "param_index": 0,
+      "probe_id": "NSLayoutManager.defaultBaselineOffsetForFont.nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSLayoutManager",
+      "selector": "layoutManagerOwnsFirstResponderInWindow:",
+      "param": "window",
+      "param_index": 0,
+      "probe_id": "NSLayoutManager.layoutManagerOwnsFirstResponderInWindow.nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSLayoutManager",
+      "selector": "substituteFontForFont:",
+      "param": "originalFont",
+      "param_index": 0,
+      "probe_id": "NSLayoutManager.substituteFontForFont.nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSLayoutManager",
+      "selector": "setCharacterIndex:forGlyphAtIndex:",
+      "param": "charIndex",
+      "param_index": 0,
+      "probe_id": "NSLayoutManager.setCharacterIndexForGlyphAtIndex.index",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSLayoutManager",
+      "selector": "setIntAttribute:value:forGlyphAtIndex:",
+      "param": "glyphIndex",
+      "param_index": 2,
+      "probe_id": "NSLayoutManager.setIntAttributeValueForGlyphAtIndex.index",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    }
+  ],
+  "enumerated_with": "codegen/probe.py --enumerate (nil/NaN/index candidates derived from the generator's plans)"
+}

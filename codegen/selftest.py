@@ -163,6 +163,60 @@ def check_early_sweep():
     check("history: %s generates compilable wrappers" % early[:8], ok, line.strip()[:110])
 
 
+def check_guards():
+    """Every measured abort must end as a Java exception, and a tolerated call must stay tolerated.
+
+    This is the only check that runs the wrapper against the real framework and reads exit codes,
+    so it is what proves the emitted guards do something rather than merely compile.
+    """
+    out = os.path.join(bench.REPORTS, "selftest-guards.json")
+    r = run([sys.executable, os.path.join(HERE, "probe.py"), "--repo", REPO, "--generated",
+             "NSViewController", "NSMenu", "NSView", "NSClipView", "--out", out],
+            timeout=900)
+    if not os.path.exists(out):
+        check("guards: probe produced measurements", False, (r.stdout + r.stderr)[-160:])
+        return
+    measured = {c["id"]: c for c in json.load(open(out))["cases"]}
+    ev = json.load(open(os.path.join(HERE, "guard-evidence.json")))["cases"]
+    by_class = {}
+    for case in ev:
+        by_class.setdefault(case["class"], []).append(case)
+    mismatches = []
+    for case in ev:
+        pid = case.get("probe_id")
+        if not pid or pid not in measured:
+            continue
+        got = measured[pid]["verdict"]
+        if case.get("guards"):
+            if got != "java-exception":
+                mismatches.append("%s:%s expected java-exception, got %s"
+                                  % (case["class"], case["selector"], got))
+        elif case.get("control") and got != "tolerated":
+            mismatches.append("%s:%s control expected tolerated, got %s"
+                              % (case["class"], case["selector"], got))
+    check("guards: measured aborts now raise, controls still pass", not mismatches,
+          "; ".join(mismatches)[:150])
+
+
+def check_enumerated_guards():
+    """Derived candidates must stop aborting once the evidence guards them.
+
+    Re-deriving the candidates and measuring them again is the check that the emitted guards are
+    real: an abort that still carries a guard statement is a guard that does not work.
+    """
+    out = os.path.join(bench.REPORTS, "selftest-enum.json")
+    r = run([sys.executable, os.path.join(HERE, "probe.py"), "--enumerate", "NSMenu",
+             "--out", out], timeout=1800)
+    if not os.path.exists(out):
+        check("guards: enumeration ran", False, (r.stdout + r.stderr)[-160:])
+        return
+    cases = json.load(open(out))["cases"]
+    aborts = [c for c in cases if c["unguarded"] in ("objc-abort", "sigtrap", "sigill")]
+    broken = [c for c in aborts if c.get("guards")]
+    check("guards: no guarded candidate still aborts", not broken,
+          "; ".join("%s %s" % (c["selector"], c["unguarded"]) for c in broken)[:140])
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--quick", action="store_true", help="skip the surface batch and history sweep")
@@ -173,6 +227,8 @@ def main():
     check_coverage()
     if not args.quick:
         check_surface_batch()
+        check_guards()
+        check_enumerated_guards()
         check_early_sweep()
     for n in notes:
         print("note: " + n)

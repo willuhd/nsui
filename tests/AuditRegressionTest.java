@@ -2001,6 +2001,23 @@ public final class AuditRegressionTest {
             TestKit.check(false, "indirect-cycle block threw: " + t);
         }
 
+        // --- 8bh. NSSegmentedControl.setSegmentCount cap (native max 2048) ---
+        // Raw probe: 2048 accepted, 2049 aborts with "index (2049) beyond bounds (2048)".
+        try {
+            nsui.NSSegmentedControl sc2 = nsui.NSSegmentedControl.create(new NSRect(0, 0, 200, 24));
+            TestKit.check(nsui.NSSegmentedControl.MAX_SEGMENTS == 2048L,
+                    "the documented segment cap is 2048");
+            TestKit.noThrow("setSegmentCount(2048) is accepted (native boundary)",
+                    () -> sc2.setSegmentCount(2048));
+            TestKit.expectThrows("setSegmentCount(2049) rejects instead of aborting",
+                    IllegalArgumentException.class, () -> sc2.setSegmentCount(2049));
+            TestKit.expectThrows("setSegmentCount(-1) rejects",
+                    IllegalArgumentException.class, () -> sc2.setSegmentCount(-1));
+            TestKit.noThrow("a small count still works", () -> sc2.setSegmentCount(3));
+        } catch (Throwable t) {
+            TestKit.check(false, "segment-count cap block threw: " + t);
+        }
+
         // --- 8z. type-confusion guards on the raw collection-view setters ---
         // AppKit does NOT raise a type error here, it either asserts isKindOfClass: or
         // messages the object: setCollectionViewLayout: with a plain NSView raised

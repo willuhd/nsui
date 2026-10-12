@@ -91,8 +91,19 @@ public final class NSSegmentedControl extends NSControl {
 
     /// [control setSegmentCount:] — number of segments. A negative count is a caller
     /// error (AppKit treats it as a very large unsigned value).
+    /// The native cap on the segment count. Measured: 2048 is accepted and 2049 aborts with
+    /// NSRangeException "-[NSSegmentedCell setSegmentCount:]: index (2049) beyond bounds (2048)",
+    /// so the limit is intentional and the error names it.
+    public static final long MAX_SEGMENTS = 2048L;
+
+    /// setSegmentCount: — 0..MAX_SEGMENTS (2048). Negative or larger counts abort natively, so both
+    /// are rejected here rather than left to fault at the call site.
     public void setSegmentCount(long count) {
         if (count < 0) throw new IllegalArgumentException("setSegmentCount: negative count " + count);
+        if (count > MAX_SEGMENTS) {
+            throw new IllegalArgumentException("setSegmentCount: count " + count + " exceeds the "
+                    + "native maximum of " + MAX_SEGMENTS + " segments (AppKit raises NSRangeException)");
+        }
         try {
             hSetCount.invokeExact(peer, ObjC.sel("setSegmentCount:"), count);
         } catch (Throwable t) {

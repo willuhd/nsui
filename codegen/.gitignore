@@ -1,0 +1,10 @@
+# CodeGen scratch. Only the generator (gen.py, hdrs.py, objcabi.py) and the reusable
+# conformance harness (bench.py) are tracked; everything below is transient output.
+work/
+reports/
+summary*.txt
+proposed*.patch
+survey.*
+.patchscratch/
+__pycache__/
+*.pyc

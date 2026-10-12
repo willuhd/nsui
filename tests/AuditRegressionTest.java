@@ -2137,6 +2137,73 @@ public final class AuditRegressionTest {
             TestKit.check(false, "section-header version block threw: " + t);
         }
 
+        // --- 8bk. behavioural coverage for the guards that had none ---
+        // A scan of the 195 guarded methods against the tests found 21 whose Java method name is
+        // never exercised: their guard's PRESENCE was enforced by VersionGuardScanTest but its
+        // BEHAVIOUR (reaching native when the selector exists) was not. Round-trips where a pair
+        // exists; for calls with side effects (activating an app, showing UI) only the selector
+        // presence is pinned, because calling them would change the machine's state.
+        try {
+            nsui.NSColorWell cw2 = nsui.NSColorWell.create(new NSRect(0, 0, 60, 40));
+            if (cw2.respondsToSelector(ObjC.sel("setSupportsAlpha:"))) {
+                cw2.setSupportsAlpha(false);
+                TestKit.check(!cw2.supportsAlpha(), "supportsAlpha round-trips (macOS 14+)");
+                cw2.setSupportsAlpha(true);
+                TestKit.check(cw2.supportsAlpha(), "supportsAlpha round-trips true");
+            } else {
+                TestKit.probe("supportsAlpha absent on this host");
+            }
+            NSMenu gm = NSMenu.createWithTitle("gm");
+            if (gm.respondsToSelector(ObjC.sel("setSelectionMode:"))) {
+                gm.setSelectionMode(1);
+                TestKit.check(gm.selectionMode() == 1, "menu selectionMode round-trips (macOS 14+)");
+            } else {
+                TestKit.probe("menu selectionMode absent on this host");
+            }
+            TestKit.noThrow("menu selectedItems/setSelectedItems are guarded but live",
+                    () -> { gm.selectedItems(); gm.setSelectedItems(nsui.NSArray.mutableArray()); });
+            TestKit.noThrow("menu presentationStyle/setPresentationStyle are guarded but live",
+                    () -> { gm.presentationStyle(); gm.setPresentationStyle(0); });
+            TestKit.noThrow("menu automaticallyInsertsWritingToolsItems is guarded but live",
+                    () -> { gm.automaticallyInsertsWritingToolsItems();
+                            gm.setAutomaticallyInsertsWritingToolsItems(true); });
+            TestKit.check(nsui.NSMenuItem.sectionHeaderWithTitle("hdr") != null,
+                    "NSMenuItem.sectionHeaderWithTitle reaches native (macOS 14+)");
+            TestKit.noThrow("NSMenuItem.writingToolsItems is guarded but live (macOS 15.2+)",
+                    () -> nsui.NSMenuItem.writingToolsItems());
+            nsui.NSMenuItem kmi = NSMenu.createWithTitle("k").addItemWithTitle("i", "", "");
+            if (kmi.respondsToSelector(ObjC.sel("setAllowsAutomaticKeyEquivalentLocalization:"))) {
+                kmi.setAllowsAutomaticKeyEquivalentLocalization(false);
+                TestKit.check(!kmi.allowsAutomaticKeyEquivalentLocalization(),
+                        "key-equivalent localization round-trips (macOS 12+)");
+                kmi.setAllowsAutomaticKeyEquivalentMirroring(false);
+                TestKit.check(!kmi.allowsAutomaticKeyEquivalentMirroring(),
+                        "key-equivalent mirroring round-trips (macOS 12+)");
+            } else {
+                TestKit.probe("key-equivalent localization absent on this host");
+            }
+            nsui.NSSwitch sw2 = nsui.NSSwitch.create(new NSRect(0, 0, 40, 24));
+            if (sw2.respondsToSelector(ObjC.sel("setAllowsMixedState:"))) {
+                sw2.setAllowsMixedState(true);
+                TestKit.check(sw2.allowsMixedState(), "allowsMixedState round-trips");
+            } else {
+                TestKit.check(!sw2.allowsMixedState(),
+                        "allowsMixedState reports false when the selector is absent");
+            }
+            TestKit.check(nsui.NSToolbar.create("probe.peer").itemIdentifiersPeer() != null,
+                    "NSToolbar.itemIdentifiersPeer returns a live peer on this host (macOS 15+)");
+            // Side-effecting selectors: presence only (calling them would activate an app or route
+            // a key event through the responder chain).
+            NSView rsp = NSView.create(new NSRect(0, 0, 20, 20), (v, d) -> {});
+            TestKit.check(rsp.respondsToSelector(ObjC.sel("contextMenuKeyDown:")),
+                    "NSResponder.contextMenuKeyDown: is present on this host (macOS 15+)");
+            TestKit.check(nsui.NSRunningApplication.current()
+                            .respondsToSelector(ObjC.sel("activateFromApplication:options:")),
+                    "NSRunningApplication.activateFromApplication:options: is present (14+)");
+        } catch (Throwable t) {
+            TestKit.check(false, "guard-coverage block threw: " + t);
+        }
+
         // --- 8z. type-confusion guards on the raw collection-view setters ---
         // AppKit does NOT raise a type error here, it either asserts isKindOfClass: or
         // messages the object: setCollectionViewLayout: with a plain NSView raised

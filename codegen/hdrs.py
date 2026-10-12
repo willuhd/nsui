@@ -153,6 +153,26 @@ def match_balanced(s, start):
     return n
 
 
+def match_balanced_angle(s, start):
+    """Index just past the '>' matching s[start] == '<'.
+
+    Angle brackets nest in a lightweight generic parameter list
+    ('<ValueType : id <NSCopying>>'), so the closer is found by depth.
+    """
+    depth = 0
+    i = start
+    n = len(s)
+    while i < n:
+        if s[i] == "<":
+            depth += 1
+        elif s[i] == ">":
+            depth -= 1
+            if depth == 0:
+                return i + 1
+        i += 1
+    return n
+
+
 def strip_macros(s):
     out = []
     i = 0
@@ -370,6 +390,59 @@ def header_end(s, start):
     return n
 
 
+_HEAD_SUPER_RE = re.compile(r"[A-Za-z_]\w*")
+_HEAD_CATEGORY_RE = re.compile(r"\(\s*([A-Za-z_]\w*)\s*\)")
+_HEAD_PROTOCOLS_RE = re.compile(r"<\s*([A-Za-z_][\w\s,]*?)\s*>")
+
+
+def parse_head(rest):
+    """(superclass, category, protocols) for the text between a class name and its body.
+
+        '<ObjectType> (NSArrayCreation)'       -> (None, 'NSArrayCreation', [])
+        '<__covariant T> : NSObject <NSCopy>'  -> ('NSObject', None, ['NSCopy'])
+        ' () <NSTextLayoutOrientationProvider>' -> (None, None, ['NSTextLayoutOrientationProvider'])
+
+    The lightweight generic parameter list has to be peeled off before the superclass, the
+    category and the protocol list are read: a category on a generic class is written
+    '@interface NSArray<ObjectType> (NSArrayCreation)', and without peeling, the '<ObjectType>'
+    would be mistaken for an adopted protocol and the category name would be lost entirely
+    (which is how 217 shipped methods went missing).
+
+    A leading '<...>' is treated as a parameter list only when the header continues with ':' or
+    '(' — '@interface NSObject <NSObject>' is a protocol list, and eating it would lose the
+    protocol. Angle brackets nest inside a parameter list, so the closer is found by depth.
+    """
+    t = rest
+    i = 0
+    while i < len(t) and t[i].isspace():
+        i += 1
+    if i < len(t) and t[i] == "<":
+        k = match_balanced_angle(t, i)
+        while k < len(t) and t[k].isspace():
+            k += 1
+        if k < len(t) and t[k] in ":(":
+            i = k
+    superclass = None
+    if i < len(t) and t[i] == ":":
+        i += 1
+        while i < len(t) and t[i].isspace():
+            i += 1
+        m = _HEAD_SUPER_RE.match(t, i)
+        if m:
+            superclass = m.group(0)
+            i = m.end()
+    category = None
+    while i < len(t) and t[i].isspace():
+        i += 1
+    m = _HEAD_CATEGORY_RE.match(t, i)          # '()' is a class extension: no category name
+    if m:
+        category = m.group(1)
+        i = m.end()
+    protocols = _HEAD_PROTOCOLS_RE.findall(t[i:])
+    proto_list = [p.strip() for p in protocols[0].split(",")] if protocols else []
+    return superclass, category, proto_list
+
+
 def parse_text(text, file="<text>", keep_private=False):
     """All @interface/@protocol blocks in a header as Interface objects."""
     clean = strip_comments(text)
@@ -391,11 +464,7 @@ def parse_text(text, file="<text>", keep_private=False):
         body = clean[hend:end]
         kind = m.group(1)
         name = m.group(2)
-        hm = re.match(r"^\s*(?::\s*([A-Za-z_]\w*))?\s*(?:\(\s*([A-Za-z_]\w*)\s*\))?", head)
-        superclass = hm.group(1) if hm else None
-        category = hm.group(2) if hm else None
-        protocols = re.findall(r"<\s*([A-Za-z_][\w\s,]*?)\s*>", head)
-        proto_list = [p.strip() for p in protocols[0].split(",")] if protocols else []
+        superclass, category, proto_list = parse_head(head)
         if kind == "implementation" and not keep_private:
             pos = end + 4
             continue
@@ -432,8 +501,13 @@ def parse_file(path):
         return parse_text(fh.read(), path)
 
 
-def parse_framework(sdk, framework, include_categories=False):
-    """Every @interface/@protocol in a framework's public Headers/ directory."""
+def parse_framework(sdk, framework, include_categories=True):
+    """Every @interface/@protocol in a framework's public Headers/ directory.
+
+    Categories are included by default: `@interface NSArray<ObjectType> (NSExtendedArray)` is
+    part of NSArray's declaration surface, and dropping it silently is what made the generator
+    see 3 of NSArray's 53 shipped methods. Pass include_categories=False for class bodies only.
+    """
     import os
     root = os.path.join(sdk, "System", "Library", "Frameworks",
                         framework + ".framework", "Headers")

@@ -44,6 +44,9 @@ public final class ServicesTest {
             NSRange bad = checker.checkSpelling("the quikc brown fox", 0);
             TestKit.check(bad.location() != NSRange.NOT_FOUND && bad.length() > 0,
                     "misspelling located (got " + bad + ")");
+            TestKit.expectThrows("checkSpelling(-1) rejects, not wrap",
+                    IllegalArgumentException.class,
+                    () -> checker.checkSpelling("the quick brown fox", -1));
         } catch (Throwable t) {
             TestKit.check(false, "spell section threw: " + t);
         }

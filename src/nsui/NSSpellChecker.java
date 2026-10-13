@@ -52,6 +52,11 @@ public final class NSSpellChecker extends NSObject {
     /// ({NOT_FOUND, 0} when clean). Struct return via the shared allocator.
     public NSRange checkSpelling(String text, long offset) {
         ensureInit();
+        if (text == null) throw new IllegalArgumentException("checkSpellingOfString:startingAt: null text");
+        if (offset < 0 || offset > text.length()) {
+            throw new IllegalArgumentException("checkSpellingOfString:startingAt: offset " + offset
+                    + " out of bounds (text length " + text.length() + ")");
+        }
         try {
             MemorySegment seg = (MemorySegment) handles.hCheck().invokeExact(
                     ObjC.structSlot(), peer,

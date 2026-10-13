@@ -2196,6 +2196,8 @@ public final class AuditRegressionTest {
             TestKit.noThrow("NSMenuItem.writingToolsItems is guarded but live (macOS 15.2+)",
                     () -> nsui.NSMenuItem.writingToolsItems());
             nsui.NSMenuItem kmi = NSMenu.createWithTitle("k").addItemWithTitle("i", "", "");
+            TestKit.noThrow("NSMenuItem.isSectionHeader is responds-guarded, not try/catch",
+                    () -> kmi.isSectionHeader());
             if (kmi.respondsToSelector(ObjC.sel("setAllowsAutomaticKeyEquivalentLocalization:"))) {
                 kmi.setAllowsAutomaticKeyEquivalentLocalization(false);
                 TestKit.check(!kmi.allowsAutomaticKeyEquivalentLocalization(),

@@ -235,7 +235,9 @@ public final class NSMenuItem extends NSObject {
         ObjC.msgSendVoidBool(peer, ObjC.sel("setAllowsAutomaticKeyEquivalentMirroring:"), flag);
     }
 
-    /// isHighlighted / isHiddenOrHasHiddenAncestor / isSectionHeader.
+    /// isHighlighted / isHiddenOrHasHiddenAncestor / isSectionHeader (macOS 14+; responds-guarded).
+    ///
+    /// CORRECTED: the try/catch this used to rely on is not a guard (see sectionHeaderWithTitle).
     public boolean isHighlighted() {
         return ObjC.msgSendBool(peer, ObjC.sel("isHighlighted"));
     }
@@ -243,7 +245,7 @@ public final class NSMenuItem extends NSObject {
         return ObjC.msgSendBool(peer, ObjC.sel("isHiddenOrHasHiddenAncestor"));
     }
     public boolean isSectionHeader() {
-        try { return ObjC.msgSendBool(peer, ObjC.sel("isSectionHeader")); }
-        catch (Throwable t) { return false; }
+        if (!respondsToSelector(ObjC.sel("isSectionHeader"))) return false;
+        return ObjC.msgSendBool(peer, ObjC.sel("isSectionHeader"));
     }
 }

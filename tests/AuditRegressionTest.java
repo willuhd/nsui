@@ -869,6 +869,8 @@ public final class AuditRegressionTest {
             mcv.setContent(arr);
             TestKit.check(mcv.numberOfItemsInSection(0) == 2,
                     "populated collection view reports 2 items (got " + mcv.numberOfItemsInSection(0) + ")");
+            TestKit.expectThrows("numberOfItemsInSection(99) rejects, not section-count abort",
+                    IllegalArgumentException.class, () -> mcv.numberOfItemsInSection(99));
             var pathHandle = ObjC.handle(nsui.objc.Sig.of(nsui.objc.Sig.Ret.ID,
                     nsui.objc.Sig.Arg.INT, nsui.objc.Sig.Arg.INT));
             java.util.function.BiFunction<Long, Long, MemorySegment> path = (it, sec) -> {

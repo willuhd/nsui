@@ -353,6 +353,7 @@ public final class NSCollectionView extends NSView {
 
     /// [view numberOfItemsInSection:]
     public long numberOfItemsInSection(long section) {
+        Bounds.index(section, numberOfSections(), "numberOfItemsInSection:");
         try {
             return (long) handles.hIntInt().invokeExact(peer, ObjC.sel("numberOfItemsInSection:"), section);
         } catch (Throwable t) {

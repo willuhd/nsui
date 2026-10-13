@@ -223,6 +223,7 @@ public final class NSPopUpButton extends NSControl {
 
     /// [popup selectItemAtIndex:] — select the item at the given index.
     public void selectItemAtIndex(long index) {
+        Bounds.index(index, numberOfItems(), "selectItemAtIndex:");
         try {
             hSelect.invokeExact(peer, ObjC.sel("selectItemAtIndex:"), index);
         } catch (Throwable t) {

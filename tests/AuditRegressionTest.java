@@ -663,6 +663,10 @@ public final class AuditRegressionTest {
                     IllegalArgumentException.class, () -> dd.setLevel(-1));
             TestKit.expectThrows("setSlice(-1) rejects, not NSUInteger wrap",
                     IllegalArgumentException.class, () -> dd.setSlice(-1));
+            TestKit.expectThrows("setClearColor(null) rejects with IAE, not silent no-op",
+                    IllegalArgumentException.class,
+                    () -> nsui.MTLRenderPassDescriptor.create().colorAttachment(0)
+                            .setClearColor(null));
 
             // The display-link factories take a required selector; a NULL SEL used to be
             // handed to the runtime (or NPE'd in ObjC.sel) instead of being reported.
@@ -869,6 +873,8 @@ public final class AuditRegressionTest {
             mcv.setContent(arr);
             TestKit.check(mcv.numberOfItemsInSection(0) == 2,
                     "populated collection view reports 2 items (got " + mcv.numberOfItemsInSection(0) + ")");
+            TestKit.expectThrows("numberOfItemsInSection(99) rejects, not section-count abort",
+                    IllegalArgumentException.class, () -> mcv.numberOfItemsInSection(99));
             var pathHandle = ObjC.handle(nsui.objc.Sig.of(nsui.objc.Sig.Ret.ID,
                     nsui.objc.Sig.Arg.INT, nsui.objc.Sig.Arg.INT));
             java.util.function.BiFunction<Long, Long, MemorySegment> path = (it, sec) -> {
@@ -943,6 +949,12 @@ public final class AuditRegressionTest {
                         () -> lm.setTextContainerForGlyphRange(tc, new nsui.NSRange(2, 5)));
                 TestKit.noThrow("NSLayoutManager.setTextContainerForGlyphRange(4,0) is accepted (empty)",
                         () -> lm.setTextContainerForGlyphRange(tc, new nsui.NSRange(4, 0)));
+                TestKit.expectThrows("NSLayoutManager.characterIndexForGlyphAtIndex(99) rejects",
+                        IllegalArgumentException.class,
+                        () -> lm.characterIndexForGlyphAtIndex(99));
+                TestKit.expectThrows("NSLayoutManager.cgGlyphAtIndex(-1) rejects, not wrap",
+                        IllegalArgumentException.class,
+                        () -> lm.cgGlyphAtIndex(-1));
             } else {
                 TestKit.probe("layout manager / text container unavailable");
             }
@@ -2261,6 +2273,11 @@ public final class AuditRegressionTest {
                     () -> l3.setZPosition(nan));
             TestKit.noThrow("CALayer.setShadowOffset(NaN) is accepted",
                     () -> l3.setShadowOffset(new NSSize(nan, nan)));
+            TestKit.expectThrows("CALayer.setShadowOffset(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> l3.setShadowOffset(null));
+            TestKit.expectThrows("CALayer.setAnchorPoint(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class,
+                    () -> l3.setAnchorPoint(null));
             TestKit.noThrow("CALayer.setDuration(NaN) is accepted",
                     () -> l3.setDuration(nan));
             nsui.CAGradientLayer gl3 = nsui.CAGradientLayer.create();

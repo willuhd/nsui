@@ -454,12 +454,12 @@ public final class PanelsCoverageTest {
             cp.setMode(origMode);
             check(cp.alpha() >= 0.0 && cp.alpha() <= 1.0, "NSColorPanel alpha in [0,1] (got " + cp.alpha() + ")");
             double origExp = 0.0;
-            boolean expOk = true;
             try {
                 origExp = cp.maximumLinearExposure();
                 cp.setMaximumLinearExposure(origExp);
-            } catch (Throwable ignore) { expOk = true; }
-            check(expOk, "NSColorPanel maximumLinearExposure get/set no crash");
+                check(cp.maximumLinearExposure() == origExp,
+                        "NSColorPanel maximumLinearExposure round-trip (got " + cp.maximumLinearExposure() + ")");
+            } catch (Throwable t) { check(false, "NSColorPanel maximumLinearExposure threw: " + t); }
             TestKit.noThrow("NSColorPanel attachColorList(null) no crash", () -> cp.attachColorList((MemorySegment) null));
             TestKit.noThrow("NSColorPanel detachColorList(null) no crash", () -> cp.detachColorList((MemorySegment) null));
             check(cp.isVisible() == false, "NSColorPanel isVisible false (never shown)");

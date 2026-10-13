@@ -173,6 +173,7 @@ public final class NSLayoutManager extends NSObject {
 
     /// [layoutManager characterIndexForGlyphAtIndex:] -> long
     public long characterIndexForGlyphAtIndex(long glyphIndex) {
+        Bounds.index(glyphIndex, numberOfGlyphs(), "characterIndexForGlyphAtIndex:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.INT, Arg.INT));
             return (long) h.invokeExact(peer, ObjC.sel("characterIndexForGlyphAtIndex:"), glyphIndex);
@@ -183,6 +184,7 @@ public final class NSLayoutManager extends NSObject {
 
     /// [layoutManager glyphIndexForCharacterAtIndex:] -> long
     public long glyphIndexForCharacterAtIndex(long charIndex) {
+        Bounds.nonNegative(charIndex, "glyphIndexForCharacterAtIndex:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.INT, Arg.INT));
             return (long) h.invokeExact(peer, ObjC.sel("glyphIndexForCharacterAtIndex:"), charIndex);
@@ -416,6 +418,7 @@ public final class NSLayoutManager extends NSObject {
 
     /// [layoutManager CGGlyphAtIndex:] -> CGGlyph (uint16_t, widened to long).
     public long cgGlyphAtIndex(long glyphIndex) {
+        Bounds.index(glyphIndex, numberOfGlyphs(), "CGGlyphAtIndex:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.SHORT, Arg.INT));
             short glyph = (short) h.invokeExact(peer, ObjC.sel("CGGlyphAtIndex:"), glyphIndex);
@@ -437,6 +440,7 @@ public final class NSLayoutManager extends NSObject {
 
     /// [layoutManager propertyForGlyphAtIndex:] -> NSGlyphProperty (long, macOS 10.5+).
     public long propertyForGlyphAtIndex(long glyphIndex) {
+        Bounds.index(glyphIndex, numberOfGlyphs(), "propertyForGlyphAtIndex:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.INT, Arg.INT));
             return (long) h.invokeExact(peer, ObjC.sel("propertyForGlyphAtIndex:"), glyphIndex);
@@ -448,6 +452,7 @@ public final class NSLayoutManager extends NSObject {
     /// [layoutManager textContainerForGlyphAtIndex:effectiveRange:] — effectiveRangeOut
     /// is NSRange* (nullable; pass NULL to ignore) -> NSTextContainer (may be nil).
     public NSTextContainer textContainerForGlyphAtIndexEffectiveRange(long glyphIndex, MemorySegment effectiveRangeOutOrNull) {
+        Bounds.index(glyphIndex, numberOfGlyphs(), "textContainerForGlyphAtIndex:effectiveRange:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.INT, Arg.ID));
             MemorySegment p = (MemorySegment) h.invokeExact(peer,
@@ -554,6 +559,7 @@ public final class NSLayoutManager extends NSObject {
 
     /// [layoutManager setNotShownAttribute:forGlyphAtIndex:]
     public void setNotShownAttributeForGlyphAtIndex(boolean flag, long glyphIndex) {
+        Bounds.index(glyphIndex, numberOfGlyphs(), "setNotShownAttribute:forGlyphAtIndex:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.BOOL, Arg.INT));
             h.invokeExact(peer, ObjC.sel("setNotShownAttribute:forGlyphAtIndex:"), flag, glyphIndex);
@@ -564,6 +570,7 @@ public final class NSLayoutManager extends NSObject {
 
     /// [layoutManager setDrawsOutsideLineFragment:forGlyphAtIndex:]
     public void setDrawsOutsideLineFragmentForGlyphAtIndex(boolean flag, long glyphIndex) {
+        Bounds.index(glyphIndex, numberOfGlyphs(), "setDrawsOutsideLineFragment:forGlyphAtIndex:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.BOOL, Arg.INT));
             h.invokeExact(peer, ObjC.sel("setDrawsOutsideLineFragment:forGlyphAtIndex:"), flag, glyphIndex);

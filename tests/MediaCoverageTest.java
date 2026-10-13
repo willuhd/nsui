@@ -280,7 +280,9 @@ public final class MediaCoverageTest {
             check(iv.contentTintColor() == null, "contentTintColor clears to null");
             iv.setPreferredImageDynamicRange(0);
             check(iv.preferredImageDynamicRange() == 0, "preferredImageDynamicRange round-trip");
-            check(iv.imageDynamicRange() >= -1, "imageDynamicRange readable (" + iv.imageDynamicRange() + ")");
+            long resolvedRange = iv.imageDynamicRange();
+            check(resolvedRange == -1 || resolvedRange == 0,
+                    "imageDynamicRange resolved or unspecified after preferring 0 (got " + resolvedRange + ")");
             iv.setImageScaling(3);
             check(iv.imageScaling() == 3, "imageScaling round-trip");
             TestKit.close(win);

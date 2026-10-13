@@ -850,6 +850,25 @@ def _differential_slice(repo, args, classes):
     return buckets
 
 
+def fold_evidence(paths, target):
+    """Merge several per-slice evidence files into one, using the same supersede rule.
+
+    Parallel slices must not write the same evidence file (a read-modify-write race loses entries),
+    so each writes its own and this folds them once.
+    """
+    added = superseded = 0
+    for path in paths:
+        if not os.path.exists(path):
+            print("missing evidence file: %s" % path)
+            continue
+        a, r, _total = merge_entries(target, json.load(open(path)).get("cases", []))
+        added += a
+        superseded += r
+    total = len(json.load(open(target)).get("cases", []))
+    print("folded %d file(s): +%d, superseded %d (%d total)" % (len(paths), added, superseded, total))
+    return 0
+
+
 def merge_differential(paths):
     """Sum the buckets of several --differential runs and report them as one result.
 
@@ -1007,8 +1026,13 @@ def main():
                     help="measure the derived candidates against the SHIPPED tree and record each "
                          "case's verdict there, so a generated-aborts/shipped-tolerates pair is "
                          "visible instead of being reported as a flaw in the shipped wrapper")
+    ap.add_argument("--fold", nargs="*", metavar="PATH", default=None,
+                    help="merge per-slice evidence files into codegen/guard-evidence.json")
     ap.add_argument("--merge-results", nargs="*", metavar="PATH", default=None,
                     help="sum the buckets of several --differential runs and report one result")
+    ap.add_argument("--no-merge", action="store_true",
+                    help="with --differential: do not fold the measured cases back into the "
+                         "evidence (the default is to fold them into codegen/guard-evidence.json)")
     ap.add_argument("--merge-evidence", metavar="PATH",
                     help="with --differential: fold every case measured from the guard-free build "
                          "into this evidence file, so the difference is acted on rather than only "
@@ -1043,9 +1067,17 @@ def main():
     repo = os.path.abspath(args.repo)
     if args.strip_guards is not None:
         repo = strip_guards(repo, args.strip_guards)
+    if args.fold is not None:
+        return fold_evidence(args.fold, os.path.join(HERE, "guard-evidence.json"))
     if args.merge_results is not None:
         return merge_differential(args.merge_results)
     if args.differential:
+        # Close the loop by default. A difference the differential measures and does not record is
+        # re-reported every run and never acted on: NSView.addSubview:nil was measured, listed as
+        # LOOSER, and stayed absent from the evidence because feeding it back was an option nobody
+        # passed after the first time.
+        if not args.no_merge and not args.merge_evidence:
+            args.merge_evidence = os.path.join(HERE, "guard-evidence.json")
         return differential(repo, args)
     if args.shipped_baseline:
         cases = enumerate_cases(args.enumerate or [], args.frameworks)

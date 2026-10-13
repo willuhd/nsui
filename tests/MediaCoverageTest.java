@@ -621,9 +621,8 @@ public final class MediaCoverageTest {
             check(cimg != null, "cursor image non-nil");
             NSPoint hot = NSCursor.arrowCursor().hotSpot();
             check(hot != null, "hotSpot readable (" + hot + ")");
-            check(NSCursor.arrowCursor().isSetOnMouseEntered() == false
-                    || NSCursor.arrowCursor().isSetOnMouseEntered() == true,
-                    "isSetOnMouseEntered no-crash");
+            TestKit.noThrow("isSetOnMouseEntered readable no crash",
+                    () -> NSCursor.arrowCursor().isSetOnMouseEntered());
             try {
                 NSCursor.arrowCursor().push();
                 TestKit.noThrow("balanced push/popCursor no-throw", () -> NSCursor.popCursor());

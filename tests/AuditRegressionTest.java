@@ -1516,6 +1516,10 @@ public final class AuditRegressionTest {
             TestKit.check(mut.count() == 1, "the mutable array holds one object");
             TestKit.expectThrows("arrayWithCapacity(-1) rejects, not NSUInteger wrap",
                     IllegalArgumentException.class, () -> nsui.NSArray.arrayWithCapacity(-1));
+            TestKit.expectThrows("dataWithCapacity(-1) rejects, not NSUInteger wrap",
+                    IllegalArgumentException.class, () -> nsui.NSMutableData.dataWithCapacity(-1));
+            TestKit.expectThrows("dataWithLength(-1) rejects, not absurd-length abort",
+                    IllegalArgumentException.class, () -> nsui.NSMutableData.dataWithLength(-1));
             nsui.NSDictionary immD = nsui.NSDictionary.dictionary();
             TestKit.expectThrows("setObjectForKey on an immutable NSDictionary rejects",
                     IllegalStateException.class,

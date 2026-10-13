@@ -655,9 +655,8 @@ public final class EventCoverageTest {
         NSArray readBack = board.readObjectsForClassesOptions(classes, null);
         TestKit.check(readBack != null && readBack.count() >= 1, "readObjectsForClasses returns >= 1");
         if (readBack != null && readBack.count() >= 1) {
-            TestKit.check("drag-me".equals(readBack.stringAt(0).toString())
-                            || readBack.stringAt(0) != null,
-                    "readObjectsForClasses first element readable (" + readBack.stringAt(0) + ")");
+            TestKit.check("drag-me".equals(String.valueOf(readBack.stringAt(0))),
+                    "readObjectsForClasses first element round-trips (got " + readBack.stringAt(0) + ")");
         }
         TestKit.check(board.prepareForNewContentsWithOptions(0) > 0, "prepareForNewContentsWithOptions no-throw");
         NSData payload = NSData.dataWithBytes(new byte[]{1, 2, 3, 4});

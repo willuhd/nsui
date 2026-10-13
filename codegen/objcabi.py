@@ -137,6 +137,12 @@ def abi(t):
         return "INT32"
     if t in ("s", "S"):
         return "SHORT"
+    if t.startswith("^") or t == "*":
+        # A pointer is one machine word, and INT is the vocabulary's 64-bit slot (a Java long), so
+        # an address is representable without a new Arg kind: `NSError **`, `CGRect *`, a buffer and
+        # a C string all pass their address through it. These used to fall through to OTHER, which
+        # is not in any vocabulary, so every method with an out-parameter was skipped wholesale.
+        return "INT"
     if t.startswith("["):
         # A fixed-size C array ([2f], [16C]) is a value type, never a scalar: it is
         # passed by pointer in the ABI this bridge models, exactly like an id.
@@ -177,8 +183,12 @@ def struct_kind(t):
 
 
 def shape_of(enc):
-    """Full method encoding -> (ret, [args]) using only the args after (self, _cmd)."""
-    toks = parse_types(enc)
+    """Full method encoding -> (ret, [args]) using only the args after (self, _cmd).
+
+    The raw token stream, not the normalized one: `parse_one` collapses `^@` to ID, which hides
+    that a parameter is a pointer and left every out-parameter method unrepresentable.
+    """
+    toks = parse_types_raw(enc)
     if len(toks) < 3:
         return None
     return abi(toks[0]), tuple(abi(t) for t in toks[3:])

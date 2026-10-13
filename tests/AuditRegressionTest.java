@@ -2261,6 +2261,11 @@ public final class AuditRegressionTest {
                     () -> l3.setZPosition(nan));
             TestKit.noThrow("CALayer.setShadowOffset(NaN) is accepted",
                     () -> l3.setShadowOffset(new NSSize(nan, nan)));
+            TestKit.expectThrows("CALayer.setShadowOffset(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> l3.setShadowOffset(null));
+            TestKit.expectThrows("CALayer.setAnchorPoint(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class,
+                    () -> l3.setAnchorPoint(null));
             TestKit.noThrow("CALayer.setDuration(NaN) is accepted",
                     () -> l3.setDuration(nan));
             nsui.CAGradientLayer gl3 = nsui.CAGradientLayer.create();

@@ -574,6 +574,7 @@ public class CALayer extends NSObject {
 
     /// [layer setAnchorPoint:]
     public void setAnchorPoint(NSPoint p) {
+        if (p == null) throw new IllegalArgumentException("setAnchorPoint: null point");
         ensureInit();
         try {
             handles.hSetPoint().invokeExact(peer, Sels.setAnchorPoint, p.toSegment());
@@ -760,6 +761,7 @@ public class CALayer extends NSObject {
 
     /// [layer setShadowOffset:]
     public void setShadowOffset(NSSize offset) {
+        if (offset == null) throw new IllegalArgumentException("setShadowOffset: null size");
         ensureInit();
         try {
             handles.hSetSize().invokeExact(peer, Sels.setShadowOffset, offset.toSegment());

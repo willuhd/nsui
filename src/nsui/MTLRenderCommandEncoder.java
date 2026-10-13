@@ -151,6 +151,10 @@ public final class MTLRenderCommandEncoder extends NSObject {
     /// setScissorRect: — MTLScissorRect (4 NSUInteger) passed BY VALUE.
     public void setScissorRect(MTLScissorRect rect) {
         if (rect == null) throw new IllegalArgumentException("rect is null");
+        Bounds.nonNegative(rect.x(), "setScissorRect: (x)");
+        Bounds.nonNegative(rect.y(), "setScissorRect: (y)");
+        Bounds.nonNegative(rect.width(), "setScissorRect: (width)");
+        Bounds.nonNegative(rect.height(), "setScissorRect: (height)");
         ensureInit();
         try {
             handles.hScissorRect().invokeExact(peer, ObjC.sel("setScissorRect:"), rect.toSegment());

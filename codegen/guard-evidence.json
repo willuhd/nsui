@@ -60,15 +60,6 @@
       "class": "NSView",
       "selector": "addSubview:",
       "param": "view",
-      "unguarded": "sigill",
-      "needs_local_guard": "the shipped wrapper uses a class-local requireNotSelfOrAncestor; Bounds has no cycle helper, so this case is reported rather than emitted",
-      "guards": [],
-      "probe_id": "NSView.addSubview:self"
-    },
-    {
-      "class": "NSView",
-      "selector": "addSubview:",
-      "param": "view",
       "unguarded": "tolerated",
       "control": "nil survives here in the unguarded tree (a different argument to the same selector), so no guard is emitted for nil",
       "guards": [],
@@ -14160,6 +14151,4152 @@
       "needs_local_guard": "no count accessor on this class to bound the index; supply the guard statement in the evidence",
       "guards": [],
       "badness": "index"
+    },
+    {
+      "class": "CALayer",
+      "selector": "setContents:",
+      "param": "contents",
+      "param_index": 0,
+      "probe_id": "CALayer.setContents.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "CALayer",
+      "selector": "setCompositingFilter:",
+      "param": "compositingFilter",
+      "param_index": 0,
+      "probe_id": "CALayer.setCompositingFilter.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "CALayer",
+      "selector": "setLayoutManager:",
+      "param": "layoutManager",
+      "param_index": 0,
+      "probe_id": "CALayer.setLayoutManager.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "CALayer",
+      "selector": "setDelegate:",
+      "param": "delegate",
+      "param_index": 0,
+      "probe_id": "CALayer.setDelegate.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "MTLComputePipelineDescriptor",
+      "selector": "setComputeFunction:",
+      "param": "computeFunction",
+      "param_index": 0,
+      "probe_id": "MTLComputePipelineDescriptor.setComputeFunction.nil",
+      "badness": "nil",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.nonNull({p}, \"setComputeFunction:\");"
+      ]
+    },
+    {
+      "class": "MTLComputePipelineDescriptor",
+      "selector": "setStageInputDescriptor:",
+      "param": "stageInputDescriptor",
+      "param_index": 0,
+      "probe_id": "MTLComputePipelineDescriptor.setStageInputDescriptor.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "MTLComputePipelineDescriptor",
+      "selector": "setLinkedFunctions:",
+      "param": "linkedFunctions",
+      "param_index": 0,
+      "probe_id": "MTLComputePipelineDescriptor.setLinkedFunctions.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "MTLRenderPipelineDescriptor",
+      "selector": "setVertexFunction:",
+      "param": "vertexFunction",
+      "param_index": 0,
+      "probe_id": "MTLRenderPipelineDescriptor.setVertexFunction.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "MTLRenderPipelineDescriptor",
+      "selector": "setFragmentFunction:",
+      "param": "fragmentFunction",
+      "param_index": 0,
+      "probe_id": "MTLRenderPipelineDescriptor.setFragmentFunction.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "MTLRenderPipelineDescriptor",
+      "selector": "setVertexDescriptor:",
+      "param": "vertexDescriptor",
+      "param_index": 0,
+      "probe_id": "MTLRenderPipelineDescriptor.setVertexDescriptor.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "MTLRenderPipelineDescriptor",
+      "selector": "setVertexLinkedFunctions:",
+      "param": "vertexLinkedFunctions",
+      "param_index": 0,
+      "probe_id": "MTLRenderPipelineDescriptor.setVertexLinkedFunctions.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "MTLRenderPipelineDescriptor",
+      "selector": "setFragmentLinkedFunctions:",
+      "param": "fragmentLinkedFunctions",
+      "param_index": 0,
+      "probe_id": "MTLRenderPipelineDescriptor.setFragmentLinkedFunctions.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSAlert",
+      "selector": "setDelegate:",
+      "param": "delegate",
+      "param_index": 0,
+      "probe_id": "NSAlert.setDelegate.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSArray",
+      "selector": "arrayByAddingObject:",
+      "param": "anObject",
+      "param_index": 0,
+      "probe_id": "NSArray.arrayByAddingObject.nil",
+      "badness": "nil",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.nonNull({p}, \"arrayByAddingObject:\");"
+      ]
+    },
+    {
+      "class": "NSArray",
+      "selector": "containsObject:",
+      "param": "anObject",
+      "param_index": 0,
+      "probe_id": "NSArray.containsObject.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSArray",
+      "selector": "descriptionWithLocale:",
+      "param": "locale",
+      "param_index": 0,
+      "probe_id": "NSArray.descriptionWithLocale.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSArray",
+      "selector": "descriptionWithLocale:indent:",
+      "param": "locale",
+      "param_index": 0,
+      "probe_id": "NSArray.descriptionWithLocaleIndent.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSArray",
+      "selector": "indexOfObject:",
+      "param": "anObject",
+      "param_index": 0,
+      "probe_id": "NSArray.indexOfObject.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSArray",
+      "selector": "indexOfObjectIdenticalTo:",
+      "param": "anObject",
+      "param_index": 0,
+      "probe_id": "NSArray.indexOfObjectIdenticalTo.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSArray",
+      "selector": "sortedArrayUsingSelector:",
+      "param": "comparator",
+      "param_index": 0,
+      "probe_id": "NSArray.sortedArrayUsingSelector.nil",
+      "badness": "nil",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.nonNull({p}, \"sortedArrayUsingSelector:\");"
+      ]
+    },
+    {
+      "class": "NSArray",
+      "selector": "makeObjectsPerformSelector:",
+      "param": "aSelector",
+      "param_index": 0,
+      "probe_id": "NSArray.makeObjectsPerformSelector.nil",
+      "badness": "nil",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.nonNull({p}, \"makeObjectsPerformSelector:\");"
+      ]
+    },
+    {
+      "class": "NSArray",
+      "selector": "sortedArrayUsingComparator:",
+      "param": "cmptr",
+      "param_index": 0,
+      "probe_id": "NSArray.sortedArrayUsingComparator.nil",
+      "badness": "nil",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.nonNull({p}, \"sortedArrayUsingComparator:\");"
+      ]
+    },
+    {
+      "class": "NSArray",
+      "selector": "sortedArrayWithOptions:usingComparator:",
+      "param": "cmptr",
+      "param_index": 1,
+      "probe_id": "NSArray.sortedArrayWithOptionsUsingComparator.nil",
+      "badness": "nil",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.nonNull({p}, \"sortedArrayWithOptions:usingComparator:\");"
+      ]
+    },
+    {
+      "class": "NSArray",
+      "selector": "arrayByApplyingDifference:",
+      "param": "difference",
+      "param_index": 0,
+      "probe_id": "NSArray.arrayByApplyingDifference.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSArray",
+      "selector": "writeToURL:atomically:",
+      "param": "url",
+      "param_index": 0,
+      "probe_id": "NSArray.writeToURLAtomically.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSArray",
+      "selector": "filteredArrayUsingPredicate:",
+      "param": "predicate",
+      "param_index": 0,
+      "probe_id": "NSArray.filteredArrayUsingPredicate.nil",
+      "badness": "nil",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.nonNull({p}, \"filteredArrayUsingPredicate:\");"
+      ]
+    },
+    {
+      "class": "NSBezierPath",
+      "selector": "transformUsingAffineTransform:",
+      "param": "transform",
+      "param_index": 0,
+      "probe_id": "NSBezierPath.transformUsingAffineTransform.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSBezierPath",
+      "selector": "appendBezierPathWithPackedGlyphs:",
+      "param": "packedGlyphs",
+      "param_index": 0,
+      "probe_id": "NSBezierPath.appendBezierPathWithPackedGlyphs.nil",
+      "badness": "nil",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.nonNull({p}, \"appendBezierPathWithPackedGlyphs:\");"
+      ]
+    },
+    {
+      "class": "NSBrowser",
+      "selector": "setDoubleAction:",
+      "param": "doubleAction",
+      "param_index": 0,
+      "probe_id": "NSBrowser.setDoubleAction.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSBrowser",
+      "selector": "setCellClass:",
+      "param": "factoryId",
+      "param_index": 0,
+      "probe_id": "NSBrowser.setCellClass.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSBrowser",
+      "selector": "setCellPrototype:",
+      "param": "cellPrototype",
+      "param_index": 0,
+      "probe_id": "NSBrowser.setCellPrototype.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSBrowser",
+      "selector": "setDelegate:",
+      "param": "delegate",
+      "param_index": 0,
+      "probe_id": "NSBrowser.setDelegate.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSBrowser",
+      "selector": "itemAtIndexPath:",
+      "param": "indexPath",
+      "param_index": 0,
+      "probe_id": "NSBrowser.itemAtIndexPath.nil",
+      "badness": "nil",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.nonNull({p}, \"itemAtIndexPath:\");"
+      ]
+    },
+    {
+      "class": "NSBrowser",
+      "selector": "isLeafItem:",
+      "param": "item",
+      "param_index": 0,
+      "probe_id": "NSBrowser.isLeafItem.nil",
+      "badness": "nil",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.nonNull({p}, \"isLeafItem:\");"
+      ]
+    },
+    {
+      "class": "NSBrowser",
+      "selector": "setSelectionIndexPath:",
+      "param": "selectionIndexPath",
+      "param_index": 0,
+      "probe_id": "NSBrowser.setSelectionIndexPath.nil",
+      "badness": "nil",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.nonNull({p}, \"setSelectionIndexPath:\");"
+      ]
+    },
+    {
+      "class": "NSBrowser",
+      "selector": "selectAll:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSBrowser.selectAll.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSBrowser",
+      "selector": "doClick:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSBrowser.doClick.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSBrowser",
+      "selector": "doDoubleClick:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSBrowser.doDoubleClick.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSBrowser",
+      "selector": "noteHeightOfRowsWithIndexesChanged:inColumn:",
+      "param": "columnIndex",
+      "param_index": 1,
+      "probe_id": "NSBrowser.noteHeightOfRowsWithIndexesChangedInColumn.index",
+      "badness": "index",
+      "unguarded": "objc-abort",
+      "needs_local_guard": "the corpus does not bound this index",
+      "guards": []
+    },
+    {
+      "class": "NSBrowser",
+      "selector": "scrollViaScroller:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSBrowser.scrollViaScroller.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSBrowser",
+      "selector": "setMatrixClass:",
+      "param": "factoryId",
+      "param_index": 0,
+      "probe_id": "NSBrowser.setMatrixClass.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSButton",
+      "selector": "setSymbolConfiguration:",
+      "param": "symbolConfiguration",
+      "param_index": 0,
+      "probe_id": "NSButton.setSymbolConfiguration.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSButton",
+      "selector": "setTitleWithMnemonic:",
+      "param": "stringWithAmpersand",
+      "param_index": 0,
+      "probe_id": "NSButton.setTitleWithMnemonic.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSCell",
+      "selector": "setTarget:",
+      "param": "target",
+      "param_index": 0,
+      "probe_id": "NSCell.setTarget.nil",
+      "badness": "nil",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.nonNull({p}, \"setTarget:\");"
+      ]
+    },
+    {
+      "class": "NSCell",
+      "selector": "setAction:",
+      "param": "action",
+      "param_index": 0,
+      "probe_id": "NSCell.setAction.nil",
+      "badness": "nil",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.nonNull({p}, \"setAction:\");"
+      ]
+    },
+    {
+      "class": "NSCell",
+      "selector": "setFormatter:",
+      "param": "formatter",
+      "param_index": 0,
+      "probe_id": "NSCell.setFormatter.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSCell",
+      "selector": "setObjectValue:",
+      "param": "objectValue",
+      "param_index": 0,
+      "probe_id": "NSCell.setObjectValue.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSCell",
+      "selector": "compare:",
+      "param": "otherCell",
+      "param_index": 0,
+      "probe_id": "NSCell.compare.nil",
+      "badness": "nil",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.nonNull({p}, \"compare:\");"
+      ]
+    },
+    {
+      "class": "NSCell",
+      "selector": "takeIntValueFrom:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSCell.takeIntValueFrom.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSCell",
+      "selector": "takeFloatValueFrom:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSCell.takeFloatValueFrom.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSCell",
+      "selector": "takeDoubleValueFrom:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSCell.takeDoubleValueFrom.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSCell",
+      "selector": "takeStringValueFrom:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSCell.takeStringValueFrom.nil",
+      "badness": "nil",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.nonNull({p}, \"takeStringValueFrom:\");"
+      ]
+    },
+    {
+      "class": "NSCell",
+      "selector": "takeObjectValueFrom:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSCell.takeObjectValueFrom.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSCell",
+      "selector": "takeIntegerValueFrom:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSCell.takeIntegerValueFrom.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSCell",
+      "selector": "setRepresentedObject:",
+      "param": "representedObject",
+      "param_index": 0,
+      "probe_id": "NSCell.setRepresentedObject.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSCell",
+      "selector": "performClick:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSCell.performClick.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSClipView",
+      "selector": "viewFrameChanged:",
+      "param": "notification",
+      "param_index": 0,
+      "probe_id": "NSClipView.viewFrameChanged.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSClipView",
+      "selector": "viewBoundsChanged:",
+      "param": "notification",
+      "param_index": 0,
+      "probe_id": "NSClipView.viewBoundsChanged.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSCollectionView",
+      "selector": "setDataSource:",
+      "param": "dataSource",
+      "param_index": 0,
+      "probe_id": "NSCollectionView.setDataSource.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSCollectionView",
+      "selector": "setPrefetchDataSource:",
+      "param": "prefetchDataSource",
+      "param_index": 0,
+      "probe_id": "NSCollectionView.setPrefetchDataSource.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSCollectionView",
+      "selector": "setDelegate:",
+      "param": "delegate",
+      "param_index": 0,
+      "probe_id": "NSCollectionView.setDelegate.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSCollectionView",
+      "selector": "setCollectionViewLayout:",
+      "param": "collectionViewLayout",
+      "param_index": 0,
+      "probe_id": "NSCollectionView.setCollectionViewLayout.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSCollectionView",
+      "selector": "layoutAttributesForItemAtIndexPath:",
+      "param": "indexPath",
+      "param_index": 0,
+      "probe_id": "NSCollectionView.layoutAttributesForItemAtIndexPath.nil",
+      "badness": "nil",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.nonNull({p}, \"layoutAttributesForItemAtIndexPath:\");"
+      ]
+    },
+    {
+      "class": "NSCollectionView",
+      "selector": "selectAll:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSCollectionView.selectAll.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSCollectionView",
+      "selector": "deselectAll:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSCollectionView.deselectAll.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSCollectionView",
+      "selector": "itemAtIndexPath:",
+      "param": "indexPath",
+      "param_index": 0,
+      "probe_id": "NSCollectionView.itemAtIndexPath.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSCollectionView",
+      "selector": "toggleSectionCollapse:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSCollectionView.toggleSectionCollapse.nil",
+      "badness": "nil",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.nonNull({p}, \"toggleSectionCollapse:\");"
+      ]
+    },
+    {
+      "class": "NSColor",
+      "selector": "colorUsingColorSpace:",
+      "param": "space",
+      "param_index": 0,
+      "probe_id": "NSColor.colorUsingColorSpace.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSConnection",
+      "selector": "setRootObject:",
+      "param": "rootObject",
+      "param_index": 0,
+      "probe_id": "NSConnection.setRootObject.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSConnection",
+      "selector": "setDelegate:",
+      "param": "delegate",
+      "param_index": 0,
+      "probe_id": "NSConnection.setDelegate.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSData",
+      "selector": "writeToURL:atomically:",
+      "param": "url",
+      "param_index": 0,
+      "probe_id": "NSData.writeToURLAtomically.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSDateComponents",
+      "selector": "setTimeZone:",
+      "param": "timeZone",
+      "param_index": 0,
+      "probe_id": "NSDateComponents.setTimeZone.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSDocument",
+      "selector": "setFileURL:",
+      "param": "fileURL",
+      "param_index": 0,
+      "probe_id": "NSDocument.setFileURL.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSDocument",
+      "selector": "revertDocumentToSaved:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSDocument.revertDocumentToSaved.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSDocument",
+      "selector": "browseDocumentVersions:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSDocument.browseDocumentVersions.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSDocument",
+      "selector": "setAutosavedContentsFileURL:",
+      "param": "autosavedContentsFileURL",
+      "param_index": 0,
+      "probe_id": "NSDocument.setAutosavedContentsFileURL.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSDocument",
+      "selector": "duplicateDocument:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSDocument.duplicateDocument.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSDocument",
+      "selector": "moveDocumentToUbiquityContainer:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSDocument.moveDocumentToUbiquityContainer.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSDocument",
+      "selector": "lockDocument:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSDocument.lockDocument.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSDocument",
+      "selector": "unlockDocument:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSDocument.unlockDocument.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSDocument",
+      "selector": "preparePageLayout:",
+      "param": "pageLayout",
+      "param_index": 0,
+      "probe_id": "NSDocument.preparePageLayout.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSDocument",
+      "selector": "printDocument:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSDocument.printDocument.nil",
+      "badness": "nil",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.nonNull({p}, \"printDocument:\");"
+      ]
+    },
+    {
+      "class": "NSDocument",
+      "selector": "saveDocumentToPDF:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSDocument.saveDocumentToPDF.nil",
+      "badness": "nil",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.nonNull({p}, \"saveDocumentToPDF:\");"
+      ]
+    },
+    {
+      "class": "NSDocument",
+      "selector": "updateChangeCountWithToken:forSaveOperation:",
+      "param": "changeCountToken",
+      "param_index": 0,
+      "probe_id": "NSDocument.updateChangeCountWithTokenForSaveOperation.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSDocument",
+      "selector": "setUndoManager:",
+      "param": "undoManager",
+      "param_index": 0,
+      "probe_id": "NSDocument.setUndoManager.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSDocument",
+      "selector": "presentError:",
+      "param": "error",
+      "param_index": 0,
+      "probe_id": "NSDocument.presentError.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSDocument",
+      "selector": "willPresentError:",
+      "param": "error",
+      "param_index": 0,
+      "probe_id": "NSDocument.willPresentError.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSDocument",
+      "selector": "willNotPresentError:",
+      "param": "error",
+      "param_index": 0,
+      "probe_id": "NSDocument.willNotPresentError.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSDocument",
+      "selector": "validateUserInterfaceItem:",
+      "param": "item",
+      "param_index": 0,
+      "probe_id": "NSDocument.validateUserInterfaceItem.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSDocument",
+      "selector": "presentedItemDidMoveToURL:",
+      "param": "newURL",
+      "param_index": 0,
+      "probe_id": "NSDocument.presentedItemDidMoveToURL.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSDocument",
+      "selector": "presentedItemDidGainVersion:",
+      "param": "version",
+      "param_index": 0,
+      "probe_id": "NSDocument.presentedItemDidGainVersion.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSDocument",
+      "selector": "presentedItemDidLoseVersion:",
+      "param": "version",
+      "param_index": 0,
+      "probe_id": "NSDocument.presentedItemDidLoseVersion.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSDocument",
+      "selector": "presentedItemDidResolveConflictVersion:",
+      "param": "version",
+      "param_index": 0,
+      "probe_id": "NSDocument.presentedItemDidResolveConflictVersion.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSDocument",
+      "selector": "handleCloseScriptCommand:",
+      "param": "command",
+      "param_index": 0,
+      "probe_id": "NSDocument.handleCloseScriptCommand.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSDocument",
+      "selector": "handlePrintScriptCommand:",
+      "param": "command",
+      "param_index": 0,
+      "probe_id": "NSDocument.handlePrintScriptCommand.nil",
+      "badness": "nil",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.nonNull({p}, \"handlePrintScriptCommand:\");"
+      ]
+    },
+    {
+      "class": "NSDocument",
+      "selector": "setUserActivity:",
+      "param": "userActivity",
+      "param_index": 0,
+      "probe_id": "NSDocument.setUserActivity.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSDocument",
+      "selector": "updateUserActivityState:",
+      "param": "activity",
+      "param_index": 0,
+      "probe_id": "NSDocument.updateUserActivityState.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSDocument",
+      "selector": "encodeRestorableStateWithCoder:",
+      "param": "coder",
+      "param_index": 0,
+      "probe_id": "NSDocument.encodeRestorableStateWithCoder.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSDocument",
+      "selector": "restoreStateWithCoder:",
+      "param": "coder",
+      "param_index": 0,
+      "probe_id": "NSDocument.restoreStateWithCoder.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSDocumentController",
+      "selector": "openDocument:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSDocumentController.openDocument.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSDocumentController",
+      "selector": "saveAllDocuments:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSDocumentController.saveAllDocuments.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSDocumentController",
+      "selector": "presentError:",
+      "param": "error",
+      "param_index": 0,
+      "probe_id": "NSDocumentController.presentError.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSDocumentController",
+      "selector": "willPresentError:",
+      "param": "error",
+      "param_index": 0,
+      "probe_id": "NSDocumentController.willPresentError.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSDocumentController",
+      "selector": "clearRecentDocuments:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSDocumentController.clearRecentDocuments.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSDocumentController",
+      "selector": "validateUserInterfaceItem:",
+      "param": "item",
+      "param_index": 0,
+      "probe_id": "NSDocumentController.validateUserInterfaceItem.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSDraggingItem",
+      "selector": "setDraggingFrame:contents:",
+      "param": "contents",
+      "param_index": 1,
+      "probe_id": "NSDraggingItem.setDraggingFrameContents.nil",
+      "badness": "nil",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.nonNull({p}, \"setDraggingFrame:contents:\");"
+      ]
+    },
+    {
+      "class": "NSDraggingItem",
+      "selector": "setDraggingFrame:contents:",
+      "param": "frame",
+      "param_index": 0,
+      "probe_id": "NSDraggingItem.setDraggingFrameContents.nan",
+      "badness": "nan",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.notNaN({p}, \"setDraggingFrame:contents:\");"
+      ]
+    },
+    {
+      "class": "NSEvent",
+      "selector": "coalescedTouchesForTouch:",
+      "param": "touch",
+      "param_index": 0,
+      "probe_id": "NSEvent.coalescedTouchesForTouch.nil",
+      "badness": "nil",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.nonNull({p}, \"coalescedTouchesForTouch:\");"
+      ]
+    },
+    {
+      "class": "NSFileManager",
+      "selector": "setDelegate:",
+      "param": "delegate",
+      "param_index": 0,
+      "probe_id": "NSFileManager.setDelegate.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSFileManager",
+      "selector": "stringWithFileSystemRepresentation:length:",
+      "param": "str",
+      "param_index": 0,
+      "probe_id": "NSFileManager.stringWithFileSystemRepresentationLength.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSFilePromiseProvider",
+      "selector": "setDelegate:",
+      "param": "delegate",
+      "param_index": 0,
+      "probe_id": "NSFilePromiseProvider.setDelegate.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSFilePromiseProvider",
+      "selector": "setUserInfo:",
+      "param": "userInfo",
+      "param_index": 0,
+      "probe_id": "NSFilePromiseProvider.setUserInfo.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSFontDescriptor",
+      "selector": "fontDescriptorWithMatrix:",
+      "param": "matrix",
+      "param_index": 0,
+      "probe_id": "NSFontDescriptor.fontDescriptorWithMatrix.nil",
+      "badness": "nil",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.nonNull({p}, \"fontDescriptorWithMatrix:\");"
+      ]
+    },
+    {
+      "class": "NSFontManager",
+      "selector": "setAction:",
+      "param": "action",
+      "param_index": 0,
+      "probe_id": "NSFontManager.setAction.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSFontManager",
+      "selector": "setDelegate:",
+      "param": "delegate",
+      "param_index": 0,
+      "probe_id": "NSFontManager.setDelegate.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSFontManager",
+      "selector": "setTarget:",
+      "param": "target",
+      "param_index": 0,
+      "probe_id": "NSFontManager.setTarget.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSFontManager",
+      "selector": "addFontTrait:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSFontManager.addFontTrait.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSFontManager",
+      "selector": "removeFontTrait:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSFontManager.removeFontTrait.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSFontManager",
+      "selector": "modifyFontViaPanel:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSFontManager.modifyFontViaPanel.nil",
+      "badness": "nil",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.nonNull({p}, \"modifyFontViaPanel:\");"
+      ]
+    },
+    {
+      "class": "NSFontManager",
+      "selector": "modifyFont:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSFontManager.modifyFont.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSFontManager",
+      "selector": "orderFrontFontPanel:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSFontManager.orderFrontFontPanel.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSFontManager",
+      "selector": "orderFrontStylesPanel:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSFontManager.orderFrontStylesPanel.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSGraphicsContext",
+      "selector": "setFocusStack:",
+      "param": "stack",
+      "param_index": 0,
+      "probe_id": "NSGraphicsContext.setFocusStack.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSGridView",
+      "selector": "indexOfRow:",
+      "param": "row",
+      "param_index": 0,
+      "probe_id": "NSGridView.indexOfRow.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSGridView",
+      "selector": "indexOfColumn:",
+      "param": "column",
+      "param_index": 0,
+      "probe_id": "NSGridView.indexOfColumn.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSHelpManager",
+      "selector": "removeContextHelpForObject:",
+      "param": "object",
+      "param_index": 0,
+      "probe_id": "NSHelpManager.removeContextHelpForObject.nil",
+      "badness": "nil",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.nonNull({p}, \"removeContextHelpForObject:\");"
+      ]
+    },
+    {
+      "class": "NSHelpManager",
+      "selector": "contextHelpForObject:",
+      "param": "object",
+      "param_index": 0,
+      "probe_id": "NSHelpManager.contextHelpForObject.nil",
+      "badness": "nil",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.nonNull({p}, \"contextHelpForObject:\");"
+      ]
+    },
+    {
+      "class": "NSLayoutManager",
+      "selector": "insertTextContainer:atIndex:",
+      "param": "index",
+      "param_index": 1,
+      "probe_id": "NSLayoutManager.insertTextContainerAtIndex.index",
+      "badness": "index",
+      "unguarded": "objc-abort",
+      "needs_local_guard": "the corpus does not bound this index",
+      "guards": []
+    },
+    {
+      "class": "NSLayoutManager",
+      "selector": "setDelegate:",
+      "param": "delegate",
+      "param_index": 0,
+      "probe_id": "NSLayoutManager.setDelegate.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSLayoutManager",
+      "selector": "setTypesetter:",
+      "param": "typesetter",
+      "param_index": 0,
+      "probe_id": "NSLayoutManager.setTypesetter.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSLayoutManager",
+      "selector": "setGlyphGenerator:",
+      "param": "glyphGenerator",
+      "param_index": 0,
+      "probe_id": "NSLayoutManager.setGlyphGenerator.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSMenu",
+      "selector": "indexOfItemWithRepresentedObject:",
+      "param": "object",
+      "param_index": 0,
+      "probe_id": "NSMenu.indexOfItemWithRepresentedObject.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSMenu",
+      "selector": "setDelegate:",
+      "param": "delegate",
+      "param_index": 0,
+      "probe_id": "NSMenu.setDelegate.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSMenu",
+      "selector": "setMenuRepresentation:",
+      "param": "menuRep",
+      "param_index": 0,
+      "probe_id": "NSMenu.setMenuRepresentation.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSMenu",
+      "selector": "setContextMenuRepresentation:",
+      "param": "menuRep",
+      "param_index": 0,
+      "probe_id": "NSMenu.setContextMenuRepresentation.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSMenu",
+      "selector": "setTearOffMenuRepresentation:",
+      "param": "menuRep",
+      "param_index": 0,
+      "probe_id": "NSMenu.setTearOffMenuRepresentation.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSMenu",
+      "selector": "locationForSubmenu:",
+      "param": "submenu",
+      "param_index": 0,
+      "probe_id": "NSMenu.locationForSubmenu.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSMenuItem",
+      "selector": "setTarget:",
+      "param": "target",
+      "param_index": 0,
+      "probe_id": "NSMenuItem.setTarget.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSMenuItem",
+      "selector": "setAction:",
+      "param": "action",
+      "param_index": 0,
+      "probe_id": "NSMenuItem.setAction.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSMenuItem",
+      "selector": "setRepresentedObject:",
+      "param": "representedObject",
+      "param_index": 0,
+      "probe_id": "NSMenuItem.setRepresentedObject.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSMenuItem",
+      "selector": "setBadge:",
+      "param": "badge",
+      "param_index": 0,
+      "probe_id": "NSMenuItem.setBadge.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSMetadataQuery",
+      "selector": "setDelegate:",
+      "param": "delegate",
+      "param_index": 0,
+      "probe_id": "NSMetadataQuery.setDelegate.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSMetadataQuery",
+      "selector": "setPredicate:",
+      "param": "predicate",
+      "param_index": 0,
+      "probe_id": "NSMetadataQuery.setPredicate.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSMetadataQuery",
+      "selector": "setOperationQueue:",
+      "param": "operationQueue",
+      "param_index": 0,
+      "probe_id": "NSMetadataQuery.setOperationQueue.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSMetadataQuery",
+      "selector": "indexOfResult:",
+      "param": "result",
+      "param_index": 0,
+      "probe_id": "NSMetadataQuery.indexOfResult.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSMutableOrderedSet",
+      "selector": "insertObject:atIndex:",
+      "param": "object",
+      "param_index": 0,
+      "probe_id": "NSMutableOrderedSet.insertObjectAtIndex.nil",
+      "badness": "nil",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.nonNull({p}, \"insertObject:atIndex:\");"
+      ]
+    },
+    {
+      "class": "NSMutableOrderedSet",
+      "selector": "replaceObjectAtIndex:withObject:",
+      "param": "object",
+      "param_index": 1,
+      "probe_id": "NSMutableOrderedSet.replaceObjectAtIndexWithObject.nil",
+      "badness": "nil",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.nonNull({p}, \"replaceObjectAtIndex:withObject:\");"
+      ]
+    },
+    {
+      "class": "NSMutableOrderedSet",
+      "selector": "addObject:",
+      "param": "object",
+      "param_index": 0,
+      "probe_id": "NSMutableOrderedSet.addObject.nil",
+      "badness": "nil",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.nonNull({p}, \"addObject:\");"
+      ]
+    },
+    {
+      "class": "NSMutableOrderedSet",
+      "selector": "setObject:atIndex:",
+      "param": "obj",
+      "param_index": 0,
+      "probe_id": "NSMutableOrderedSet.setObjectAtIndex.nil",
+      "badness": "nil",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.nonNull({p}, \"setObject:atIndex:\");"
+      ]
+    },
+    {
+      "class": "NSMutableOrderedSet",
+      "selector": "setObject:atIndexedSubscript:",
+      "param": "obj",
+      "param_index": 0,
+      "probe_id": "NSMutableOrderedSet.setObjectAtIndexedSubscript.nil",
+      "badness": "nil",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.nonNull({p}, \"setObject:atIndexedSubscript:\");"
+      ]
+    },
+    {
+      "class": "NSMutableOrderedSet",
+      "selector": "removeObject:",
+      "param": "object",
+      "param_index": 0,
+      "probe_id": "NSMutableOrderedSet.removeObject.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSMutableOrderedSet",
+      "selector": "sortUsingComparator:",
+      "param": "cmptr",
+      "param_index": 0,
+      "probe_id": "NSMutableOrderedSet.sortUsingComparator.nil",
+      "badness": "nil",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.nonNull({p}, \"sortUsingComparator:\");"
+      ]
+    },
+    {
+      "class": "NSMutableOrderedSet",
+      "selector": "sortWithOptions:usingComparator:",
+      "param": "cmptr",
+      "param_index": 1,
+      "probe_id": "NSMutableOrderedSet.sortWithOptionsUsingComparator.nil",
+      "badness": "nil",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.nonNull({p}, \"sortWithOptions:usingComparator:\");"
+      ]
+    },
+    {
+      "class": "NSMutableOrderedSet",
+      "selector": "applyDifference:",
+      "param": "difference",
+      "param_index": 0,
+      "probe_id": "NSMutableOrderedSet.applyDifference.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSMutableOrderedSet",
+      "selector": "filterUsingPredicate:",
+      "param": "p",
+      "param_index": 0,
+      "probe_id": "NSMutableOrderedSet.filterUsingPredicate.nil",
+      "badness": "nil",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.nonNull({p}, \"filterUsingPredicate:\");"
+      ]
+    },
+    {
+      "class": "NSOrderedSet",
+      "selector": "indexOfObject:",
+      "param": "object",
+      "param_index": 0,
+      "probe_id": "NSOrderedSet.indexOfObject.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSOrderedSet",
+      "selector": "containsObject:",
+      "param": "object",
+      "param_index": 0,
+      "probe_id": "NSOrderedSet.containsObject.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSOrderedSet",
+      "selector": "sortedArrayUsingComparator:",
+      "param": "cmptr",
+      "param_index": 0,
+      "probe_id": "NSOrderedSet.sortedArrayUsingComparator.nil",
+      "badness": "nil",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.nonNull({p}, \"sortedArrayUsingComparator:\");"
+      ]
+    },
+    {
+      "class": "NSOrderedSet",
+      "selector": "sortedArrayWithOptions:usingComparator:",
+      "param": "cmptr",
+      "param_index": 1,
+      "probe_id": "NSOrderedSet.sortedArrayWithOptionsUsingComparator.nil",
+      "badness": "nil",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.nonNull({p}, \"sortedArrayWithOptions:usingComparator:\");"
+      ]
+    },
+    {
+      "class": "NSOrderedSet",
+      "selector": "descriptionWithLocale:",
+      "param": "locale",
+      "param_index": 0,
+      "probe_id": "NSOrderedSet.descriptionWithLocale.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSOrderedSet",
+      "selector": "descriptionWithLocale:indent:",
+      "param": "locale",
+      "param_index": 0,
+      "probe_id": "NSOrderedSet.descriptionWithLocaleIndent.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSOrderedSet",
+      "selector": "orderedSetByApplyingDifference:",
+      "param": "difference",
+      "param_index": 0,
+      "probe_id": "NSOrderedSet.orderedSetByApplyingDifference.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSOrderedSet",
+      "selector": "filteredOrderedSetUsingPredicate:",
+      "param": "p",
+      "param_index": 0,
+      "probe_id": "NSOrderedSet.filteredOrderedSetUsingPredicate.nil",
+      "badness": "nil",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.nonNull({p}, \"filteredOrderedSetUsingPredicate:\");"
+      ]
+    },
+    {
+      "class": "NSOutlineView",
+      "selector": "isExpandable:",
+      "param": "item",
+      "param_index": 0,
+      "probe_id": "NSOutlineView.isExpandable.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSOutlineView",
+      "selector": "numberOfChildrenOfItem:",
+      "param": "item",
+      "param_index": 0,
+      "probe_id": "NSOutlineView.numberOfChildrenOfItem.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSOutlineView",
+      "selector": "child:ofItem:",
+      "param": "item",
+      "param_index": 1,
+      "probe_id": "NSOutlineView.childOfItem.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSOutlineView",
+      "selector": "child:ofItem:",
+      "param": "index",
+      "param_index": 0,
+      "probe_id": "NSOutlineView.childOfItem.index",
+      "badness": "index",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSOutlineView",
+      "selector": "expandItem:expandChildren:",
+      "param": "item",
+      "param_index": 0,
+      "probe_id": "NSOutlineView.expandItemExpandChildren.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSOutlineView",
+      "selector": "expandItem:",
+      "param": "item",
+      "param_index": 0,
+      "probe_id": "NSOutlineView.expandItem.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSOutlineView",
+      "selector": "collapseItem:collapseChildren:",
+      "param": "item",
+      "param_index": 0,
+      "probe_id": "NSOutlineView.collapseItemCollapseChildren.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSOutlineView",
+      "selector": "collapseItem:",
+      "param": "item",
+      "param_index": 0,
+      "probe_id": "NSOutlineView.collapseItem.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSOutlineView",
+      "selector": "reloadItem:reloadChildren:",
+      "param": "item",
+      "param_index": 0,
+      "probe_id": "NSOutlineView.reloadItemReloadChildren.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSOutlineView",
+      "selector": "reloadItem:",
+      "param": "item",
+      "param_index": 0,
+      "probe_id": "NSOutlineView.reloadItem.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSOutlineView",
+      "selector": "parentForItem:",
+      "param": "item",
+      "param_index": 0,
+      "probe_id": "NSOutlineView.parentForItem.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSOutlineView",
+      "selector": "childIndexForItem:",
+      "param": "item",
+      "param_index": 0,
+      "probe_id": "NSOutlineView.childIndexForItem.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSOutlineView",
+      "selector": "rowForItem:",
+      "param": "item",
+      "param_index": 0,
+      "probe_id": "NSOutlineView.rowForItem.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSOutlineView",
+      "selector": "levelForItem:",
+      "param": "item",
+      "param_index": 0,
+      "probe_id": "NSOutlineView.levelForItem.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSOutlineView",
+      "selector": "isItemExpanded:",
+      "param": "item",
+      "param_index": 0,
+      "probe_id": "NSOutlineView.isItemExpanded.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSOutlineView",
+      "selector": "setDropItem:dropChildIndex:",
+      "param": "item",
+      "param_index": 0,
+      "probe_id": "NSOutlineView.setDropItemDropChildIndex.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSOutlineView",
+      "selector": "setDropItem:dropChildIndex:",
+      "param": "index",
+      "param_index": 1,
+      "probe_id": "NSOutlineView.setDropItemDropChildIndex.index",
+      "badness": "index",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSPathControl",
+      "selector": "setURL:",
+      "param": "URL",
+      "param_index": 0,
+      "probe_id": "NSPathControl.setURL.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSPathControl",
+      "selector": "setDoubleAction:",
+      "param": "doubleAction",
+      "param_index": 0,
+      "probe_id": "NSPathControl.setDoubleAction.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSPathControl",
+      "selector": "setDelegate:",
+      "param": "delegate",
+      "param_index": 0,
+      "probe_id": "NSPathControl.setDelegate.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSPickerTouchBarItem",
+      "selector": "setImage:atIndex:",
+      "param": "index",
+      "param_index": 1,
+      "probe_id": "NSPickerTouchBarItem.setImageAtIndex.index",
+      "badness": "index",
+      "unguarded": "objc-abort",
+      "needs_local_guard": "the corpus does not bound this index",
+      "guards": []
+    },
+    {
+      "class": "NSPickerTouchBarItem",
+      "selector": "setTarget:",
+      "param": "target",
+      "param_index": 0,
+      "probe_id": "NSPickerTouchBarItem.setTarget.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSPickerTouchBarItem",
+      "selector": "setAction:",
+      "param": "action",
+      "param_index": 0,
+      "probe_id": "NSPickerTouchBarItem.setAction.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSPopover",
+      "selector": "setDelegate:",
+      "param": "delegate",
+      "param_index": 0,
+      "probe_id": "NSPopover.setDelegate.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSPopover",
+      "selector": "performClose:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSPopover.performClose.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSPrintInfo",
+      "selector": "setPrinter:",
+      "param": "printer",
+      "param_index": 0,
+      "probe_id": "NSPrintInfo.setPrinter.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSPrintInfo",
+      "selector": "takeSettingsFromPDFInfo:",
+      "param": "inPDFInfo",
+      "param_index": 0,
+      "probe_id": "NSPrintInfo.takeSettingsFromPDFInfo.nil",
+      "badness": "nil",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.nonNull({p}, \"takeSettingsFromPDFInfo:\");"
+      ]
+    },
+    {
+      "class": "NSPrintOperation",
+      "selector": "setPDFPanel:",
+      "param": "PDFPanel",
+      "param_index": 0,
+      "probe_id": "NSPrintOperation.setPDFPanel.nil",
+      "badness": "nil",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.nonNull({p}, \"setPDFPanel:\");"
+      ]
+    },
+    {
+      "class": "NSResponder",
+      "selector": "noResponderFor:",
+      "param": "eventSelector",
+      "param_index": 0,
+      "probe_id": "NSResponder.noResponderFor.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSResponder",
+      "selector": "showContextHelp:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSResponder.showContextHelp.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSResponder",
+      "selector": "presentError:",
+      "param": "error",
+      "param_index": 0,
+      "probe_id": "NSResponder.presentError.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSResponder",
+      "selector": "willPresentError:",
+      "param": "error",
+      "param_index": 0,
+      "probe_id": "NSResponder.willPresentError.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSResponder",
+      "selector": "setUserActivity:",
+      "param": "userActivity",
+      "param_index": 0,
+      "probe_id": "NSResponder.setUserActivity.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSResponder",
+      "selector": "updateUserActivityState:",
+      "param": "userActivity",
+      "param_index": 0,
+      "probe_id": "NSResponder.updateUserActivityState.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSResponder",
+      "selector": "encodeRestorableStateWithCoder:",
+      "param": "coder",
+      "param_index": 0,
+      "probe_id": "NSResponder.encodeRestorableStateWithCoder.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSResponder",
+      "selector": "restoreStateWithCoder:",
+      "param": "coder",
+      "param_index": 0,
+      "probe_id": "NSResponder.restoreStateWithCoder.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSSavePanel",
+      "selector": "setDirectoryURL:",
+      "param": "directoryURL",
+      "param_index": 0,
+      "probe_id": "NSSavePanel.setDirectoryURL.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSSavePanel",
+      "selector": "setCurrentContentType:",
+      "param": "currentContentType",
+      "param_index": 0,
+      "probe_id": "NSSavePanel.setCurrentContentType.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSSavePanel",
+      "selector": "ok:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSSavePanel.ok.nil",
+      "badness": "nil",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.nonNull({p}, \"ok:\");"
+      ]
+    },
+    {
+      "class": "NSSavePanel",
+      "selector": "cancel:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSSavePanel.cancel.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSSpellChecker",
+      "selector": "guessesForWord:",
+      "param": "word",
+      "param_index": 0,
+      "probe_id": "NSSpellChecker.guessesForWord.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSSpellChecker",
+      "selector": "forgetWord:",
+      "param": "word",
+      "param_index": 0,
+      "probe_id": "NSSpellChecker.forgetWord.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSSplitView",
+      "selector": "setDelegate:",
+      "param": "delegate",
+      "param_index": 0,
+      "probe_id": "NSSplitView.setDelegate.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSSplitView",
+      "selector": "insertArrangedSubview:atIndex:",
+      "param": "index",
+      "param_index": 1,
+      "probe_id": "NSSplitView.insertArrangedSubviewAtIndex.index",
+      "badness": "index",
+      "unguarded": "objc-abort",
+      "needs_local_guard": "the corpus does not bound this index",
+      "guards": []
+    },
+    {
+      "class": "NSString",
+      "selector": "getFileSystemRepresentation:maxLength:",
+      "param": "cname",
+      "param_index": 0,
+      "probe_id": "NSString.getFileSystemRepresentationMaxLength.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSString",
+      "selector": "rangeOfCharacterFromSet:",
+      "param": "searchSet",
+      "param_index": 0,
+      "probe_id": "NSString.rangeOfCharacterFromSet.nil",
+      "badness": "nil",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.nonNull({p}, \"rangeOfCharacterFromSet:\");"
+      ]
+    },
+    {
+      "class": "NSString",
+      "selector": "rangeOfCharacterFromSet:options:",
+      "param": "searchSet",
+      "param_index": 0,
+      "probe_id": "NSString.rangeOfCharacterFromSetOptions.nil",
+      "badness": "nil",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.nonNull({p}, \"rangeOfCharacterFromSet:options:\");"
+      ]
+    },
+    {
+      "class": "NSString",
+      "selector": "rangeOfCharacterFromSet:options:range:",
+      "param": "searchSet",
+      "param_index": 0,
+      "probe_id": "NSString.rangeOfCharacterFromSetOptionsRange.nil",
+      "badness": "nil",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.nonNull({p}, \"rangeOfCharacterFromSet:options:range:\");"
+      ]
+    },
+    {
+      "class": "NSString",
+      "selector": "uppercaseStringWithLocale:",
+      "param": "locale",
+      "param_index": 0,
+      "probe_id": "NSString.uppercaseStringWithLocale.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSString",
+      "selector": "lowercaseStringWithLocale:",
+      "param": "locale",
+      "param_index": 0,
+      "probe_id": "NSString.lowercaseStringWithLocale.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSString",
+      "selector": "capitalizedStringWithLocale:",
+      "param": "locale",
+      "param_index": 0,
+      "probe_id": "NSString.capitalizedStringWithLocale.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSString",
+      "selector": "componentsSeparatedByCharactersInSet:",
+      "param": "separator",
+      "param_index": 0,
+      "probe_id": "NSString.componentsSeparatedByCharactersInSet.nil",
+      "badness": "nil",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.nonNull({p}, \"componentsSeparatedByCharactersInSet:\");"
+      ]
+    },
+    {
+      "class": "NSString",
+      "selector": "stringByTrimmingCharactersInSet:",
+      "param": "set",
+      "param_index": 0,
+      "probe_id": "NSString.stringByTrimmingCharactersInSet.nil",
+      "badness": "nil",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.nonNull({p}, \"stringByTrimmingCharactersInSet:\");"
+      ]
+    },
+    {
+      "class": "NSString",
+      "selector": "stringByFoldingWithOptions:locale:",
+      "param": "locale",
+      "param_index": 1,
+      "probe_id": "NSString.stringByFoldingWithOptionsLocale.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSString",
+      "selector": "getCString:",
+      "param": "bytes",
+      "param_index": 0,
+      "probe_id": "NSString.getCString.nil",
+      "badness": "nil",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.nonNull({p}, \"getCString:\");"
+      ]
+    },
+    {
+      "class": "NSString",
+      "selector": "getCString:maxLength:",
+      "param": "bytes",
+      "param_index": 0,
+      "probe_id": "NSString.getCStringMaxLength.nil",
+      "badness": "nil",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.nonNull({p}, \"getCString:maxLength:\");"
+      ]
+    },
+    {
+      "class": "NSString",
+      "selector": "writeToURL:atomically:",
+      "param": "url",
+      "param_index": 0,
+      "probe_id": "NSString.writeToURLAtomically.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSString",
+      "selector": "stringByAddingPercentEncodingWithAllowedCharacters:",
+      "param": "allowedCharacters",
+      "param_index": 0,
+      "probe_id": "NSString.stringByAddingPercentEncodingWithAllowedCharacters.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSTabView",
+      "selector": "selectTabViewItemWithIdentifier:",
+      "param": "identifier",
+      "param_index": 0,
+      "probe_id": "NSTabView.selectTabViewItemWithIdentifier.nil",
+      "badness": "nil",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.nonNull({p}, \"selectTabViewItemWithIdentifier:\");"
+      ]
+    },
+    {
+      "class": "NSTabView",
+      "selector": "takeSelectedTabViewItemFromSender:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSTabView.takeSelectedTabViewItemFromSender.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSTabView",
+      "selector": "selectFirstTabViewItem:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSTabView.selectFirstTabViewItem.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSTabView",
+      "selector": "selectLastTabViewItem:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSTabView.selectLastTabViewItem.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSTabView",
+      "selector": "selectNextTabViewItem:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSTabView.selectNextTabViewItem.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSTabView",
+      "selector": "selectPreviousTabViewItem:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSTabView.selectPreviousTabViewItem.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSTabView",
+      "selector": "insertTabViewItem:atIndex:",
+      "param": "index",
+      "param_index": 1,
+      "probe_id": "NSTabView.insertTabViewItemAtIndex.index",
+      "badness": "index",
+      "unguarded": "objc-abort",
+      "needs_local_guard": "the corpus does not bound this index",
+      "guards": []
+    },
+    {
+      "class": "NSTabView",
+      "selector": "setDelegate:",
+      "param": "delegate",
+      "param_index": 0,
+      "probe_id": "NSTabView.setDelegate.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSTabView",
+      "selector": "indexOfTabViewItemWithIdentifier:",
+      "param": "identifier",
+      "param_index": 0,
+      "probe_id": "NSTabView.indexOfTabViewItemWithIdentifier.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSTabViewController",
+      "selector": "insertTabViewItem:atIndex:",
+      "param": "index",
+      "param_index": 1,
+      "probe_id": "NSTabViewController.insertTabViewItemAtIndex.index",
+      "badness": "index",
+      "unguarded": "objc-abort",
+      "needs_local_guard": "the corpus does not bound this index",
+      "guards": []
+    },
+    {
+      "class": "NSTableColumn",
+      "selector": "setTableView:",
+      "param": "tableView",
+      "param_index": 0,
+      "probe_id": "NSTableColumn.setTableView.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSTableColumn",
+      "selector": "setHeaderCell:",
+      "param": "headerCell",
+      "param_index": 0,
+      "probe_id": "NSTableColumn.setHeaderCell.nil",
+      "badness": "nil",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.nonNull({p}, \"setHeaderCell:\");"
+      ]
+    },
+    {
+      "class": "NSTableColumn",
+      "selector": "setSortDescriptorPrototype:",
+      "param": "sortDescriptorPrototype",
+      "param_index": 0,
+      "probe_id": "NSTableColumn.setSortDescriptorPrototype.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSTableColumn",
+      "selector": "setDataCell:",
+      "param": "dataCell",
+      "param_index": 0,
+      "probe_id": "NSTableColumn.setDataCell.nil",
+      "badness": "nil",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.nonNull({p}, \"setDataCell:\");"
+      ]
+    },
+    {
+      "class": "NSTask",
+      "selector": "setStandardInput:",
+      "param": "standardInput",
+      "param_index": 0,
+      "probe_id": "NSTask.setStandardInput.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSTask",
+      "selector": "setStandardOutput:",
+      "param": "standardOutput",
+      "param_index": 0,
+      "probe_id": "NSTask.setStandardOutput.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSTask",
+      "selector": "setStandardError:",
+      "param": "standardError",
+      "param_index": 0,
+      "probe_id": "NSTask.setStandardError.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSText",
+      "selector": "setDelegate:",
+      "param": "delegate",
+      "param_index": 0,
+      "probe_id": "NSText.setDelegate.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSText",
+      "selector": "copy:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSText.copy.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSText",
+      "selector": "copyFont:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSText.copyFont.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSText",
+      "selector": "copyRuler:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSText.copyRuler.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSText",
+      "selector": "cut:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSText.cut.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSText",
+      "selector": "delete:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSText.delete.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSText",
+      "selector": "paste:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSText.paste.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSText",
+      "selector": "pasteFont:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSText.pasteFont.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSText",
+      "selector": "pasteRuler:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSText.pasteRuler.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSText",
+      "selector": "selectAll:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSText.selectAll.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSText",
+      "selector": "changeFont:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSText.changeFont.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSText",
+      "selector": "alignLeft:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSText.alignLeft.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSText",
+      "selector": "alignRight:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSText.alignRight.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSText",
+      "selector": "alignCenter:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSText.alignCenter.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSText",
+      "selector": "subscript:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSText.subscript.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSText",
+      "selector": "superscript:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSText.superscript.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSText",
+      "selector": "underline:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSText.underline.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSText",
+      "selector": "unscript:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSText.unscript.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSText",
+      "selector": "showGuessPanel:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSText.showGuessPanel.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSText",
+      "selector": "checkSpelling:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSText.checkSpelling.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSText",
+      "selector": "toggleRuler:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSText.toggleRuler.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSTextStorage",
+      "selector": "setDelegate:",
+      "param": "delegate",
+      "param_index": 0,
+      "probe_id": "NSTextStorage.setDelegate.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSTextStorage",
+      "selector": "setTextStorageObserver:",
+      "param": "textStorageObserver",
+      "param_index": 0,
+      "probe_id": "NSTextStorage.setTextStorageObserver.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSTextView",
+      "selector": "turnOffKerning:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSTextView.turnOffKerning.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSTextView",
+      "selector": "tightenKerning:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSTextView.tightenKerning.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSTextView",
+      "selector": "loosenKerning:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSTextView.loosenKerning.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSTextView",
+      "selector": "useStandardKerning:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSTextView.useStandardKerning.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSTextView",
+      "selector": "turnOffLigatures:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSTextView.turnOffLigatures.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSTextView",
+      "selector": "useStandardLigatures:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSTextView.useStandardLigatures.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSTextView",
+      "selector": "useAllLigatures:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSTextView.useAllLigatures.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSTextView",
+      "selector": "raiseBaseline:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSTextView.raiseBaseline.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSTextView",
+      "selector": "lowerBaseline:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSTextView.lowerBaseline.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSTextView",
+      "selector": "toggleTraditionalCharacterShape:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSTextView.toggleTraditionalCharacterShape.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSTextView",
+      "selector": "outline:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSTextView.outline.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSTextView",
+      "selector": "performFindPanelAction:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSTextView.performFindPanelAction.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSTextView",
+      "selector": "alignJustified:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSTextView.alignJustified.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSTextView",
+      "selector": "changeColor:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSTextView.changeColor.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSTextView",
+      "selector": "changeAttributes:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSTextView.changeAttributes.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSTextView",
+      "selector": "changeDocumentBackgroundColor:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSTextView.changeDocumentBackgroundColor.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSTextView",
+      "selector": "orderFrontSpacingPanel:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSTextView.orderFrontSpacingPanel.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSTextView",
+      "selector": "orderFrontLinkPanel:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSTextView.orderFrontLinkPanel.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSTextView",
+      "selector": "orderFrontListPanel:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSTextView.orderFrontListPanel.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSTextView",
+      "selector": "orderFrontTablePanel:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSTextView.orderFrontTablePanel.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSTextView",
+      "selector": "clickedOnLink:atIndex:",
+      "param": "link",
+      "param_index": 0,
+      "probe_id": "NSTextView.clickedOnLinkAtIndex.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSTextView",
+      "selector": "clickedOnLink:atIndex:",
+      "param": "charIndex",
+      "param_index": 1,
+      "probe_id": "NSTextView.clickedOnLinkAtIndex.index",
+      "badness": "index",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSTextView",
+      "selector": "startSpeaking:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSTextView.startSpeaking.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSTextView",
+      "selector": "stopSpeaking:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSTextView.stopSpeaking.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSTextView",
+      "selector": "changeLayoutOrientation:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSTextView.changeLayoutOrientation.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSTextView",
+      "selector": "complete:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSTextView.complete.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSTextView",
+      "selector": "pasteAsPlainText:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSTextView.pasteAsPlainText.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSTextView",
+      "selector": "pasteAsRichText:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSTextView.pasteAsRichText.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSTextView",
+      "selector": "toggleContinuousSpellChecking:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSTextView.toggleContinuousSpellChecking.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSTextView",
+      "selector": "toggleGrammarChecking:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSTextView.toggleGrammarChecking.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSTextView",
+      "selector": "toggleSmartInsertDelete:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSTextView.toggleSmartInsertDelete.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSTextView",
+      "selector": "toggleAutomaticQuoteSubstitution:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSTextView.toggleAutomaticQuoteSubstitution.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSTextView",
+      "selector": "toggleAutomaticLinkDetection:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSTextView.toggleAutomaticLinkDetection.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSTextView",
+      "selector": "toggleAutomaticDataDetection:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSTextView.toggleAutomaticDataDetection.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSTextView",
+      "selector": "toggleAutomaticDashSubstitution:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSTextView.toggleAutomaticDashSubstitution.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSTextView",
+      "selector": "toggleAutomaticTextReplacement:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSTextView.toggleAutomaticTextReplacement.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSTextView",
+      "selector": "toggleAutomaticSpellingCorrection:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSTextView.toggleAutomaticSpellingCorrection.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSTextView",
+      "selector": "orderFrontSubstitutionsPanel:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSTextView.orderFrontSubstitutionsPanel.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSTextView",
+      "selector": "checkTextInSelection:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSTextView.checkTextInSelection.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSTextView",
+      "selector": "checkTextInDocument:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSTextView.checkTextInDocument.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSTextView",
+      "selector": "toggleQuickLookPreviewPanel:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSTextView.toggleQuickLookPreviewPanel.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSTextView",
+      "selector": "orderFrontSharingServicePicker:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSTextView.orderFrontSharingServicePicker.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSTextView",
+      "selector": "toggleAutomaticTextCompletion:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSTextView.toggleAutomaticTextCompletion.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSTextView",
+      "selector": "highlight:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSTextView.highlight.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSTextView",
+      "selector": "toggleBaseWritingDirection:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSTextView.toggleBaseWritingDirection.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSToolbar",
+      "selector": "setDelegate:",
+      "param": "delegate",
+      "param_index": 0,
+      "probe_id": "NSToolbar.setDelegate.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSToolbar",
+      "selector": "runCustomizationPalette:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSToolbar.runCustomizationPalette.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSToolbarItem",
+      "selector": "setTarget:",
+      "param": "target",
+      "param_index": 0,
+      "probe_id": "NSToolbarItem.setTarget.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSToolbarItem",
+      "selector": "setAction:",
+      "param": "action",
+      "param_index": 0,
+      "probe_id": "NSToolbarItem.setAction.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSToolbarItem",
+      "selector": "setBadge:",
+      "param": "badge",
+      "param_index": 0,
+      "probe_id": "NSToolbarItem.setBadge.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSTouchBar",
+      "selector": "setDelegate:",
+      "param": "delegate",
+      "param_index": 0,
+      "probe_id": "NSTouchBar.setDelegate.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSURL",
+      "selector": "getFileSystemRepresentation:maxLength:",
+      "param": "buffer",
+      "param_index": 0,
+      "probe_id": "NSURL.getFileSystemRepresentationMaxLength.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSURL",
+      "selector": "loadResourceDataNotifyingClient:usingCache:",
+      "param": "client",
+      "param_index": 0,
+      "probe_id": "NSURL.loadResourceDataNotifyingClientUsingCache.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSURLSession",
+      "selector": "dataTaskWithRequest:",
+      "param": "request",
+      "param_index": 0,
+      "probe_id": "NSURLSession.dataTaskWithRequest.nil",
+      "badness": "nil",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.nonNull({p}, \"dataTaskWithRequest:\");"
+      ]
+    },
+    {
+      "class": "NSURLSession",
+      "selector": "uploadTaskWithStreamedRequest:",
+      "param": "request",
+      "param_index": 0,
+      "probe_id": "NSURLSession.uploadTaskWithStreamedRequest.nil",
+      "badness": "nil",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.nonNull({p}, \"uploadTaskWithStreamedRequest:\");"
+      ]
+    },
+    {
+      "class": "NSURLSession",
+      "selector": "downloadTaskWithRequest:",
+      "param": "request",
+      "param_index": 0,
+      "probe_id": "NSURLSession.downloadTaskWithRequest.nil",
+      "badness": "nil",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.nonNull({p}, \"downloadTaskWithRequest:\");"
+      ]
+    },
+    {
+      "class": "NSURLSession",
+      "selector": "streamTaskWithNetService:",
+      "param": "service",
+      "param_index": 0,
+      "probe_id": "NSURLSession.streamTaskWithNetService.nil",
+      "badness": "nil",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.nonNull({p}, \"streamTaskWithNetService:\");"
+      ]
+    },
+    {
+      "class": "NSURLSession",
+      "selector": "webSocketTaskWithRequest:",
+      "param": "request",
+      "param_index": 0,
+      "probe_id": "NSURLSession.webSocketTaskWithRequest.nil",
+      "badness": "nil",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.nonNull({p}, \"webSocketTaskWithRequest:\");"
+      ]
+    },
+    {
+      "class": "NSUserNotification",
+      "selector": "setDeliveryTimeZone:",
+      "param": "deliveryTimeZone",
+      "param_index": 0,
+      "probe_id": "NSUserNotification.setDeliveryTimeZone.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSView",
+      "selector": "setCompositingFilter:",
+      "param": "compositingFilter",
+      "param_index": 0,
+      "probe_id": "NSView.setCompositingFilter.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSView",
+      "selector": "addLayoutGuide:",
+      "param": "guide",
+      "param_index": 0,
+      "probe_id": "NSView.addLayoutGuide.nil",
+      "badness": "nil",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.nonNull({p}, \"addLayoutGuide:\");"
+      ]
+    },
+    {
+      "class": "NSView",
+      "selector": "removeLayoutGuide:",
+      "param": "guide",
+      "param_index": 0,
+      "probe_id": "NSView.removeLayoutGuide.nil",
+      "badness": "nil",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.nonNull({p}, \"removeLayoutGuide:\");"
+      ]
+    },
+    {
+      "class": "NSView",
+      "selector": "setPressureConfiguration:",
+      "param": "pressureConfiguration",
+      "param_index": 0,
+      "probe_id": "NSView.setPressureConfiguration.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSView",
+      "selector": "setWritingToolsCoordinator:",
+      "param": "writingToolsCoordinator",
+      "param_index": 0,
+      "probe_id": "NSView.setWritingToolsCoordinator.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSView",
+      "selector": "layoutGuideForLayoutRegion:",
+      "param": "layoutRegion",
+      "param_index": 0,
+      "probe_id": "NSView.layoutGuideForLayoutRegion.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSView",
+      "selector": "rectForLayoutRegion:",
+      "param": "layoutRegion",
+      "param_index": 0,
+      "probe_id": "NSView.rectForLayoutRegion.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSViewController",
+      "selector": "setRepresentedObject:",
+      "param": "representedObject",
+      "param_index": 0,
+      "probe_id": "NSViewController.setRepresentedObject.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSViewController",
+      "selector": "dismissController:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSViewController.dismissController.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSWindow",
+      "selector": "addTitlebarAccessoryViewController:",
+      "param": "childViewController",
+      "param_index": 0,
+      "probe_id": "NSWindow.addTitlebarAccessoryViewController.nil",
+      "badness": "nil",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.nonNull({p}, \"addTitlebarAccessoryViewController:\");"
+      ]
+    },
+    {
+      "class": "NSWindow",
+      "selector": "insertTitlebarAccessoryViewController:atIndex:",
+      "param": "childViewController",
+      "param_index": 0,
+      "probe_id": "NSWindow.insertTitlebarAccessoryViewControllerAtIndex.nil",
+      "badness": "nil",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.nonNull({p}, \"insertTitlebarAccessoryViewController:atIndex:\");"
+      ]
+    },
+    {
+      "class": "NSWindow",
+      "selector": "insertTitlebarAccessoryViewController:atIndex:",
+      "param": "index",
+      "param_index": 1,
+      "probe_id": "NSWindow.insertTitlebarAccessoryViewControllerAtIndex.index",
+      "badness": "index",
+      "unguarded": "objc-abort",
+      "needs_local_guard": "the corpus does not bound this index",
+      "guards": []
+    },
+    {
+      "class": "NSWindow",
+      "selector": "setRepresentedURL:",
+      "param": "representedURL",
+      "param_index": 0,
+      "probe_id": "NSWindow.setRepresentedURL.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSWindow",
+      "selector": "setDelegate:",
+      "param": "delegate",
+      "param_index": 0,
+      "probe_id": "NSWindow.setDelegate.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSWindow",
+      "selector": "endEditingFor:",
+      "param": "object",
+      "param_index": 0,
+      "probe_id": "NSWindow.endEditingFor.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSWindow",
+      "selector": "miniaturize:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSWindow.miniaturize.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSWindow",
+      "selector": "deminiaturize:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSWindow.deminiaturize.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSWindow",
+      "selector": "zoom:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSWindow.zoom.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSWindow",
+      "selector": "makeKeyAndOrderFront:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSWindow.makeKeyAndOrderFront.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSWindow",
+      "selector": "orderFront:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSWindow.orderFront.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSWindow",
+      "selector": "orderBack:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSWindow.orderBack.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSWindow",
+      "selector": "orderOut:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSWindow.orderOut.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSWindow",
+      "selector": "performClose:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSWindow.performClose.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSWindow",
+      "selector": "performMiniaturize:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSWindow.performMiniaturize.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSWindow",
+      "selector": "performZoom:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSWindow.performZoom.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSWindow",
+      "selector": "toggleFullScreen:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSWindow.toggleFullScreen.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSWindow",
+      "selector": "setColorSpace:",
+      "param": "colorSpace",
+      "param_index": 0,
+      "probe_id": "NSWindow.setColorSpace.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSWindow",
+      "selector": "selectNextKeyView:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSWindow.selectNextKeyView.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSWindow",
+      "selector": "selectPreviousKeyView:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSWindow.selectPreviousKeyView.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSWindow",
+      "selector": "setDefaultButtonCell:",
+      "param": "defaultButtonCell",
+      "param_index": 0,
+      "probe_id": "NSWindow.setDefaultButtonCell.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSWindow",
+      "selector": "toggleToolbarShown:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSWindow.toggleToolbarShown.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSWindow",
+      "selector": "runToolbarCustomizationPalette:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSWindow.runToolbarCustomizationPalette.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSWindow",
+      "selector": "selectNextTab:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSWindow.selectNextTab.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSWindow",
+      "selector": "selectPreviousTab:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSWindow.selectPreviousTab.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSWindow",
+      "selector": "moveTabToNewWindow:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSWindow.moveTabToNewWindow.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSWindow",
+      "selector": "mergeAllWindows:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSWindow.mergeAllWindows.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSWindow",
+      "selector": "toggleTabBar:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSWindow.toggleTabBar.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSWindow",
+      "selector": "toggleTabOverview:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSWindow.toggleTabOverview.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSWindow",
+      "selector": "setRestorationClass:",
+      "param": "restorationClass",
+      "param_index": 0,
+      "probe_id": "NSWindow.setRestorationClass.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSWindow",
+      "selector": "handleCloseScriptCommand:",
+      "param": "command",
+      "param_index": 0,
+      "probe_id": "NSWindow.handleCloseScriptCommand.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSWindow",
+      "selector": "handleSaveScriptCommand:",
+      "param": "command",
+      "param_index": 0,
+      "probe_id": "NSWindow.handleSaveScriptCommand.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSWindowController",
+      "selector": "setDocument:",
+      "param": "document",
+      "param_index": 0,
+      "probe_id": "NSWindowController.setDocument.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSWindowController",
+      "selector": "showWindow:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSWindowController.showWindow.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSWindowController",
+      "selector": "dismissController:",
+      "param": "sender",
+      "param_index": 0,
+      "probe_id": "NSWindowController.dismissController.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSWorkspace",
+      "selector": "openURL:",
+      "param": "url",
+      "param_index": 0,
+      "probe_id": "NSWorkspace.openURL.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSWorkspace",
+      "selector": "iconForContentType:",
+      "param": "contentType",
+      "param_index": 0,
+      "probe_id": "NSWorkspace.iconForContentType.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSWorkspace",
+      "selector": "URLForApplicationToOpenURL:",
+      "param": "url",
+      "param_index": 0,
+      "probe_id": "NSWorkspace.URLForApplicationToOpenURL.nil",
+      "badness": "nil",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.nonNull({p}, \"URLForApplicationToOpenURL:\");"
+      ]
+    },
+    {
+      "class": "NSWorkspace",
+      "selector": "URLsForApplicationsToOpenURL:",
+      "param": "url",
+      "param_index": 0,
+      "probe_id": "NSWorkspace.URLsForApplicationsToOpenURL.nil",
+      "badness": "nil",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.nonNull({p}, \"URLsForApplicationsToOpenURL:\");"
+      ]
+    },
+    {
+      "class": "NSWorkspace",
+      "selector": "URLForApplicationToOpenContentType:",
+      "param": "contentType",
+      "param_index": 0,
+      "probe_id": "NSWorkspace.URLForApplicationToOpenContentType.nil",
+      "badness": "nil",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.nonNull({p}, \"URLForApplicationToOpenContentType:\");"
+      ]
+    },
+    {
+      "class": "NSWorkspace",
+      "selector": "URLsForApplicationsToOpenContentType:",
+      "param": "contentType",
+      "param_index": 0,
+      "probe_id": "NSWorkspace.URLsForApplicationsToOpenContentType.nil",
+      "badness": "nil",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.nonNull({p}, \"URLsForApplicationsToOpenContentType:\");"
+      ]
+    },
+    {
+      "class": "NSXMLNode",
+      "selector": "setObjectValue:",
+      "param": "objectValue",
+      "param_index": 0,
+      "probe_id": "NSXMLNode.setObjectValue.nil",
+      "badness": "nil",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.nonNull({p}, \"setObjectValue:\");"
+      ]
     }
   ],
   "enumerated_with": "codegen/probe.py --enumerate (nil/NaN/index candidates derived from the generator's plans)",

@@ -754,7 +754,10 @@ def case_entry(case, verdict):
         entry["control"] = "the unguarded call survived, so no guard is emitted"
         entry["guards"] = []
     else:
-        return None                     # already fails safely in Java
+        # It fails safely in Java now (a fix landed), so this measurement supersedes an older abort
+        # verdict rather than leaving both in the file. The generator skips a verification entry.
+        entry["guards"] = []
+        entry["verification"] = True
     return entry
 
 
@@ -762,22 +765,25 @@ def merge_entries(path, entries):
     """Fold entries into an evidence file, adding new ones and upgrading guardless duplicates."""
     existing = json.load(open(path)) if os.path.exists(path) else {"cases": []}
     cases = existing.get("cases", [])
-    by_key = {(c.get("class"), c.get("selector"), c.get("param"), c.get("unguarded")): i
+    # Keyed on the case and its kind, not on the verdict: a later measurement of the same case is
+    # the better one, and keying on the verdict left a stale abort and a fresh tolerated side by
+    # side, so the generator emitted the same guard twice.
+    by_key = {(c.get("class"), c.get("selector"), c.get("param"), c.get("badness")): i
               for i, c in enumerate(cases)}
-    added = replaced = 0
+    added = superseded = 0
     for e in entries:
-        key = (e["class"], e["selector"], e.get("param"), e.get("unguarded"))
+        key = (e["class"], e["selector"], e.get("param"), e.get("badness"))
         i = by_key.get(key)
         if i is None:
             by_key[key] = len(cases)
             cases.append(e)
             added += 1
-        elif e.get("guards") and not cases[i].get("guards"):
+        else:
             cases[i] = e
-            replaced += 1
+            superseded += 1
     existing["cases"] = cases
     json.dump(existing, open(path, "w"), indent=2)
-    return added, replaced, len(cases)
+    return added, superseded, len(cases)
 
 
 def _differential_slice(repo, args, classes):
@@ -809,19 +815,30 @@ def _differential_slice(repo, args, classes):
         if g is None or r["id"].endswith(".__baseline"):
             continue
         s_v, g_v = r["verdict"], g["verdict"]
-        if s_v == "tolerated" and g_v != "tolerated":
-            b = bare_by_id.get(r["id"], {}).get("verdict")
-            buckets["STRICTER-GUARD" if b == "tolerated" else "STRICTER-BODY"].append(
-                (r["id"], s_v, g_v))
-        elif s_v in STRICTER and g_v in STRICTER:
-            buckets["STILL-ABORTS"].append((r["id"], s_v, g_v))
-        elif s_v in STRICTER or s_v == "java-exception":
+        if s_v == "tolerated":
             if g_v == "tolerated":
+                buckets["unchanged-tolerated"].append((r["id"], s_v, g_v))
+            else:
+                b = bare_by_id.get(r["id"], {}).get("verdict")
+                buckets["STRICTER-GUARD" if b == "tolerated" else "STRICTER-BODY"].append(
+                    (r["id"], s_v, g_v))
+        elif s_v in STRICTER:                      # the shipped wrapper aborts on this call
+            if g_v in STRICTER:
+                buckets["STILL-ABORTS"].append((r["id"], s_v, g_v))
+            elif g_v == "java-exception":
+                buckets["fixed"].append((r["id"], s_v, g_v))
+            else:
+                buckets["LOOSER"].append((r["id"], s_v, g_v))
+        else:                                      # the shipped wrapper raises a Java exception
+            if g_v in STRICTER:
+                # The generated wrapper aborts where the shipped one raised a clear error: worse
+                # than the code it replaces. Counting this as "fixed" hid exactly the regression a
+                # rejected index bound causes.
+                buckets["LESS-SAFE"].append((r["id"], s_v, g_v))
+            elif g_v == "tolerated":
                 buckets["LOOSER"].append((r["id"], s_v, g_v))
             else:
-                buckets["fixed"].append((r["id"], s_v, g_v))
-        else:
-            buckets["unchanged-tolerated"].append((r["id"], s_v, g_v))
+                buckets["parity"].append((r["id"], s_v, g_v))
     if getattr(args, "merge_evidence", None):
         # Feed every case this slice measured from its guard-free build back into the evidence, so
         # the next generator run acts on it instead of the difference surviving in reports only.
@@ -831,6 +848,34 @@ def _differential_slice(repo, args, classes):
         added, replaced, total = merge_entries(args.merge_evidence, entries)
         print("   evidence: +%d, upgraded %d (%d total)" % (added, replaced, total))
     return buckets
+
+
+def merge_differential(paths):
+    """Sum the buckets of several --differential runs and report them as one result.
+
+    A full sweep is three measurements per class, so it is run as parallel slices; this is how the
+    slices become one answer instead of four files nobody adds up.
+    """
+    buckets = defaultdict(list)
+    missing = []
+    for path in paths:
+        if not os.path.exists(path):
+            missing.append(path)
+            continue
+        for key, items in json.load(open(path)).items():
+            buckets[key].extend(items)
+    for name in ("fixed", "parity", "unchanged-tolerated", "STRICTER-GUARD", "STRICTER-BODY",
+                 "STILL-ABORTS", "LESS-SAFE", "LOOSER"):
+        print("%-22s %4d" % (name, len(buckets.get(name, []))))
+    for name in ("STRICTER-GUARD", "STRICTER-BODY", "STILL-ABORTS", "LESS-SAFE", "LOOSER"):
+        for cid, s_v, g_v in buckets.get(name, [])[:8]:
+            print("   %-14s %-56s shipped=%-13s generated=%s" % (name, cid, s_v, g_v))
+    if missing:
+        print("missing result file(s): %s" % ", ".join(missing))
+    bad = (len(buckets.get("STRICTER-GUARD", [])) + len(buckets.get("STILL-ABORTS", []))
+           + len(buckets.get("LESS-SAFE", [])))
+    print("defects (STRICTER-GUARD + STILL-ABORTS + LESS-SAFE): %d" % bad)
+    return 1 if (bad or missing) else 0
 
 
 def differential(repo, args):
@@ -858,13 +903,15 @@ def differential(repo, args):
             continue
         for key, items in part.items():
             buckets[key].extend(items)
-    for name in ("fixed", "unchanged-tolerated", "STRICTER-GUARD", "STRICTER-BODY",
-                 "STILL-ABORTS", "LOOSER"):
+    for name in ("fixed", "parity", "unchanged-tolerated", "STRICTER-GUARD", "STRICTER-BODY",
+                 "STILL-ABORTS", "LESS-SAFE", "LOOSER"):
         print("%-22s %4d" % (name, len(buckets.get(name, []))))
-    # Only a guard that over-rejects and a case that still aborts are defects. STRICTER-BODY and
-    # LOOSER are conformance differences in the generated body, reported but not failures.
-    bad = len(buckets.get("STRICTER-GUARD", [])) + len(buckets.get("STILL-ABORTS", []))
-    for name in ("STRICTER-GUARD", "STRICTER-BODY", "STILL-ABORTS", "LOOSER"):
+    # A guard that over-rejects, a case that still aborts, and a generated wrapper that aborts
+    # where the shipped one raised a clear error are defects. STRICTER-BODY and LOOSER are
+    # conformance differences, reported but not failures.
+    bad = (len(buckets.get("STRICTER-GUARD", [])) + len(buckets.get("STILL-ABORTS", []))
+           + len(buckets.get("LESS-SAFE", [])))
+    for name in ("STRICTER-GUARD", "STRICTER-BODY", "STILL-ABORTS", "LESS-SAFE", "LOOSER"):
         for cid, s_v, g_v in buckets.get(name, [])[:12]:
             print("   %-14s %-56s shipped=%-13s generated=%s" % (name, cid, s_v, g_v))
     if failed:
@@ -921,23 +968,24 @@ def enumerate_measure(repo, args):
     if args.merge and os.path.exists(path):
         existing = json.load(open(path))
         old_cases = existing.get("cases", [])
-        by_key = {(c.get("class"), c.get("selector"), c.get("param"), c.get("unguarded")): i
+        by_key = {(c.get("class"), c.get("selector"), c.get("param"), c.get("badness")): i
                   for i, c in enumerate(old_cases)}
         added = replaced = 0
         for e in entries:
-            key = (e["class"], e["selector"], e["param"], e["unguarded"])
+            if e.get("baseline"):
+                continue                       # scaffolding, not a case
+            key = (e.get("class"), e.get("selector"), e.get("param"), e.get("badness"))
             i = by_key.get(key)
             if i is None:
                 by_key[key] = len(old_cases)
                 old_cases.append(e)
                 added += 1
-            elif e.get("guards") and not old_cases[i].get("guards"):
-                # a case that could not be guarded before, but a discovered bound now allows it
+            else:
                 old_cases[i] = e
                 replaced += 1
         existing["cases"] = old_cases
         json.dump(existing, open(path, "w"), indent=2)
-        print("merged %d new case(s) and upgraded %d into %s (%d total)"
+        print("merged %d new case(s), superseded %d in %s (%d total)"
               % (added, replaced, path, len(old_cases)))
     else:
         json.dump({"measured_with": "codegen/probe.py --enumerate",
@@ -959,6 +1007,8 @@ def main():
                     help="measure the derived candidates against the SHIPPED tree and record each "
                          "case's verdict there, so a generated-aborts/shipped-tolerates pair is "
                          "visible instead of being reported as a flaw in the shipped wrapper")
+    ap.add_argument("--merge-results", nargs="*", metavar="PATH", default=None,
+                    help="sum the buckets of several --differential runs and report one result")
     ap.add_argument("--merge-evidence", metavar="PATH",
                     help="with --differential: fold every case measured from the guard-free build "
                          "into this evidence file, so the difference is acted on rather than only "
@@ -993,6 +1043,8 @@ def main():
     repo = os.path.abspath(args.repo)
     if args.strip_guards is not None:
         repo = strip_guards(repo, args.strip_guards)
+    if args.merge_results is not None:
+        return merge_differential(args.merge_results)
     if args.differential:
         return differential(repo, args)
     if args.shipped_baseline:

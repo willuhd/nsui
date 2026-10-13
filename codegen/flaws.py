@@ -241,12 +241,15 @@ def check_f3():
 
 
 def check_f6():
-    """Generated code that guards an argument the shipped wrapper actually tolerates.
+    """Arguments the shipped wrapper tolerates where the unguarded generated body aborts.
 
-    This is a generator conformance gap, not a shipped flaw: the guard the generator adds rejects
-    input the shipped API accepts, so the generated wrapper is stricter than the one it replaces.
-    gen.py now consults the same baseline and skips those guards (reported as GUARD-SKIPPED), so
-    these findings stay as the record of the discrepancy rather than as pending emissions.
+    Informational, and no longer a pending emission. It began as "the generated guard rejects input
+    the shipped API accepts", which was true while the generator guarded every measured abort. It
+    now follows the same baseline: it declines to guard a tolerated argument (GUARD-SKIPPED) and, for
+    a nil, matches the tolerance with an early return (NIL-SKIP), so no rejecting guard is emitted
+    for these cases at all. The measured statement of generated conformance is the differential
+    (`probe.py --differential`, which reports STRICTER-GUARD and STRICTER-BODY), and this check is
+    the static view of the same set. It is excluded from the shipped-flaw total.
     """
     baseline = shipped_baseline()
     findings = []
@@ -256,7 +259,8 @@ def check_f6():
         verdict = baseline.get(case.get("probe_id"))
         if verdict != "tolerated":
             continue       # java-exception is not over-guarding: the shipped wrapper rejects too
-        findings.append({"check": "F6", "class": case.get("class"), "selector": case.get("selector"),
+        findings.append({"check": "F6", "informational": True, "class": case.get("class"),
+                         "selector": case.get("selector"),
                          "param": case.get("param"), "generated": case.get("unguarded"),
                          "shipped": verdict,
                          "file": os.path.relpath(os.path.join(REPO, "src", "nsui",
@@ -423,7 +427,13 @@ def main():
             print("  %-52s %-30s %s" % (where, str(extra)[:30], f["evidence"]))
         if len(items) > args.limit:
             print("  ... %d more" % (len(items) - args.limit))
-    print("\ntotal: %d" % len(out))
+    info = [f for f in out if f.get("informational")]
+    real = [f for f in out if not f.get("informational")]
+    if info:
+        print("\ninformational: %d case(s) where the generator follows the shipped wrapper's own "
+              "tolerance instead of guarding (not shipped flaws; see --differential for the "
+              "measured behaviour)" % len(info))
+    print("\ntotal shipped flaws: %d" % len(real))
     if args.json:
         json.dump(out, open(args.json, "w"), indent=2)
         print("wrote " + args.json)

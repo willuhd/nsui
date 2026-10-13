@@ -140,7 +140,9 @@ public final class FullCoverageTest {
             NSDictionary dict = NSDictionary.mutableDictionary();
             dict.setObjectForKey(NSString.of("v"), NSString.of("k"));
             check("v".equals(ObjC.toString(dict.objectForKey("k"))), "NSDictionary");
-            try { NSDictionary tmpD = NSDictionary.mutableDictionary(); tmpD.setObjectForKey(MemorySegment.NULL, MemorySegment.NULL); TestKit.probe("setObject NULL did not throw"); } catch (Throwable ignore) { TestKit.skipCase("setObject NULL throws handled"); }
+            TestKit.expectThrows("setObjectForKey(NULL,NULL) rejects nil in Java (no native crash)",
+                    IllegalArgumentException.class,
+                    () -> NSDictionary.mutableDictionary().setObjectForKey(MemorySegment.NULL, MemorySegment.NULL));
             // Actually test proper
             dict = NSDictionary.mutableDictionary();
             dict.setObjectForKey(NSString.of("v1"), NSString.of("k1"));

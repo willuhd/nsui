@@ -199,7 +199,9 @@ public final class AppCoverageTest {
             try { bpath = main.bundlePath(); } catch (Throwable t) { bpath = null; }
             System.out.println("  mainBundle path=" + bpath + " id=" + main.bundleIdentifier());
             TestKit.check(bpath != null && !bpath.isEmpty(), "NSBundle main bundlePath probe no crash");
-            TestKit.check(main.bundleIdentifier() == null || !main.bundleIdentifier().isEmpty(), "bundleIdentifier probe no crash");
+            String bid = TestKit.attempt("bundleIdentifier readable no crash (nil headless, non-empty bundled)",
+                    () -> main.bundleIdentifier());
+            TestKit.check(bid == null || !bid.isEmpty(), "bundleIdentifier null-or-nonempty");
             TestKit.check(main.resourcePath() != null, "resourcePath probe no crash");
             TestKit.check(main.executablePath() != null, "executablePath probe no crash");
             TestKit.check(main.infoDictionary() != null, "infoDictionary probe no crash");

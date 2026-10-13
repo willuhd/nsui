@@ -57,6 +57,8 @@ public final class SelectionWidgetsTest {
 
         popup.selectItemAtIndex(1);
         checkEq(popup.indexOfSelectedItem(), 1, "NSPopUpButton re-add + selectItemAtIndex(1) -> indexOfSelectedItem()==1");
+        TestKit.expectThrows("NSPopUpButton selectItemAtIndex(99) rejects, like removeItemAtIndex:",
+                IllegalArgumentException.class, () -> popup.selectItemAtIndex(99));
         // AppKit only fires the action on USER interaction; a programmatic select is a no-op.
         TestKit.check(!fired[0], "programmatic selectItemAtIndex: did NOT fire the action (AppKit fires only on user interaction)");
 

@@ -40,6 +40,7 @@ public final class NSMutableOrderedSet extends NSOrderedSet {
     /// [NSMutableOrderedSet orderedSetWithCapacity:]
     public static NSMutableOrderedSet orderedSetWithCapacity(long capacity) {
         ensureMutInit();
+        Bounds.nonNegative(capacity, "orderedSetWithCapacity:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.INT));
             MemorySegment s = (MemorySegment) h.invokeExact(ObjC.cls("NSMutableOrderedSet"), ObjC.sel("orderedSetWithCapacity:"), capacity);

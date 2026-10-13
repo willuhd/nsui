@@ -203,6 +203,7 @@ public final class NSDictionary extends NSObject {
     /// +dictionaryWithCapacity: (NSMutableDictionary).
     public static NSDictionary dictionaryWithCapacity(long capacity) {
         ensureInit();
+        Bounds.nonNegative(capacity, "dictionaryWithCapacity:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.INT));
             return wrap((MemorySegment) h.invokeExact(

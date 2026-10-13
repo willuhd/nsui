@@ -38,6 +38,7 @@ public final class NSMutableSet extends NSSet {
     /// [NSMutableSet setWithCapacity:]
     public static NSMutableSet setWithCapacity(long capacity) {
         ensureMutInit();
+        Bounds.nonNegative(capacity, "setWithCapacity:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.INT));
             MemorySegment s = (MemorySegment) h.invokeExact(ObjC.cls("NSMutableSet"), ObjC.sel("setWithCapacity:"), capacity);

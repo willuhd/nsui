@@ -263,6 +263,10 @@ public final class TableCoverageTest {
             catch (Throwable t) { check(false, "reloadItem(null) threw: " + t); }
             try { TestKit.noThrow("setDropItem(null,-1) no throw", () -> ov.setDropItem(null, -1)); }
             catch (Throwable t) { check(false, "setDropItem threw: " + t); }
+            TestKit.expectThrows("child(-1) rejects, not NSUInteger wrap",
+                    IllegalArgumentException.class, () -> ov.child(-1, null));
+            TestKit.expectThrows("setDropItem(null,-2) rejects below drop-on",
+                    IllegalArgumentException.class, () -> ov.setDropItem(null, -2));
             try { ov.expandItem(null); TestKit.noThrow("expand/collapse(null) no throw", () -> ov.collapseItem(null)); }
             catch (Throwable t) { check(false, "expand/collapse(null) threw: " + t); }
             check(ov.rowForItem(null) == -1, "rowForItem(null) == -1");

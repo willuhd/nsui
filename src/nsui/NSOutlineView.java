@@ -156,6 +156,7 @@ public final class NSOutlineView extends NSTableView {
 
     /// [outline child:ofItem:] — child at index of item.
     public MemorySegment child(long index, MemorySegment item) {
+        Bounds.nonNegative(index, "child:ofItem:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.INT, Arg.ID));
             return (MemorySegment) h.invokeExact(peer, ObjC.sel("child:ofItem:"), index, (MemorySegment) (item == null ? MemorySegment.NULL : item));
@@ -285,6 +286,10 @@ public final class NSOutlineView extends NSTableView {
 
     /// [outline setDropItem:dropChildIndex:] — re-target a proposed drop.
     public void setDropItem(MemorySegment item, long index) {
+        if (index < -1) {
+            throw new IllegalArgumentException("setDropItem:dropChildIndex: index " + index
+                    + " must be -1 (drop on) or >= 0");
+        }
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.INT));
             h.invokeExact(peer, ObjC.sel("setDropItem:dropChildIndex:"), (MemorySegment) (item == null ? MemorySegment.NULL : item), index);

@@ -93,7 +93,7 @@ def generate(snap, classes, frameworks, batch=30, tag="sweep"):
     rc_all = 0
     for i in range(0, len(classes), batch):
         chunk = classes[i:i + batch]
-        cmd = [sys.executable, os.path.join(HERE, "gen.py"), "--repo", snap, "--apply",
+        cmd = [sys.executable, os.path.join(HERE, "gen.py"), "--repo", snap, "--apply", "--allow-drop",
                "--patch-out", os.path.join(bench.REPORTS, tag + ".patch"),
                "--summary-out", os.path.join(bench.REPORTS, tag + "-summary.txt"),
                "--scratch", os.path.join(bench.WORK, tag + "-scratch")]

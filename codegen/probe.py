@@ -353,7 +353,9 @@ def generated_shadow(repo, classes, use_evidence=True):
     shipped_classes = tree_classes(repo)
     if shipped_classes is None:
         return None, None, None
-    cmd = [sys.executable, os.path.join(HERE, "gen.py"), "--repo", scratch, "--apply",
+    # --allow-drop: this shadow deliberately replaces shipped classes to measure the generated
+    # code; the guard that protects a hand-written wrapper from losing its API is for real trees.
+    cmd = [sys.executable, os.path.join(HERE, "gen.py"), "--repo", scratch, "--apply", "--allow-drop",
            "--patch-out", os.path.join(scratch, "gen.patch"),
            "--summary-out", os.path.join(scratch, "gen-summary.txt")]
     for c in classes:

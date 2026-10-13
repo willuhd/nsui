@@ -2004,6 +2004,8 @@ public final class AuditRegressionTest {
                     "supermenu reflects the submenu attachment (guard precondition)");
             TestKit.expectThrows("indirect submenu cycle rejects instead of hanging",
                     IllegalArgumentException.class, () -> cmB.setSubmenu(cmIb, cmA));
+            TestKit.expectThrows("setSubmenuForItem(null item) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> cmA.setSubmenuForItem(null, null));
 
             nsui.NSStackView sOuter = nsui.NSStackView.create(new NSRect(0, 0, 200, 100));
             nsui.NSStackView sInner = nsui.NSStackView.create(new NSRect(0, 0, 100, 50));

@@ -340,6 +340,7 @@ public final class NSMenu extends NSObject {
     /// [self setSubmenu:submenu forItem:item] — the NSMenu variant (both peers as ID).
     public void setSubmenuForItem(NSMenu submenu, NSMenuItem item) {
         ensureInit();
+        Bounds.nonNull(item, "setSubmenu:forItem: (item)");
         try {
             H.hSetSubmenuForItem().invokeExact(peer, Sels.setSubmenu_forItem,
                     (MemorySegment) (submenu == null ? MemorySegment.NULL : submenu.peer()),

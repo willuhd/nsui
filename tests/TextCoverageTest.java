@@ -907,6 +907,8 @@ public final class TextCoverageTest {
         TestKit.check(tv.shouldChangeTextInRangesReplacementStrings(null, null),
                 "shouldChangeTextInRanges(NULL,NULL) did not crash");
         TestKit.noThrow("clickedOnLink(NULL,0) did not crash", () -> tv.clickedOnLinkAtIndex(null, 0));
+        TestKit.expectThrows("clickedOnLinkAtIndex(-1) rejects, not wrap",
+                IllegalArgumentException.class, () -> tv.clickedOnLinkAtIndex(null, -1));
         tv.setLayoutOrientation(0);
 
         // ---- RTFD file round-trip under a unique /tmp/sa-* dir ----

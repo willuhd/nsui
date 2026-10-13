@@ -939,6 +939,11 @@ public class NSTextView extends NSText {
     /// [textView clickedOnLink:atIndex:] — link is id (NSURL/NSString).
     public void clickedOnLinkAtIndex(MemorySegment link, long charIndex) {
         ensureInit();
+        long textLen = textLength();
+        if (charIndex < 0 || charIndex > textLen) {
+            throw new IllegalArgumentException("clickedOnLink:atIndex: index " + charIndex
+                    + " out of bounds (text length " + textLen + ")");
+        }
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.INT));
             h.invokeExact(peer, Sels.clickedOnLink_atIndex,

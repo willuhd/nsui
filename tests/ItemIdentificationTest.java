@@ -51,7 +51,7 @@ public final class ItemIdentificationTest {
             String cleared = item.identifier();
             System.out.println("  after setIdentifier(null) -> " + (cleared == null ? "null" : "\"" + cleared + "\""));
             // Accept null or empty as cleared; just ensure no crash and not still previous value
-            boolean clearedOk = cleared == null || cleared.isEmpty() || !cleared.equals("com.example.third");
+            boolean clearedOk = cleared == null || cleared.isEmpty();
             TestKit.check(clearedOk, "identifier after setIdentifier(null) cleared or nil [got " + (cleared == null ? "null" : "\"" + cleared + "\"") + "]");
             // restore for stress
             item.setIdentifier("com.example.stress");

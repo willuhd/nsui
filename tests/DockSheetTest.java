@@ -588,8 +588,8 @@ public final class DockSheetTest {
         // Pump to let AppKit call the completionHandler block
         TestKit.pump(app, 600);
         app.updateWindows();
-        // The block should have fired with code 42 if AppKit dispatched it
-        // On some AppKit paths the handler fires after the sheet is fully dismissed; allow 0 or 42 but not crash
+        // The block should have fired with code 42 if AppKit dispatched it.
+        // AppKit may coerce the code to NSModalResponseOK (1); accept 42 or 1 but fail anything else.
         if (callbackFired.get()) {
             check(callbackCode.get() == 42 || callbackCode.get() == 1 /* NSModalResponseOK */, "IntConsumer handler fired with expected code (got " + callbackCode.get() + ", expect 42 or 1)");
         } else {

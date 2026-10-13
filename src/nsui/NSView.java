@@ -1737,6 +1737,7 @@ public class NSView extends NSResponder {
     /// [view rotateByAngle:] — CGFloat degrees.
     public void rotateByAngle(double angle) {
         ensureInit();
+        Bounds.notNaN(angle, "rotateByAngle:");
         try {
             H.hSetDouble().invokeExact(peer, Sels.rotateByAngle, angle);
         } catch (Throwable t) {
@@ -1757,6 +1758,7 @@ public class NSView extends NSResponder {
     /// [view setFrameRotation:].
     public void setFrameRotation(double angle) {
         ensureInit();
+        Bounds.notNaN(angle, "setFrameRotation:");
         try {
             H.hSetDouble().invokeExact(peer, Sels.setFrameRotation, angle);
         } catch (Throwable t) {
@@ -1777,6 +1779,7 @@ public class NSView extends NSResponder {
     /// [view setFrameCenterRotation:].
     public void setFrameCenterRotation(double angle) {
         ensureInit();
+        Bounds.notNaN(angle, "setFrameCenterRotation:");
         try {
             H.hSetDouble().invokeExact(peer, Sels.setFrameCenterRotation, angle);
         } catch (Throwable t) {
@@ -1797,6 +1800,7 @@ public class NSView extends NSResponder {
     /// [view setBoundsRotation:].
     public void setBoundsRotation(double angle) {
         ensureInit();
+        Bounds.notNaN(angle, "setBoundsRotation:");
         try {
             H.hSetDouble().invokeExact(peer, Sels.setBoundsRotation, angle);
         } catch (Throwable t) {

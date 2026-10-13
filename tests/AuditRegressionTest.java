@@ -2053,6 +2053,8 @@ public final class AuditRegressionTest {
             NSView nv = NSView.create(new NSRect(0, 0, 100, 100), (v, d) -> {});
             TestKit.expectThrows("setBoundsOrigin(NaN) rejects (native 133)",
                     IllegalArgumentException.class, () -> nv.setBoundsOrigin(np));
+            TestKit.expectThrows("setFrameRotation(NaN) rejects, like other NaN geometry",
+                    IllegalArgumentException.class, () -> nv.setFrameRotation(nan));
             TestKit.expectThrows("translateOriginToPoint(NaN) rejects (native 133)",
                     IllegalArgumentException.class, () -> nv.translateOriginToPoint(np));
             TestKit.expectThrows("scaleUnitSquareToSize(NaN) rejects (native 133)",

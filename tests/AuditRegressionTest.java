@@ -1546,6 +1546,12 @@ public final class AuditRegressionTest {
                     IllegalArgumentException.class, () -> nsui.NSMutableSet.setWithCapacity(-1));
             TestKit.expectThrows("orderedSetWithCapacity(-1) rejects, not NSUInteger wrap",
                     IllegalArgumentException.class, () -> nsui.NSMutableOrderedSet.orderedSetWithCapacity(-1));
+            TestKit.expectThrows("increaseLengthBy(-1) rejects, not huge-growth wrap",
+                    IllegalArgumentException.class,
+                    () -> nsui.NSMutableData.data().increaseLengthBy(-1));
+            TestKit.expectThrows("setLength(-1) rejects, not huge-extension wrap",
+                    IllegalArgumentException.class,
+                    () -> nsui.NSMutableData.data().setLength(-1));
             nsui.NSDictionary immD = nsui.NSDictionary.dictionary();
             TestKit.expectThrows("setObjectForKey on an immutable NSDictionary rejects",
                     IllegalStateException.class,

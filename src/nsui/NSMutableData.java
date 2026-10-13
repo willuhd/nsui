@@ -84,6 +84,7 @@ public final class NSMutableData extends NSData {
     /// increaseLengthBy:
     public void increaseLengthBy(long extra) {
         ensureMutInit();
+        Bounds.nonNegative(extra, "increaseLengthBy:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.INT));
             h.invokeExact(peer, ObjC.sel("increaseLengthBy:"), extra);
@@ -93,6 +94,7 @@ public final class NSMutableData extends NSData {
     /// setLength:
     public void setLength(long length) {
         ensureMutInit();
+        Bounds.nonNegative(length, "setLength:");
         try { hSetLength.invokeExact(peer, ObjC.sel("setLength:"), length); }
         catch (Throwable t) { throw new RuntimeException("setLength: failed", t); }
     }

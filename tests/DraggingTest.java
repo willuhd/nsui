@@ -248,8 +248,9 @@ public final class DraggingTest {
                 } catch (Throwable t) {
                     // Should not throw RuntimeException with "failed" but may be InvocationTarget due to no window server
                     System.out.println("  NOTE beginDraggingSession threw: " + t + " (graceful if no window server)");
-                    // Check that exception is not due to missing handle but expected no-window condition
-                    check(t.getMessage() == null || !t.getMessage().contains("vocabulary"), "beginDraggingSession threw but not vocabulary missing (got " + t.getMessage() + ")");
+                    // Check that exception is not due to missing handle but expected no-window condition;
+                    // a null message carries no diagnostic, so it must not pass vacuously.
+                    check(t.getMessage() != null && !t.getMessage().contains("vocabulary"), "beginDraggingSession threw but not vocabulary missing (got " + t.getMessage() + ")");
                 }
 
                 // Cleanup window

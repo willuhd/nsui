@@ -2391,6 +2391,10 @@ public final class AuditRegressionTest {
                         IllegalArgumentException.class, () -> od.newBuffer(256L, 2L));
                 TestKit.expectThrows("newBuffer(MANAGED|PRIVATE) rejects",
                         IllegalArgumentException.class, () -> od.newBuffer(256L, 48L));
+                TestKit.expectThrows("newBuffer(0) rejects with IAE, not nil",
+                        IllegalArgumentException.class, () -> od.newBuffer(0L, 0L));
+                TestKit.expectThrows("newBuffer(-1) rejects with IAE, not abort",
+                        IllegalArgumentException.class, () -> od.newBuffer(-1L, 0L));
             } else {
                 TestKit.probe("no Metal device; buffer-option constants checked only");
             }

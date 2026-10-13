@@ -190,7 +190,7 @@ public final class PopoverTest {
                 boolean responds = false;
                 try {
                     responds = (boolean) ObjC.handle(Sig.of(Ret.BOOL, Arg.ID)).invokeExact(pop.peer(), ObjC.sel("respondsToSelector:"), ObjC.sel("showRelativeToRect:ofView:preferredEdge:"));
-                } catch (Throwable ignore) { responds = true; }
+                } catch (Throwable t) { check(false, "NSPopover respondsToSelector probe threw: " + t); }
                 check(responds, "NSPopover respondsToSelector: showRelativeToRect:ofView:preferredEdge:");
                 boolean hasWindow = false;
                 try { hasWindow = anchor != null && anchor.window() != null && anchor.window().peer().address() != 0; } catch (Throwable ignore) {}

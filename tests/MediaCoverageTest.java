@@ -395,7 +395,7 @@ public final class MediaCoverageTest {
             NSRect bounds = p.bounds();
             check(bounds != null && bounds.width() > 0, "bounds sane (" + bounds + ")");
             check(p.controlPointBounds().width() >= bounds.width(), "controlPointBounds sane");
-            check(near(p.lineWidth(), 1.0, 0.01) || p.lineWidth() > 0, "default lineWidth sane (" + p.lineWidth() + ")");
+            check(near(p.lineWidth(), 1.0, 0.01), "default lineWidth 1.0 (" + p.lineWidth() + ")");
             p.setLineWidth(2.5);
             check(near(p.lineWidth(), 2.5, 0.001), "lineWidth round-trip");
             p.setWindingRule(NSBezierPath.WINDING_EVEN_ODD);

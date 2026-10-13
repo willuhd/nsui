@@ -2322,6 +2322,9 @@ public final class AuditRegressionTest {
                 TestKit.expectThrows("setViewport(NaN) rejects (native 'must not be infinite or NaN')",
                         IllegalArgumentException.class,
                         () -> e2.setViewport(new nsui.MTLViewport(Double.NaN, 0, 64, 64, 0, 1)));
+                TestKit.expectThrows("setViewport(null) rejects with IAE, not NPE",
+                        IllegalArgumentException.class,
+                        () -> e2.setViewport(null));
                 TestKit.expectThrows("drawIndexed past the index buffer rejects",
                         IllegalArgumentException.class, () -> e2.drawIndexed(5L, 1L, b2, 0L));
                 TestKit.expectThrows("drawIndexed with an invalid indexType rejects",

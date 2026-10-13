@@ -131,6 +131,7 @@ public final class MTLRenderCommandEncoder extends NSObject {
 
     /// setViewport: — MTLViewport (6 doubles) passed BY VALUE.
     public void setViewport(MTLViewport viewport) {
+        if (viewport == null) throw new IllegalArgumentException("viewport is null");
         // Measured: any NaN (or infinity) component aborts — "Viewport Validation viewport.originX
         // must not be infinite or NaN" (exit 134). Negative width/height is tolerated.
         Bounds.notNaN(viewport.originX(), "setViewport: (originX)");
@@ -139,7 +140,6 @@ public final class MTLRenderCommandEncoder extends NSObject {
         Bounds.notNaN(viewport.height(), "setViewport: (height)");
         Bounds.notNaN(viewport.znear(), "setViewport: (znear)");
         Bounds.notNaN(viewport.zfar(), "setViewport: (zfar)");
-        if (viewport == null) throw new IllegalArgumentException("viewport is null");
         ensureInit();
         try {
             handles.hViewport().invokeExact(peer, ObjC.sel("setViewport:"), viewport.toSegment());

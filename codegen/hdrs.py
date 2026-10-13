@@ -76,6 +76,15 @@ def collect_typedefs(sdk, frameworks):
     return out
 
 
+# Qualifiers that may precede a type name. `null_unspecified` was missing, so
+# `- (null_unspecified NSImage *)image` never resolved and the generated override returned a raw
+# MemorySegment where its superclass returned NSImage, which Java rejects as an override.
+TYPE_QUALIFIERS = ("nullable|nonnull|null_unspecified|_Nullable|_Nonnull|_Null_unspecified"
+                   "|__kindof|__strong|__weak|__unsafe_unretained|__autoreleasing"
+                   "|const|volatile|inout|out|oneway|bycopy|byref|IBOutlet|IBAction"
+                   "|NS_REFINED_FOR_SWIFT")
+
+
 def expand_type(text, typedefs, depth=4):
     """Replace a leading typedef name by what it stands for, transitively.
 
@@ -85,8 +94,7 @@ def expand_type(text, typedefs, depth=4):
     """
     t = text or ""
     for _ in range(depth):
-        m = re.search(r"(?:(?:nullable|nonnull|__kindof|const|volatile|inout|out|oneway|_Nullable"
-                      r"|_Nonnull|NS_REFINED_FOR_SWIFT)\s+)*([A-Za-z_]\w*)", t)
+        m = re.search(r"(?:%s\s+)*([A-Za-z_]\w*)" % TYPE_QUALIFIERS, t)
         if not m:
             break
         base = typedefs.get(m.group(1))

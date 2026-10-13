@@ -91,7 +91,7 @@ def check_determinism():
     check("determinism: two runs emit identical bytes", outs[0] == outs[1] and len(outs[0]) > 0,
           "%d bytes" % len(outs[0]))
     r = run([sys.executable, os.path.join(HERE, "gen.py"), "--repo", c, "--class", "NSMatrix",
-             "--class", "NSCell", "--framework", "AppKit", "--apply"])
+             "--class", "NSCell", "--framework", "AppKit", "--apply", "--allow-drop"])
     r = run([sys.executable, os.path.join(HERE, "gen.py"), "--repo", c, "--class", "NSMatrix",
              "--class", "NSCell", "--framework", "AppKit", "--check"])
     check("determinism: --check agrees with a freshly generated tree", r.returncode == 0,
@@ -119,7 +119,7 @@ def check_coverage():
 
 def check_surface_batch():
     where = fresh_copy(os.path.join(bench.WORK, "selftest-surface"))
-    cmd = [sys.executable, os.path.join(HERE, "gen.py"), "--repo", where, "--apply",
+    cmd = [sys.executable, os.path.join(HERE, "gen.py"), "--repo", where, "--apply", "--allow-drop",
            "--framework", "AppKit", "--framework", "Foundation", "--framework", "QuartzCore",
            "--framework", "Metal"]
     for c in SURFACE_BATCH:

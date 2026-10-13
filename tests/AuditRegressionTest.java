@@ -967,6 +967,11 @@ public final class AuditRegressionTest {
             NSSize got = layer.drawableSize();
             TestKit.check(got.width() == 128 && got.height() == 64,
                     "CAMetalLayer drawableSize round-trip (128,64) (got " + got + ")");
+            TestKit.expectThrows("setDrawableSize(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> layer.setDrawableSize(null));
+            TestKit.expectThrows("setDrawableSize(NaN) rejects, not Metal abort",
+                    IllegalArgumentException.class,
+                    () -> layer.setDrawableSize(new NSSize(Double.NaN, 64)));
         } catch (Throwable t) {
             TestKit.check(false, "CAMetalLayer drawableSize round-trip threw: " + t);
         }
@@ -995,6 +1000,10 @@ public final class AuditRegressionTest {
                     TestKit.expectThrows("MTLTexture.getBytes negative level rejected",
                             IllegalArgumentException.class,
                             () -> ft.getBytes(32 * 4, MTLRegion.of2D(0, 0, 8, 8), -1));
+                    TestKit.expectThrows("MTLTexture.getBytes x+width overflow rejects, not wrap",
+                            IllegalArgumentException.class,
+                            () -> ft.getBytes(32 * 4,
+                                    new MTLRegion(Long.MAX_VALUE - 5, 0, 0, 10, 8, 1), 0));
                 }
             } catch (Throwable t) {
                 TestKit.check(false, "Metal texture guard setup threw: " + t);
@@ -2004,6 +2013,8 @@ public final class AuditRegressionTest {
                     "supermenu reflects the submenu attachment (guard precondition)");
             TestKit.expectThrows("indirect submenu cycle rejects instead of hanging",
                     IllegalArgumentException.class, () -> cmB.setSubmenu(cmIb, cmA));
+            TestKit.expectThrows("setSubmenuForItem(null item) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> cmA.setSubmenuForItem(null, null));
 
             nsui.NSStackView sOuter = nsui.NSStackView.create(new NSRect(0, 0, 200, 100));
             nsui.NSStackView sInner = nsui.NSStackView.create(new NSRect(0, 0, 100, 50));
@@ -2042,6 +2053,8 @@ public final class AuditRegressionTest {
             NSView nv = NSView.create(new NSRect(0, 0, 100, 100), (v, d) -> {});
             TestKit.expectThrows("setBoundsOrigin(NaN) rejects (native 133)",
                     IllegalArgumentException.class, () -> nv.setBoundsOrigin(np));
+            TestKit.expectThrows("setFrameRotation(NaN) rejects, like other NaN geometry",
+                    IllegalArgumentException.class, () -> nv.setFrameRotation(nan));
             TestKit.expectThrows("translateOriginToPoint(NaN) rejects (native 133)",
                     IllegalArgumentException.class, () -> nv.translateOriginToPoint(np));
             TestKit.expectThrows("scaleUnitSquareToSize(NaN) rejects (native 133)",
@@ -2322,6 +2335,15 @@ public final class AuditRegressionTest {
                 TestKit.expectThrows("setViewport(NaN) rejects (native 'must not be infinite or NaN')",
                         IllegalArgumentException.class,
                         () -> e2.setViewport(new nsui.MTLViewport(Double.NaN, 0, 64, 64, 0, 1)));
+                TestKit.expectThrows("setViewport(null) rejects with IAE, not NPE",
+                        IllegalArgumentException.class,
+                        () -> e2.setViewport(null));
+                TestKit.expectThrows("setViewport(+INF) rejects (native 'must not be infinite or NaN')",
+                        IllegalArgumentException.class,
+                        () -> e2.setViewport(new nsui.MTLViewport(Double.POSITIVE_INFINITY, 0, 64, 64, 0, 1)));
+                TestKit.expectThrows("setScissorRect(-1 width) rejects, not wrap to NSUInteger",
+                        IllegalArgumentException.class,
+                        () -> e2.setScissorRect(new nsui.MTLScissorRect(0, 0, -1, 8)));
                 TestKit.expectThrows("drawIndexed past the index buffer rejects",
                         IllegalArgumentException.class, () -> e2.drawIndexed(5L, 1L, b2, 0L));
                 TestKit.expectThrows("drawIndexed with an invalid indexType rejects",
@@ -2383,6 +2405,10 @@ public final class AuditRegressionTest {
                         IllegalArgumentException.class, () -> od.newBuffer(256L, 2L));
                 TestKit.expectThrows("newBuffer(MANAGED|PRIVATE) rejects",
                         IllegalArgumentException.class, () -> od.newBuffer(256L, 48L));
+                TestKit.expectThrows("newBuffer(0) rejects with IAE, not nil",
+                        IllegalArgumentException.class, () -> od.newBuffer(0L, 0L));
+                TestKit.expectThrows("newBuffer(-1) rejects with IAE, not abort",
+                        IllegalArgumentException.class, () -> od.newBuffer(-1L, 0L));
             } else {
                 TestKit.probe("no Metal device; buffer-option constants checked only");
             }

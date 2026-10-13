@@ -128,6 +128,10 @@ public final class MTLDevice extends NSObject {
     /// combination and the unused cache-mode bit — because the high bits may become meaningful on a
     /// later OS and refusing them pre-emptively would be over-tight.
     public MTLBuffer newBuffer(long length, long options) {
+        if (length <= 0) {
+            throw new IllegalArgumentException("newBuffer length " + length
+                    + " must be > 0 (zero returns nil, negative wraps to a huge NSUInteger)");
+        }
         if ((options & 0x30L) == 0x30L) {
             throw new IllegalArgumentException("newBuffer options " + options
                     + " combine MANAGED and PRIVATE storage (0x30); pick one storage mode");

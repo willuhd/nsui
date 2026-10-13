@@ -131,15 +131,15 @@ public final class MTLRenderCommandEncoder extends NSObject {
 
     /// setViewport: — MTLViewport (6 doubles) passed BY VALUE.
     public void setViewport(MTLViewport viewport) {
+        if (viewport == null) throw new IllegalArgumentException("viewport is null");
         // Measured: any NaN (or infinity) component aborts — "Viewport Validation viewport.originX
         // must not be infinite or NaN" (exit 134). Negative width/height is tolerated.
-        Bounds.notNaN(viewport.originX(), "setViewport: (originX)");
-        Bounds.notNaN(viewport.originY(), "setViewport: (originY)");
-        Bounds.notNaN(viewport.width(), "setViewport: (width)");
-        Bounds.notNaN(viewport.height(), "setViewport: (height)");
-        Bounds.notNaN(viewport.znear(), "setViewport: (znear)");
-        Bounds.notNaN(viewport.zfar(), "setViewport: (zfar)");
-        if (viewport == null) throw new IllegalArgumentException("viewport is null");
+        Bounds.finite(viewport.originX(), "setViewport: (originX)");
+        Bounds.finite(viewport.originY(), "setViewport: (originY)");
+        Bounds.finite(viewport.width(), "setViewport: (width)");
+        Bounds.finite(viewport.height(), "setViewport: (height)");
+        Bounds.finite(viewport.znear(), "setViewport: (znear)");
+        Bounds.finite(viewport.zfar(), "setViewport: (zfar)");
         ensureInit();
         try {
             handles.hViewport().invokeExact(peer, ObjC.sel("setViewport:"), viewport.toSegment());
@@ -151,6 +151,10 @@ public final class MTLRenderCommandEncoder extends NSObject {
     /// setScissorRect: — MTLScissorRect (4 NSUInteger) passed BY VALUE.
     public void setScissorRect(MTLScissorRect rect) {
         if (rect == null) throw new IllegalArgumentException("rect is null");
+        Bounds.nonNegative(rect.x(), "setScissorRect: (x)");
+        Bounds.nonNegative(rect.y(), "setScissorRect: (y)");
+        Bounds.nonNegative(rect.width(), "setScissorRect: (width)");
+        Bounds.nonNegative(rect.height(), "setScissorRect: (height)");
         ensureInit();
         try {
             handles.hScissorRect().invokeExact(peer, ObjC.sel("setScissorRect:"), rect.toSegment());

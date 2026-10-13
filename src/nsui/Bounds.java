@@ -94,6 +94,19 @@ final class Bounds {
         }
     }
 
+    /// Reject non-finite doubles where Metal aborts on infinity as well as NaN.
+    ///
+    /// This is deliberately separate from notNaN(double): AppKit's view/window geometry
+    /// setters tolerate infinity (measured exit 0), so widening that helper would refuse
+    /// values AppKit accepts. Metal's viewport validation does not tolerate it —
+    /// "must not be infinite or NaN" (exit 134) — so the viewport checks here.
+    public static void finite(double value, String what) {
+        if (!Double.isFinite(value)) {
+            throw new IllegalArgumentException(what + ": value " + value
+                    + " must be finite (Metal aborts on infinite or NaN viewport)");
+        }
+    }
+
     /// A required (non-null) argument. AppKit declares these `nonnull`, so `null`
     /// is a caller error; report it as `IllegalArgumentException` naming the call
     /// instead of a raw NullPointerException at the peer dereference.

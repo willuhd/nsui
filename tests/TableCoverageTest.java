@@ -73,6 +73,8 @@ public final class TableCoverageTest {
             check(isNil(NSTableColumn.create("Detached").tableView()), "detached NSTableColumn.tableView nil");
             check(!isNil(c1.tableView()) && c1.tableView().address() == tv.peer().address(),
                     "NSTableColumn.tableView peer == table after addTableColumn");
+            TestKit.expectThrows("dataCellForRow(-1) rejects, not NSUInteger wrap",
+                    IllegalArgumentException.class, () -> c1.dataCellForRow(-1));
 
             check(tv.columnWithIdentifier("Name") == 0, "columnWithIdentifier Name == 0");
             check(tv.columnWithIdentifier("Nope") == -1, "columnWithIdentifier unknown == -1");

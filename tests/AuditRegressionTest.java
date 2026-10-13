@@ -945,6 +945,12 @@ public final class AuditRegressionTest {
                         () -> lm.setTextContainerForGlyphRange(tc, new nsui.NSRange(2, 5)));
                 TestKit.noThrow("NSLayoutManager.setTextContainerForGlyphRange(4,0) is accepted (empty)",
                         () -> lm.setTextContainerForGlyphRange(tc, new nsui.NSRange(4, 0)));
+                TestKit.expectThrows("NSLayoutManager.characterIndexForGlyphAtIndex(99) rejects",
+                        IllegalArgumentException.class,
+                        () -> lm.characterIndexForGlyphAtIndex(99));
+                TestKit.expectThrows("NSLayoutManager.cgGlyphAtIndex(-1) rejects, not wrap",
+                        IllegalArgumentException.class,
+                        () -> lm.cgGlyphAtIndex(-1));
             } else {
                 TestKit.probe("layout manager / text container unavailable");
             }

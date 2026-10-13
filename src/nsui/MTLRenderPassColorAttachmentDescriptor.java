@@ -61,7 +61,7 @@ public final class MTLRenderPassColorAttachmentDescriptor extends NSObject {
 
     /// setClearColor: (32-byte struct by value).
     public void setClearColor(MTLClearColor color) {
-        if (color == null) return;
+        if (color == null) throw new IllegalArgumentException("setClearColor: null color");
         try {
             handles.hSetClear().invokeExact(
                     peer, ObjC.sel("setClearColor:"), color.toSegment());

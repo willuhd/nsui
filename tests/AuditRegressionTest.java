@@ -663,6 +663,10 @@ public final class AuditRegressionTest {
                     IllegalArgumentException.class, () -> dd.setLevel(-1));
             TestKit.expectThrows("setSlice(-1) rejects, not NSUInteger wrap",
                     IllegalArgumentException.class, () -> dd.setSlice(-1));
+            TestKit.expectThrows("setClearColor(null) rejects with IAE, not silent no-op",
+                    IllegalArgumentException.class,
+                    () -> nsui.MTLRenderPassDescriptor.create().colorAttachment(0)
+                            .setClearColor(null));
 
             // The display-link factories take a required selector; a NULL SEL used to be
             // handed to the runtime (or NPE'd in ObjC.sel) instead of being reported.

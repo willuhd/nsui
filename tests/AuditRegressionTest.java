@@ -1000,6 +1000,10 @@ public final class AuditRegressionTest {
                     TestKit.expectThrows("MTLTexture.getBytes negative level rejected",
                             IllegalArgumentException.class,
                             () -> ft.getBytes(32 * 4, MTLRegion.of2D(0, 0, 8, 8), -1));
+                    TestKit.expectThrows("MTLTexture.getBytes x+width overflow rejects, not wrap",
+                            IllegalArgumentException.class,
+                            () -> ft.getBytes(32 * 4,
+                                    new MTLRegion(Long.MAX_VALUE - 5, 0, 0, 10, 8, 1), 0));
                 }
             } catch (Throwable t) {
                 TestKit.check(false, "Metal texture guard setup threw: " + t);

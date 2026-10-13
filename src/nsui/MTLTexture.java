@@ -100,20 +100,35 @@ public final class MTLTexture extends NSObject {
         // overflow a Java shift, so clamp it).
         long tw = level >= 32 ? 1 : Math.max(1, width() >> (int) level);
         long th = level >= 32 ? 1 : Math.max(1, height() >> (int) level);
-        if (region.x() < 0 || region.y() < 0 || region.x() + w > tw || region.y() + h > th) {
-            throw new IllegalArgumentException("region " + region.x() + "," + region.y() + " " + w + "x" + h
-                    + " is outside texture " + tw + "x" + th);
-        }
         long bpp = bytesPerPixel(pixelFormat());
         if (bpp < 0) {
             throw new IllegalArgumentException("cannot validate bytesPerRow for pixelFormat " + pixelFormat()
                     + " (unknown to this toolkit; add it to bytesPerPixel before copying)");
         }
-        if (bytesPerRow < w * bpp) {
-            throw new IllegalArgumentException("bytesPerRow " + bytesPerRow + " < width*bytesPerPixel "
-                    + (w * bpp) + " (format " + pixelFormat() + ")");
+        final long ex, ey, need;
+        try {
+            ex = Math.addExact(region.x(), w);
+            ey = Math.addExact(region.y(), h);
+            need = Math.multiplyExact(w, bpp);
+        } catch (ArithmeticException ae) {
+            throw new IllegalArgumentException("region " + region.x() + "," + region.y() + " " + w + "x" + h
+                    + " overflows long math (cannot be inside texture " + tw + "x" + th + ")", ae);
         }
-        long len = (long) bytesPerRow * h;
+        if (region.x() < 0 || region.y() < 0 || ex > tw || ey > th) {
+            throw new IllegalArgumentException("region " + region.x() + "," + region.y() + " " + w + "x" + h
+                    + " is outside texture " + tw + "x" + th);
+        }
+        if (bytesPerRow < need) {
+            throw new IllegalArgumentException("bytesPerRow " + bytesPerRow + " < width*bytesPerPixel "
+                    + need + " (format " + pixelFormat() + ")");
+        }
+        long len;
+        try {
+            len = Math.multiplyExact((long) bytesPerRow, h);
+        } catch (ArithmeticException ae) {
+            throw new IllegalArgumentException("readback too large: bytesPerRow " + bytesPerRow
+                    + " * height " + h + " overflows", ae);
+        }
         if (len > Integer.MAX_VALUE) throw new IllegalArgumentException("readback too large: " + len + " bytes");
         byte[] out = new byte[(int) len];
         try (java.lang.foreign.Arena arena = java.lang.foreign.Arena.ofConfined()) {
@@ -161,20 +176,35 @@ public final class MTLTexture extends NSObject {
         // overflow a Java shift, so clamp it).
         long tw = level >= 32 ? 1 : Math.max(1, width() >> (int) level);
         long th = level >= 32 ? 1 : Math.max(1, height() >> (int) level);
-        if (region.x() < 0 || region.y() < 0 || region.x() + w > tw || region.y() + h > th) {
-            throw new IllegalArgumentException("region " + region.x() + "," + region.y() + " " + w + "x" + h
-                    + " is outside texture " + tw + "x" + th);
-        }
         long bpp = bytesPerPixel(pixelFormat());
         if (bpp < 0) {
             throw new IllegalArgumentException("cannot validate bytesPerRow for pixelFormat " + pixelFormat()
                     + " (unknown to this toolkit; add it to bytesPerPixel before copying)");
         }
-        if (bytesPerRow < w * bpp) {
-            throw new IllegalArgumentException("bytesPerRow " + bytesPerRow + " < width*bytesPerPixel "
-                    + (w * bpp) + " (format " + pixelFormat() + ")");
+        final long ex, ey, need;
+        try {
+            ex = Math.addExact(region.x(), w);
+            ey = Math.addExact(region.y(), h);
+            need = Math.multiplyExact(w, bpp);
+        } catch (ArithmeticException ae) {
+            throw new IllegalArgumentException("region " + region.x() + "," + region.y() + " " + w + "x" + h
+                    + " overflows long math (cannot be inside texture " + tw + "x" + th + ")", ae);
         }
-        long len = (long) bytesPerRow * h;
+        if (region.x() < 0 || region.y() < 0 || ex > tw || ey > th) {
+            throw new IllegalArgumentException("region " + region.x() + "," + region.y() + " " + w + "x" + h
+                    + " is outside texture " + tw + "x" + th);
+        }
+        if (bytesPerRow < need) {
+            throw new IllegalArgumentException("bytesPerRow " + bytesPerRow + " < width*bytesPerPixel "
+                    + need + " (format " + pixelFormat() + ")");
+        }
+        final long len;
+        try {
+            len = Math.multiplyExact((long) bytesPerRow, h);
+        } catch (ArithmeticException ae) {
+            throw new IllegalArgumentException("upload too large: bytesPerRow " + bytesPerRow
+                    + " * height " + h + " overflows", ae);
+        }
         if (len > Integer.MAX_VALUE) throw new IllegalArgumentException("upload too large: " + len + " bytes");
         if ((long) data.length < len) {
             throw new IllegalArgumentException("data too short: " + data.length + " < bytesPerRow*height "

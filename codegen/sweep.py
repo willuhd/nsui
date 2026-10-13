@@ -108,12 +108,32 @@ def generate(snap, classes, frameworks, batch=30, tag="sweep"):
 
 
 def skip_histogram(summary_lines):
+    """Reasons the generator declined to emit something, keyed by reason.
+
+    Anchored at the start of the line: an unanchored `SKIP ` also matched `NIL-SKIP`, which is an
+    emission (a matching early return) rather than a skip, and it made the histogram claim 84
+    methods were skipped in a run that handled them.
+    """
     hist = Counter()
     for ln in summary_lines:
-        m = re.search(r"SKIP .*?\[(.*)\]$", ln.strip())
+        m = re.match(r"\s*SKIP\s+.*?\[(.*)\]\s*$", ln)
         if m:
             hist[re.sub(r"\d+", "N", m.group(1))] += 1
     return hist
+
+
+def emission_counts(summary_lines):
+    """What the run emitted: guards, nil-tolerance matches, and guards withheld on purpose."""
+    counts = Counter()
+    for ln in summary_lines:
+        s = ln.strip()
+        if re.match(r"GUARD(-MATCH|-BOUND-SETUP|-UNAVAILABLE|-MISS|-LOCAL)?\s", s):
+            counts["guards emitted"] += 1
+        elif s.startswith("NIL-SKIP "):
+            counts["nil tolerance matched"] += 1
+        elif s.startswith("GUARD-SKIPPED "):
+            counts["guard withheld (shipped tolerates)"] += 1
+    return counts
 
 
 def compile_snapshot(snap, include_gate):
@@ -215,7 +235,9 @@ def main():
                                tag="sweep-" + commit[:12])
     generated = sum(1 for ln in summary if ln.startswith("class "))
     skips = skip_histogram(summary)
+    emits = emission_counts(summary)
     print("generator rc=%s  classes generated=%d  skip reasons=%d distinct" % (gen_rc, generated, len(skips)))
+    print("emitted: " + ", ".join("%s=%d" % kv for kv in sorted(emits.items())))
 
     compile_rc, errors, log = compile_snapshot(snap, include_gate=args.gate)
     gen_errors = {p: n for p, n in errors.items() if is_generated(os.path.join(snap, p))}

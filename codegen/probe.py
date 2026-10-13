@@ -850,6 +850,34 @@ def _differential_slice(repo, args, classes):
     return buckets
 
 
+def merge_differential(paths):
+    """Sum the buckets of several --differential runs and report them as one result.
+
+    A full sweep is three measurements per class, so it is run as parallel slices; this is how the
+    slices become one answer instead of four files nobody adds up.
+    """
+    buckets = defaultdict(list)
+    missing = []
+    for path in paths:
+        if not os.path.exists(path):
+            missing.append(path)
+            continue
+        for key, items in json.load(open(path)).items():
+            buckets[key].extend(items)
+    for name in ("fixed", "parity", "unchanged-tolerated", "STRICTER-GUARD", "STRICTER-BODY",
+                 "STILL-ABORTS", "LESS-SAFE", "LOOSER"):
+        print("%-22s %4d" % (name, len(buckets.get(name, []))))
+    for name in ("STRICTER-GUARD", "STRICTER-BODY", "STILL-ABORTS", "LESS-SAFE", "LOOSER"):
+        for cid, s_v, g_v in buckets.get(name, [])[:8]:
+            print("   %-14s %-56s shipped=%-13s generated=%s" % (name, cid, s_v, g_v))
+    if missing:
+        print("missing result file(s): %s" % ", ".join(missing))
+    bad = (len(buckets.get("STRICTER-GUARD", [])) + len(buckets.get("STILL-ABORTS", []))
+           + len(buckets.get("LESS-SAFE", [])))
+    print("defects (STRICTER-GUARD + STILL-ABORTS + LESS-SAFE): %d" % bad)
+    return 1 if (bad or missing) else 0
+
+
 def differential(repo, args):
     """Attribute every rejection: measure the shipped tree, the guarded tree and the bare tree.
 
@@ -979,6 +1007,8 @@ def main():
                     help="measure the derived candidates against the SHIPPED tree and record each "
                          "case's verdict there, so a generated-aborts/shipped-tolerates pair is "
                          "visible instead of being reported as a flaw in the shipped wrapper")
+    ap.add_argument("--merge-results", nargs="*", metavar="PATH", default=None,
+                    help="sum the buckets of several --differential runs and report one result")
     ap.add_argument("--merge-evidence", metavar="PATH",
                     help="with --differential: fold every case measured from the guard-free build "
                          "into this evidence file, so the difference is acted on rather than only "
@@ -1013,6 +1043,8 @@ def main():
     repo = os.path.abspath(args.repo)
     if args.strip_guards is not None:
         repo = strip_guards(repo, args.strip_guards)
+    if args.merge_results is not None:
+        return merge_differential(args.merge_results)
     if args.differential:
         return differential(repo, args)
     if args.shipped_baseline:

@@ -128,7 +128,7 @@ public final class CollectionOutlinePathTest {
             ov.setOutlineTableColumn(col);
             NSTableColumn gotCol = ov.outlineTableColumn();
             check(gotCol != null && gotCol.peer().address() != 0, "NSOutlineView outlineTableColumn non-nil after set");
-            if (gotCol != null) check("outlineCol".equals(gotCol.title()) || "Outline".equals(gotCol.title()), "NSOutlineView outlineTableColumn title (got \"" + gotCol.title() + "\")");
+            if (gotCol != null) check("Outline".equals(gotCol.title()), "NSOutlineView outlineTableColumn title (got \"" + gotCol.title() + "\")");
 
             // expand/collapse/isItemExpanded with null item should not throw
             try {

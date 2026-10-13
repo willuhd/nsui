@@ -90,6 +90,7 @@ public final class MTLRenderPassDepthAttachmentDescriptor extends NSObject {
 
     /// setClearDepth: (double by value in an FP register).
     public void setClearDepth(double depth) {
+        Bounds.finite(depth, "setClearDepth:");
         ensureInit();
         try {
             handles.hSetClearDepth().invokeExact(peer, ObjC.sel("setClearDepth:"), depth);
@@ -105,6 +106,7 @@ public final class MTLRenderPassDepthAttachmentDescriptor extends NSObject {
 
     /// setLevel:.
     public void setLevel(long level) {
+        Bounds.nonNegative(level, "setLevel:");
         ObjC.msgSendVoidLong(peer, ObjC.sel("setLevel:"), level);
     }
 
@@ -115,6 +117,7 @@ public final class MTLRenderPassDepthAttachmentDescriptor extends NSObject {
 
     /// setSlice:.
     public void setSlice(long slice) {
+        Bounds.nonNegative(slice, "setSlice:");
         ObjC.msgSendVoidLong(peer, ObjC.sel("setSlice:"), slice);
     }
 

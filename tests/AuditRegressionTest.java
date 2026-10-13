@@ -655,6 +655,14 @@ public final class AuditRegressionTest {
             nsui.MTLSamplerDescriptor sd = nsui.MTLSamplerDescriptor.create();
             TestKit.expectThrows("MTLSamplerDescriptor.setLabel(null) reports the Metal assertion",
                     IllegalArgumentException.class, () -> sd.setLabel(null));
+            nsui.MTLRenderPassDepthAttachmentDescriptor dd =
+                    nsui.MTLRenderPassDescriptor.create().depthAttachment();
+            TestKit.expectThrows("setClearDepth(NaN) rejects, not validation-layer abort",
+                    IllegalArgumentException.class, () -> dd.setClearDepth(Double.NaN));
+            TestKit.expectThrows("setLevel(-1) rejects, not NSUInteger wrap",
+                    IllegalArgumentException.class, () -> dd.setLevel(-1));
+            TestKit.expectThrows("setSlice(-1) rejects, not NSUInteger wrap",
+                    IllegalArgumentException.class, () -> dd.setSlice(-1));
 
             // The display-link factories take a required selector; a NULL SEL used to be
             // handed to the runtime (or NPE'd in ObjC.sel) instead of being reported.
@@ -1514,6 +1522,12 @@ public final class AuditRegressionTest {
             TestKit.noThrow("addObject on mutableArray() works",
                     () -> mut.addObject(nsui.NSString.of("x")));
             TestKit.check(mut.count() == 1, "the mutable array holds one object");
+            TestKit.expectThrows("arrayWithCapacity(-1) rejects, not NSUInteger wrap",
+                    IllegalArgumentException.class, () -> nsui.NSArray.arrayWithCapacity(-1));
+            TestKit.expectThrows("dataWithCapacity(-1) rejects, not NSUInteger wrap",
+                    IllegalArgumentException.class, () -> nsui.NSMutableData.dataWithCapacity(-1));
+            TestKit.expectThrows("dataWithLength(-1) rejects, not absurd-length abort",
+                    IllegalArgumentException.class, () -> nsui.NSMutableData.dataWithLength(-1));
             nsui.NSDictionary immD = nsui.NSDictionary.dictionary();
             TestKit.expectThrows("setObjectForKey on an immutable NSDictionary rejects",
                     IllegalStateException.class,
@@ -2196,6 +2210,8 @@ public final class AuditRegressionTest {
             TestKit.noThrow("NSMenuItem.writingToolsItems is guarded but live (macOS 15.2+)",
                     () -> nsui.NSMenuItem.writingToolsItems());
             nsui.NSMenuItem kmi = NSMenu.createWithTitle("k").addItemWithTitle("i", "", "");
+            TestKit.noThrow("NSMenuItem.isSectionHeader is responds-guarded, not try/catch",
+                    () -> kmi.isSectionHeader());
             if (kmi.respondsToSelector(ObjC.sel("setAllowsAutomaticKeyEquivalentLocalization:"))) {
                 kmi.setAllowsAutomaticKeyEquivalentLocalization(false);
                 TestKit.check(!kmi.allowsAutomaticKeyEquivalentLocalization(),

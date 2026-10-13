@@ -37,6 +37,7 @@ public final class NSMutableData extends NSData {
     /// [NSMutableData dataWithCapacity:]
     public static NSMutableData dataWithCapacity(long capacity) {
         ensureMutInit();
+        Bounds.nonNegative(capacity, "dataWithCapacity:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.INT));
             MemorySegment s = (MemorySegment) h.invokeExact(ObjC.cls("NSMutableData"), ObjC.sel("dataWithCapacity:"), capacity);
@@ -47,6 +48,7 @@ public final class NSMutableData extends NSData {
     /// [NSMutableData dataWithLength:]
     public static NSMutableData dataWithLength(long length) {
         ensureMutInit();
+        Bounds.nonNegative(length, "dataWithLength:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.INT));
             MemorySegment s = (MemorySegment) h.invokeExact(ObjC.cls("NSMutableData"), ObjC.sel("dataWithLength:"), length);

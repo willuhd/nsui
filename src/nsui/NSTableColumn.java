@@ -176,6 +176,7 @@ public final class NSTableColumn extends NSObject {
 
     /// [column dataCellForRow:] — per-row data cell (if row-specific).
     public MemorySegment dataCellForRow(long row) {
+        Bounds.nonNegative(row, "dataCellForRow:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.INT));
             return (MemorySegment) h.invokeExact(peer, ObjC.sel("dataCellForRow:"), row);

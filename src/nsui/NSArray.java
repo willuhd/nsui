@@ -199,6 +199,7 @@ public final class NSArray extends NSObject {
     /// +arrayWithCapacity: (NSMutableArray).
     public static NSArray arrayWithCapacity(long capacity) {
         ensureInit();
+        Bounds.nonNegative(capacity, "arrayWithCapacity:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.INT));
             return wrap((MemorySegment) h.invokeExact(ObjC.cls("NSMutableArray"), ObjC.sel("arrayWithCapacity:"), capacity));

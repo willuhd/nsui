@@ -107,7 +107,7 @@ public final class MenuBarStatusTest {
                 if (btn == null) {
                     TestKit.skipCase("button may be nil before runloop — skipping title/image checks (no crash is pass)");
                 } else {
-                    check(btn.isKindOfClass("NSButton") || btn.isKindOfClass("NSStatusBarButton") || respondsTo(btn.peer(), "setTitle:"), "button isKindOfClass NSButton/NSStatusBarButton (or responds to setTitle:)");
+                    check(btn.isKindOfClass("NSButton") || btn.isKindOfClass("NSStatusBarButton"), "button isKindOfClass NSButton/NSStatusBarButton");
 
                     // setTitle via button
                     btn.setTitle("TrayTitle");
@@ -115,7 +115,8 @@ public final class MenuBarStatusTest {
                     // via NSStatusItem convenience
                     itemVar.setTitle("ItemTitle");
                     String viaConvenience = itemVar.title();
-                    check("ItemTitle".equals(viaConvenience) || "ItemTitle".equals(btn.title()), "NSStatusItem setTitle convenience (got \"" + viaConvenience + "\" / btn \"" + btn.title() + "\")");
+                    check("ItemTitle".equals(viaConvenience), "NSStatusItem setTitle convenience round-trip (got \"" + viaConvenience + "\")");
+                    check("ItemTitle".equals(btn.title()), "button title mirrors convenience setTitle (got \"" + btn.title() + "\")");
 
                     // setImage via button — use imageNamed if available, else null no crash
                     NSImage named = NSImage.imageNamed("NSApplicationIcon");

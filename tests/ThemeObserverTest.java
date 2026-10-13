@@ -145,7 +145,7 @@ public final class ThemeObserverTest {
             ThemeObserver.removeListener(pre);
 
             ThemeObserver.dispose();
-            check(!ThemeObserver.getInstance().isDarkInstance() || !ThemeObserver.isInitialized(), "dispose cleared initialized flag (initialized=" + ThemeObserver.isInitialized() + ")");
+            check(!ThemeObserver.isInitialized(), "dispose cleared initialized flag (initialized=" + ThemeObserver.isInitialized() + ")");
 
             AtomicBoolean secondFired = new AtomicBoolean(false);
             CountDownLatch secondLatch = new CountDownLatch(1);

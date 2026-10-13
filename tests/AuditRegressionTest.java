@@ -967,6 +967,11 @@ public final class AuditRegressionTest {
             NSSize got = layer.drawableSize();
             TestKit.check(got.width() == 128 && got.height() == 64,
                     "CAMetalLayer drawableSize round-trip (128,64) (got " + got + ")");
+            TestKit.expectThrows("setDrawableSize(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> layer.setDrawableSize(null));
+            TestKit.expectThrows("setDrawableSize(NaN) rejects, not Metal abort",
+                    IllegalArgumentException.class,
+                    () -> layer.setDrawableSize(new NSSize(Double.NaN, 64)));
         } catch (Throwable t) {
             TestKit.check(false, "CAMetalLayer drawableSize round-trip threw: " + t);
         }

@@ -66,6 +66,9 @@ public class CAMetalLayer extends CALayer {
     /// Sending the NSSize as an object pointer left the SIMD registers untouched, so
     /// the layer kept a garbage drawable size.
     public void setDrawableSize(NSSize size) {
+        if (size == null) throw new IllegalArgumentException("size is null");
+        Bounds.finite(size.width(), "setDrawableSize: (width)");
+        Bounds.finite(size.height(), "setDrawableSize: (height)");
         ensureInit();
         try {
             handles.hSetSize().invokeExact(peer, ObjC.sel("setDrawableSize:"), size.toSegment());

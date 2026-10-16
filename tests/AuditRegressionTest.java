@@ -578,6 +578,13 @@ public final class AuditRegressionTest {
                     IllegalArgumentException.class, () -> grid.moveColumnAtIndexToIndex(0, 2));
             TestKit.noThrow("NSGridView.moveRowAtIndexToIndex(0,1) still works",
                     () -> grid.moveRowAtIndexToIndex(0, 1));
+            // A negative factory count wraps to NSUInteger the way the fixed
+            // array/data/set capacities did; the upper max is unknowable, so only
+            // the negative half is guarded.
+            TestKit.expectThrows("gridViewWithNumberOfColumnsRows(-1,2) rejects, not NSUInteger wrap",
+                    IllegalArgumentException.class, () -> nsui.NSGridView.gridViewWithNumberOfColumnsRows(-1, 2));
+            TestKit.expectThrows("gridViewWithNumberOfColumnsRows(2,-1) rejects, not NSUInteger wrap",
+                    IllegalArgumentException.class, () -> nsui.NSGridView.gridViewWithNumberOfColumnsRows(2, -1));
         } catch (Throwable t) {
             TestKit.check(false, "NSGridView move-guard block threw: " + t);
         }

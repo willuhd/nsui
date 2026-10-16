@@ -58,6 +58,8 @@ public final class NSGridView extends NSView {
     /// +[NSGridView gridViewWithNumberOfColumns:rows:] — convenience factory
     public static NSGridView gridViewWithNumberOfColumnsRows(long cols, long rows) {
         ensureInit();
+        Bounds.nonNegative(cols, "gridViewWithNumberOfColumns:rows: (cols)");
+        Bounds.nonNegative(rows, "gridViewWithNumberOfColumns:rows: (rows)");
         try {
             MemorySegment p = (MemorySegment) handles.hGridInit().invokeExact(ObjC.cls("NSGridView"), ObjC.sel("gridViewWithNumberOfColumns:rows:"), cols, rows);
             if (p == null || p.address() == 0) throw new IllegalStateException("gridViewWithNumberOfColumns:rows: returned nil");

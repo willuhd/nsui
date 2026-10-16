@@ -67,6 +67,7 @@ public final class NSBezierPath extends NSObject {
     /// +[NSBezierPath bezierPathWithRect:]
     public static NSBezierPath bezierPathWithRect(NSRect rect) {
         ensureInit();
+        if (rect == null) throw new IllegalArgumentException("bezierPathWithRect: null rect");
         try {
             MemorySegment p = (MemorySegment) handles.hWithRect().invokeExact(ObjC.cls("NSBezierPath"), ObjC.sel("bezierPathWithRect:"), rect.toSegment());
             return new NSBezierPath(p);
@@ -78,6 +79,7 @@ public final class NSBezierPath extends NSObject {
     /// +[NSBezierPath bezierPathWithOvalInRect:]
     public static NSBezierPath bezierPathWithOvalInRect(NSRect rect) {
         ensureInit();
+        if (rect == null) throw new IllegalArgumentException("bezierPathWithOvalInRect: null rect");
         try {
             MemorySegment p = (MemorySegment) handles.hWithRect().invokeExact(ObjC.cls("NSBezierPath"), ObjC.sel("bezierPathWithOvalInRect:"), rect.toSegment());
             return new NSBezierPath(p);
@@ -89,6 +91,7 @@ public final class NSBezierPath extends NSObject {
     /// -moveToPoint:
     public void moveToPoint(NSPoint p) {
         ensureInit();
+        if (p == null) throw new IllegalArgumentException("moveToPoint: null point");
         try {
             handles.hVoidPoint().invokeExact(peer, ObjC.sel("moveToPoint:"), p.toSegment());
         } catch (Throwable t) {
@@ -99,6 +102,7 @@ public final class NSBezierPath extends NSObject {
     /// -lineToPoint:
     public void lineToPoint(NSPoint p) {
         ensureInit();
+        if (p == null) throw new IllegalArgumentException("lineToPoint: null point");
         try {
             handles.hVoidPoint().invokeExact(peer, ObjC.sel("lineToPoint:"), p.toSegment());
         } catch (Throwable t) {
@@ -109,6 +113,9 @@ public final class NSBezierPath extends NSObject {
     /// -curveToPoint:controlPoint1:controlPoint2:
     public void curveToPoint(NSPoint end, NSPoint cp1, NSPoint cp2) {
         ensureInit();
+        if (end == null) throw new IllegalArgumentException("curveToPoint:controlPoint1:controlPoint2: null end point");
+        if (cp1 == null) throw new IllegalArgumentException("curveToPoint:controlPoint1:controlPoint2: null controlPoint1");
+        if (cp2 == null) throw new IllegalArgumentException("curveToPoint:controlPoint1:controlPoint2: null controlPoint2");
         try {
             handles.hCurve().invokeExact(peer, ObjC.sel("curveToPoint:controlPoint1:controlPoint2:"), end.toSegment(), cp1.toSegment(), cp2.toSegment());
         } catch (Throwable t) {
@@ -344,6 +351,7 @@ public final class NSBezierPath extends NSObject {
     /// -relativeMoveToPoint:.
     public void relativeMoveToPoint(NSPoint p) {
         ensureInit();
+        if (p == null) throw new IllegalArgumentException("relativeMoveToPoint: null point");
         try {
             handles.hVoidPoint().invokeExact(peer, ObjC.sel("relativeMoveToPoint:"), p.toSegment());
         } catch (Throwable t) {
@@ -354,6 +362,7 @@ public final class NSBezierPath extends NSObject {
     /// -relativeLineToPoint:.
     public void relativeLineToPoint(NSPoint p) {
         ensureInit();
+        if (p == null) throw new IllegalArgumentException("relativeLineToPoint: null point");
         try {
             handles.hVoidPoint().invokeExact(peer, ObjC.sel("relativeLineToPoint:"), p.toSegment());
         } catch (Throwable t) {
@@ -364,6 +373,9 @@ public final class NSBezierPath extends NSObject {
     /// -relativeCurveToPoint:controlPoint1:controlPoint2:.
     public void relativeCurveToPoint(NSPoint end, NSPoint cp1, NSPoint cp2) {
         ensureInit();
+        if (end == null) throw new IllegalArgumentException("relativeCurveToPoint:controlPoint1:controlPoint2: null end point");
+        if (cp1 == null) throw new IllegalArgumentException("relativeCurveToPoint:controlPoint1:controlPoint2: null controlPoint1");
+        if (cp2 == null) throw new IllegalArgumentException("relativeCurveToPoint:controlPoint1:controlPoint2: null controlPoint2");
         try {
             handles.hCurve().invokeExact(peer, ObjC.sel("relativeCurveToPoint:controlPoint1:controlPoint2:"),
                     end.toSegment(), cp1.toSegment(), cp2.toSegment());
@@ -507,6 +519,7 @@ public final class NSBezierPath extends NSObject {
     /// appendBezierPathWithRect:.
     public void appendBezierPathWithRect(NSRect rect) {
         ensureInit();
+        if (rect == null) throw new IllegalArgumentException("appendBezierPathWithRect: null rect");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.RECT));
             h.invokeExact(peer, ObjC.sel("appendBezierPathWithRect:"), rect.toSegment());
@@ -518,6 +531,7 @@ public final class NSBezierPath extends NSObject {
     /// appendBezierPathWithOvalInRect:.
     public void appendBezierPathWithOvalInRect(NSRect rect) {
         ensureInit();
+        if (rect == null) throw new IllegalArgumentException("appendBezierPathWithOvalInRect: null rect");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.RECT));
             h.invokeExact(peer, ObjC.sel("appendBezierPathWithOvalInRect:"), rect.toSegment());

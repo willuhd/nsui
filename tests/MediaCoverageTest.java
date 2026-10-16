@@ -424,6 +424,19 @@ public final class MediaCoverageTest {
             check(q.elementCount() > q0, "appends grow path");
             q.removeAllPoints();
             check(q.isEmpty(), "removeAllPoints empties");
+            TestKit.expectThrows("bezierPathWithRect(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> NSBezierPath.bezierPathWithRect(null));
+            TestKit.expectThrows("bezierPathWithOvalInRect(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> NSBezierPath.bezierPathWithOvalInRect(null));
+            TestKit.expectThrows("moveToPoint(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> p.moveToPoint(null));
+            TestKit.expectThrows("lineToPoint(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> p.lineToPoint(null));
+            TestKit.expectThrows("curveToPoint(null,·,·) rejects with IAE, not NPE",
+                    IllegalArgumentException.class,
+                    () -> p.curveToPoint(null, new NSPoint(1, 1), new NSPoint(2, 2)));
+            TestKit.expectThrows("appendBezierPathWithRect(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> q.appendBezierPathWithRect(null));
             try {
                 p.stroke();
                 p.fill();

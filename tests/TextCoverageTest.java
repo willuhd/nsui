@@ -842,7 +842,15 @@ public final class TextCoverageTest {
         // completion / pasteboard types / dragging types (no UI, noPasteboard IO)
         TestKit.check(tv.rangeForUserCompletion() != null, "rangeForUserCompletion readable");
         tv.completionsForPartialWordRange(new NSRange(0, 5), null);
-        TestKit.probe("completionsForPartialWordRange did not crash");
+        TestKit.probe("completionsForPartialWordRange(0,5) did not crash");
+        TestKit.expectThrows("completionsForPartialWordRange(-1,1) rejects, not NSUInteger wrap",
+                IllegalArgumentException.class, () -> tv.completionsForPartialWordRange(new NSRange(-1, 1), null));
+        // Tolerated counterparts: an over-range location returns nil and a negative length
+        // is tolerated natively — both must still go through (pins against over-tightening).
+        TestKit.noThrow("completionsForPartialWordRange(100,1) tolerated (nil, no abort)",
+                () -> tv.completionsForPartialWordRange(new NSRange(100, 1), null));
+        TestKit.noThrow("completionsForPartialWordRange(0,-1) tolerated (nil, no abort)",
+                () -> tv.completionsForPartialWordRange(new NSRange(0, -1), null));
         TestKit.check(tv.writablePasteboardTypes() != null, "writablePasteboardTypes non-nil");
         TestKit.check(tv.readablePasteboardTypes() != null, "readablePasteboardTypes non-nil");
         TestKit.check(tv.acceptableDragTypes() != null, "acceptableDragTypes non-nil");

@@ -876,6 +876,13 @@ public class NSTableView extends NSView {
 
     /// [table setDropRow:dropOperation:] — re-target a proposed drop.
     public void setDropRow(long row, long operation) {
+        // -1 is the drop-on-table sentinel (pinned valid); below -1 wraps to NSUInteger
+        // the way NSOutlineView.setDropItem:dropChildIndex: measured-aborts on -2, while a
+        // positive out-of-range row only logs, so only the negative half is guarded.
+        if (row < -1) {
+            throw new IllegalArgumentException("setDropRow:dropOperation: row " + row
+                    + " must be -1 (drop on) or >= 0");
+        }
         ensureInit();
         try { H.hVoidIntInt().invokeExact(peer, Sels.setDropRow_dropOperation, row, operation); } catch (Throwable t) { throw new RuntimeException("setDropRow:dropOperation: failed", t); }
     }

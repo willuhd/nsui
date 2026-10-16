@@ -74,6 +74,7 @@ public final class NSMutableIndexSet extends NSIndexSet {
     /// addIndexesInRange:
     public void addIndexesInRange(NSRange range) {
         ensureMutInit();
+        if (range == null) throw new IllegalArgumentException("addIndexesInRange: null range");
         try { hAddRange.invokeExact(peer, ObjC.sel("addIndexesInRange:"), range.toSegment()); }
         catch (Throwable t) { throw new RuntimeException("addIndexesInRange: failed", t); }
     }
@@ -81,6 +82,7 @@ public final class NSMutableIndexSet extends NSIndexSet {
     /// removeIndexesInRange:
     public void removeIndexesInRange(NSRange range) {
         ensureMutInit();
+        if (range == null) throw new IllegalArgumentException("removeIndexesInRange: null range");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.RANGE));
             h.invokeExact(peer, ObjC.sel("removeIndexesInRange:"), range.toSegment());

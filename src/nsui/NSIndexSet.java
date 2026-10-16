@@ -108,6 +108,7 @@ public class NSIndexSet extends NSObject {
     /// containsIndexesInRange:
     public boolean containsIndexesInRange(NSRange range) {
         ensureInit();
+        if (range == null) throw new IllegalArgumentException("containsIndexesInRange: null range");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.BOOL, Arg.RANGE));
             return (boolean) h.invokeExact(peer, ObjC.sel("containsIndexesInRange:"), range.toSegment());
@@ -177,6 +178,7 @@ public class NSIndexSet extends NSObject {
     /// countOfIndexesInRange:.
     public long countOfIndexesInRange(NSRange range) {
         ensureInit();
+        if (range == null) throw new IllegalArgumentException("countOfIndexesInRange: null range");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.INT, Arg.RANGE));
             return (long) h.invokeExact(peer, ObjC.sel("countOfIndexesInRange:"), range.toSegment());
@@ -196,6 +198,7 @@ public class NSIndexSet extends NSObject {
     /// intersectsIndexesInRange:.
     public boolean intersectsIndexesInRange(NSRange range) {
         ensureInit();
+        if (range == null) throw new IllegalArgumentException("intersectsIndexesInRange: null range");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.BOOL, Arg.RANGE));
             return (boolean) h.invokeExact(peer, ObjC.sel("intersectsIndexesInRange:"), range.toSegment());

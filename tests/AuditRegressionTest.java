@@ -1565,6 +1565,18 @@ public final class AuditRegressionTest {
             TestKit.expectThrows("setLength(-1) rejects, not huge-extension wrap",
                     IllegalArgumentException.class,
                     () -> nsui.NSMutableData.data().setLength(-1));
+            nsui.NSIndexSet probeSet = nsui.NSIndexSet.indexSet();
+            TestKit.expectThrows("containsIndexesInRange(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> probeSet.containsIndexesInRange(null));
+            TestKit.expectThrows("countOfIndexesInRange(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> probeSet.countOfIndexesInRange(null));
+            TestKit.expectThrows("intersectsIndexesInRange(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> probeSet.intersectsIndexesInRange(null));
+            nsui.NSMutableIndexSet probeMut = nsui.NSMutableIndexSet.indexSet();
+            TestKit.expectThrows("addIndexesInRange(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> probeMut.addIndexesInRange(null));
+            TestKit.expectThrows("removeIndexesInRange(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> probeMut.removeIndexesInRange(null));
             nsui.NSDictionary immD = nsui.NSDictionary.dictionary();
             TestKit.expectThrows("setObjectForKey on an immutable NSDictionary rejects",
                     IllegalStateException.class,

@@ -1288,6 +1288,7 @@ public class NSView extends NSResponder {
     /// displayIfNeededInRect: — display if needed in rect.
     public void displayIfNeededInRect(NSRect rect) {
         ensureInit();
+        if (rect == null) throw new IllegalArgumentException("displayIfNeededInRect: null rect");
         try {
             H.hNeedsRect().invokeExact(peer, Sels.displayIfNeededInRect, rect.toSegment());
         } catch (Throwable t) {
@@ -1839,6 +1840,7 @@ public class NSView extends NSResponder {
     /// [view resizeSubviewsWithOldSize:].
     public void resizeSubviewsWithOldSize(NSSize oldSize) {
         ensureInit();
+        if (oldSize == null) throw new IllegalArgumentException("resizeSubviewsWithOldSize: null size");
         try {
             H.hSetSize().invokeExact(peer, Sels.resizeSubviewsWithOldSize, oldSize.toSegment());
         } catch (Throwable t) {
@@ -1849,6 +1851,7 @@ public class NSView extends NSResponder {
     /// [view resizeWithOldSuperviewSize:].
     public void resizeWithOldSuperviewSize(NSSize oldSize) {
         ensureInit();
+        if (oldSize == null) throw new IllegalArgumentException("resizeWithOldSuperviewSize: null size");
         try {
             H.hSetSize().invokeExact(peer, Sels.resizeWithOldSuperviewSize, oldSize.toSegment());
         } catch (Throwable t) {
@@ -1893,6 +1896,7 @@ public class NSView extends NSResponder {
     /// [view displayIfNeededInRectIgnoringOpacity:].
     public void displayIfNeededInRectIgnoringOpacity(NSRect rect) {
         ensureInit();
+        if (rect == null) throw new IllegalArgumentException("displayIfNeededInRectIgnoringOpacity: null rect");
         try {
             H.hSetBounds().invokeExact(peer, Sels.displayIfNeededInRectIgnoringOpacity, rect.toSegment());
         } catch (Throwable t) {
@@ -1969,6 +1973,7 @@ public class NSView extends NSResponder {
     /// [view centerScanRect:] — pixel-aligned rect for scanning.
     public NSRect centerScanRect(NSRect rect) {
         ensureInit();
+        if (rect == null) throw new IllegalArgumentException("centerScanRect: null rect");
         try {
             return NSRect.fromSegment((MemorySegment) H.hConvBacking().invokeExact(ObjC.structSlot(), peer, Sels.centerScanRect, rect.toSegment()));
         } catch (Throwable t) {

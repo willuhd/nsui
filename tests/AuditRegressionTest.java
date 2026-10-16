@@ -2840,6 +2840,35 @@ public final class AuditRegressionTest {
             TestKit.check(false, "screen/color/popover/clip null block threw: " + t);
         }
 
+        // --- 8by. view overflow null reports IAE, not NPE (a: display/resize) ---
+        // displayIfNeeded, resize-with-old-size and centerScanRect take structs by value.
+        // displayIfNeededInRectIgnoringOpacity:inContext: was guarded in Round 1 without a
+        // pin; pin it here alongside the new guards (NaN stays tolerated where listed).
+        try {
+            nsui.NSView ov = NSView.create(new NSRect(0, 0, 100, 100), (v, d) -> {});
+            TestKit.expectThrows("NSView.displayIfNeededInRect(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> ov.displayIfNeededInRect(null));
+            TestKit.expectThrows("NSView.displayIfNeededInRectIgnoringOpacity(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> ov.displayIfNeededInRectIgnoringOpacity(null));
+            TestKit.expectThrows("NSView.displayRectIgnoringOpacityInContext(null,·) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> {
+                        nsui.NSImage icon = nsui.NSWorkspace.sharedWorkspace().iconForFileType("txt");
+                        nsui.NSBitmapImageRep rep = nsui.NSBitmapImageRep.create(
+                                nsui.NSData.wrap(icon.TIFFRepresentation()));
+                        nsui.NSGraphicsContext ctx =
+                                nsui.NSGraphicsContext.graphicsContextWithBitmapImageRep(rep);
+                        ov.displayRectIgnoringOpacityInContext(null, ctx);
+                    });
+            TestKit.expectThrows("NSView.resizeSubviewsWithOldSize(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> ov.resizeSubviewsWithOldSize(null));
+            TestKit.expectThrows("NSView.resizeWithOldSuperviewSize(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> ov.resizeWithOldSuperviewSize(null));
+            TestKit.expectThrows("NSView.centerScanRect(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> ov.centerScanRect(null));
+        } catch (Throwable t) {
+            TestKit.check(false, "view overflow (a) null block threw: " + t);
+        }
+
         // --- 11. lifetime / leak oracles ---
         // A runtime ObjC class pair is created once per (super, className) and never
         // disposed, so creating the same delegate shape repeatedly must NOT grow the

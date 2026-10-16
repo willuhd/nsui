@@ -82,6 +82,7 @@ public final class NSGradient extends NSObject {
     /// -drawInRect:angle:
     public void drawInRectAngle(NSRect rect, double angle) {
         ensureInit();
+        if (rect == null) throw new IllegalArgumentException("drawInRect:angle: null rect");
         try {
             handles.hDrawRectAngle().invokeExact(peer, ObjC.sel("drawInRect:angle:"), rect.toSegment(), angle);
         } catch (Throwable t) {
@@ -163,6 +164,8 @@ public final class NSGradient extends NSObject {
     /// [gradient drawFromPoint:toPoint:options:] with explicit NSGradientDrawingOptions.
     public void drawFromPointToPoint(NSPoint start, NSPoint end, long options) {
         ensureInit();
+        if (start == null) throw new IllegalArgumentException("drawFromPoint:toPoint:options: null start");
+        if (end == null) throw new IllegalArgumentException("drawFromPoint:toPoint:options: null end");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.POINT, Arg.POINT, Arg.INT));
             h.invokeExact(peer, ObjC.sel("drawFromPoint:toPoint:options:"),

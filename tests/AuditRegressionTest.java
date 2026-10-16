@@ -2777,6 +2777,24 @@ public final class AuditRegressionTest {
             TestKit.check(false, "text layout null block threw: " + t);
         }
 
+        // --- 8bv. gradient null reports IAE, not NPE (NaN stays tolerated) ---
+        // drawInRect:angle: and drawFromPoint:toPoint:options: take structs by value;
+        // drawInRect:angle: is probe-tolerated for NaN, so null-only guards.
+        try {
+            nsui.NSGradient gr = nsui.NSGradient.initWithStartingColorEndingColor(
+                    nsui.NSColor.whiteColor(), nsui.NSColor.blackColor());
+            TestKit.expectThrows("NSGradient.drawInRectAngle(null,·) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> gr.drawInRectAngle(null, 0.0));
+            TestKit.expectThrows("NSGradient.drawFromPointToPoint(null,·,·) rejects with IAE, not NPE",
+                    IllegalArgumentException.class,
+                    () -> gr.drawFromPointToPoint(null, new NSPoint(1, 1), 0L));
+            TestKit.expectThrows("NSGradient.drawFromPointToPoint(·,null,·) rejects with IAE, not NPE",
+                    IllegalArgumentException.class,
+                    () -> gr.drawFromPointToPoint(new NSPoint(0, 0), null, 0L));
+        } catch (Throwable t) {
+            TestKit.check(false, "gradient null block threw: " + t);
+        }
+
         // --- 11. lifetime / leak oracles ---
         // A runtime ObjC class pair is created once per (super, className) and never
         // disposed, so creating the same delegate shape repeatedly must NOT grow the

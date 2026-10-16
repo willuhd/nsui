@@ -2182,6 +2182,8 @@ public final class AuditRegressionTest {
             nsui.CAScrollLayer ncl = nsui.CAScrollLayer.create();
             TestKit.expectThrows("CAScrollLayer.scrollToPoint(NaN) rejects (native 134)",
                     IllegalArgumentException.class, () -> ncl.scrollToPoint(np));
+            TestKit.expectThrows("CAScrollLayer.scrollToRect(NaN) rejects like scrollToPoint:",
+                    IllegalArgumentException.class, () -> ncl.scrollToRect(nr));
             // Tolerated counterparts: valid geometry must still go through.
             TestKit.noThrow("valid geometry still works after the guards",
                     () -> { nv.setBoundsOrigin(new NSPoint(1, 2));

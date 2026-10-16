@@ -56,6 +56,7 @@ public class CAScrollLayer extends CALayer {
 
     /// scrollToRect:.
     public void scrollToRect(NSRect r) {
+        Bounds.notNaN(r, "scrollToRect:");
         try {
             handles.hScrollRect().invokeExact(peer, ObjC.sel("scrollToRect:"), r.toSegment());
         } catch (Throwable t) {

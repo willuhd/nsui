@@ -590,7 +590,7 @@ public final class NSButton extends NSControl {
     /// [button setSymbolConfiguration:] — pass `MemorySegment.NULL` for nil.
     public void setSymbolConfiguration(MemorySegment config) {
         ensureInit();
-        ObjC.msgSendVoidId(peer, Sels.setSymbolConfiguration, config);
+        ObjC.msgSendVoidId(peer, Sels.setSymbolConfiguration, (MemorySegment) (config == null ? MemorySegment.NULL : config));
     }
 
     // ---- macOS 26 tint / border shape (guarded: 0 / no-op where absent) ----

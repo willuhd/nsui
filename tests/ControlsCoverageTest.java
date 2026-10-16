@@ -105,6 +105,7 @@ public final class ControlsCoverageTest {
         MemorySegment symCfg = hello.symbolConfiguration();
         TestKit.check(symCfg == null || symCfg.address() == 0, "symbolConfiguration nil by default");
         TestKit.noThrow("setSymbolConfiguration(NULL) no crash", () -> hello.setSymbolConfiguration(MemorySegment.NULL));
+        TestKit.noThrow("setSymbolConfiguration(null) clears like nil, no crash", () -> hello.setSymbolConfiguration(null));
         hello.setTintProminence(1L);
         TestKit.check(hello.tintProminence() == 1L, "tintProminence 1 round-trip (macOS 26+)");
         hello.setTintProminence(0L);

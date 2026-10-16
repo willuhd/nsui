@@ -198,6 +198,7 @@ public final class NSGraphicsContext extends NSObject {
     /// setPatternPhase:.
     public void setPatternPhase(NSPoint phase) {
         ensureInit();
+        if (phase == null) throw new IllegalArgumentException("setPatternPhase: null phase");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.POINT));
             h.invokeExact(peer, ObjC.sel("setPatternPhase:"), phase.toSegment());

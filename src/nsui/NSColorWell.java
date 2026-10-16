@@ -187,6 +187,7 @@ public final class NSColorWell extends NSControl {
     /// [well drawWellInside:] — draw the well swatch inside the rect.
     public void drawWellInside(NSRect insideRect) {
         ensureInit();
+        if (insideRect == null) throw new IllegalArgumentException("drawWellInside: null rect");
         try {
             hDrawWell.invokeExact(peer, ObjC.sel("drawWellInside:"), insideRect.toSegment());
         } catch (Throwable t) {

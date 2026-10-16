@@ -2920,6 +2920,31 @@ public final class AuditRegressionTest {
             TestKit.check(false, "layout chrome null block threw: " + t);
         }
 
+        // --- 8b1. drawing chrome null reports IAE, not NPE ---
+        // setShadowOffset, setTranslation:inView:, drawWellInside and setPatternPhase
+        // take structs by value; the gesture view stays nullable.
+        try {
+            nsui.NSShadow sh = nsui.NSShadow.create();
+            TestKit.expectThrows("NSShadow.setShadowOffset(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> sh.setShadowOffset(null));
+            nsui.NSPanGestureRecognizer pan = nsui.NSPanGestureRecognizer.create(
+                    java.lang.foreign.MemorySegment.NULL, null);
+            TestKit.expectThrows("NSPanGestureRecognizer.setTranslation(null,·) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> pan.setTranslation(null, null));
+            nsui.NSColorWell well = nsui.NSColorWell.create(new NSRect(0, 0, 50, 30));
+            TestKit.expectThrows("NSColorWell.drawWellInside(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> well.drawWellInside(null));
+            nsui.NSImage icon2 = nsui.NSWorkspace.sharedWorkspace().iconForFileType("txt");
+            nsui.NSBitmapImageRep rep2 = nsui.NSBitmapImageRep.create(
+                    nsui.NSData.wrap(icon2.TIFFRepresentation()));
+            nsui.NSGraphicsContext gctx =
+                    nsui.NSGraphicsContext.graphicsContextWithBitmapImageRep(rep2);
+            TestKit.expectThrows("NSGraphicsContext.setPatternPhase(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> gctx.setPatternPhase(null));
+        } catch (Throwable t) {
+            TestKit.check(false, "drawing chrome null block threw: " + t);
+        }
+
         // --- 11. lifetime / leak oracles ---
         // A runtime ObjC class pair is created once per (super, className) and never
         // disposed, so creating the same delegate shape repeatedly must NOT grow the

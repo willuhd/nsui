@@ -2795,6 +2795,25 @@ public final class AuditRegressionTest {
             TestKit.check(false, "gradient null block threw: " + t);
         }
 
+        // --- 8bw. image null reports IAE, not NPE (NaN stays tolerated) ---
+        // setSize, drawInRect, setCapInsets, initWithSize and setAlignmentRect take
+        // structs by value; probes list them as NaN-tolerant, so null-only guards.
+        try {
+            nsui.NSImage im = nsui.NSImage.createWithSize(new NSSize(10, 10));
+            TestKit.expectThrows("NSImage.setSize(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> im.setSize(null));
+            TestKit.expectThrows("NSImage.drawInRect(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> im.drawInRect(null));
+            TestKit.expectThrows("NSImage.setCapInsets(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> im.setCapInsets(null));
+            TestKit.expectThrows("NSImage.createWithSize(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> nsui.NSImage.createWithSize(null));
+            TestKit.expectThrows("NSImage.setAlignmentRect(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> im.setAlignmentRect(null));
+        } catch (Throwable t) {
+            TestKit.check(false, "image null block threw: " + t);
+        }
+
         // --- 11. lifetime / leak oracles ---
         // A runtime ObjC class pair is created once per (super, className) and never
         // disposed, so creating the same delegate shape repeatedly must NOT grow the

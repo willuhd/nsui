@@ -409,6 +409,7 @@ public final class NSLayoutManager extends NSObject {
 
     /// [layoutManager ensureLayoutForBoundingRect:inTextContainer:]
     public void ensureLayoutForBoundingRectInTextContainer(NSRect bounds, NSTextContainer container) {
+        if (bounds == null) throw new IllegalArgumentException("ensureLayoutForBoundingRect:inTextContainer: null bounds");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.RECT, Arg.ID));
             h.invokeExact(peer, ObjC.sel("ensureLayoutForBoundingRect:inTextContainer:"),
@@ -602,6 +603,7 @@ public final class NSLayoutManager extends NSObject {
 
     /// [layoutManager setTemporaryAttributes:forCharacterRange:] — attrs is NSDictionary*.
     public void setTemporaryAttributesForCharacterRange(MemorySegment attrs, NSRange charRange) {
+        if (charRange == null) throw new IllegalArgumentException("setTemporaryAttributes:forCharacterRange: null range");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.RANGE));
             h.invokeExact(peer, ObjC.sel("setTemporaryAttributes:forCharacterRange:"),
@@ -613,6 +615,7 @@ public final class NSLayoutManager extends NSObject {
 
     /// [layoutManager addTemporaryAttributes:forCharacterRange:] — attrs is NSDictionary*.
     public void addTemporaryAttributesForCharacterRange(MemorySegment attrs, NSRange charRange) {
+        if (charRange == null) throw new IllegalArgumentException("addTemporaryAttributes:forCharacterRange: null range");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.RANGE));
             h.invokeExact(peer, ObjC.sel("addTemporaryAttributes:forCharacterRange:"),
@@ -624,6 +627,7 @@ public final class NSLayoutManager extends NSObject {
 
     /// [layoutManager removeTemporaryAttribute:forCharacterRange:]
     public void removeTemporaryAttributeForCharacterRange(String attrName, NSRange charRange) {
+        if (charRange == null) throw new IllegalArgumentException("removeTemporaryAttribute:forCharacterRange: null range");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.RANGE));
             h.invokeExact(peer, ObjC.sel("removeTemporaryAttribute:forCharacterRange:"),
@@ -652,6 +656,7 @@ public final class NSLayoutManager extends NSObject {
 
     /// [layoutManager addTemporaryAttribute:value:forCharacterRange:] (macOS 10.5+).
     public void addTemporaryAttributeValueForCharacterRange(String attrName, MemorySegment value, NSRange charRange) {
+        if (charRange == null) throw new IllegalArgumentException("addTemporaryAttribute:value:forCharacterRange: null range");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.ID, Arg.RANGE));
             h.invokeExact(peer, ObjC.sel("addTemporaryAttribute:value:forCharacterRange:"),

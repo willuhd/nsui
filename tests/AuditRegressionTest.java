@@ -2735,6 +2735,48 @@ public final class AuditRegressionTest {
             TestKit.check(false, "view display null block threw: " + t);
         }
 
+        // --- 8bu. text layout null reports IAE, not NPE (NaN stays tolerated) ---
+        // NSTextView inset/display/completions, NSText selectedRange/min/max and the
+        // layout-manager temporary-attribute ranges take structs by value; insets and
+        // display rects stay NaN-tolerant per Bounds.js:42-58, so null-only guards.
+        try {
+            nsui.NSTextView tv = nsui.NSTextView.create(new NSRect(0, 0, 200, 100));
+            TestKit.expectThrows("NSTextView.setTextContainerInset(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> tv.setTextContainerInset(null));
+            TestKit.expectThrows("NSTextView.setNeedsDisplayInRectAvoidAdditionalLayout(null,·) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> tv.setNeedsDisplayInRectAvoidAdditionalLayout(null, false));
+            TestKit.expectThrows("NSTextView.drawViewBackgroundInRect(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> tv.drawViewBackgroundInRect(null));
+            TestKit.expectThrows("NSTextView.completionsForPartialWordRange(null,·) rejects with IAE, not NPE",
+                    IllegalArgumentException.class,
+                    () -> tv.completionsForPartialWordRange(null, java.lang.foreign.MemorySegment.NULL));
+            nsui.NSText tx = nsui.NSText.create(new NSRect(0, 0, 200, 100));
+            TestKit.expectThrows("NSText.setSelectedRange(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> tx.setSelectedRange(null));
+            TestKit.expectThrows("NSText.setMaxSize(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> tx.setMaxSize(null));
+            TestKit.expectThrows("NSText.setMinSize(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> tx.setMinSize(null));
+            nsui.NSLayoutManager lm3 = nsui.NSLayoutManager.create();
+            TestKit.expectThrows("NSLayoutManager.ensureLayoutForBoundingRect(null,·) rejects with IAE, not NPE",
+                    IllegalArgumentException.class,
+                    () -> lm3.ensureLayoutForBoundingRectInTextContainer(null, null));
+            TestKit.expectThrows("NSLayoutManager.setTemporaryAttributes(null range) rejects with IAE, not NPE",
+                    IllegalArgumentException.class,
+                    () -> lm3.setTemporaryAttributesForCharacterRange(null, null));
+            TestKit.expectThrows("NSLayoutManager.addTemporaryAttributes(null range) rejects with IAE, not NPE",
+                    IllegalArgumentException.class,
+                    () -> lm3.addTemporaryAttributesForCharacterRange(null, null));
+            TestKit.expectThrows("NSLayoutManager.removeTemporaryAttribute(null range) rejects with IAE, not NPE",
+                    IllegalArgumentException.class,
+                    () -> lm3.removeTemporaryAttributeForCharacterRange(null, null));
+            TestKit.expectThrows("NSLayoutManager.addTemporaryAttributeValue(null range) rejects with IAE, not NPE",
+                    IllegalArgumentException.class,
+                    () -> lm3.addTemporaryAttributeValueForCharacterRange(null, null, null));
+        } catch (Throwable t) {
+            TestKit.check(false, "text layout null block threw: " + t);
+        }
+
         // --- 11. lifetime / leak oracles ---
         // A runtime ObjC class pair is created once per (super, className) and never
         // disposed, so creating the same delegate shape repeatedly must NOT grow the

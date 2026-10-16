@@ -270,6 +270,7 @@ public class NSText extends NSView {
 
     /// [text setSelectedRange:]
     public void setSelectedRange(NSRange range) {
+        if (range == null) throw new IllegalArgumentException("setSelectedRange: null range");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.RANGE));
             h.invokeExact(peer, ObjC.sel("setSelectedRange:"), range.toSegment());
@@ -352,6 +353,7 @@ public class NSText extends NSView {
 
     /// [text setMaxSize:]
     public void setMaxSize(NSSize size) {
+        if (size == null) throw new IllegalArgumentException("setMaxSize: null size");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.SIZE));
             h.invokeExact(peer, ObjC.sel("setMaxSize:"), size.toSegment());
@@ -373,6 +375,7 @@ public class NSText extends NSView {
 
     /// [text setMinSize:]
     public void setMinSize(NSSize size) {
+        if (size == null) throw new IllegalArgumentException("setMinSize: null size");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.SIZE));
             h.invokeExact(peer, ObjC.sel("setMinSize:"), size.toSegment());

@@ -2628,6 +2628,25 @@ public final class AuditRegressionTest {
             TestKit.check(false, "tab-view-controller index block threw: " + t);
         }
 
+        // --- 8bq. NSWindow convertRect null reports IAE, not NPE (NaN stays tolerated) ---
+        // convertRectToScreen/FromScreen/ToBacking/FromBacking take NSRect by value, so a
+        // null has no native meaning and deref'd to NPE. Bounds.java:42-58 lists the convert
+        // family as NaN-tolerant, so the guard is null-only.
+        try {
+            nsui.NSWindow cw2 = TestKit.hiddenWindow(160, 120);
+            TestKit.expectThrows("NSWindow.convertRectToScreen(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> cw2.convertRectToScreen(null));
+            TestKit.expectThrows("NSWindow.convertRectFromScreen(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> cw2.convertRectFromScreen(null));
+            TestKit.expectThrows("NSWindow.convertRectToBacking(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> cw2.convertRectToBacking(null));
+            TestKit.expectThrows("NSWindow.convertRectFromBacking(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> cw2.convertRectFromBacking(null));
+            TestKit.close(cw2);
+        } catch (Throwable t) {
+            TestKit.check(false, "window convertRect null block threw: " + t);
+        }
+
         // --- 11. lifetime / leak oracles ---
         // A runtime ObjC class pair is created once per (super, className) and never
         // disposed, so creating the same delegate shape repeatedly must NOT grow the

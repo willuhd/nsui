@@ -2215,6 +2215,7 @@ ensureInit(); return ObjC.msgSendBool(peer, Sels.hasDynamicDepthLimit); }
     /// [window convertRectToScreen:] — window-base rect to screen coordinates.
     public NSRect convertRectToScreen(NSRect rect) {
         ensureInit();
+        if (rect == null) throw new IllegalArgumentException("convertRectToScreen: null rect");
         try {
             MemorySegment s = (MemorySegment) H.hRectRect().invokeExact(
                     ObjC.structSlot(), peer, Sels.convertRectToScreen, rect.toSegment());
@@ -2227,6 +2228,7 @@ ensureInit(); return ObjC.msgSendBool(peer, Sels.hasDynamicDepthLimit); }
     /// [window convertRectFromScreen:] — screen rect to window-base coordinates.
     public NSRect convertRectFromScreen(NSRect rect) {
         ensureInit();
+        if (rect == null) throw new IllegalArgumentException("convertRectFromScreen: null rect");
         try {
             MemorySegment s = (MemorySegment) H.hRectRect().invokeExact(
                     ObjC.structSlot(), peer, Sels.convertRectFromScreen, rect.toSegment());
@@ -2239,6 +2241,7 @@ ensureInit(); return ObjC.msgSendBool(peer, Sels.hasDynamicDepthLimit); }
     /// [window convertRectToBacking:] — points to backing pixels (macOS 10.7+).
     public NSRect convertRectToBacking(NSRect rect) {
         ensureInit();
+        if (rect == null) throw new IllegalArgumentException("convertRectToBacking: null rect");
         try {
             MemorySegment s = (MemorySegment) H.hRectRect().invokeExact(
                     ObjC.structSlot(), peer, Sels.convertRectToBacking, rect.toSegment());
@@ -2251,6 +2254,7 @@ ensureInit(); return ObjC.msgSendBool(peer, Sels.hasDynamicDepthLimit); }
     /// [window convertRectFromBacking:] — backing pixels to points (macOS 10.7+).
     public NSRect convertRectFromBacking(NSRect rect) {
         ensureInit();
+        if (rect == null) throw new IllegalArgumentException("convertRectFromBacking: null rect");
         try {
             MemorySegment s = (MemorySegment) H.hRectRect().invokeExact(
                     ObjC.structSlot(), peer, Sels.convertRectFromBacking, rect.toSegment());

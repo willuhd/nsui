@@ -321,6 +321,8 @@ public final class MTLRenderCommandEncoder extends NSObject {
 
     /// drawPrimitives:vertexStart:vertexCount:.
     public void drawTriangles(long start, long count) {
+        Bounds.nonNegative(start, "drawPrimitives:vertexStart:vertexCount: (vertexStart)");
+        Bounds.nonNegative(count, "drawPrimitives:vertexStart:vertexCount: (vertexCount)");
         ensureInit();
         try {
             handles.hDraw().invokeExact(peer, ObjC.sel("drawPrimitives:vertexStart:vertexCount:"),

@@ -2330,6 +2330,22 @@ public final class AuditRegressionTest {
             TestKit.expectThrows("CALayer.setAnchorPoint(null) rejects with IAE, not NPE",
                     IllegalArgumentException.class,
                     () -> l3.setAnchorPoint(null));
+            TestKit.expectThrows("CALayer.setTransform(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> l3.setTransform(null));
+            TestKit.expectThrows("CALayer.setSublayerTransform(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> l3.setSublayerTransform(null));
+            TestKit.expectThrows("CALayer.setContentsRect(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> l3.setContentsRect(null));
+            TestKit.expectThrows("CALayer.setContentsCenter(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> l3.setContentsCenter(null));
+            TestKit.expectThrows("CALayer.hitTest(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> l3.hitTest(null));
+            TestKit.expectThrows("CALayer.containsPoint(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> l3.containsPoint(null));
+            TestKit.expectThrows("CALayer.convertPointFromLayer(null,·) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> l3.convertPointFromLayer(null, null));
+            TestKit.expectThrows("CALayer.convertPointToLayer(null,·) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> l3.convertPointToLayer(null, null));
             TestKit.noThrow("CALayer.setDuration(NaN) is accepted",
                     () -> l3.setDuration(nan));
             nsui.CAGradientLayer gl3 = nsui.CAGradientLayer.create();

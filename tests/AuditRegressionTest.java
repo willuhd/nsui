@@ -955,6 +955,12 @@ public final class AuditRegressionTest {
                 TestKit.expectThrows("NSLayoutManager.cgGlyphAtIndex(-1) rejects, not wrap",
                         IllegalArgumentException.class,
                         () -> lm.cgGlyphAtIndex(-1));
+                TestKit.expectThrows("NSLayoutManager.temporaryAttributesAtCharacterIndex(-1) rejects, not wrap",
+                        IllegalArgumentException.class,
+                        () -> lm.temporaryAttributesAtCharacterIndexEffectiveRange(-1, null));
+                TestKit.expectThrows("NSLayoutManager.temporaryAttributeAtCharacterIndex(-1) rejects, not wrap",
+                        IllegalArgumentException.class,
+                        () -> lm.temporaryAttributeAtCharacterIndexEffectiveRange("NSFont", -1, null));
             } else {
                 TestKit.probe("layout manager / text container unavailable");
             }

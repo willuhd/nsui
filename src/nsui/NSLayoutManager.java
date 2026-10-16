@@ -583,6 +583,7 @@ public final class NSLayoutManager extends NSObject {
 
     /// [layoutManager temporaryAttributesAtCharacterIndex:effectiveRange:] — rangeOut nullable.
     public MemorySegment temporaryAttributesAtCharacterIndexEffectiveRange(long charIndex, MemorySegment effectiveRangeOutOrNull) {
+        Bounds.nonNegative(charIndex, "temporaryAttributesAtCharacterIndex:effectiveRange:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.INT, Arg.ID));
             return (MemorySegment) h.invokeExact(peer,
@@ -628,6 +629,7 @@ public final class NSLayoutManager extends NSObject {
 
     /// [layoutManager temporaryAttribute:atCharacterIndex:effectiveRange:] — rangeOut nullable.
     public MemorySegment temporaryAttributeAtCharacterIndexEffectiveRange(String attrName, long location, MemorySegment effectiveRangeOutOrNull) {
+        Bounds.nonNegative(location, "temporaryAttribute:atCharacterIndex:effectiveRange:");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.ID, Arg.INT, Arg.ID));
             return (MemorySegment) h.invokeExact(peer,

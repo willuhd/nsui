@@ -1106,6 +1106,7 @@ public class NSView extends NSResponder {
     /// convertRectToBacking: — a point-space rect in the view's coordinates -> backing pixels.
     public NSRect convertRectToBacking(NSRect rect) {
         ensureInit();
+        if (rect == null) throw new IllegalArgumentException("convertRectToBacking: null rect");
         try {
             return NSRect.fromSegment((MemorySegment) H.hConvBacking().invokeExact(
                     ObjC.structSlot(), peer,
@@ -1983,6 +1984,7 @@ public class NSView extends NSResponder {
     /// [view convertPoint:fromView:] — nil view means the window's coordinate system.
     public NSPoint convertPointFromView(NSPoint point, NSView view) {
         ensureInit();
+        if (point == null) throw new IllegalArgumentException("convertPoint:fromView: null point");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.POINT, Arg.POINT, Arg.ID));
             return NSPoint.fromSegment((MemorySegment) h.invokeExact(ObjC.structSlot(), peer,
@@ -1995,6 +1997,7 @@ public class NSView extends NSResponder {
     /// [view convertPoint:toView:] — nil view means the window's coordinate system.
     public NSPoint convertPointToView(NSPoint point, NSView view) {
         ensureInit();
+        if (point == null) throw new IllegalArgumentException("convertPoint:toView: null point");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.POINT, Arg.POINT, Arg.ID));
             return NSPoint.fromSegment((MemorySegment) h.invokeExact(ObjC.structSlot(), peer,
@@ -2007,6 +2010,7 @@ public class NSView extends NSResponder {
     /// [view convertSize:fromView:] — nil view means the window's coordinate system.
     public NSSize convertSizeFromView(NSSize size, NSView view) {
         ensureInit();
+        if (size == null) throw new IllegalArgumentException("convertSize:fromView: null size");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.SIZE, Arg.SIZE, Arg.ID));
             return NSSize.fromSegment((MemorySegment) h.invokeExact(ObjC.structSlot(), peer,
@@ -2019,6 +2023,7 @@ public class NSView extends NSResponder {
     /// [view convertSize:toView:] — nil view means the window's coordinate system.
     public NSSize convertSizeToView(NSSize size, NSView view) {
         ensureInit();
+        if (size == null) throw new IllegalArgumentException("convertSize:toView: null size");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.SIZE, Arg.SIZE, Arg.ID));
             return NSSize.fromSegment((MemorySegment) h.invokeExact(ObjC.structSlot(), peer,
@@ -2031,6 +2036,7 @@ public class NSView extends NSResponder {
     /// [view convertRect:fromView:] — nil view means the window's coordinate system.
     public NSRect convertRectFromView(NSRect rect, NSView view) {
         ensureInit();
+        if (rect == null) throw new IllegalArgumentException("convertRect:fromView: null rect");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.RECT, Arg.RECT, Arg.ID));
             return NSRect.fromSegment((MemorySegment) h.invokeExact(ObjC.structSlot(), peer,
@@ -2043,6 +2049,7 @@ public class NSView extends NSResponder {
     /// [view convertRect:toView:] — nil view means the window's coordinate system.
     public NSRect convertRectToView(NSRect rect, NSView view) {
         ensureInit();
+        if (rect == null) throw new IllegalArgumentException("convertRect:toView: null rect");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.RECT, Arg.RECT, Arg.ID));
             return NSRect.fromSegment((MemorySegment) h.invokeExact(ObjC.structSlot(), peer,
@@ -2055,6 +2062,7 @@ public class NSView extends NSResponder {
     /// [view convertPointToBacking:] — view coordinates to backing-store pixels.
     public NSPoint convertPointToBacking(NSPoint point) {
         ensureInit();
+        if (point == null) throw new IllegalArgumentException("convertPointToBacking: null point");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.POINT, Arg.POINT));
             return NSPoint.fromSegment((MemorySegment) h.invokeExact(ObjC.structSlot(), peer,
@@ -2067,6 +2075,7 @@ public class NSView extends NSResponder {
     /// [view convertPointFromBacking:] — backing-store pixels back to view coordinates.
     public NSPoint convertPointFromBacking(NSPoint point) {
         ensureInit();
+        if (point == null) throw new IllegalArgumentException("convertPointFromBacking: null point");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.POINT, Arg.POINT));
             return NSPoint.fromSegment((MemorySegment) h.invokeExact(ObjC.structSlot(), peer,
@@ -2137,6 +2146,7 @@ public class NSView extends NSResponder {
     /// [view convertRectFromBacking:].
     public NSRect convertRectFromBacking(NSRect rect) {
         ensureInit();
+        if (rect == null) throw new IllegalArgumentException("convertRectFromBacking: null rect");
         try {
             return NSRect.fromSegment((MemorySegment) H.hConvBacking().invokeExact(ObjC.structSlot(), peer, Sels.convertRectFromBacking, rect.toSegment()));
         } catch (Throwable t) {
@@ -2147,6 +2157,7 @@ public class NSView extends NSResponder {
     /// [view convertSizeToBacking:].
     public NSSize convertSizeToBacking(NSSize size) {
         ensureInit();
+        if (size == null) throw new IllegalArgumentException("convertSizeToBacking: null size");
         try {
             MemorySegment s = (MemorySegment) H.hSizeSize().invokeExact(ObjC.structSlot(), peer, Sels.convertSizeToBacking, size.toSegment());
             return NSSize.fromSegment(s);
@@ -2158,6 +2169,7 @@ public class NSView extends NSResponder {
     /// [view convertSizeFromBacking:].
     public NSSize convertSizeFromBacking(NSSize size) {
         ensureInit();
+        if (size == null) throw new IllegalArgumentException("convertSizeFromBacking: null size");
         try {
             MemorySegment s = (MemorySegment) H.hSizeSize().invokeExact(ObjC.structSlot(), peer, Sels.convertSizeFromBacking, size.toSegment());
             return NSSize.fromSegment(s);

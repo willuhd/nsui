@@ -2677,6 +2677,40 @@ public final class AuditRegressionTest {
             TestKit.check(false, "window size null block threw: " + t);
         }
 
+        // --- 8bs. NSView convert null reports IAE, not NPE (NaN stays tolerated) ---
+        // convertPoint/Size/Rect from/toView, to/fromBacking take structs by value; the
+        // view arg stays nullable (nil = window coords). Bounds.js:42-58 lists converts as
+        // NaN-tolerant, so null-only guards.
+        try {
+            nsui.NSView cv = NSView.create(new NSRect(0, 0, 100, 100), (v, d) -> {});
+            TestKit.expectThrows("NSView.convertPointFromView(null,·) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> cv.convertPointFromView(null, null));
+            TestKit.expectThrows("NSView.convertPointToView(null,·) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> cv.convertPointToView(null, null));
+            TestKit.expectThrows("NSView.convertSizeFromView(null,·) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> cv.convertSizeFromView(null, null));
+            TestKit.expectThrows("NSView.convertSizeToView(null,·) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> cv.convertSizeToView(null, null));
+            TestKit.expectThrows("NSView.convertRectFromView(null,·) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> cv.convertRectFromView(null, null));
+            TestKit.expectThrows("NSView.convertRectToView(null,·) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> cv.convertRectToView(null, null));
+            TestKit.expectThrows("NSView.convertPointToBacking(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> cv.convertPointToBacking(null));
+            TestKit.expectThrows("NSView.convertPointFromBacking(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> cv.convertPointFromBacking(null));
+            TestKit.expectThrows("NSView.convertRectToBacking(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> cv.convertRectToBacking(null));
+            TestKit.expectThrows("NSView.convertRectFromBacking(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> cv.convertRectFromBacking(null));
+            TestKit.expectThrows("NSView.convertSizeToBacking(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> cv.convertSizeToBacking(null));
+            TestKit.expectThrows("NSView.convertSizeFromBacking(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> cv.convertSizeFromBacking(null));
+        } catch (Throwable t) {
+            TestKit.check(false, "view convert null block threw: " + t);
+        }
+
         // --- 11. lifetime / leak oracles ---
         // A runtime ObjC class pair is created once per (super, className) and never
         // disposed, so creating the same delegate shape repeatedly must NOT grow the

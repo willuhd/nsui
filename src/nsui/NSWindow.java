@@ -1191,6 +1191,7 @@ public class NSWindow extends NSResponder {
     /// [window setMinSize:].
     public void setMinSize(NSSize size) {
         ensureInit();
+        if (size == null) throw new IllegalArgumentException("setMinSize: null size");
         try {
             H.hSetSize().invokeExact(peer, Sels.setMinSize, size.toSegment());
         } catch (Throwable t) {
@@ -1212,6 +1213,7 @@ public class NSWindow extends NSResponder {
     /// [window setMaxSize:].
     public void setMaxSize(NSSize size) {
         ensureInit();
+        if (size == null) throw new IllegalArgumentException("setMaxSize: null size");
         try {
             H.hSetSize().invokeExact(peer, Sels.setMaxSize, size.toSegment());
         } catch (Throwable t) {
@@ -1760,6 +1762,7 @@ ensureInit(); return ObjC.msgSendBool(peer, Sels.hasDynamicDepthLimit); }
     /// [window setResizeIncrements:].
     public void setResizeIncrements(NSSize size) {
         ensureInit();
+        if (size == null) throw new IllegalArgumentException("setResizeIncrements: null size");
         try {
             H.hSetSize().invokeExact(peer, Sels.setResizeIncrements, size.toSegment());
         } catch (Throwable t) {
@@ -1783,6 +1786,7 @@ ensureInit(); return ObjC.msgSendBool(peer, Sels.hasDynamicDepthLimit); }
     /// silently (SIGTRAP, measured). Restore to a valid ratio like (1,1).
     public void setAspectRatio(NSSize size) {
         ensureInit();
+        if (size == null) throw new IllegalArgumentException("setAspectRatio: null size");
         try {
             H.hSetSize().invokeExact(peer, Sels.setAspectRatio, size.toSegment());
         } catch (Throwable t) {
@@ -1804,6 +1808,7 @@ ensureInit(); return ObjC.msgSendBool(peer, Sels.hasDynamicDepthLimit); }
     /// [window setContentResizeIncrements:].
     public void setContentResizeIncrements(NSSize size) {
         ensureInit();
+        if (size == null) throw new IllegalArgumentException("setContentResizeIncrements: null size");
         try {
             H.hSetSize().invokeExact(peer, Sels.setContentResizeIncrements, size.toSegment());
         } catch (Throwable t) {
@@ -1827,6 +1832,7 @@ ensureInit(); return ObjC.msgSendBool(peer, Sels.hasDynamicDepthLimit); }
     /// next setFrame* traps silently (SIGTRAP, measured). Restore to (1,1).
     public void setContentAspectRatio(NSSize size) {
         ensureInit();
+        if (size == null) throw new IllegalArgumentException("setContentAspectRatio: null size");
         try {
             H.hSetSize().invokeExact(peer, Sels.setContentAspectRatio, size.toSegment());
         } catch (Throwable t) {
@@ -1848,6 +1854,7 @@ ensureInit(); return ObjC.msgSendBool(peer, Sels.hasDynamicDepthLimit); }
     /// [window setContentMinSize:].
     public void setContentMinSize(NSSize size) {
         ensureInit();
+        if (size == null) throw new IllegalArgumentException("setContentMinSize: null size");
         try {
             H.hSetSize().invokeExact(peer, Sels.setContentMinSize, size.toSegment());
         } catch (Throwable t) {
@@ -1869,6 +1876,7 @@ ensureInit(); return ObjC.msgSendBool(peer, Sels.hasDynamicDepthLimit); }
     /// [window setContentMaxSize:].
     public void setContentMaxSize(NSSize size) {
         ensureInit();
+        if (size == null) throw new IllegalArgumentException("setContentMaxSize: null size");
         try {
             H.hSetSize().invokeExact(peer, Sels.setContentMaxSize, size.toSegment());
         } catch (Throwable t) {
@@ -1890,6 +1898,7 @@ ensureInit(); return ObjC.msgSendBool(peer, Sels.hasDynamicDepthLimit); }
     /// [window setMinFullScreenContentSize:].
     public void setMinFullScreenContentSize(NSSize size) {
         ensureInit();
+        if (size == null) throw new IllegalArgumentException("setMinFullScreenContentSize: null size");
         try {
             H.hSetSize().invokeExact(peer, Sels.setMinFullScreenContentSize, size.toSegment());
         } catch (Throwable t) {
@@ -1911,6 +1920,7 @@ ensureInit(); return ObjC.msgSendBool(peer, Sels.hasDynamicDepthLimit); }
     /// [window setMaxFullScreenContentSize:].
     public void setMaxFullScreenContentSize(NSSize size) {
         ensureInit();
+        if (size == null) throw new IllegalArgumentException("setMaxFullScreenContentSize: null size");
         try {
             H.hSetSize().invokeExact(peer, Sels.setMaxFullScreenContentSize, size.toSegment());
         } catch (Throwable t) {

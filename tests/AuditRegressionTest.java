@@ -2647,6 +2647,36 @@ public final class AuditRegressionTest {
             TestKit.check(false, "window convertRect null block threw: " + t);
         }
 
+        // --- 8br. NSWindow size null reports IAE, not NPE (NaN stays tolerated) ---
+        // setMin/MaxSize, setResizeIncrements, setAspectRatio and the content/full-screen
+        // twins take NSSize by value; Bounds.js:42-58 lists them as NaN-tolerant, so null-only.
+        try {
+            nsui.NSWindow sw2 = TestKit.hiddenWindow(160, 120);
+            TestKit.expectThrows("NSWindow.setMinSize(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> sw2.setMinSize(null));
+            TestKit.expectThrows("NSWindow.setMaxSize(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> sw2.setMaxSize(null));
+            TestKit.expectThrows("NSWindow.setResizeIncrements(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> sw2.setResizeIncrements(null));
+            TestKit.expectThrows("NSWindow.setAspectRatio(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> sw2.setAspectRatio(null));
+            TestKit.expectThrows("NSWindow.setContentResizeIncrements(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> sw2.setContentResizeIncrements(null));
+            TestKit.expectThrows("NSWindow.setContentAspectRatio(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> sw2.setContentAspectRatio(null));
+            TestKit.expectThrows("NSWindow.setContentMinSize(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> sw2.setContentMinSize(null));
+            TestKit.expectThrows("NSWindow.setContentMaxSize(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> sw2.setContentMaxSize(null));
+            TestKit.expectThrows("NSWindow.setMinFullScreenContentSize(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> sw2.setMinFullScreenContentSize(null));
+            TestKit.expectThrows("NSWindow.setMaxFullScreenContentSize(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> sw2.setMaxFullScreenContentSize(null));
+            TestKit.close(sw2);
+        } catch (Throwable t) {
+            TestKit.check(false, "window size null block threw: " + t);
+        }
+
         // --- 11. lifetime / leak oracles ---
         // A runtime ObjC class pair is created once per (super, className) and never
         // disposed, so creating the same delegate shape repeatedly must NOT grow the

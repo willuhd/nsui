@@ -2711,6 +2711,30 @@ public final class AuditRegressionTest {
             TestKit.check(false, "view convert null block threw: " + t);
         }
 
+        // --- 8bt. NSView display/hit null reports IAE, not NPE (NaN stays tolerated) ---
+        // setNeedsDisplayInRect, displayRect, needsToDrawRect, bitmap rep and hitTest take
+        // rects/points by value; Bounds.js:42-58 lists them as NaN-tolerant, so null-only.
+        try {
+            nsui.NSView dv = NSView.create(new NSRect(0, 0, 100, 100), (v, d) -> {});
+            TestKit.expectThrows("NSView.setNeedsDisplayInRect(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> dv.setNeedsDisplayInRect(null));
+            TestKit.expectThrows("NSView.displayRect(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> dv.displayRect(null));
+            TestKit.expectThrows("NSView.displayRectIgnoringOpacity(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> dv.displayRectIgnoringOpacity(null));
+            TestKit.expectThrows("NSView.needsToDrawRect(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> dv.needsToDrawRect(null));
+            TestKit.expectThrows("NSView.bitmapImageRepForCachingDisplayInRect(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> dv.bitmapImageRepForCachingDisplayInRect(null));
+            TestKit.expectThrows("NSView.hitTest(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> dv.hitTest(null));
+            TestKit.expectThrows("NSView.backingAlignedRect(null,·) rejects with IAE, not NPE",
+                    IllegalArgumentException.class,
+                    () -> dv.backingAlignedRect(null, NSView.ALIGN_ALL_EDGES_INWARD));
+        } catch (Throwable t) {
+            TestKit.check(false, "view display null block threw: " + t);
+        }
+
         // --- 11. lifetime / leak oracles ---
         // A runtime ObjC class pair is created once per (super, className) and never
         // disposed, so creating the same delegate shape repeatedly must NOT grow the

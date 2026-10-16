@@ -1083,6 +1083,7 @@ public class NSView extends NSResponder {
     /// `rect` avoids a full-bounds redraw.
     public void setNeedsDisplayInRect(NSRect rect) {
         ensureInit();
+        if (rect == null) throw new IllegalArgumentException("setNeedsDisplayInRect: null rect");
         try {
             H.hNeedsRect().invokeExact(peer, Sels.setNeedsDisplayInRect, rect.toSegment());
         } catch (Throwable t) {
@@ -1465,6 +1466,7 @@ public class NSView extends NSResponder {
     /// [view bitmapImageRepForCachingDisplayInRect:] — create a rep sized for caching.
     public NSBitmapImageRep bitmapImageRepForCachingDisplayInRect(NSRect rect) {
         ensureInit();
+        if (rect == null) throw new IllegalArgumentException("bitmapImageRepForCachingDisplayInRect: null rect");
         try {
             MemorySegment rep = (MemorySegment) H.hRepForCache().invokeExact(peer, Sels.bitmapImageRepForCachingDisplayInRect, rect.toSegment());
             return NSBitmapImageRep.wrap(rep);
@@ -1496,6 +1498,7 @@ public class NSView extends NSResponder {
     /// of(BOOL,RECT) was the missing shape; the call is a pure query (verified: exit 0).
     public boolean needsToDrawRect(NSRect rect) {
         ensureInit();
+        if (rect == null) throw new IllegalArgumentException("needsToDrawRect: null rect");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.BOOL, Arg.RECT));
             return (boolean) h.invokeExact(peer, ObjC.sel("needsToDrawRect:"), rect.toSegment());
@@ -1868,6 +1871,7 @@ public class NSView extends NSResponder {
     /// [view displayRect:].
     public void displayRect(NSRect rect) {
         ensureInit();
+        if (rect == null) throw new IllegalArgumentException("displayRect: null rect");
         try {
             H.hSetBounds().invokeExact(peer, Sels.displayRect, rect.toSegment());
         } catch (Throwable t) {
@@ -1878,6 +1882,7 @@ public class NSView extends NSResponder {
     /// [view displayRectIgnoringOpacity:].
     public void displayRectIgnoringOpacity(NSRect rect) {
         ensureInit();
+        if (rect == null) throw new IllegalArgumentException("displayRectIgnoringOpacity: null rect");
         try {
             H.hSetBounds().invokeExact(peer, Sels.displayRectIgnoringOpacity, rect.toSegment());
         } catch (Throwable t) {
@@ -1899,6 +1904,7 @@ public class NSView extends NSResponder {
     public void displayRectIgnoringOpacityInContext(NSRect rect, NSGraphicsContext context) {
         ensureInit();
         Bounds.nonNull(context, "displayRectIgnoringOpacity:inContext:");
+        if (rect == null) throw new IllegalArgumentException("displayRectIgnoringOpacity:inContext: null rect");
         try {
             H.hCacheDisplay().invokeExact(peer, Sels.displayRectIgnoringOpacity_inContext, rect.toSegment(), context.peer());
         } catch (Throwable t) {
@@ -2134,6 +2140,7 @@ public class NSView extends NSResponder {
     public NSRect backingAlignedRect(NSRect rect, long options) {
         validateAlignmentOptions(options);
         ensureInit();
+        if (rect == null) throw new IllegalArgumentException("backingAlignedRect:options: null rect");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.RECT, Arg.RECT, Arg.INT));
             return NSRect.fromSegment((MemorySegment) h.invokeExact(ObjC.structSlot(), peer,
@@ -2225,6 +2232,7 @@ public class NSView extends NSResponder {
     /// [view hitTest:] — deepest descendant containing the point (nil-safe).
     public NSView hitTest(NSPoint point) {
         ensureInit();
+        if (point == null) throw new IllegalArgumentException("hitTest: null point");
         try {
             MemorySegment v = (MemorySegment) H.hIdPoint().invokeExact(peer, Sels.hitTest, point.toSegment());
             return NSView.wrap(v);

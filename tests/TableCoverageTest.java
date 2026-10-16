@@ -200,6 +200,8 @@ public final class TableCoverageTest {
             catch (Throwable t) { check(false, "begin/endUpdates threw: " + t); }
             try { TestKit.noThrow("setDropRow(-1,DropOn) no throw", () -> tv.setDropRow(-1, 0)); }
             catch (Throwable t) { check(false, "setDropRow threw: " + t); }
+            TestKit.expectThrows("setDropRow(-2,DropOn) rejects below the drop-on sentinel",
+                    IllegalArgumentException.class, () -> tv.setDropRow(-2, 0));
             tv.selectRowIndexes(NSIndexSet.indexSet().peer(), false);
             check(tv.selectedRow() == -1 && tv.numberOfSelectedRows() == 0,
                     "selectRowIndexes(empty) -> selectedRow -1");

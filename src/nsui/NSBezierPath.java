@@ -263,6 +263,7 @@ public final class NSBezierPath extends NSObject {
 
     private static void classFillStrokeClip(String sel, NSRect rect) {
         ensureInit();
+        if (rect == null) throw new IllegalArgumentException(sel + " null rect");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.RECT));
             h.invokeExact(ObjC.cls("NSBezierPath"), ObjC.sel(sel), rect.toSegment());

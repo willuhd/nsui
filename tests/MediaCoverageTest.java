@@ -437,6 +437,12 @@ public final class MediaCoverageTest {
                     () -> p.curveToPoint(null, new NSPoint(1, 1), new NSPoint(2, 2)));
             TestKit.expectThrows("appendBezierPathWithRect(null) rejects with IAE, not NPE",
                     IllegalArgumentException.class, () -> q.appendBezierPathWithRect(null));
+            TestKit.expectThrows("fillRect(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> NSBezierPath.fillRect(null));
+            TestKit.expectThrows("strokeRect(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> NSBezierPath.strokeRect(null));
+            TestKit.expectThrows("clipRect(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> NSBezierPath.clipRect(null));
             try {
                 p.stroke();
                 p.fill();

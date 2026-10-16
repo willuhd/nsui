@@ -109,7 +109,8 @@ public final class NSFont extends NSObject {
         ensureInit();
         try {
             MemorySegment f = (MemorySegment) H.hFontWithDescriptor().invokeExact(
-                    ObjC.cls("NSFont"), ObjC.sel("fontWithDescriptor:size:"), descriptor, size);
+                    ObjC.cls("NSFont"), ObjC.sel("fontWithDescriptor:size:"),
+                    (MemorySegment) (descriptor == null ? MemorySegment.NULL : descriptor), size);
             if (f == null || f.address() == 0) return null;
             return new NSFont(f);
         } catch (Throwable t) {

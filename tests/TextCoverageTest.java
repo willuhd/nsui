@@ -247,6 +247,8 @@ public final class TextCoverageTest {
         TestKit.check(NSFont.fontWithNameMatrix("Helvetica", null) != null, "fontWithName:matrix: (NULL) non-nil");
         TestKit.check(NSFont.fontWithDescriptorTextTransform(helv.fontDescriptor(), null) != null,
                 "fontWithDescriptor:textTransform: non-nil");
+        TestKit.check(NSFont.fontWithDescriptor(null, 12) == null,
+                "fontWithDescriptor(nil) answers nil, not a bridge throw");
         TestKit.check(NSFont.userFixedPitchFontOfSize(11) != null, "userFixedPitchFontOfSize non-nil");
         TestKit.check(NSFont.titleBarFontOfSize(12) != null, "titleBarFontOfSize non-nil");
         TestKit.check(NSFont.menuFontOfSize(12) != null, "menuFontOfSize non-nil");

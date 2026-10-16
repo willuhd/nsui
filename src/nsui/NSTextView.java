@@ -1027,6 +1027,12 @@ public class NSTextView extends NSText {
     public NSArray completionsForPartialWordRange(NSRange charRange, MemorySegment indexOutOrNull) {
         ensureInit();
         if (charRange == null) throw new IllegalArgumentException("completionsForPartialWordRange:indexOfSelectedItem: null range");
+        // A negative location wraps to NSUIntegerMax and raises NSRangeException natively
+        // ("Range {18446744073709551615, 1} out of bounds", exit 134, measured). Only the
+        // negative half is guarded: an over-range positive location returns nil ({100,1}
+        // measured) and a negative length is tolerated ({0,-1} measured), so a full
+        // Bounds.range here would refuse calls the API accepts.
+        Bounds.nonNegative(charRange.location(), "completionsForPartialWordRange:indexOfSelectedItem: (location)");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.RANGE, Arg.ID));
             MemorySegment p = (MemorySegment) h.invokeExact(peer,

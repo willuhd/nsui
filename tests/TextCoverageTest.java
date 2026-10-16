@@ -595,6 +595,8 @@ public final class TextCoverageTest {
         tv.setSelectedRange(new NSRange(0, 5));
         TestKit.check(tv.selectedRange().location() == 0 && tv.selectedRange().length() == 5,
                 "selectedRange round-trip (got " + tv.selectedRange() + ")");
+        TestKit.expectThrows("setSelectedRange(null) rejects with IAE, not NPE",
+                IllegalArgumentException.class, () -> tv.setSelectedRange(null));
         TestKit.noThrow("scrollRangeToVisible did not crash", () -> tv.scrollRangeToVisible(new NSRange(0, 5)));
 
         boolean ufp0 = tv.usesFontPanel();

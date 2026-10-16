@@ -1224,6 +1224,7 @@ public class NSTextView extends NSText {
     /// [textView setSelectedRange:] (single-range NSTextView override).
     public void setSelectedRange(NSRange charRange) {
         ensureInit();
+        if (charRange == null) throw new IllegalArgumentException("setSelectedRange: null range");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.RANGE));
             h.invokeExact(peer, Sels.setSelectedRange, charRange.toSegment());

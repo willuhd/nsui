@@ -967,6 +967,15 @@ public final class AuditRegressionTest {
                 TestKit.expectThrows("NSLayoutManager.temporaryAttributeAtCharacterIndex(-1) rejects, not wrap",
                         IllegalArgumentException.class,
                         () -> lm.temporaryAttributeAtCharacterIndexEffectiveRange("NSFont", -1, null));
+                TestKit.expectThrows("NSLayoutManager.invalidateDisplayForCharacterRange(null) rejects, not NPE",
+                        IllegalArgumentException.class,
+                        () -> lm.invalidateDisplayForCharacterRange(null));
+                TestKit.expectThrows("NSLayoutManager.ensureGlyphsForCharacterRange(null) rejects, not NPE",
+                        IllegalArgumentException.class,
+                        () -> lm.ensureGlyphsForCharacterRange(null));
+                TestKit.expectThrows("NSLayoutManager.ensureLayoutForGlyphRange(null) rejects, not NPE",
+                        IllegalArgumentException.class,
+                        () -> lm.ensureLayoutForGlyphRange(null));
                 TestKit.expectThrows("NSTextContainer.create(null) rejects with IAE, not NPE",
                         IllegalArgumentException.class,
                         () -> nsui.NSTextContainer.create((nsui.NSSize) null));

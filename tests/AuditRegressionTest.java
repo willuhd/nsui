@@ -2869,6 +2869,32 @@ public final class AuditRegressionTest {
             TestKit.check(false, "view overflow (a) null block threw: " + t);
         }
 
+        // --- 8bz. view overflow null reports IAE, not NPE (b: layer/prepare) ---
+        // convertSizeTo/FromLayer, prepareContent, keyboard-focus ring, EPS write,
+        // page border and removeCursorRect take structs by value; converts and the
+        // focus-ring rect stay NaN-tolerant, so null-only guards.
+        try {
+            nsui.NSView bv = NSView.create(new NSRect(0, 0, 100, 100), (v, d) -> {});
+            TestKit.expectThrows("NSView.convertSizeToLayer(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> bv.convertSizeToLayer(null));
+            TestKit.expectThrows("NSView.convertSizeFromLayer(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> bv.convertSizeFromLayer(null));
+            TestKit.expectThrows("NSView.prepareContentInRect(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> bv.prepareContentInRect(null));
+            TestKit.expectThrows("NSView.setKeyboardFocusRingNeedsDisplayInRect(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> bv.setKeyboardFocusRingNeedsDisplayInRect(null));
+            TestKit.expectThrows("NSView.drawPageBorderWithSize(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> bv.drawPageBorderWithSize(null));
+            TestKit.expectThrows("NSView.removeCursorRect(null,·) rejects with IAE, not NPE",
+                    IllegalArgumentException.class,
+                    () -> bv.removeCursorRect(null, nsui.NSCursor.arrowCursor()));
+            TestKit.expectThrows("NSView.writeEPSInsideRectToPasteboard(null,·) rejects with IAE, not NPE",
+                    IllegalArgumentException.class,
+                    () -> bv.writeEPSInsideRectToPasteboard(null, nsui.NSPasteboard.generalPasteboard()));
+        } catch (Throwable t) {
+            TestKit.check(false, "view overflow (b) null block threw: " + t);
+        }
+
         // --- 11. lifetime / leak oracles ---
         // A runtime ObjC class pair is created once per (super, className) and never
         // disposed, so creating the same delegate shape repeatedly must NOT grow the

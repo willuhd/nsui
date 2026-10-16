@@ -2193,6 +2193,7 @@ public class NSView extends NSResponder {
     /// [view convertSizeToLayer:].
     public NSSize convertSizeToLayer(NSSize size) {
         ensureInit();
+        if (size == null) throw new IllegalArgumentException("convertSizeToLayer: null size");
         try {
             MemorySegment s = (MemorySegment) H.hSizeSize().invokeExact(ObjC.structSlot(), peer, Sels.convertSizeToLayer, size.toSegment());
             return NSSize.fromSegment(s);
@@ -2204,6 +2205,7 @@ public class NSView extends NSResponder {
     /// [view convertSizeFromLayer:].
     public NSSize convertSizeFromLayer(NSSize size) {
         ensureInit();
+        if (size == null) throw new IllegalArgumentException("convertSizeFromLayer: null size");
         try {
             MemorySegment s = (MemorySegment) H.hSizeSize().invokeExact(ObjC.structSlot(), peer, Sels.convertSizeFromLayer, size.toSegment());
             return NSSize.fromSegment(s);
@@ -2374,6 +2376,7 @@ public class NSView extends NSResponder {
     /// [view prepareContentInRect:].
     public void prepareContentInRect(NSRect rect) {
         ensureInit();
+        if (rect == null) throw new IllegalArgumentException("prepareContentInRect: null rect");
         try {
             H.hSetBounds().invokeExact(peer, Sels.prepareContentInRect, rect.toSegment());
         } catch (Throwable t) {
@@ -2390,6 +2393,7 @@ public class NSView extends NSResponder {
     /// [view setKeyboardFocusRingNeedsDisplayInRect:].
     public void setKeyboardFocusRingNeedsDisplayInRect(NSRect rect) {
         ensureInit();
+        if (rect == null) throw new IllegalArgumentException("setKeyboardFocusRingNeedsDisplayInRect: null rect");
         try {
             H.hSetBounds().invokeExact(peer, Sels.setKeyboardFocusRingNeedsDisplayInRect, rect.toSegment());
         } catch (Throwable t) {
@@ -2623,6 +2627,7 @@ public class NSView extends NSResponder {
     public void writeEPSInsideRectToPasteboard(NSRect rect, NSPasteboard pasteboard) {
         ensureInit();
         Bounds.nonNull(pasteboard, "writeEPSInsideRect:toPasteboard:");
+        if (rect == null) throw new IllegalArgumentException("writeEPSInsideRect:toPasteboard: null rect");
         try {
             H.hCacheDisplay().invokeExact(peer, Sels.writeEPSInsideRect_toPasteboard, rect.toSegment(), pasteboard.peer());
         } catch (Throwable t) {
@@ -2645,6 +2650,7 @@ public class NSView extends NSResponder {
     /// [view drawPageBorderWithSize:].
     public void drawPageBorderWithSize(NSSize size) {
         ensureInit();
+        if (size == null) throw new IllegalArgumentException("drawPageBorderWithSize: null size");
         try {
             H.hSetSize().invokeExact(peer, Sels.drawPageBorderWithSize, size.toSegment());
         } catch (Throwable t) {
@@ -2786,6 +2792,7 @@ public class NSView extends NSResponder {
     public void removeCursorRect(NSRect rect, NSCursor cursor) {
         ensureInit();
         Bounds.nonNull(cursor, "removeCursorRect:cursor:");
+        if (rect == null) throw new IllegalArgumentException("removeCursorRect:cursor: null rect");
         try {
             H.hCacheDisplay().invokeExact(peer, Sels.removeCursorRect_cursor, rect.toSegment(), cursor.peer());
         } catch (Throwable t) {

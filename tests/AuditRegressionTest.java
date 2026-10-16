@@ -955,6 +955,12 @@ public final class AuditRegressionTest {
                 TestKit.expectThrows("NSLayoutManager.cgGlyphAtIndex(-1) rejects, not wrap",
                         IllegalArgumentException.class,
                         () -> lm.cgGlyphAtIndex(-1));
+                TestKit.expectThrows("NSLayoutManager.temporaryAttributesAtCharacterIndex(-1) rejects, not wrap",
+                        IllegalArgumentException.class,
+                        () -> lm.temporaryAttributesAtCharacterIndexEffectiveRange(-1, null));
+                TestKit.expectThrows("NSLayoutManager.temporaryAttributeAtCharacterIndex(-1) rejects, not wrap",
+                        IllegalArgumentException.class,
+                        () -> lm.temporaryAttributeAtCharacterIndexEffectiveRange("NSFont", -1, null));
             } else {
                 TestKit.probe("layout manager / text container unavailable");
             }
@@ -2393,6 +2399,10 @@ public final class AuditRegressionTest {
                         IllegalArgumentException.class, () -> e2.drawIndexed(5L, 1L, b2, 0L));
                 TestKit.expectThrows("drawIndexed with an invalid indexType rejects",
                         IllegalArgumentException.class, () -> e2.drawIndexed(1L, 5L, b2, 0L));
+                TestKit.expectThrows("drawTriangles(-1, 3) rejects, not wrap to NSUInteger",
+                        IllegalArgumentException.class, () -> e2.drawTriangles(-1L, 3L));
+                TestKit.expectThrows("drawTriangles(0, -1) rejects, not wrap to NSUInteger",
+                        IllegalArgumentException.class, () -> e2.drawTriangles(0L, -1L));
                 TestKit.check(nsui.MTLRenderCommandEncoder.MAX_SAMPLER_SLOTS == 16L
                                 && nsui.MTLRenderCommandEncoder.MAX_TEXTURE_SLOTS == 128L,
                         "the documented sampler/texture slot caps are 16 and 128");

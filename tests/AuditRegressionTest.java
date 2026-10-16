@@ -961,6 +961,13 @@ public final class AuditRegressionTest {
                 TestKit.expectThrows("NSLayoutManager.temporaryAttributeAtCharacterIndex(-1) rejects, not wrap",
                         IllegalArgumentException.class,
                         () -> lm.temporaryAttributeAtCharacterIndexEffectiveRange("NSFont", -1, null));
+                TestKit.expectThrows("NSTextContainer.create(null) rejects with IAE, not NPE",
+                        IllegalArgumentException.class,
+                        () -> nsui.NSTextContainer.create((nsui.NSSize) null));
+                TestKit.expectThrows("NSTextContainer.setContainerSize(null) rejects with IAE, not NPE",
+                        IllegalArgumentException.class, () -> tc.setContainerSize(null));
+                TestKit.expectThrows("NSTextContainer.setSize(null) rejects with IAE, not NPE",
+                        IllegalArgumentException.class, () -> tc.setSize(null));
             } else {
                 TestKit.probe("layout manager / text container unavailable");
             }

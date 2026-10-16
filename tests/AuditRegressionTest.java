@@ -506,6 +506,12 @@ public final class AuditRegressionTest {
             TestKit.check(est.length() == 2, "storage shortened to 2 before edited()");
             TestKit.noThrow("edited() accepts a PRE-edit range after a deletion",
                     () -> est.edited(0, new nsui.NSRange(1, 3), -3));
+            TestKit.expectThrows("invalidateAttributesInRange(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> st.invalidateAttributesInRange(null));
+            TestKit.expectThrows("ensureAttributesAreFixed(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> st.ensureAttributesAreFixed(null));
+            TestKit.noThrow("invalidateAttributesInRange in-range still works",
+                    () -> st.invalidateAttributesInRange(new nsui.NSRange(0, 3)));
             nsui.NSTextStorage est2 = nsui.NSTextStorage.create("abc");
             TestKit.expectThrows("edited() still rejects a range beyond the pre-edit length",
                     IllegalArgumentException.class, () -> est2.edited(0, new nsui.NSRange(5, 1), 1));

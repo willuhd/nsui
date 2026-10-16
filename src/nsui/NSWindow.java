@@ -1314,7 +1314,7 @@ public class NSWindow extends NSResponder {
     /// beginSheet:completionHandler: — attach sheet to receiver; handler receives NSModalResponse.
     public void beginSheet(NSWindow sheet, java.util.function.IntConsumer completionHandler) {
         ensureInit();
-        if (sheet == null) return;
+        Bounds.nonNull(sheet, "beginSheet:completionHandler:");
         // A window cannot be attached to itself ("sheet ... cannot be attached to itself",
         // verified exit 134) and attaching an ANCESTOR sheet hangs (>12 s, verified with a
         // watchdog), so the sheetParent chain is walked like the other cycle guards.
@@ -1352,7 +1352,7 @@ public class NSWindow extends NSResponder {
     /// beginSheet:completionHandler: with raw block segment (for advanced use).
     public void beginSheet(NSWindow sheet, MemorySegment completionHandlerBlock) {
         ensureInit();
-        if (sheet == null) return;
+        Bounds.nonNull(sheet, "beginSheet:completionHandler:");
         for (NSWindow p = this; p != null; p = p.sheetParent()) {
             if (p.peer() != null && p.peer().address() == sheet.peer().address()) {
                 throw new IllegalArgumentException("beginSheet:completionHandler: the sheet is this "

@@ -253,6 +253,7 @@ public class NSClipView extends NSView {
     /// [clip setContentInsets:] — NSEdgeInsets by value.
     public void setContentInsets(NSEdgeInsets insets) {
         ensureInit();
+        if (insets == null) throw new IllegalArgumentException("setContentInsets: null insets");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.EDGEINSETS));
             h.invokeExact(peer, ObjC.sel("setContentInsets:"), insets.toSegment());

@@ -2895,6 +2895,31 @@ public final class AuditRegressionTest {
             TestKit.check(false, "view overflow (b) null block threw: " + t);
         }
 
+        // --- 8b0. layout chrome null reports IAE, not NPE ---
+        // setPreparedContentRect, setAdditionalSafeAreaInsets, setContentInsets,
+        // tabViewItemAtPoint, drawDividerInRect and setEdgeInsets take structs by value.
+        try {
+            nsui.NSView pv = NSView.create(new NSRect(0, 0, 100, 100), (v, d) -> {});
+            TestKit.expectThrows("NSView.setPreparedContentRect(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> pv.setPreparedContentRect(null));
+            TestKit.expectThrows("NSView.setAdditionalSafeAreaInsets(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> pv.setAdditionalSafeAreaInsets(null));
+            nsui.NSClipView cc2 = nsui.NSClipView.create(new NSRect(0, 0, 100, 100));
+            TestKit.expectThrows("NSClipView.setContentInsets(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> cc2.setContentInsets(null));
+            nsui.NSTabView tb2 = nsui.NSTabView.create(new NSRect(0, 0, 200, 100));
+            TestKit.expectThrows("NSTabView.tabViewItemAtPoint(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> tb2.tabViewItemAtPoint(null));
+            nsui.NSSplitView sp2 = nsui.NSSplitView.create(new NSRect(0, 0, 200, 100));
+            TestKit.expectThrows("NSSplitView.drawDividerInRect(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> sp2.drawDividerInRect(null));
+            nsui.NSStackView st2 = nsui.NSStackView.create(new NSRect(0, 0, 200, 100));
+            TestKit.expectThrows("NSStackView.setEdgeInsets(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> st2.setEdgeInsets(null));
+        } catch (Throwable t) {
+            TestKit.check(false, "layout chrome null block threw: " + t);
+        }
+
         // --- 11. lifetime / leak oracles ---
         // A runtime ObjC class pair is created once per (super, className) and never
         // disposed, so creating the same delegate shape repeatedly must NOT grow the

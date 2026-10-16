@@ -2850,6 +2850,7 @@ public class NSView extends NSResponder {
     /// [view setPreparedContentRect:].
     public void setPreparedContentRect(NSRect rect) {
         ensureInit();
+        if (rect == null) throw new IllegalArgumentException("setPreparedContentRect: null rect");
         try {
             H.hSetBounds().invokeExact(peer, Sels.setPreparedContentRect, rect.toSegment());
         } catch (Throwable t) {
@@ -2878,6 +2879,7 @@ public class NSView extends NSResponder {
     /// [view setAdditionalSafeAreaInsets:] — NSEdgeInsets by value.
     public void setAdditionalSafeAreaInsets(NSEdgeInsets insets) {
         ensureInit();
+        if (insets == null) throw new IllegalArgumentException("setAdditionalSafeAreaInsets: null insets");
         try {
             ObjC.handle(Sig.of(Ret.VOID, Arg.EDGEINSETS)).invokeExact(peer, Sels.setAdditionalSafeAreaInsets, insets.toSegment());
         } catch (Throwable t) {

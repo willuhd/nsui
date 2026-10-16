@@ -135,6 +135,10 @@ public final class ControlsCoverageTest {
         hello.updateCell(cell);
         hello.updateCellInside(cell);
         TestKit.noThrow("updateCell/updateCellInside/selectCell no crash", () -> hello.selectCell(cell));
+        TestKit.expectThrows("sizeThatFits(null) rejects with IAE, not NPE",
+                IllegalArgumentException.class, () -> hello.sizeThatFits(null));
+        TestKit.noThrow("sizeThatFits(valid) still works",
+                () -> hello.sizeThatFits(new NSSize(120, 24)));
 
         // ------------------------------------------------------------ NSComboButton
         NSComboButton comboBtn = NSComboButton.create(new NSRect(0, 0, 160, 32));

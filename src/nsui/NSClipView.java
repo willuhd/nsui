@@ -228,6 +228,7 @@ public class NSClipView extends NSView {
     /// [clip constrainBoundsRect:] — constrain a proposed bounds rect.
     public NSRect constrainBoundsRect(NSRect proposedBounds) {
         ensureInit();
+        if (proposedBounds == null) throw new IllegalArgumentException("constrainBoundsRect: null rect");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.RECT, Arg.RECT));
             MemorySegment r = (MemorySegment) h.invokeExact(ObjC.structSlot(), peer, ObjC.sel("constrainBoundsRect:"), proposedBounds.toSegment());
@@ -252,6 +253,7 @@ public class NSClipView extends NSView {
     /// [clip setContentInsets:] — NSEdgeInsets by value.
     public void setContentInsets(NSEdgeInsets insets) {
         ensureInit();
+        if (insets == null) throw new IllegalArgumentException("setContentInsets: null insets");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.EDGEINSETS));
             h.invokeExact(peer, ObjC.sel("setContentInsets:"), insets.toSegment());

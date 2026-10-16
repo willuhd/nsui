@@ -1083,6 +1083,7 @@ public class NSView extends NSResponder {
     /// `rect` avoids a full-bounds redraw.
     public void setNeedsDisplayInRect(NSRect rect) {
         ensureInit();
+        if (rect == null) throw new IllegalArgumentException("setNeedsDisplayInRect: null rect");
         try {
             H.hNeedsRect().invokeExact(peer, Sels.setNeedsDisplayInRect, rect.toSegment());
         } catch (Throwable t) {
@@ -1106,6 +1107,7 @@ public class NSView extends NSResponder {
     /// convertRectToBacking: — a point-space rect in the view's coordinates -> backing pixels.
     public NSRect convertRectToBacking(NSRect rect) {
         ensureInit();
+        if (rect == null) throw new IllegalArgumentException("convertRectToBacking: null rect");
         try {
             return NSRect.fromSegment((MemorySegment) H.hConvBacking().invokeExact(
                     ObjC.structSlot(), peer,
@@ -1286,6 +1288,7 @@ public class NSView extends NSResponder {
     /// displayIfNeededInRect: — display if needed in rect.
     public void displayIfNeededInRect(NSRect rect) {
         ensureInit();
+        if (rect == null) throw new IllegalArgumentException("displayIfNeededInRect: null rect");
         try {
             H.hNeedsRect().invokeExact(peer, Sels.displayIfNeededInRect, rect.toSegment());
         } catch (Throwable t) {
@@ -1464,6 +1467,7 @@ public class NSView extends NSResponder {
     /// [view bitmapImageRepForCachingDisplayInRect:] — create a rep sized for caching.
     public NSBitmapImageRep bitmapImageRepForCachingDisplayInRect(NSRect rect) {
         ensureInit();
+        if (rect == null) throw new IllegalArgumentException("bitmapImageRepForCachingDisplayInRect: null rect");
         try {
             MemorySegment rep = (MemorySegment) H.hRepForCache().invokeExact(peer, Sels.bitmapImageRepForCachingDisplayInRect, rect.toSegment());
             return NSBitmapImageRep.wrap(rep);
@@ -1495,6 +1499,7 @@ public class NSView extends NSResponder {
     /// of(BOOL,RECT) was the missing shape; the call is a pure query (verified: exit 0).
     public boolean needsToDrawRect(NSRect rect) {
         ensureInit();
+        if (rect == null) throw new IllegalArgumentException("needsToDrawRect: null rect");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.BOOL, Arg.RECT));
             return (boolean) h.invokeExact(peer, ObjC.sel("needsToDrawRect:"), rect.toSegment());
@@ -1835,6 +1840,7 @@ public class NSView extends NSResponder {
     /// [view resizeSubviewsWithOldSize:].
     public void resizeSubviewsWithOldSize(NSSize oldSize) {
         ensureInit();
+        if (oldSize == null) throw new IllegalArgumentException("resizeSubviewsWithOldSize: null size");
         try {
             H.hSetSize().invokeExact(peer, Sels.resizeSubviewsWithOldSize, oldSize.toSegment());
         } catch (Throwable t) {
@@ -1845,6 +1851,7 @@ public class NSView extends NSResponder {
     /// [view resizeWithOldSuperviewSize:].
     public void resizeWithOldSuperviewSize(NSSize oldSize) {
         ensureInit();
+        if (oldSize == null) throw new IllegalArgumentException("resizeWithOldSuperviewSize: null size");
         try {
             H.hSetSize().invokeExact(peer, Sels.resizeWithOldSuperviewSize, oldSize.toSegment());
         } catch (Throwable t) {
@@ -1867,6 +1874,7 @@ public class NSView extends NSResponder {
     /// [view displayRect:].
     public void displayRect(NSRect rect) {
         ensureInit();
+        if (rect == null) throw new IllegalArgumentException("displayRect: null rect");
         try {
             H.hSetBounds().invokeExact(peer, Sels.displayRect, rect.toSegment());
         } catch (Throwable t) {
@@ -1877,6 +1885,7 @@ public class NSView extends NSResponder {
     /// [view displayRectIgnoringOpacity:].
     public void displayRectIgnoringOpacity(NSRect rect) {
         ensureInit();
+        if (rect == null) throw new IllegalArgumentException("displayRectIgnoringOpacity: null rect");
         try {
             H.hSetBounds().invokeExact(peer, Sels.displayRectIgnoringOpacity, rect.toSegment());
         } catch (Throwable t) {
@@ -1887,6 +1896,7 @@ public class NSView extends NSResponder {
     /// [view displayIfNeededInRectIgnoringOpacity:].
     public void displayIfNeededInRectIgnoringOpacity(NSRect rect) {
         ensureInit();
+        if (rect == null) throw new IllegalArgumentException("displayIfNeededInRectIgnoringOpacity: null rect");
         try {
             H.hSetBounds().invokeExact(peer, Sels.displayIfNeededInRectIgnoringOpacity, rect.toSegment());
         } catch (Throwable t) {
@@ -1898,6 +1908,7 @@ public class NSView extends NSResponder {
     public void displayRectIgnoringOpacityInContext(NSRect rect, NSGraphicsContext context) {
         ensureInit();
         Bounds.nonNull(context, "displayRectIgnoringOpacity:inContext:");
+        if (rect == null) throw new IllegalArgumentException("displayRectIgnoringOpacity:inContext: null rect");
         try {
             H.hCacheDisplay().invokeExact(peer, Sels.displayRectIgnoringOpacity_inContext, rect.toSegment(), context.peer());
         } catch (Throwable t) {
@@ -1962,6 +1973,7 @@ public class NSView extends NSResponder {
     /// [view centerScanRect:] — pixel-aligned rect for scanning.
     public NSRect centerScanRect(NSRect rect) {
         ensureInit();
+        if (rect == null) throw new IllegalArgumentException("centerScanRect: null rect");
         try {
             return NSRect.fromSegment((MemorySegment) H.hConvBacking().invokeExact(ObjC.structSlot(), peer, Sels.centerScanRect, rect.toSegment()));
         } catch (Throwable t) {
@@ -1983,6 +1995,7 @@ public class NSView extends NSResponder {
     /// [view convertPoint:fromView:] — nil view means the window's coordinate system.
     public NSPoint convertPointFromView(NSPoint point, NSView view) {
         ensureInit();
+        if (point == null) throw new IllegalArgumentException("convertPoint:fromView: null point");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.POINT, Arg.POINT, Arg.ID));
             return NSPoint.fromSegment((MemorySegment) h.invokeExact(ObjC.structSlot(), peer,
@@ -1995,6 +2008,7 @@ public class NSView extends NSResponder {
     /// [view convertPoint:toView:] — nil view means the window's coordinate system.
     public NSPoint convertPointToView(NSPoint point, NSView view) {
         ensureInit();
+        if (point == null) throw new IllegalArgumentException("convertPoint:toView: null point");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.POINT, Arg.POINT, Arg.ID));
             return NSPoint.fromSegment((MemorySegment) h.invokeExact(ObjC.structSlot(), peer,
@@ -2007,6 +2021,7 @@ public class NSView extends NSResponder {
     /// [view convertSize:fromView:] — nil view means the window's coordinate system.
     public NSSize convertSizeFromView(NSSize size, NSView view) {
         ensureInit();
+        if (size == null) throw new IllegalArgumentException("convertSize:fromView: null size");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.SIZE, Arg.SIZE, Arg.ID));
             return NSSize.fromSegment((MemorySegment) h.invokeExact(ObjC.structSlot(), peer,
@@ -2019,6 +2034,7 @@ public class NSView extends NSResponder {
     /// [view convertSize:toView:] — nil view means the window's coordinate system.
     public NSSize convertSizeToView(NSSize size, NSView view) {
         ensureInit();
+        if (size == null) throw new IllegalArgumentException("convertSize:toView: null size");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.SIZE, Arg.SIZE, Arg.ID));
             return NSSize.fromSegment((MemorySegment) h.invokeExact(ObjC.structSlot(), peer,
@@ -2031,6 +2047,7 @@ public class NSView extends NSResponder {
     /// [view convertRect:fromView:] — nil view means the window's coordinate system.
     public NSRect convertRectFromView(NSRect rect, NSView view) {
         ensureInit();
+        if (rect == null) throw new IllegalArgumentException("convertRect:fromView: null rect");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.RECT, Arg.RECT, Arg.ID));
             return NSRect.fromSegment((MemorySegment) h.invokeExact(ObjC.structSlot(), peer,
@@ -2043,6 +2060,7 @@ public class NSView extends NSResponder {
     /// [view convertRect:toView:] — nil view means the window's coordinate system.
     public NSRect convertRectToView(NSRect rect, NSView view) {
         ensureInit();
+        if (rect == null) throw new IllegalArgumentException("convertRect:toView: null rect");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.RECT, Arg.RECT, Arg.ID));
             return NSRect.fromSegment((MemorySegment) h.invokeExact(ObjC.structSlot(), peer,
@@ -2055,6 +2073,7 @@ public class NSView extends NSResponder {
     /// [view convertPointToBacking:] — view coordinates to backing-store pixels.
     public NSPoint convertPointToBacking(NSPoint point) {
         ensureInit();
+        if (point == null) throw new IllegalArgumentException("convertPointToBacking: null point");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.POINT, Arg.POINT));
             return NSPoint.fromSegment((MemorySegment) h.invokeExact(ObjC.structSlot(), peer,
@@ -2067,6 +2086,7 @@ public class NSView extends NSResponder {
     /// [view convertPointFromBacking:] — backing-store pixels back to view coordinates.
     public NSPoint convertPointFromBacking(NSPoint point) {
         ensureInit();
+        if (point == null) throw new IllegalArgumentException("convertPointFromBacking: null point");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.POINT, Arg.POINT));
             return NSPoint.fromSegment((MemorySegment) h.invokeExact(ObjC.structSlot(), peer,
@@ -2125,6 +2145,7 @@ public class NSView extends NSResponder {
     public NSRect backingAlignedRect(NSRect rect, long options) {
         validateAlignmentOptions(options);
         ensureInit();
+        if (rect == null) throw new IllegalArgumentException("backingAlignedRect:options: null rect");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.RECT, Arg.RECT, Arg.INT));
             return NSRect.fromSegment((MemorySegment) h.invokeExact(ObjC.structSlot(), peer,
@@ -2137,6 +2158,7 @@ public class NSView extends NSResponder {
     /// [view convertRectFromBacking:].
     public NSRect convertRectFromBacking(NSRect rect) {
         ensureInit();
+        if (rect == null) throw new IllegalArgumentException("convertRectFromBacking: null rect");
         try {
             return NSRect.fromSegment((MemorySegment) H.hConvBacking().invokeExact(ObjC.structSlot(), peer, Sels.convertRectFromBacking, rect.toSegment()));
         } catch (Throwable t) {
@@ -2147,6 +2169,7 @@ public class NSView extends NSResponder {
     /// [view convertSizeToBacking:].
     public NSSize convertSizeToBacking(NSSize size) {
         ensureInit();
+        if (size == null) throw new IllegalArgumentException("convertSizeToBacking: null size");
         try {
             MemorySegment s = (MemorySegment) H.hSizeSize().invokeExact(ObjC.structSlot(), peer, Sels.convertSizeToBacking, size.toSegment());
             return NSSize.fromSegment(s);
@@ -2158,6 +2181,7 @@ public class NSView extends NSResponder {
     /// [view convertSizeFromBacking:].
     public NSSize convertSizeFromBacking(NSSize size) {
         ensureInit();
+        if (size == null) throw new IllegalArgumentException("convertSizeFromBacking: null size");
         try {
             MemorySegment s = (MemorySegment) H.hSizeSize().invokeExact(ObjC.structSlot(), peer, Sels.convertSizeFromBacking, size.toSegment());
             return NSSize.fromSegment(s);
@@ -2169,6 +2193,7 @@ public class NSView extends NSResponder {
     /// [view convertSizeToLayer:].
     public NSSize convertSizeToLayer(NSSize size) {
         ensureInit();
+        if (size == null) throw new IllegalArgumentException("convertSizeToLayer: null size");
         try {
             MemorySegment s = (MemorySegment) H.hSizeSize().invokeExact(ObjC.structSlot(), peer, Sels.convertSizeToLayer, size.toSegment());
             return NSSize.fromSegment(s);
@@ -2180,6 +2205,7 @@ public class NSView extends NSResponder {
     /// [view convertSizeFromLayer:].
     public NSSize convertSizeFromLayer(NSSize size) {
         ensureInit();
+        if (size == null) throw new IllegalArgumentException("convertSizeFromLayer: null size");
         try {
             MemorySegment s = (MemorySegment) H.hSizeSize().invokeExact(ObjC.structSlot(), peer, Sels.convertSizeFromLayer, size.toSegment());
             return NSSize.fromSegment(s);
@@ -2213,6 +2239,7 @@ public class NSView extends NSResponder {
     /// [view hitTest:] — deepest descendant containing the point (nil-safe).
     public NSView hitTest(NSPoint point) {
         ensureInit();
+        if (point == null) throw new IllegalArgumentException("hitTest: null point");
         try {
             MemorySegment v = (MemorySegment) H.hIdPoint().invokeExact(peer, Sels.hitTest, point.toSegment());
             return NSView.wrap(v);
@@ -2349,6 +2376,7 @@ public class NSView extends NSResponder {
     /// [view prepareContentInRect:].
     public void prepareContentInRect(NSRect rect) {
         ensureInit();
+        if (rect == null) throw new IllegalArgumentException("prepareContentInRect: null rect");
         try {
             H.hSetBounds().invokeExact(peer, Sels.prepareContentInRect, rect.toSegment());
         } catch (Throwable t) {
@@ -2365,6 +2393,7 @@ public class NSView extends NSResponder {
     /// [view setKeyboardFocusRingNeedsDisplayInRect:].
     public void setKeyboardFocusRingNeedsDisplayInRect(NSRect rect) {
         ensureInit();
+        if (rect == null) throw new IllegalArgumentException("setKeyboardFocusRingNeedsDisplayInRect: null rect");
         try {
             H.hSetBounds().invokeExact(peer, Sels.setKeyboardFocusRingNeedsDisplayInRect, rect.toSegment());
         } catch (Throwable t) {
@@ -2598,6 +2627,7 @@ public class NSView extends NSResponder {
     public void writeEPSInsideRectToPasteboard(NSRect rect, NSPasteboard pasteboard) {
         ensureInit();
         Bounds.nonNull(pasteboard, "writeEPSInsideRect:toPasteboard:");
+        if (rect == null) throw new IllegalArgumentException("writeEPSInsideRect:toPasteboard: null rect");
         try {
             H.hCacheDisplay().invokeExact(peer, Sels.writeEPSInsideRect_toPasteboard, rect.toSegment(), pasteboard.peer());
         } catch (Throwable t) {
@@ -2620,6 +2650,7 @@ public class NSView extends NSResponder {
     /// [view drawPageBorderWithSize:].
     public void drawPageBorderWithSize(NSSize size) {
         ensureInit();
+        if (size == null) throw new IllegalArgumentException("drawPageBorderWithSize: null size");
         try {
             H.hSetSize().invokeExact(peer, Sels.drawPageBorderWithSize, size.toSegment());
         } catch (Throwable t) {
@@ -2761,6 +2792,7 @@ public class NSView extends NSResponder {
     public void removeCursorRect(NSRect rect, NSCursor cursor) {
         ensureInit();
         Bounds.nonNull(cursor, "removeCursorRect:cursor:");
+        if (rect == null) throw new IllegalArgumentException("removeCursorRect:cursor: null rect");
         try {
             H.hCacheDisplay().invokeExact(peer, Sels.removeCursorRect_cursor, rect.toSegment(), cursor.peer());
         } catch (Throwable t) {
@@ -2818,6 +2850,7 @@ public class NSView extends NSResponder {
     /// [view setPreparedContentRect:].
     public void setPreparedContentRect(NSRect rect) {
         ensureInit();
+        if (rect == null) throw new IllegalArgumentException("setPreparedContentRect: null rect");
         try {
             H.hSetBounds().invokeExact(peer, Sels.setPreparedContentRect, rect.toSegment());
         } catch (Throwable t) {
@@ -2846,6 +2879,7 @@ public class NSView extends NSResponder {
     /// [view setAdditionalSafeAreaInsets:] — NSEdgeInsets by value.
     public void setAdditionalSafeAreaInsets(NSEdgeInsets insets) {
         ensureInit();
+        if (insets == null) throw new IllegalArgumentException("setAdditionalSafeAreaInsets: null insets");
         try {
             ObjC.handle(Sig.of(Ret.VOID, Arg.EDGEINSETS)).invokeExact(peer, Sels.setAdditionalSafeAreaInsets, insets.toSegment());
         } catch (Throwable t) {

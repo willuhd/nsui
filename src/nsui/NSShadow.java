@@ -80,6 +80,7 @@ public final class NSShadow extends NSObject {
     /// [shadow setShadowOffset:]
     public void setShadowOffset(NSSize offset) {
         ensureInit();
+        if (offset == null) throw new IllegalArgumentException("setShadowOffset: null offset");
         try {
             handles.hSetSize().invokeExact(peer, ObjC.sel("setShadowOffset:"), offset.toSegment());
         } catch (Throwable t) {

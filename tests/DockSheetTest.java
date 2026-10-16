@@ -353,10 +353,13 @@ public final class DockSheetTest {
         try {
             NSWindow dummy = NSWindow.create(new NSRect(0, 0, 200, 100), 15L, 2L, false);
             dummy.setReleasedWhenClosed(false);
-            // beginSheet with null sheet -> no throw
-            dummy.beginSheet(null, (java.util.function.IntConsumer) null);
-            TestKit.probe("beginSheet(null, null) no throw (guard)");
-            TestKit.noThrow("beginSheet(null, MemorySegment.NULL) no throw (guard)", () -> dummy.beginSheet(null, MemorySegment.NULL));
+            // beginSheet with null sheet -> caller error, not a silent no-op
+            TestKit.expectThrows("beginSheet(null, handler) rejects a nil sheet",
+                    IllegalArgumentException.class,
+                    () -> dummy.beginSheet(null, (java.util.function.IntConsumer) null));
+            TestKit.expectThrows("beginSheet(null, NULL block) rejects a nil sheet",
+                    IllegalArgumentException.class,
+                    () -> dummy.beginSheet(null, MemorySegment.NULL));
             TestKit.noThrow("endSheet(null) no throw (guard)", () -> dummy.endSheet(null));
             TestKit.noThrow("endSheet(null, 0) no throw (guard)", () -> dummy.endSheet(null, 0));
             check(dummy.attachedSheet() == null, "attachedSheet null when no sheet attached");

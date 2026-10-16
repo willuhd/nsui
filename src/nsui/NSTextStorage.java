@@ -237,6 +237,7 @@ public class NSTextStorage extends NSMutableAttributedString {
 
     /// [storage invalidateAttributesInRange:] — mark attributes needing validation.
     public void invalidateAttributesInRange(NSRange range) {
+        if (range == null) throw new IllegalArgumentException("invalidateAttributesInRange: null range");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.RANGE));
             h.invokeExact(peer, ObjC.sel("invalidateAttributesInRange:"), range.toSegment());
@@ -264,6 +265,7 @@ public class NSTextStorage extends NSMutableAttributedString {
 
     /// [storage ensureAttributesAreFixedInRange:]
     public void ensureAttributesAreFixed(NSRange range) {
+        if (range == null) throw new IllegalArgumentException("ensureAttributesAreFixedInRange: null range");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.RANGE));
             h.invokeExact(peer, ObjC.sel("ensureAttributesAreFixedInRange:"), range.toSegment());

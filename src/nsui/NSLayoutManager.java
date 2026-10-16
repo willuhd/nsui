@@ -195,6 +195,7 @@ public final class NSLayoutManager extends NSObject {
 
     /// [layoutManager invalidateLayoutForCharacterRange:actualCharacterRange:] simplified untyped
     public void invalidateDisplayForCharacterRange(NSRange range) {
+        if (range == null) throw new IllegalArgumentException("invalidateDisplayForCharacterRange: null range");
         try {
             handles.hVoidRange().invokeExact(peer, ObjC.sel("invalidateDisplayForCharacterRange:"), range.toSegment());
         } catch (Throwable t) {
@@ -356,6 +357,7 @@ public final class NSLayoutManager extends NSObject {
 
     /// [layoutManager invalidateDisplayForGlyphRange:]
     public void invalidateDisplayForGlyphRange(NSRange glyphRange) {
+        if (glyphRange == null) throw new IllegalArgumentException("invalidateDisplayForGlyphRange: null range");
         try {
             handles.hVoidRange().invokeExact(peer, ObjC.sel("invalidateDisplayForGlyphRange:"), glyphRange.toSegment());
         } catch (Throwable t) {
@@ -367,6 +369,7 @@ public final class NSLayoutManager extends NSObject {
 
     /// [layoutManager ensureGlyphsForCharacterRange:]
     public void ensureGlyphsForCharacterRange(NSRange charRange) {
+        if (charRange == null) throw new IllegalArgumentException("ensureGlyphsForCharacterRange: null range");
         try {
             handles.hVoidRange().invokeExact(peer, ObjC.sel("ensureGlyphsForCharacterRange:"), charRange.toSegment());
         } catch (Throwable t) {
@@ -376,6 +379,7 @@ public final class NSLayoutManager extends NSObject {
 
     /// [layoutManager ensureGlyphsForGlyphRange:]
     public void ensureGlyphsForGlyphRange(NSRange glyphRange) {
+        if (glyphRange == null) throw new IllegalArgumentException("ensureGlyphsForGlyphRange: null range");
         try {
             handles.hVoidRange().invokeExact(peer, ObjC.sel("ensureGlyphsForGlyphRange:"), glyphRange.toSegment());
         } catch (Throwable t) {
@@ -385,6 +389,7 @@ public final class NSLayoutManager extends NSObject {
 
     /// [layoutManager ensureLayoutForCharacterRange:]
     public void ensureLayoutForCharacterRange(NSRange charRange) {
+        if (charRange == null) throw new IllegalArgumentException("ensureLayoutForCharacterRange: null range");
         try {
             handles.hVoidRange().invokeExact(peer, ObjC.sel("ensureLayoutForCharacterRange:"), charRange.toSegment());
         } catch (Throwable t) {
@@ -394,6 +399,7 @@ public final class NSLayoutManager extends NSObject {
 
     /// [layoutManager ensureLayoutForGlyphRange:]
     public void ensureLayoutForGlyphRange(NSRange glyphRange) {
+        if (glyphRange == null) throw new IllegalArgumentException("ensureLayoutForGlyphRange: null range");
         try {
             handles.hVoidRange().invokeExact(peer, ObjC.sel("ensureLayoutForGlyphRange:"), glyphRange.toSegment());
         } catch (Throwable t) {
@@ -403,6 +409,7 @@ public final class NSLayoutManager extends NSObject {
 
     /// [layoutManager ensureLayoutForBoundingRect:inTextContainer:]
     public void ensureLayoutForBoundingRectInTextContainer(NSRect bounds, NSTextContainer container) {
+        if (bounds == null) throw new IllegalArgumentException("ensureLayoutForBoundingRect:inTextContainer: null bounds");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.RECT, Arg.ID));
             h.invokeExact(peer, ObjC.sel("ensureLayoutForBoundingRect:inTextContainer:"),
@@ -596,6 +603,7 @@ public final class NSLayoutManager extends NSObject {
 
     /// [layoutManager setTemporaryAttributes:forCharacterRange:] — attrs is NSDictionary*.
     public void setTemporaryAttributesForCharacterRange(MemorySegment attrs, NSRange charRange) {
+        if (charRange == null) throw new IllegalArgumentException("setTemporaryAttributes:forCharacterRange: null range");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.RANGE));
             h.invokeExact(peer, ObjC.sel("setTemporaryAttributes:forCharacterRange:"),
@@ -607,6 +615,7 @@ public final class NSLayoutManager extends NSObject {
 
     /// [layoutManager addTemporaryAttributes:forCharacterRange:] — attrs is NSDictionary*.
     public void addTemporaryAttributesForCharacterRange(MemorySegment attrs, NSRange charRange) {
+        if (charRange == null) throw new IllegalArgumentException("addTemporaryAttributes:forCharacterRange: null range");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.RANGE));
             h.invokeExact(peer, ObjC.sel("addTemporaryAttributes:forCharacterRange:"),
@@ -618,6 +627,7 @@ public final class NSLayoutManager extends NSObject {
 
     /// [layoutManager removeTemporaryAttribute:forCharacterRange:]
     public void removeTemporaryAttributeForCharacterRange(String attrName, NSRange charRange) {
+        if (charRange == null) throw new IllegalArgumentException("removeTemporaryAttribute:forCharacterRange: null range");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.RANGE));
             h.invokeExact(peer, ObjC.sel("removeTemporaryAttribute:forCharacterRange:"),
@@ -646,6 +656,7 @@ public final class NSLayoutManager extends NSObject {
 
     /// [layoutManager addTemporaryAttribute:value:forCharacterRange:] (macOS 10.5+).
     public void addTemporaryAttributeValueForCharacterRange(String attrName, MemorySegment value, NSRange charRange) {
+        if (charRange == null) throw new IllegalArgumentException("addTemporaryAttribute:value:forCharacterRange: null range");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.ID, Arg.ID, Arg.RANGE));
             h.invokeExact(peer, ObjC.sel("addTemporaryAttribute:value:forCharacterRange:"),

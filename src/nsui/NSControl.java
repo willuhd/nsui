@@ -397,6 +397,7 @@ public class NSControl extends NSView {
     // ---- sizeThatFits / sizeToFit ----
     public NSSize sizeThatFits(NSSize size) {
         ensureInit();
+        Bounds.nonNull(size, "sizeThatFits:");
         try {
             MemorySegment seg = (MemorySegment) H.hSizeThatFits().invokeExact(ObjC.structSlot(), peer, Sels.sizeThatFits, size.toSegment());
             return NSSize.fromSegment(seg);

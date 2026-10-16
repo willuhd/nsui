@@ -63,6 +63,7 @@ public final class NSTextContainer extends NSObject {
     /// `[[NSTextContainer alloc] initWithContainerSize:size]` — sized container.
     public static NSTextContainer create(NSSize size) {
         ensureInit();
+        if (size == null) throw new IllegalArgumentException("initWithContainerSize: null size");
         MemorySegment alloc = ObjC.msgSendId(ObjC.cls("NSTextContainer"), ObjC.sel("alloc"));
         if (handles.hInitSize() != null) {
             try {
@@ -105,6 +106,7 @@ public final class NSTextContainer extends NSObject {
     /// [container setContainerSize:]
     public void setContainerSize(NSSize size) {
         ensureInit();
+        if (size == null) throw new IllegalArgumentException("setContainerSize: null size");
         try {
             handles.hSetSize().invokeExact(peer, ObjC.sel("setContainerSize:"), size.toSegment());
         } catch (Throwable t) {
@@ -202,6 +204,7 @@ public final class NSTextContainer extends NSObject {
     /// [container setSize:]
     public void setSize(NSSize size) {
         ensureInit();
+        if (size == null) throw new IllegalArgumentException("setSize: null size");
         try {
             handles.hSetSize().invokeExact(peer, ObjC.sel("setSize:"), size.toSegment());
         } catch (Throwable t) {

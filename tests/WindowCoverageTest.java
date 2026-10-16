@@ -280,8 +280,9 @@ public final class WindowCoverageTest {
             TestKit.noThrow("cursor-rect methods no crash", () -> w1.resetCursorRects());
             w1.registerForDraggedTypes(NSArray.array());
             w1.unregisterDraggedTypes();
-            check(w1.beginDraggingSessionWithItems(NSArray.array(), null, null) == null,
-                    "beginDraggingSession null-event guard returns null");
+            TestKit.expectThrows("beginDraggingSessionWithItems(null event) rejects, not silent null",
+                    IllegalArgumentException.class,
+                    () -> w1.beginDraggingSessionWithItems(NSArray.array(), null, null));
             check(!w1.tryToPerform(ObjC.sel("nsuiBogusAction999:"), null),
                     "tryToPerform bogus selector returns false");
             MemorySegment req = w1.validRequestorForSendType(

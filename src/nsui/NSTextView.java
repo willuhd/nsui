@@ -609,6 +609,7 @@ public class NSTextView extends NSText {
     /// [textView setTextContainerInset:]
     public void setTextContainerInset(NSSize inset) {
         ensureInit();
+        if (inset == null) throw new IllegalArgumentException("setTextContainerInset: null inset");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.SIZE));
             h.invokeExact(peer, Sels.setTextContainerInset, inset.toSegment());
@@ -887,6 +888,7 @@ public class NSTextView extends NSText {
     /// [textView setNeedsDisplayInRect:avoidAdditionalLayout:]
     public void setNeedsDisplayInRectAvoidAdditionalLayout(NSRect rect, boolean flag) {
         ensureInit();
+        if (rect == null) throw new IllegalArgumentException("setNeedsDisplayInRect:avoidAdditionalLayout: null rect");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.RECT, Arg.BOOL));
             h.invokeExact(peer, Sels.setNeedsDisplayInRect_avoidAdditionalLayout, rect.toSegment(), flag);
@@ -907,6 +909,7 @@ public class NSTextView extends NSText {
     /// [textView drawViewBackgroundInRect:] — subclass override point.
     public void drawViewBackgroundInRect(NSRect rect) {
         ensureInit();
+        if (rect == null) throw new IllegalArgumentException("drawViewBackgroundInRect: null rect");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.RECT));
             h.invokeExact(peer, Sels.drawViewBackgroundInRect, rect.toSegment());
@@ -1023,6 +1026,7 @@ public class NSTextView extends NSText {
     /// NSInteger* (nullable; pass NULL to ignore) -> NSArray of NSString (may be nil).
     public NSArray completionsForPartialWordRange(NSRange charRange, MemorySegment indexOutOrNull) {
         ensureInit();
+        if (charRange == null) throw new IllegalArgumentException("completionsForPartialWordRange:indexOfSelectedItem: null range");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.RANGE, Arg.ID));
             MemorySegment p = (MemorySegment) h.invokeExact(peer,
@@ -1224,6 +1228,7 @@ public class NSTextView extends NSText {
     /// [textView setSelectedRange:] (single-range NSTextView override).
     public void setSelectedRange(NSRange charRange) {
         ensureInit();
+        if (charRange == null) throw new IllegalArgumentException("setSelectedRange: null range");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.RANGE));
             h.invokeExact(peer, Sels.setSelectedRange, charRange.toSegment());

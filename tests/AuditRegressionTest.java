@@ -506,6 +506,12 @@ public final class AuditRegressionTest {
             TestKit.check(est.length() == 2, "storage shortened to 2 before edited()");
             TestKit.noThrow("edited() accepts a PRE-edit range after a deletion",
                     () -> est.edited(0, new nsui.NSRange(1, 3), -3));
+            TestKit.expectThrows("invalidateAttributesInRange(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> st.invalidateAttributesInRange(null));
+            TestKit.expectThrows("ensureAttributesAreFixed(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> st.ensureAttributesAreFixed(null));
+            TestKit.noThrow("invalidateAttributesInRange in-range still works",
+                    () -> st.invalidateAttributesInRange(new nsui.NSRange(0, 3)));
             nsui.NSTextStorage est2 = nsui.NSTextStorage.create("abc");
             TestKit.expectThrows("edited() still rejects a range beyond the pre-edit length",
                     IllegalArgumentException.class, () -> est2.edited(0, new nsui.NSRange(5, 1), 1));
@@ -961,6 +967,22 @@ public final class AuditRegressionTest {
                 TestKit.expectThrows("NSLayoutManager.temporaryAttributeAtCharacterIndex(-1) rejects, not wrap",
                         IllegalArgumentException.class,
                         () -> lm.temporaryAttributeAtCharacterIndexEffectiveRange("NSFont", -1, null));
+                TestKit.expectThrows("NSLayoutManager.invalidateDisplayForCharacterRange(null) rejects, not NPE",
+                        IllegalArgumentException.class,
+                        () -> lm.invalidateDisplayForCharacterRange(null));
+                TestKit.expectThrows("NSLayoutManager.ensureGlyphsForCharacterRange(null) rejects, not NPE",
+                        IllegalArgumentException.class,
+                        () -> lm.ensureGlyphsForCharacterRange(null));
+                TestKit.expectThrows("NSLayoutManager.ensureLayoutForGlyphRange(null) rejects, not NPE",
+                        IllegalArgumentException.class,
+                        () -> lm.ensureLayoutForGlyphRange(null));
+                TestKit.expectThrows("NSTextContainer.create(null) rejects with IAE, not NPE",
+                        IllegalArgumentException.class,
+                        () -> nsui.NSTextContainer.create((nsui.NSSize) null));
+                TestKit.expectThrows("NSTextContainer.setContainerSize(null) rejects with IAE, not NPE",
+                        IllegalArgumentException.class, () -> tc.setContainerSize(null));
+                TestKit.expectThrows("NSTextContainer.setSize(null) rejects with IAE, not NPE",
+                        IllegalArgumentException.class, () -> tc.setSize(null));
             } else {
                 TestKit.probe("layout manager / text container unavailable");
             }
@@ -1558,6 +1580,18 @@ public final class AuditRegressionTest {
             TestKit.expectThrows("setLength(-1) rejects, not huge-extension wrap",
                     IllegalArgumentException.class,
                     () -> nsui.NSMutableData.data().setLength(-1));
+            nsui.NSIndexSet probeSet = nsui.NSIndexSet.indexSet();
+            TestKit.expectThrows("containsIndexesInRange(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> probeSet.containsIndexesInRange(null));
+            TestKit.expectThrows("countOfIndexesInRange(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> probeSet.countOfIndexesInRange(null));
+            TestKit.expectThrows("intersectsIndexesInRange(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> probeSet.intersectsIndexesInRange(null));
+            nsui.NSMutableIndexSet probeMut = nsui.NSMutableIndexSet.indexSet();
+            TestKit.expectThrows("addIndexesInRange(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> probeMut.addIndexesInRange(null));
+            TestKit.expectThrows("removeIndexesInRange(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> probeMut.removeIndexesInRange(null));
             nsui.NSDictionary immD = nsui.NSDictionary.dictionary();
             TestKit.expectThrows("setObjectForKey on an immutable NSDictionary rejects",
                     IllegalStateException.class,
@@ -2296,6 +2330,22 @@ public final class AuditRegressionTest {
             TestKit.expectThrows("CALayer.setAnchorPoint(null) rejects with IAE, not NPE",
                     IllegalArgumentException.class,
                     () -> l3.setAnchorPoint(null));
+            TestKit.expectThrows("CALayer.setTransform(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> l3.setTransform(null));
+            TestKit.expectThrows("CALayer.setSublayerTransform(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> l3.setSublayerTransform(null));
+            TestKit.expectThrows("CALayer.setContentsRect(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> l3.setContentsRect(null));
+            TestKit.expectThrows("CALayer.setContentsCenter(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> l3.setContentsCenter(null));
+            TestKit.expectThrows("CALayer.hitTest(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> l3.hitTest(null));
+            TestKit.expectThrows("CALayer.containsPoint(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> l3.containsPoint(null));
+            TestKit.expectThrows("CALayer.convertPointFromLayer(null,·) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> l3.convertPointFromLayer(null, null));
+            TestKit.expectThrows("CALayer.convertPointToLayer(null,·) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> l3.convertPointToLayer(null, null));
             TestKit.noThrow("CALayer.setDuration(NaN) is accepted",
                     () -> l3.setDuration(nan));
             nsui.CAGradientLayer gl3 = nsui.CAGradientLayer.create();
@@ -2576,6 +2626,323 @@ public final class AuditRegressionTest {
                     IllegalArgumentException.class, () -> tvc.setSelectedTabViewItemIndex(-2));
         } catch (Throwable t) {
             TestKit.check(false, "tab-view-controller index block threw: " + t);
+        }
+
+        // --- 8bq. NSWindow convertRect null reports IAE, not NPE (NaN stays tolerated) ---
+        // convertRectToScreen/FromScreen/ToBacking/FromBacking take NSRect by value, so a
+        // null has no native meaning and deref'd to NPE. Bounds.java:42-58 lists the convert
+        // family as NaN-tolerant, so the guard is null-only.
+        try {
+            nsui.NSWindow cw2 = TestKit.hiddenWindow(160, 120);
+            TestKit.expectThrows("NSWindow.convertRectToScreen(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> cw2.convertRectToScreen(null));
+            TestKit.expectThrows("NSWindow.convertRectFromScreen(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> cw2.convertRectFromScreen(null));
+            TestKit.expectThrows("NSWindow.convertRectToBacking(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> cw2.convertRectToBacking(null));
+            TestKit.expectThrows("NSWindow.convertRectFromBacking(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> cw2.convertRectFromBacking(null));
+            TestKit.close(cw2);
+        } catch (Throwable t) {
+            TestKit.check(false, "window convertRect null block threw: " + t);
+        }
+
+        // --- 8br. NSWindow size null reports IAE, not NPE (NaN stays tolerated) ---
+        // setMin/MaxSize, setResizeIncrements, setAspectRatio and the content/full-screen
+        // twins take NSSize by value; Bounds.js:42-58 lists them as NaN-tolerant, so null-only.
+        try {
+            nsui.NSWindow sw2 = TestKit.hiddenWindow(160, 120);
+            TestKit.expectThrows("NSWindow.setMinSize(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> sw2.setMinSize(null));
+            TestKit.expectThrows("NSWindow.setMaxSize(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> sw2.setMaxSize(null));
+            TestKit.expectThrows("NSWindow.setResizeIncrements(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> sw2.setResizeIncrements(null));
+            TestKit.expectThrows("NSWindow.setAspectRatio(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> sw2.setAspectRatio(null));
+            TestKit.expectThrows("NSWindow.setContentResizeIncrements(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> sw2.setContentResizeIncrements(null));
+            TestKit.expectThrows("NSWindow.setContentAspectRatio(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> sw2.setContentAspectRatio(null));
+            TestKit.expectThrows("NSWindow.setContentMinSize(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> sw2.setContentMinSize(null));
+            TestKit.expectThrows("NSWindow.setContentMaxSize(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> sw2.setContentMaxSize(null));
+            TestKit.expectThrows("NSWindow.setMinFullScreenContentSize(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> sw2.setMinFullScreenContentSize(null));
+            TestKit.expectThrows("NSWindow.setMaxFullScreenContentSize(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> sw2.setMaxFullScreenContentSize(null));
+            TestKit.close(sw2);
+        } catch (Throwable t) {
+            TestKit.check(false, "window size null block threw: " + t);
+        }
+
+        // --- 8bs. NSView convert null reports IAE, not NPE (NaN stays tolerated) ---
+        // convertPoint/Size/Rect from/toView, to/fromBacking take structs by value; the
+        // view arg stays nullable (nil = window coords). Bounds.js:42-58 lists converts as
+        // NaN-tolerant, so null-only guards.
+        try {
+            nsui.NSView cv = NSView.create(new NSRect(0, 0, 100, 100), (v, d) -> {});
+            TestKit.expectThrows("NSView.convertPointFromView(null,·) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> cv.convertPointFromView(null, null));
+            TestKit.expectThrows("NSView.convertPointToView(null,·) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> cv.convertPointToView(null, null));
+            TestKit.expectThrows("NSView.convertSizeFromView(null,·) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> cv.convertSizeFromView(null, null));
+            TestKit.expectThrows("NSView.convertSizeToView(null,·) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> cv.convertSizeToView(null, null));
+            TestKit.expectThrows("NSView.convertRectFromView(null,·) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> cv.convertRectFromView(null, null));
+            TestKit.expectThrows("NSView.convertRectToView(null,·) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> cv.convertRectToView(null, null));
+            TestKit.expectThrows("NSView.convertPointToBacking(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> cv.convertPointToBacking(null));
+            TestKit.expectThrows("NSView.convertPointFromBacking(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> cv.convertPointFromBacking(null));
+            TestKit.expectThrows("NSView.convertRectToBacking(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> cv.convertRectToBacking(null));
+            TestKit.expectThrows("NSView.convertRectFromBacking(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> cv.convertRectFromBacking(null));
+            TestKit.expectThrows("NSView.convertSizeToBacking(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> cv.convertSizeToBacking(null));
+            TestKit.expectThrows("NSView.convertSizeFromBacking(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> cv.convertSizeFromBacking(null));
+        } catch (Throwable t) {
+            TestKit.check(false, "view convert null block threw: " + t);
+        }
+
+        // --- 8bt. NSView display/hit null reports IAE, not NPE (NaN stays tolerated) ---
+        // setNeedsDisplayInRect, displayRect, needsToDrawRect, bitmap rep and hitTest take
+        // rects/points by value; Bounds.js:42-58 lists them as NaN-tolerant, so null-only.
+        try {
+            nsui.NSView dv = NSView.create(new NSRect(0, 0, 100, 100), (v, d) -> {});
+            TestKit.expectThrows("NSView.setNeedsDisplayInRect(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> dv.setNeedsDisplayInRect(null));
+            TestKit.expectThrows("NSView.displayRect(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> dv.displayRect(null));
+            TestKit.expectThrows("NSView.displayRectIgnoringOpacity(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> dv.displayRectIgnoringOpacity(null));
+            TestKit.expectThrows("NSView.needsToDrawRect(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> dv.needsToDrawRect(null));
+            TestKit.expectThrows("NSView.bitmapImageRepForCachingDisplayInRect(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> dv.bitmapImageRepForCachingDisplayInRect(null));
+            TestKit.expectThrows("NSView.hitTest(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> dv.hitTest(null));
+            TestKit.expectThrows("NSView.backingAlignedRect(null,·) rejects with IAE, not NPE",
+                    IllegalArgumentException.class,
+                    () -> dv.backingAlignedRect(null, NSView.ALIGN_ALL_EDGES_INWARD));
+        } catch (Throwable t) {
+            TestKit.check(false, "view display null block threw: " + t);
+        }
+
+        // --- 8bu. text layout null reports IAE, not NPE (NaN stays tolerated) ---
+        // NSTextView inset/display/completions, NSText selectedRange/min/max and the
+        // layout-manager temporary-attribute ranges take structs by value; insets and
+        // display rects stay NaN-tolerant per Bounds.js:42-58, so null-only guards.
+        try {
+            nsui.NSTextView tv = nsui.NSTextView.create(new NSRect(0, 0, 200, 100));
+            TestKit.expectThrows("NSTextView.setTextContainerInset(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> tv.setTextContainerInset(null));
+            TestKit.expectThrows("NSTextView.setNeedsDisplayInRectAvoidAdditionalLayout(null,·) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> tv.setNeedsDisplayInRectAvoidAdditionalLayout(null, false));
+            TestKit.expectThrows("NSTextView.drawViewBackgroundInRect(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> tv.drawViewBackgroundInRect(null));
+            TestKit.expectThrows("NSTextView.completionsForPartialWordRange(null,·) rejects with IAE, not NPE",
+                    IllegalArgumentException.class,
+                    () -> tv.completionsForPartialWordRange(null, java.lang.foreign.MemorySegment.NULL));
+            nsui.NSText tx = nsui.NSText.create(new NSRect(0, 0, 200, 100));
+            TestKit.expectThrows("NSText.setSelectedRange(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> tx.setSelectedRange(null));
+            TestKit.expectThrows("NSText.setMaxSize(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> tx.setMaxSize(null));
+            TestKit.expectThrows("NSText.setMinSize(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> tx.setMinSize(null));
+            nsui.NSLayoutManager lm3 = nsui.NSLayoutManager.create();
+            TestKit.expectThrows("NSLayoutManager.ensureLayoutForBoundingRect(null,·) rejects with IAE, not NPE",
+                    IllegalArgumentException.class,
+                    () -> lm3.ensureLayoutForBoundingRectInTextContainer(null, null));
+            TestKit.expectThrows("NSLayoutManager.setTemporaryAttributes(null range) rejects with IAE, not NPE",
+                    IllegalArgumentException.class,
+                    () -> lm3.setTemporaryAttributesForCharacterRange(null, null));
+            TestKit.expectThrows("NSLayoutManager.addTemporaryAttributes(null range) rejects with IAE, not NPE",
+                    IllegalArgumentException.class,
+                    () -> lm3.addTemporaryAttributesForCharacterRange(null, null));
+            TestKit.expectThrows("NSLayoutManager.removeTemporaryAttribute(null range) rejects with IAE, not NPE",
+                    IllegalArgumentException.class,
+                    () -> lm3.removeTemporaryAttributeForCharacterRange(null, null));
+            TestKit.expectThrows("NSLayoutManager.addTemporaryAttributeValue(null range) rejects with IAE, not NPE",
+                    IllegalArgumentException.class,
+                    () -> lm3.addTemporaryAttributeValueForCharacterRange(null, null, null));
+        } catch (Throwable t) {
+            TestKit.check(false, "text layout null block threw: " + t);
+        }
+
+        // --- 8bv. gradient null reports IAE, not NPE (NaN stays tolerated) ---
+        // drawInRect:angle: and drawFromPoint:toPoint:options: take structs by value;
+        // drawInRect:angle: is probe-tolerated for NaN, so null-only guards.
+        try {
+            nsui.NSGradient gr = nsui.NSGradient.initWithStartingColorEndingColor(
+                    nsui.NSColor.whiteColor(), nsui.NSColor.blackColor());
+            TestKit.expectThrows("NSGradient.drawInRectAngle(null,·) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> gr.drawInRectAngle(null, 0.0));
+            TestKit.expectThrows("NSGradient.drawFromPointToPoint(null,·,·) rejects with IAE, not NPE",
+                    IllegalArgumentException.class,
+                    () -> gr.drawFromPointToPoint(null, new NSPoint(1, 1), 0L));
+            TestKit.expectThrows("NSGradient.drawFromPointToPoint(·,null,·) rejects with IAE, not NPE",
+                    IllegalArgumentException.class,
+                    () -> gr.drawFromPointToPoint(new NSPoint(0, 0), null, 0L));
+        } catch (Throwable t) {
+            TestKit.check(false, "gradient null block threw: " + t);
+        }
+
+        // --- 8bw. image null reports IAE, not NPE (NaN stays tolerated) ---
+        // setSize, drawInRect, setCapInsets, initWithSize and setAlignmentRect take
+        // structs by value; probes list them as NaN-tolerant, so null-only guards.
+        try {
+            nsui.NSImage im = nsui.NSImage.createWithSize(new NSSize(10, 10));
+            TestKit.expectThrows("NSImage.setSize(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> im.setSize(null));
+            TestKit.expectThrows("NSImage.drawInRect(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> im.drawInRect(null));
+            TestKit.expectThrows("NSImage.setCapInsets(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> im.setCapInsets(null));
+            TestKit.expectThrows("NSImage.createWithSize(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> nsui.NSImage.createWithSize(null));
+            TestKit.expectThrows("NSImage.setAlignmentRect(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> im.setAlignmentRect(null));
+        } catch (Throwable t) {
+            TestKit.check(false, "image null block threw: " + t);
+        }
+
+        // --- 8bx. screen/color/popover/clip null reports IAE, not NPE ---
+        // convertRectTo/FromBacking, drawSwatchInRect, setContentSize and
+        // constrainBoundsRect take structs by value; converts and content size stay
+        // NaN-tolerant per Bounds, so null-only guards.
+        try {
+            if (nsui.NSScreen.mainScreen() != null) {
+                nsui.NSScreen sc = nsui.NSScreen.mainScreen();
+                TestKit.expectThrows("NSScreen.convertRectToBacking(null) rejects with IAE, not NPE",
+                        IllegalArgumentException.class, () -> sc.convertRectToBacking(null));
+                TestKit.expectThrows("NSScreen.convertRectFromBacking(null) rejects with IAE, not NPE",
+                        IllegalArgumentException.class, () -> sc.convertRectFromBacking(null));
+            } else {
+                TestKit.probe("no main screen; screen convert null guards checked by constant only");
+            }
+            TestKit.expectThrows("NSColor.drawSwatchInRect(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> nsui.NSColor.whiteColor().drawSwatchInRect(null));
+            nsui.NSPopover pop = nsui.NSPopover.create();
+            TestKit.expectThrows("NSPopover.setContentSize(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> pop.setContentSize(null));
+            nsui.NSClipView cv2 = nsui.NSClipView.create(new NSRect(0, 0, 100, 100));
+            TestKit.expectThrows("NSClipView.constrainBoundsRect(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> cv2.constrainBoundsRect(null));
+        } catch (Throwable t) {
+            TestKit.check(false, "screen/color/popover/clip null block threw: " + t);
+        }
+
+        // --- 8by. view overflow null reports IAE, not NPE (a: display/resize) ---
+        // displayIfNeeded, resize-with-old-size and centerScanRect take structs by value.
+        // displayIfNeededInRectIgnoringOpacity:inContext: was guarded in Round 1 without a
+        // pin; pin it here alongside the new guards (NaN stays tolerated where listed).
+        try {
+            nsui.NSView ov = NSView.create(new NSRect(0, 0, 100, 100), (v, d) -> {});
+            TestKit.expectThrows("NSView.displayIfNeededInRect(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> ov.displayIfNeededInRect(null));
+            TestKit.expectThrows("NSView.displayIfNeededInRectIgnoringOpacity(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> ov.displayIfNeededInRectIgnoringOpacity(null));
+            TestKit.expectThrows("NSView.displayRectIgnoringOpacityInContext(null,·) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> {
+                        nsui.NSImage icon = nsui.NSWorkspace.sharedWorkspace().iconForFileType("txt");
+                        nsui.NSBitmapImageRep rep = nsui.NSBitmapImageRep.create(
+                                nsui.NSData.wrap(icon.TIFFRepresentation()));
+                        nsui.NSGraphicsContext ctx =
+                                nsui.NSGraphicsContext.graphicsContextWithBitmapImageRep(rep);
+                        ov.displayRectIgnoringOpacityInContext(null, ctx);
+                    });
+            TestKit.expectThrows("NSView.resizeSubviewsWithOldSize(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> ov.resizeSubviewsWithOldSize(null));
+            TestKit.expectThrows("NSView.resizeWithOldSuperviewSize(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> ov.resizeWithOldSuperviewSize(null));
+            TestKit.expectThrows("NSView.centerScanRect(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> ov.centerScanRect(null));
+        } catch (Throwable t) {
+            TestKit.check(false, "view overflow (a) null block threw: " + t);
+        }
+
+        // --- 8bz. view overflow null reports IAE, not NPE (b: layer/prepare) ---
+        // convertSizeTo/FromLayer, prepareContent, keyboard-focus ring, EPS write,
+        // page border and removeCursorRect take structs by value; converts and the
+        // focus-ring rect stay NaN-tolerant, so null-only guards.
+        try {
+            nsui.NSView bv = NSView.create(new NSRect(0, 0, 100, 100), (v, d) -> {});
+            TestKit.expectThrows("NSView.convertSizeToLayer(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> bv.convertSizeToLayer(null));
+            TestKit.expectThrows("NSView.convertSizeFromLayer(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> bv.convertSizeFromLayer(null));
+            TestKit.expectThrows("NSView.prepareContentInRect(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> bv.prepareContentInRect(null));
+            TestKit.expectThrows("NSView.setKeyboardFocusRingNeedsDisplayInRect(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> bv.setKeyboardFocusRingNeedsDisplayInRect(null));
+            TestKit.expectThrows("NSView.drawPageBorderWithSize(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> bv.drawPageBorderWithSize(null));
+            TestKit.expectThrows("NSView.removeCursorRect(null,·) rejects with IAE, not NPE",
+                    IllegalArgumentException.class,
+                    () -> bv.removeCursorRect(null, nsui.NSCursor.arrowCursor()));
+            TestKit.expectThrows("NSView.writeEPSInsideRectToPasteboard(null,·) rejects with IAE, not NPE",
+                    IllegalArgumentException.class,
+                    () -> bv.writeEPSInsideRectToPasteboard(null, nsui.NSPasteboard.generalPasteboard()));
+        } catch (Throwable t) {
+            TestKit.check(false, "view overflow (b) null block threw: " + t);
+        }
+
+        // --- 8b0. layout chrome null reports IAE, not NPE ---
+        // setPreparedContentRect, setAdditionalSafeAreaInsets, setContentInsets,
+        // tabViewItemAtPoint, drawDividerInRect and setEdgeInsets take structs by value.
+        try {
+            nsui.NSView pv = NSView.create(new NSRect(0, 0, 100, 100), (v, d) -> {});
+            TestKit.expectThrows("NSView.setPreparedContentRect(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> pv.setPreparedContentRect(null));
+            TestKit.expectThrows("NSView.setAdditionalSafeAreaInsets(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> pv.setAdditionalSafeAreaInsets(null));
+            nsui.NSClipView cc2 = nsui.NSClipView.create(new NSRect(0, 0, 100, 100));
+            TestKit.expectThrows("NSClipView.setContentInsets(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> cc2.setContentInsets(null));
+            nsui.NSTabView tb2 = nsui.NSTabView.create(new NSRect(0, 0, 200, 100));
+            TestKit.expectThrows("NSTabView.tabViewItemAtPoint(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> tb2.tabViewItemAtPoint(null));
+            nsui.NSSplitView sp2 = nsui.NSSplitView.create(new NSRect(0, 0, 200, 100));
+            TestKit.expectThrows("NSSplitView.drawDividerInRect(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> sp2.drawDividerInRect(null));
+            nsui.NSStackView st2 = nsui.NSStackView.create(new NSRect(0, 0, 200, 100));
+            TestKit.expectThrows("NSStackView.setEdgeInsets(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> st2.setEdgeInsets(null));
+        } catch (Throwable t) {
+            TestKit.check(false, "layout chrome null block threw: " + t);
+        }
+
+        // --- 8b1. drawing chrome null reports IAE, not NPE ---
+        // setShadowOffset, setTranslation:inView:, drawWellInside and setPatternPhase
+        // take structs by value; the gesture view stays nullable.
+        try {
+            nsui.NSShadow sh = nsui.NSShadow.create();
+            TestKit.expectThrows("NSShadow.setShadowOffset(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> sh.setShadowOffset(null));
+            nsui.NSPanGestureRecognizer pan = nsui.NSPanGestureRecognizer.create(
+                    java.lang.foreign.MemorySegment.NULL, null);
+            TestKit.expectThrows("NSPanGestureRecognizer.setTranslation(null,·) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> pan.setTranslation(null, null));
+            nsui.NSColorWell well = nsui.NSColorWell.create(new NSRect(0, 0, 50, 30));
+            TestKit.expectThrows("NSColorWell.drawWellInside(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> well.drawWellInside(null));
+            nsui.NSImage icon2 = nsui.NSWorkspace.sharedWorkspace().iconForFileType("txt");
+            nsui.NSBitmapImageRep rep2 = nsui.NSBitmapImageRep.create(
+                    nsui.NSData.wrap(icon2.TIFFRepresentation()));
+            nsui.NSGraphicsContext gctx =
+                    nsui.NSGraphicsContext.graphicsContextWithBitmapImageRep(rep2);
+            TestKit.expectThrows("NSGraphicsContext.setPatternPhase(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> gctx.setPatternPhase(null));
+        } catch (Throwable t) {
+            TestKit.check(false, "drawing chrome null block threw: " + t);
         }
 
         // --- 11. lifetime / leak oracles ---

@@ -341,6 +341,7 @@ public final class NSTabView extends NSView {
 
     /// [tabView tabViewItemAtPoint:] — item at local point (nil-safe).
     public NSTabViewItem tabViewItemAtPoint(NSPoint point) {
+        if (point == null) throw new IllegalArgumentException("tabViewItemAtPoint: null point");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.POINT));
             MemorySegment p = (MemorySegment) h.invokeExact(peer, ObjC.sel("tabViewItemAtPoint:"), point.toSegment());

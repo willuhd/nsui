@@ -121,6 +121,7 @@ public final class NSPanGestureRecognizer extends NSGestureRecognizer {
 
     /// [recognizer setTranslation:inView:]
     public void setTranslation(NSPoint translation, NSView view) {
+        if (translation == null) throw new IllegalArgumentException("setTranslation:inView: null translation");
         try {
             handles.hSetTranslation().invokeExact(peer, ObjC.sel("setTranslation:inView:"), translation.toSegment(), (MemorySegment) ((view == null || view.peer() == null || view.peer().address()==0) ? MemorySegment.NULL : view.peer()));
         } catch (Throwable t) {

@@ -213,6 +213,7 @@ public final class NSSplitView extends NSView {
     /// [splitView drawDividerInRect:] — draw one divider (override point; callable directly).
     public void drawDividerInRect(NSRect rect) {
         ensureInit();
+        if (rect == null) throw new IllegalArgumentException("drawDividerInRect: null rect");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.RECT));
             h.invokeExact(peer, ObjC.sel("drawDividerInRect:"), rect.toSegment());

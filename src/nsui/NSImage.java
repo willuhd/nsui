@@ -182,6 +182,7 @@ public final class NSImage extends NSObject {
     /// [image setSize:] — set the image's size.
     public void setSize(NSSize size) {
         ensureInit();
+        if (size == null) throw new IllegalArgumentException("setSize: null size");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.SIZE));
             h.invokeExact(peer, ObjC.sel("setSize:"), size.toSegment());
@@ -199,6 +200,7 @@ public final class NSImage extends NSObject {
     /// context (the view's drawing context when called from a `Drawable`),
     /// scaled to `rect` in the recipient's (typically the view's) coordinates.
     public void drawInRect(NSRect rect) {
+        if (rect == null) throw new IllegalArgumentException("drawInRect: null rect");
         try {
             H.hDrawRect().invokeExact(peer, ObjC.sel("drawInRect:"), rect.toSegment());
         } catch (Throwable t) {
@@ -250,6 +252,7 @@ public final class NSImage extends NSObject {
 
     /// [image setCapInsets:] — edge insets for 9-part scaling (NSEdgeInsets by value).
     public void setCapInsets(NSEdgeInsets insets) {
+        if (insets == null) throw new IllegalArgumentException("setCapInsets: null insets");
         try {
             H.hSetCapEdgeInsets().invokeExact(peer, ObjC.sel("setCapInsets:"), insets.toSegment());
         } catch (Throwable t) {
@@ -317,6 +320,7 @@ public final class NSImage extends NSObject {
 
     /// `[[NSImage alloc] initWithSize:size]` — blank image with the given size.
     public static NSImage createWithSize(NSSize size) {
+        if (size == null) throw new IllegalArgumentException("initWithSize: null size");
         ensureInit();
         MemorySegment img = ObjC.msgSendId(ObjC.cls("NSImage"), ObjC.sel("alloc"));
         try {
@@ -502,6 +506,7 @@ public final class NSImage extends NSObject {
     /// setAlignmentRect:.
     public void setAlignmentRect(NSRect rect) {
         ensureInit();
+        if (rect == null) throw new IllegalArgumentException("setAlignmentRect: null rect");
         try {
             H.hSetCapInsets().invokeExact(peer, ObjC.sel("setAlignmentRect:"), rect.toSegment());
         } catch (Throwable t) {

@@ -247,6 +247,8 @@ public final class TextCoverageTest {
         TestKit.check(NSFont.fontWithNameMatrix("Helvetica", null) != null, "fontWithName:matrix: (NULL) non-nil");
         TestKit.check(NSFont.fontWithDescriptorTextTransform(helv.fontDescriptor(), null) != null,
                 "fontWithDescriptor:textTransform: non-nil");
+        TestKit.check(NSFont.fontWithDescriptor(null, 12) == null,
+                "fontWithDescriptor(nil) answers nil, not a bridge throw");
         TestKit.check(NSFont.userFixedPitchFontOfSize(11) != null, "userFixedPitchFontOfSize non-nil");
         TestKit.check(NSFont.titleBarFontOfSize(12) != null, "titleBarFontOfSize non-nil");
         TestKit.check(NSFont.menuFontOfSize(12) != null, "menuFontOfSize non-nil");
@@ -595,6 +597,8 @@ public final class TextCoverageTest {
         tv.setSelectedRange(new NSRange(0, 5));
         TestKit.check(tv.selectedRange().location() == 0 && tv.selectedRange().length() == 5,
                 "selectedRange round-trip (got " + tv.selectedRange() + ")");
+        TestKit.expectThrows("setSelectedRange(null) rejects with IAE, not NPE",
+                IllegalArgumentException.class, () -> tv.setSelectedRange(null));
         TestKit.noThrow("scrollRangeToVisible did not crash", () -> tv.scrollRangeToVisible(new NSRange(0, 5)));
 
         boolean ufp0 = tv.usesFontPanel();

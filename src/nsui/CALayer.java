@@ -881,6 +881,7 @@ public class CALayer extends NSObject {
     /// [layer setTransform:] — model-value transform (animatable).
     public void setTransform(CATransform3D transform) {
         ensureInit();
+        if (transform == null) throw new IllegalArgumentException("setTransform: null transform");
         try {
             handles.hSetTransform().invokeExact(peer, Sels.setTransform, transform.toSegment());
         } catch (Throwable t) { throw new RuntimeException("setTransform: failed", t); }
@@ -898,6 +899,7 @@ public class CALayer extends NSObject {
     /// [layer setSublayerTransform:]
     public void setSublayerTransform(CATransform3D transform) {
         ensureInit();
+        if (transform == null) throw new IllegalArgumentException("setSublayerTransform: null transform");
         try {
             handles.hSetTransform().invokeExact(peer, Sels.setSublayerTransform, transform.toSegment());
         } catch (Throwable t) { throw new RuntimeException("setSublayerTransform: failed", t); }
@@ -985,6 +987,7 @@ public class CALayer extends NSObject {
     /// [layer setContentsRect:]
     public void setContentsRect(NSRect rect) {
         ensureInit();
+        if (rect == null) throw new IllegalArgumentException("setContentsRect: null rect");
         try {
             handles.hSetRect().invokeExact(peer, Sels.setContentsRect, rect.toSegment());
         } catch (Throwable t) { throw new RuntimeException("setContentsRect: failed", t); }
@@ -1002,6 +1005,7 @@ public class CALayer extends NSObject {
     /// [layer setContentsCenter:]
     public void setContentsCenter(NSRect rect) {
         ensureInit();
+        if (rect == null) throw new IllegalArgumentException("setContentsCenter: null rect");
         try {
             handles.hSetRect().invokeExact(peer, Sels.setContentsCenter, rect.toSegment());
         } catch (Throwable t) { throw new RuntimeException("setContentsCenter: failed", t); }
@@ -1414,6 +1418,7 @@ public class CALayer extends NSObject {
     /// [layer hitTest:] — deepest descendant containing the point, or null.
     public CALayer hitTest(NSPoint point) {
         ensureInit();
+        if (point == null) throw new IllegalArgumentException("hitTest: null point");
         try {
             return wrap((MemorySegment) handles.hGetIdPoint().invokeExact(peer, Sels.hitTest, point.toSegment()));
         } catch (Throwable t) { throw new RuntimeException("hitTest: failed", t); }
@@ -1422,6 +1427,7 @@ public class CALayer extends NSObject {
     /// [layer containsPoint:] — whether the point lies inside the layer's bounds.
     public boolean containsPoint(NSPoint point) {
         ensureInit();
+        if (point == null) throw new IllegalArgumentException("containsPoint: null point");
         try {
             return (boolean) handles.hGetBoolPoint().invokeExact(peer, Sels.containsPoint, point.toSegment());
         } catch (Throwable t) { throw new RuntimeException("containsPoint: failed", t); }
@@ -1430,6 +1436,7 @@ public class CALayer extends NSObject {
     /// [layer convertPoint:fromLayer:] — map a point from the given layer's space into this layer's.
     public NSPoint convertPointFromLayer(NSPoint point, CALayer fromLayer) {
         ensureInit();
+        if (point == null) throw new IllegalArgumentException("convertPoint:fromLayer: null point");
         try {
             MemorySegment s = (MemorySegment) handles.hGetPointPointId().invokeExact(ObjC.structSlot(), peer, Sels.convertPoint_fromLayer,
                     point.toSegment(), (MemorySegment) (fromLayer == null ? MemorySegment.NULL : fromLayer.peer()));
@@ -1440,6 +1447,7 @@ public class CALayer extends NSObject {
     /// [layer convertPoint:toLayer:] — map a point from this layer's space into the given layer's.
     public NSPoint convertPointToLayer(NSPoint point, CALayer toLayer) {
         ensureInit();
+        if (point == null) throw new IllegalArgumentException("convertPoint:toLayer: null point");
         try {
             MemorySegment s = (MemorySegment) handles.hGetPointPointId().invokeExact(ObjC.structSlot(), peer, Sels.convertPoint_toLayer,
                     point.toSegment(), (MemorySegment) (toLayer == null ? MemorySegment.NULL : toLayer.peer()));

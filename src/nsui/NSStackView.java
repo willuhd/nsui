@@ -125,6 +125,7 @@ public class NSStackView extends NSView {
     /// Takes a typed `NSEdgeInsets` (four doubles: top, left, bottom, right).
     /// The struct is passed by value (32 bytes, layout-identical to NSRect for ABI).
     public void setEdgeInsets(NSEdgeInsets insets) {
+        if (insets == null) throw new IllegalArgumentException("setEdgeInsets: null insets");
         try {
             hEdgeInsets.invokeExact(peer, ObjC.sel("setEdgeInsets:"), insets.toSegment());
         } catch (Throwable t) {

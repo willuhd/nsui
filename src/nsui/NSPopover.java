@@ -89,6 +89,7 @@ public final class NSPopover extends NSObject {
     /// setContentSize:
     public void setContentSize(NSSize size) {
         ensureInit();
+        if (size == null) throw new IllegalArgumentException("setContentSize: null size");
         try {
             handles.hSetContentSize().invokeExact(peer, ObjC.sel("setContentSize:"), size.toSegment());
         } catch (Throwable t) {

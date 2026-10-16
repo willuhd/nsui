@@ -1191,6 +1191,7 @@ public class NSWindow extends NSResponder {
     /// [window setMinSize:].
     public void setMinSize(NSSize size) {
         ensureInit();
+        if (size == null) throw new IllegalArgumentException("setMinSize: null size");
         try {
             H.hSetSize().invokeExact(peer, Sels.setMinSize, size.toSegment());
         } catch (Throwable t) {
@@ -1212,6 +1213,7 @@ public class NSWindow extends NSResponder {
     /// [window setMaxSize:].
     public void setMaxSize(NSSize size) {
         ensureInit();
+        if (size == null) throw new IllegalArgumentException("setMaxSize: null size");
         try {
             H.hSetSize().invokeExact(peer, Sels.setMaxSize, size.toSegment());
         } catch (Throwable t) {
@@ -1314,7 +1316,7 @@ public class NSWindow extends NSResponder {
     /// beginSheet:completionHandler: — attach sheet to receiver; handler receives NSModalResponse.
     public void beginSheet(NSWindow sheet, java.util.function.IntConsumer completionHandler) {
         ensureInit();
-        if (sheet == null) return;
+        Bounds.nonNull(sheet, "beginSheet:completionHandler:");
         // A window cannot be attached to itself ("sheet ... cannot be attached to itself",
         // verified exit 134) and attaching an ANCESTOR sheet hangs (>12 s, verified with a
         // watchdog), so the sheetParent chain is walked like the other cycle guards.
@@ -1352,7 +1354,7 @@ public class NSWindow extends NSResponder {
     /// beginSheet:completionHandler: with raw block segment (for advanced use).
     public void beginSheet(NSWindow sheet, MemorySegment completionHandlerBlock) {
         ensureInit();
-        if (sheet == null) return;
+        Bounds.nonNull(sheet, "beginSheet:completionHandler:");
         for (NSWindow p = this; p != null; p = p.sheetParent()) {
             if (p.peer() != null && p.peer().address() == sheet.peer().address()) {
                 throw new IllegalArgumentException("beginSheet:completionHandler: the sheet is this "
@@ -1760,6 +1762,7 @@ ensureInit(); return ObjC.msgSendBool(peer, Sels.hasDynamicDepthLimit); }
     /// [window setResizeIncrements:].
     public void setResizeIncrements(NSSize size) {
         ensureInit();
+        if (size == null) throw new IllegalArgumentException("setResizeIncrements: null size");
         try {
             H.hSetSize().invokeExact(peer, Sels.setResizeIncrements, size.toSegment());
         } catch (Throwable t) {
@@ -1783,6 +1786,7 @@ ensureInit(); return ObjC.msgSendBool(peer, Sels.hasDynamicDepthLimit); }
     /// silently (SIGTRAP, measured). Restore to a valid ratio like (1,1).
     public void setAspectRatio(NSSize size) {
         ensureInit();
+        if (size == null) throw new IllegalArgumentException("setAspectRatio: null size");
         try {
             H.hSetSize().invokeExact(peer, Sels.setAspectRatio, size.toSegment());
         } catch (Throwable t) {
@@ -1804,6 +1808,7 @@ ensureInit(); return ObjC.msgSendBool(peer, Sels.hasDynamicDepthLimit); }
     /// [window setContentResizeIncrements:].
     public void setContentResizeIncrements(NSSize size) {
         ensureInit();
+        if (size == null) throw new IllegalArgumentException("setContentResizeIncrements: null size");
         try {
             H.hSetSize().invokeExact(peer, Sels.setContentResizeIncrements, size.toSegment());
         } catch (Throwable t) {
@@ -1827,6 +1832,7 @@ ensureInit(); return ObjC.msgSendBool(peer, Sels.hasDynamicDepthLimit); }
     /// next setFrame* traps silently (SIGTRAP, measured). Restore to (1,1).
     public void setContentAspectRatio(NSSize size) {
         ensureInit();
+        if (size == null) throw new IllegalArgumentException("setContentAspectRatio: null size");
         try {
             H.hSetSize().invokeExact(peer, Sels.setContentAspectRatio, size.toSegment());
         } catch (Throwable t) {
@@ -1848,6 +1854,7 @@ ensureInit(); return ObjC.msgSendBool(peer, Sels.hasDynamicDepthLimit); }
     /// [window setContentMinSize:].
     public void setContentMinSize(NSSize size) {
         ensureInit();
+        if (size == null) throw new IllegalArgumentException("setContentMinSize: null size");
         try {
             H.hSetSize().invokeExact(peer, Sels.setContentMinSize, size.toSegment());
         } catch (Throwable t) {
@@ -1869,6 +1876,7 @@ ensureInit(); return ObjC.msgSendBool(peer, Sels.hasDynamicDepthLimit); }
     /// [window setContentMaxSize:].
     public void setContentMaxSize(NSSize size) {
         ensureInit();
+        if (size == null) throw new IllegalArgumentException("setContentMaxSize: null size");
         try {
             H.hSetSize().invokeExact(peer, Sels.setContentMaxSize, size.toSegment());
         } catch (Throwable t) {
@@ -1890,6 +1898,7 @@ ensureInit(); return ObjC.msgSendBool(peer, Sels.hasDynamicDepthLimit); }
     /// [window setMinFullScreenContentSize:].
     public void setMinFullScreenContentSize(NSSize size) {
         ensureInit();
+        if (size == null) throw new IllegalArgumentException("setMinFullScreenContentSize: null size");
         try {
             H.hSetSize().invokeExact(peer, Sels.setMinFullScreenContentSize, size.toSegment());
         } catch (Throwable t) {
@@ -1911,6 +1920,7 @@ ensureInit(); return ObjC.msgSendBool(peer, Sels.hasDynamicDepthLimit); }
     /// [window setMaxFullScreenContentSize:].
     public void setMaxFullScreenContentSize(NSSize size) {
         ensureInit();
+        if (size == null) throw new IllegalArgumentException("setMaxFullScreenContentSize: null size");
         try {
             H.hSetSize().invokeExact(peer, Sels.setMaxFullScreenContentSize, size.toSegment());
         } catch (Throwable t) {
@@ -2215,6 +2225,7 @@ ensureInit(); return ObjC.msgSendBool(peer, Sels.hasDynamicDepthLimit); }
     /// [window convertRectToScreen:] — window-base rect to screen coordinates.
     public NSRect convertRectToScreen(NSRect rect) {
         ensureInit();
+        if (rect == null) throw new IllegalArgumentException("convertRectToScreen: null rect");
         try {
             MemorySegment s = (MemorySegment) H.hRectRect().invokeExact(
                     ObjC.structSlot(), peer, Sels.convertRectToScreen, rect.toSegment());
@@ -2227,6 +2238,7 @@ ensureInit(); return ObjC.msgSendBool(peer, Sels.hasDynamicDepthLimit); }
     /// [window convertRectFromScreen:] — screen rect to window-base coordinates.
     public NSRect convertRectFromScreen(NSRect rect) {
         ensureInit();
+        if (rect == null) throw new IllegalArgumentException("convertRectFromScreen: null rect");
         try {
             MemorySegment s = (MemorySegment) H.hRectRect().invokeExact(
                     ObjC.structSlot(), peer, Sels.convertRectFromScreen, rect.toSegment());
@@ -2239,6 +2251,7 @@ ensureInit(); return ObjC.msgSendBool(peer, Sels.hasDynamicDepthLimit); }
     /// [window convertRectToBacking:] — points to backing pixels (macOS 10.7+).
     public NSRect convertRectToBacking(NSRect rect) {
         ensureInit();
+        if (rect == null) throw new IllegalArgumentException("convertRectToBacking: null rect");
         try {
             MemorySegment s = (MemorySegment) H.hRectRect().invokeExact(
                     ObjC.structSlot(), peer, Sels.convertRectToBacking, rect.toSegment());
@@ -2251,6 +2264,7 @@ ensureInit(); return ObjC.msgSendBool(peer, Sels.hasDynamicDepthLimit); }
     /// [window convertRectFromBacking:] — backing pixels to points (macOS 10.7+).
     public NSRect convertRectFromBacking(NSRect rect) {
         ensureInit();
+        if (rect == null) throw new IllegalArgumentException("convertRectFromBacking: null rect");
         try {
             MemorySegment s = (MemorySegment) H.hRectRect().invokeExact(
                     ObjC.structSlot(), peer, Sels.convertRectFromBacking, rect.toSegment());
@@ -2984,7 +2998,8 @@ ensureInit(); return ObjC.msgSendBool(peer, Sels.hasDynamicDepthLimit); }
     /// `items` is an NSArray of NSDraggingItem, `source` any NSObject.
     public NSDraggingSession beginDraggingSessionWithItems(NSArray items, NSEvent event, NSObject source) {
         ensureInit();
-        if (items == null || event == null) return null;
+        Bounds.nonNull(items, "beginDraggingSessionWithItems:event:source: (items)");
+        Bounds.nonNull(event, "beginDraggingSessionWithItems:event:source: (event)");
         try {
             MemorySegment s = (MemorySegment) H.hIdIdIdId().invokeExact(peer,
                     Sels.beginDraggingSessionWithItems_event_source,

@@ -163,6 +163,7 @@ public final class NSScreen extends NSObject {
     /// [screen convertRectToBacking:] (macOS 10.7+) — points to backing pixels.
     public NSRect convertRectToBacking(NSRect rect) {
         ensureInit();
+        if (rect == null) throw new IllegalArgumentException("convertRectToBacking: null rect");
         try {
             MemorySegment s = (MemorySegment) H.hRectRect().invokeExact(
                     ObjC.structSlot(), peer, ObjC.sel("convertRectToBacking:"), rect.toSegment());
@@ -175,6 +176,7 @@ public final class NSScreen extends NSObject {
     /// [screen convertRectFromBacking:] (macOS 10.7+) — backing pixels to points.
     public NSRect convertRectFromBacking(NSRect rect) {
         ensureInit();
+        if (rect == null) throw new IllegalArgumentException("convertRectFromBacking: null rect");
         try {
             MemorySegment s = (MemorySegment) H.hRectRect().invokeExact(
                     ObjC.structSlot(), peer, ObjC.sel("convertRectFromBacking:"), rect.toSegment());

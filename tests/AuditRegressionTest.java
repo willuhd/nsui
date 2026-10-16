@@ -2814,6 +2814,32 @@ public final class AuditRegressionTest {
             TestKit.check(false, "image null block threw: " + t);
         }
 
+        // --- 8bx. screen/color/popover/clip null reports IAE, not NPE ---
+        // convertRectTo/FromBacking, drawSwatchInRect, setContentSize and
+        // constrainBoundsRect take structs by value; converts and content size stay
+        // NaN-tolerant per Bounds, so null-only guards.
+        try {
+            if (nsui.NSScreen.mainScreen() != null) {
+                nsui.NSScreen sc = nsui.NSScreen.mainScreen();
+                TestKit.expectThrows("NSScreen.convertRectToBacking(null) rejects with IAE, not NPE",
+                        IllegalArgumentException.class, () -> sc.convertRectToBacking(null));
+                TestKit.expectThrows("NSScreen.convertRectFromBacking(null) rejects with IAE, not NPE",
+                        IllegalArgumentException.class, () -> sc.convertRectFromBacking(null));
+            } else {
+                TestKit.probe("no main screen; screen convert null guards checked by constant only");
+            }
+            TestKit.expectThrows("NSColor.drawSwatchInRect(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> nsui.NSColor.whiteColor().drawSwatchInRect(null));
+            nsui.NSPopover pop = nsui.NSPopover.create();
+            TestKit.expectThrows("NSPopover.setContentSize(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> pop.setContentSize(null));
+            nsui.NSClipView cv2 = nsui.NSClipView.create(new NSRect(0, 0, 100, 100));
+            TestKit.expectThrows("NSClipView.constrainBoundsRect(null) rejects with IAE, not NPE",
+                    IllegalArgumentException.class, () -> cv2.constrainBoundsRect(null));
+        } catch (Throwable t) {
+            TestKit.check(false, "screen/color/popover/clip null block threw: " + t);
+        }
+
         // --- 11. lifetime / leak oracles ---
         // A runtime ObjC class pair is created once per (super, className) and never
         // disposed, so creating the same delegate shape repeatedly must NOT grow the

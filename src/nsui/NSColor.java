@@ -752,6 +752,7 @@ public final class NSColor extends NSObject {
     /// drawSwatchInRect: — draw the color swatch (needs a graphics context).
     public void drawSwatchInRect(NSRect rect) {
         ensureInit();
+        if (rect == null) throw new IllegalArgumentException("drawSwatchInRect: null rect");
         try {
             H.hVoidRect().invokeExact(peer, ObjC.sel("drawSwatchInRect:"), rect.toSegment());
         } catch (Throwable t) {

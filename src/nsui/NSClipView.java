@@ -228,6 +228,7 @@ public class NSClipView extends NSView {
     /// [clip constrainBoundsRect:] — constrain a proposed bounds rect.
     public NSRect constrainBoundsRect(NSRect proposedBounds) {
         ensureInit();
+        if (proposedBounds == null) throw new IllegalArgumentException("constrainBoundsRect: null rect");
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.RECT, Arg.RECT));
             MemorySegment r = (MemorySegment) h.invokeExact(ObjC.structSlot(), peer, ObjC.sel("constrainBoundsRect:"), proposedBounds.toSegment());

@@ -2984,7 +2984,8 @@ ensureInit(); return ObjC.msgSendBool(peer, Sels.hasDynamicDepthLimit); }
     /// `items` is an NSArray of NSDraggingItem, `source` any NSObject.
     public NSDraggingSession beginDraggingSessionWithItems(NSArray items, NSEvent event, NSObject source) {
         ensureInit();
-        if (items == null || event == null) return null;
+        Bounds.nonNull(items, "beginDraggingSessionWithItems:event:source: (items)");
+        Bounds.nonNull(event, "beginDraggingSessionWithItems:event:source: (event)");
         try {
             MemorySegment s = (MemorySegment) H.hIdIdIdId().invokeExact(peer,
                     Sels.beginDraggingSessionWithItems_event_source,

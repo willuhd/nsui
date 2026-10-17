@@ -354,7 +354,8 @@ def param_name(raw, i):
 class Plan:
     __slots__ = ("decl", "shape", "enc", "kind", "is_class", "skip", "reason",
                  "java_name", "field", "handle", "params", "ret_kind", "ret_java", "renamed_from",
-                 "guards", "guard_setup", "nil_skips", "nil_returns", "is_constructor")
+                 "guards", "guard_setup", "nil_skips", "nil_returns", "class_consts",
+                 "is_constructor")
 
     def __init__(self, decl):
         self.decl = decl
@@ -374,6 +375,7 @@ class Plan:
         self.guard_setup = []
         self.nil_skips = []
         self.nil_returns = {}
+        self.class_consts = []
         self.is_constructor = False
         self.ret_java = None
 
@@ -771,7 +773,28 @@ def shipped_index_setup(selector, bound, repo, cls):
     return None if missing else setup
 
 
-def bound_is_usable(bound, plans, repo):
+def shipped_declares_max(repo, cls, name):
+    """The shipped wrapper's `public static final long <name> = ...;` line, else None.
+
+    Per-selector native maxima (MAX_BUFFER_SLOTS) live as constants on the shipped class.
+    A generated guard referencing one only compiles if the declaration travels with it
+    (see class_consts); the strict `public static final long` match rejects private,
+    non-long, or absent constants back to GUARD-UNUSABLE-BOUND instead of miscompiling.
+    """
+    if not cls or not re.fullmatch(r"MAX_[A-Z0-9_]+", name or ""):
+        return None
+    path = os.path.join(repo, "src", "nsui", cls + ".java")
+    try:
+        with open(path, encoding="utf-8", errors="replace") as fh:
+            text = fh.read()
+    except OSError:
+        return None
+    m = re.search(r"^\s*public\s+static\s+final\s+long\s+%s\s*=\s*[^;]+;" % re.escape(name),
+                  text, re.M)
+    return m.group(0).strip() if m else None
+
+
+def bound_is_usable(bound, plans, repo, cls=None):
     """Whether a bound copied from the corpus still compiles against the generated class.
 
     The corpus may call a convenience the generator does not emit: the shipped
@@ -779,6 +802,12 @@ def bound_is_usable(bound, plans, repo):
     `.size()`, while the generated method returns NSArray, which has count(). Emitting the bound
     verbatim produced a file that did not compile.
     """
+    b = (bound or "").strip()
+    # A bare per-selector maximum (MAX_BUFFER_SLOTS) is usable when the shipped wrapper
+    # declares it: the declaration travels into the generated class via class_consts and the
+    # guard references it qualified (<Cls>.MAX_X). Anything else all-caps still falls through.
+    if re.fullmatch(r"MAX_[A-Z0-9_]+", b):
+        return shipped_declares_max(repo, cls, b) is not None
     names = {q.java_name: q for q in plans if not q.skip}
     # A usable bound is a chain of calls on the generated class with constant arguments:
     # numberOfItemsInSection(0), textContainers().count(). Anything else — a ternary over a shipped
@@ -1250,6 +1279,14 @@ def render_class(class_name, superclass, header_rel, plans, surface, framework="
     L.append("    private record Handles(%s) {}" % comps)
     L.append("    private static volatile Handles H;")
     L.append("")
+    consts = sorted({c for p in used for c in (getattr(p, "class_consts", []) or [])})
+    if consts:
+        # Per-selector native maxima copied from the shipped wrapper (see GUARD-CONST):
+        # one declaration per constant even when several guards share it.
+        L.append("    /// Per-selector maxima copied from the shipped wrapper.")
+        for c in consts:
+            L.append("    %s" % c)
+        L.append("")
     L.append("    protected %s(MemorySegment peer) {" % class_name)
     L.append("        super(peer);")
     L.append("        ensureInit();")
@@ -2029,7 +2066,7 @@ def gen_classes(args, sdk, vocab, wrappers, rt):
                     continue
                 if any("Bounds.index" in g for g in wanted) and case.get("bound"):
                     repo_ = getattr(args, "repo", ".")
-                    if not bound_is_usable(case["bound"], plans, repo_):
+                    if not bound_is_usable(case["bound"], plans, repo_, cls):
                         # A corpus bound may be a self-contained accessor (`numberOfItems()`) or use
                         # a local the shipped method declares just above the guard. The second form
                         # needs that declaration copied with it; anything else cannot be emitted.
@@ -2046,6 +2083,21 @@ def gen_classes(args, sdk, vocab, wrappers, rt):
                                          "generated class]" % ("+" if q.is_class else "",
                                                                q.decl.selector, case["bound"]))
                             continue
+                    else:
+                        # A bare per-selector maximum travels as a class-level constant: qualify
+                        # the reference and copy the declaration (guard_setup renders inside
+                        # method bodies, so a field needs its own channel — see class_consts).
+                        b = (case.get("bound") or "").strip()
+                        decl = shipped_declares_max(repo_, cls, b) if re.fullmatch(
+                            r"MAX_[A-Z0-9_]+", b) else None
+                        if decl:
+                            wanted = [re.sub(r"\b%s\b" % re.escape(b), cls + "." + b, g)
+                                      for g in wanted]
+                            if decl not in q.class_consts:
+                                q.class_consts.append(decl)
+                            lines.append("    GUARD-CONST %s%s  [copied %s from the shipped "
+                                         "class]" % ("+" if q.is_class else "", q.decl.selector,
+                                                     decl[:60]))
                 need = [g.split("(")[0] for g in wanted]
                 missing = [n for n in need if n in PRIMITIVES and not toolkit.has(n)]
                 if missing:

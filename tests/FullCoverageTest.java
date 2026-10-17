@@ -336,7 +336,9 @@ public final class FullCoverageTest {
             v.setHidden(true); check(v.isHidden(), "isHidden true"); v.setHidden(false);
             check(!v.isHiddenOrHasHiddenAncestor(), "isHiddenOrHasHiddenAncestor");
             check(v.superview()==null, "superview");
-            check(v.isOpaque() || !v.isOpaque(), "isOpaque");
+            // NSView.h documents the default as NO: an ||-both-ways check here
+            // passed opaque or not, so pin the determined state instead.
+            check(!v.isOpaque(), "isOpaque false (default NO)");
             check(v.visibleRect()!=null, "visibleRect");
             v.invalidateIntrinsicContentSize();
             // addSubview

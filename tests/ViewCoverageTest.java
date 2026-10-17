@@ -148,7 +148,9 @@ public final class ViewCoverageTest {
         v.displayIfNeededInRectIgnoringOpacity(new NSRect(0, 0, 50, 50));
         v.prepareForReuse();
         v.prepareContentInRect(new NSRect(0, 0, 50, 50));
-        TestKit.check(v.wantsDefaultClipping() || !v.wantsDefaultClipping(), "NSView wantsDefaultClipping no-throw");
+        // Readonly with no documented default: an ||-both-ways check passed
+        // clipped or not, so verify the read does not throw instead.
+        TestKit.noThrow("NSView wantsDefaultClipping no-throw", () -> v.wantsDefaultClipping());
         boolean cdc = v.canDrawConcurrently();
         v.setCanDrawConcurrently(!cdc);
         TestKit.check(v.canDrawConcurrently() == !cdc, "NSView canDrawConcurrently toggle");

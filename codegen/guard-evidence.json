@@ -2810,10 +2810,11 @@
       "param": "valueFunction",
       "param_index": 0,
       "probe_id": "CAPropertyAnimation.setValueFunction.nil",
+      "badness": "nil",
       "unguarded": "tolerated",
+      "param_kind": "typed:CAValueFunction",
       "control": "the unguarded call survived, so no guard is emitted",
-      "guards": [],
-      "badness": "nil"
+      "guards": []
     },
     {
       "class": "CAScrollLayer",
@@ -2954,10 +2955,11 @@
       "param": "frontFaceStencil",
       "param_index": 0,
       "probe_id": "MTLDepthStencilDescriptor.setFrontFaceStencil.nil",
+      "badness": "nil",
       "unguarded": "tolerated",
+      "param_kind": "typed:MTLStencilDescriptor",
       "control": "the unguarded call survived, so no guard is emitted",
-      "guards": [],
-      "badness": "nil"
+      "guards": []
     },
     {
       "class": "MTLDepthStencilDescriptor",
@@ -2965,10 +2967,11 @@
       "param": "backFaceStencil",
       "param_index": 0,
       "probe_id": "MTLDepthStencilDescriptor.setBackFaceStencil.nil",
+      "badness": "nil",
       "unguarded": "tolerated",
+      "param_kind": "typed:MTLStencilDescriptor",
       "control": "the unguarded call survived, so no guard is emitted",
-      "guards": [],
-      "badness": "nil"
+      "guards": []
     },
     {
       "class": "MTLDepthStencilDescriptor",
@@ -2976,11 +2979,12 @@
       "param": "label",
       "param_index": 0,
       "probe_id": "MTLDepthStencilDescriptor.setLabel.nil",
+      "badness": "nil",
       "unguarded": "objc-abort",
+      "param_kind": "string",
       "guards": [
         "Bounds.nonNull({p}, \"setLabel:\");"
-      ],
-      "badness": "nil"
+      ]
     },
     {
       "class": "MTLRenderPassDescriptor",
@@ -3055,11 +3059,12 @@
       "param": "label",
       "param_index": 0,
       "probe_id": "MTLSamplerDescriptor.setLabel.nil",
+      "badness": "nil",
       "unguarded": "objc-abort",
+      "param_kind": "string",
       "guards": [
         "Bounds.nonNull({p}, \"setLabel:\");"
-      ],
-      "badness": "nil"
+      ]
     },
     {
       "class": "NSAlert",
@@ -18447,6 +18452,210 @@
         "Bounds.finite({p}.znear(), \"setViewport: (znear)\");",
         "Bounds.finite({p}.zfar(), \"setViewport: (zfar)\");"
       ]
+    },
+    {
+      "class": "MTLDepthStencilDescriptor",
+      "selector": "setDepthCompareFunction:",
+      "param": "depthCompareFunction",
+      "param_index": 0,
+      "probe_id": "MTLDepthStencilDescriptor.setDepthCompareFunction.negative",
+      "badness": "negative",
+      "unguarded": "tolerated",
+      "param_kind": "ulong",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "MTLSamplerDescriptor",
+      "selector": "setMinFilter:",
+      "param": "minFilter",
+      "param_index": 0,
+      "probe_id": "MTLSamplerDescriptor.setMinFilter.negative",
+      "badness": "negative",
+      "unguarded": "tolerated",
+      "param_kind": "ulong",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "MTLSamplerDescriptor",
+      "selector": "setMagFilter:",
+      "param": "magFilter",
+      "param_index": 0,
+      "probe_id": "MTLSamplerDescriptor.setMagFilter.negative",
+      "badness": "negative",
+      "unguarded": "tolerated",
+      "param_kind": "ulong",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "MTLSamplerDescriptor",
+      "selector": "setMipFilter:",
+      "param": "mipFilter",
+      "param_index": 0,
+      "probe_id": "MTLSamplerDescriptor.setMipFilter.negative",
+      "badness": "negative",
+      "unguarded": "tolerated",
+      "param_kind": "ulong",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "MTLSamplerDescriptor",
+      "selector": "setMaxAnisotropy:",
+      "param": "maxAnisotropy",
+      "param_index": 0,
+      "probe_id": "MTLSamplerDescriptor.setMaxAnisotropy.negative",
+      "badness": "negative",
+      "unguarded": "tolerated",
+      "param_kind": "ulong",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "MTLSamplerDescriptor",
+      "selector": "setSAddressMode:",
+      "param": "sAddressMode",
+      "param_index": 0,
+      "probe_id": "MTLSamplerDescriptor.setSAddressMode.negative",
+      "badness": "negative",
+      "unguarded": "tolerated",
+      "param_kind": "ulong",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "MTLSamplerDescriptor",
+      "selector": "setTAddressMode:",
+      "param": "tAddressMode",
+      "param_index": 0,
+      "probe_id": "MTLSamplerDescriptor.setTAddressMode.negative",
+      "badness": "negative",
+      "unguarded": "tolerated",
+      "param_kind": "ulong",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "MTLSamplerDescriptor",
+      "selector": "setRAddressMode:",
+      "param": "rAddressMode",
+      "param_index": 0,
+      "probe_id": "MTLSamplerDescriptor.setRAddressMode.negative",
+      "badness": "negative",
+      "unguarded": "tolerated",
+      "param_kind": "ulong",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "MTLSamplerDescriptor",
+      "selector": "setBorderColor:",
+      "param": "borderColor",
+      "param_index": 0,
+      "probe_id": "MTLSamplerDescriptor.setBorderColor.negative",
+      "badness": "negative",
+      "unguarded": "tolerated",
+      "param_kind": "ulong",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "MTLSamplerDescriptor",
+      "selector": "setReductionMode:",
+      "param": "reductionMode",
+      "param_index": 0,
+      "probe_id": "MTLSamplerDescriptor.setReductionMode.negative",
+      "badness": "negative",
+      "unguarded": "tolerated",
+      "param_kind": "ulong",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "MTLSamplerDescriptor",
+      "selector": "setLodMinClamp:",
+      "param": "lodMinClamp",
+      "param_index": 0,
+      "probe_id": "MTLSamplerDescriptor.setLodMinClamp.inf",
+      "badness": "inf",
+      "unguarded": "tolerated",
+      "param_kind": "float",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "MTLSamplerDescriptor",
+      "selector": "setLodMinClamp:",
+      "param": "lodMinClamp",
+      "param_index": 0,
+      "probe_id": "MTLSamplerDescriptor.setLodMinClamp.nan",
+      "badness": "nan",
+      "unguarded": "tolerated",
+      "param_kind": "float",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "MTLSamplerDescriptor",
+      "selector": "setLodMaxClamp:",
+      "param": "lodMaxClamp",
+      "param_index": 0,
+      "probe_id": "MTLSamplerDescriptor.setLodMaxClamp.inf",
+      "badness": "inf",
+      "unguarded": "tolerated",
+      "param_kind": "float",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "MTLSamplerDescriptor",
+      "selector": "setLodMaxClamp:",
+      "param": "lodMaxClamp",
+      "param_index": 0,
+      "probe_id": "MTLSamplerDescriptor.setLodMaxClamp.nan",
+      "badness": "nan",
+      "unguarded": "tolerated",
+      "param_kind": "float",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "MTLSamplerDescriptor",
+      "selector": "setLodBias:",
+      "param": "lodBias",
+      "param_index": 0,
+      "probe_id": "MTLSamplerDescriptor.setLodBias.inf",
+      "badness": "inf",
+      "unguarded": "tolerated",
+      "param_kind": "float",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "MTLSamplerDescriptor",
+      "selector": "setLodBias:",
+      "param": "lodBias",
+      "param_index": 0,
+      "probe_id": "MTLSamplerDescriptor.setLodBias.nan",
+      "badness": "nan",
+      "unguarded": "tolerated",
+      "param_kind": "float",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "MTLSamplerDescriptor",
+      "selector": "setCompareFunction:",
+      "param": "compareFunction",
+      "param_index": 0,
+      "probe_id": "MTLSamplerDescriptor.setCompareFunction.negative",
+      "badness": "negative",
+      "unguarded": "tolerated",
+      "param_kind": "ulong",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
     }
   ],
   "enumerated_with": "codegen/probe.py --enumerate (nil/NaN/index candidates derived from the generator's plans)",

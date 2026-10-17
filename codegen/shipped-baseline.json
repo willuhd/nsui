@@ -1122,6 +1122,20 @@
     "NSGridView.moveColumnAtIndexToIndex.index.0_fromIndex": "java-exception",
     "NSGridView.moveColumnAtIndexToIndex.index.1_toIndex": "java-exception",
     "NSGridView.moveRowAtIndexToIndex.index.0_fromIndex": "java-exception",
-    "NSGridView.moveRowAtIndexToIndex.index.1_toIndex": "java-exception"
+    "NSGridView.moveRowAtIndexToIndex.index.1_toIndex": "java-exception",
+    "MTLDepthStencilDescriptor.setDepthCompareFunction.negative": "tolerated",
+    "MTLSamplerDescriptor.setMinFilter.negative": "tolerated",
+    "MTLSamplerDescriptor.setMagFilter.negative": "tolerated",
+    "MTLSamplerDescriptor.setMipFilter.negative": "tolerated",
+    "MTLSamplerDescriptor.setMaxAnisotropy.negative": "tolerated",
+    "MTLSamplerDescriptor.setSAddressMode.negative": "tolerated",
+    "MTLSamplerDescriptor.setTAddressMode.negative": "tolerated",
+    "MTLSamplerDescriptor.setRAddressMode.negative": "tolerated",
+    "MTLSamplerDescriptor.setBorderColor.negative": "tolerated",
+    "MTLSamplerDescriptor.setLodMinClamp.inf": "tolerated",
+    "MTLSamplerDescriptor.setLodMinClamp.nan": "tolerated",
+    "MTLSamplerDescriptor.setLodMaxClamp.inf": "tolerated",
+    "MTLSamplerDescriptor.setLodMaxClamp.nan": "tolerated",
+    "MTLSamplerDescriptor.setCompareFunction.negative": "tolerated"
   }
 }

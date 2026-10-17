@@ -23,7 +23,10 @@ generated wrapper rejects it only because of the evidence (STRICTER-GUARD); when
 build rejects it too, the difference is in the generated body (STRICTER-BODY).
 
 Exit codes are read directly: 0 tolerated, 1 a Java exception (a guard fired), 134 uncaught ObjC
-exception, 133 SIGTRAP (NaN geometry), 132 SIGILL (self/ancestor cycle).
+exception, 133 SIGTRAP (NaN geometry), 132 SIGILL (self/ancestor cycle). One exception: an abort
+exit whose captured output already holds the guard's IAE (IllegalArgumentException through a
+Bounds frame) reads as java-exception — a stateful teardown can abort the process after the
+guard fired, and the guard, not the teardown, is what the measurement attributes.
 """
 
 import argparse
@@ -768,8 +771,19 @@ def run_cases(repo, cases, timeout=25, generated=None, use_evidence=True):
             verdict = "no-receiver"        # the wrapper was never reached, so nothing was measured
         else:
             verdict = VERDICTS.get(rc, "exit-%d" % rc)
+        guard_fired = False
+        if verdict in STRICTER and "IllegalArgumentException" in text and "Bounds." in text:
+            # The guard threw before the native abort: an open Metal encoder's teardown
+            # asserts at process exit even when the IAE fired first (viewport INF reads
+            # exit 134 with the guard's IAE line already printed). Attribute the outcome
+            # to the guard, so the differential files it as fixed rather than STILL-ABORTS.
+            # Both markers are required: a bare IAE match would also fire on setup or
+            # chained exceptions, and only a Bounds frame proves the guard itself threw.
+            guard_fired = True
+            verdict = "java-exception"
         results.append({"id": c["id"], "class": c["class"], "guard": c["guard"],
-                        "param": c.get("param"), "exit": rc, "verdict": verdict, "tail": tail})
+                        "param": c.get("param"), "exit": rc, "verdict": verdict, "tail": tail,
+                        "guard_fired": guard_fired})
         print("%-52s exit=%-4s %s" % (c["id"], rc, verdict))
     shutil.rmtree(os.path.dirname(probe_out), ignore_errors=True)
     return results

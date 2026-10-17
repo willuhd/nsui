@@ -171,6 +171,19 @@ public final class AppCoverageTest {
                                     + byPid.processIdentifier() + ", asked " + pid + ")");
                 }
             } catch (Throwable t) { TestKit.check(false, "runningApplicationWithProcessIdentifier threw: " + t); }
+            // pid_t is 32 bits: values outside the int range truncated before
+            // the guard (2^31 became -2^31). -1 stays accepted: processes
+            // without a pid report -1.
+            TestKit.expectThrows("runningApplicationWithProcessIdentifier(2^31) rejected", IllegalArgumentException.class,
+                    () -> NSRunningApplication.runningApplicationWithProcessIdentifier(2147483648L));
+            TestKit.expectThrows("runningApplicationWithProcessIdentifier(-2^31-1) rejected", IllegalArgumentException.class,
+                    () -> NSRunningApplication.runningApplicationWithProcessIdentifier(-2147483649L));
+            TestKit.expectThrows("runningApplicationWithProcessIdentifier(Long.MAX_VALUE) rejected", IllegalArgumentException.class,
+                    () -> NSRunningApplication.runningApplicationWithProcessIdentifier(Long.MAX_VALUE));
+            TestKit.noThrow("runningApplicationWithProcessIdentifier(-1/0) accepted", () -> {
+                NSRunningApplication.runningApplicationWithProcessIdentifier(-1L);
+                NSRunningApplication.runningApplicationWithProcessIdentifier(0L);
+            });
             // Bundle-id lookup with our own id (may be nil without bundle metadata) — no crash is pass.
             try {
                 String bid = cur.bundleIdentifier();

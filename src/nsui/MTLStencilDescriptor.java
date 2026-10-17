@@ -102,6 +102,10 @@ public final class MTLStencilDescriptor extends NSObject {
 
     /// setReadMask: — uint32_t (exact 32-bit INT32 call shape).
     public void setReadMask(long mask) {
+        if (mask < 0 || mask > 0xFFFFFFFFL) {
+            throw new IllegalArgumentException("setReadMask: mask " + mask
+                    + " out of range (0..4294967295)");
+        }
         try {
             ObjC.handle(Sig.of(Ret.VOID, Arg.INT32)).invokeExact(peer, ObjC.sel("setReadMask:"), (int) mask);
         } catch (Throwable t) { throw new RuntimeException("setReadMask: failed", t); }
@@ -119,6 +123,10 @@ public final class MTLStencilDescriptor extends NSObject {
 
     /// setWriteMask: — uint32_t (exact 32-bit INT32 call shape).
     public void setWriteMask(long mask) {
+        if (mask < 0 || mask > 0xFFFFFFFFL) {
+            throw new IllegalArgumentException("setWriteMask: mask " + mask
+                    + " out of range (0..4294967295)");
+        }
         try {
             ObjC.handle(Sig.of(Ret.VOID, Arg.INT32)).invokeExact(peer, ObjC.sel("setWriteMask:"), (int) mask);
         } catch (Throwable t) { throw new RuntimeException("setWriteMask: failed", t); }

@@ -54,6 +54,10 @@ public final class NSNumber extends NSValue {
 
     /// numberWithInt: (C `int`, 32-bit — exact INT32 call shape).
     public static NSNumber numberWithInt(long value) {
+        if (value < Integer.MIN_VALUE || value > Integer.MAX_VALUE) {
+            throw new IllegalArgumentException("numberWithInt: value " + value
+                    + " out of int range (" + Integer.MIN_VALUE + ".." + Integer.MAX_VALUE + ")");
+        }
         ensureNumInit();
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.INT32));
@@ -99,6 +103,10 @@ public final class NSNumber extends NSValue {
 
     /// numberWithChar: (C char, 1 byte).
     public static NSNumber numberWithChar(long value) {
+        if (value < Byte.MIN_VALUE || value > Byte.MAX_VALUE) {
+            throw new IllegalArgumentException("numberWithChar: value " + value
+                    + " out of char range (" + Byte.MIN_VALUE + ".." + Byte.MAX_VALUE + ")");
+        }
         ensureNumInit();
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.BYTE));
@@ -119,6 +127,10 @@ public final class NSNumber extends NSValue {
 
     /// numberWithShort: (C short, 2 bytes).
     public static NSNumber numberWithShort(long value) {
+        if (value < Short.MIN_VALUE || value > Short.MAX_VALUE) {
+            throw new IllegalArgumentException("numberWithShort: value " + value
+                    + " out of short range (" + Short.MIN_VALUE + ".." + Short.MAX_VALUE + ")");
+        }
         ensureNumInit();
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.SHORT));

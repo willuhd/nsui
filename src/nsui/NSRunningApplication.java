@@ -152,6 +152,10 @@ public final class NSRunningApplication extends NSObject {
     /// runningApplicationWithProcessIdentifier: (nil when no app has that pid).
     /// pid_t is a 32-bit int — exact INT32 call shape.
     public static NSRunningApplication runningApplicationWithProcessIdentifier(long pid) {
+        if (pid < Integer.MIN_VALUE || pid > Integer.MAX_VALUE) {
+            throw new IllegalArgumentException("runningApplicationWithProcessIdentifier: pid " + pid
+                    + " out of int range (" + Integer.MIN_VALUE + ".." + Integer.MAX_VALUE + ")");
+        }
         try {
             MemorySegment p = (MemorySegment) ObjC.handle(Sig.of(Ret.ID, Arg.INT32)).invokeExact(
                     ObjC.cls("NSRunningApplication"), ObjC.sel("runningApplicationWithProcessIdentifier:"), (int) pid);

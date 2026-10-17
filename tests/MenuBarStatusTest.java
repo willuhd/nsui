@@ -94,6 +94,32 @@ public final class MenuBarStatusTest {
             check(itemConv != null && itemConv.peer().address() != 0, "NSStatusBar.statusItem() convenience non-nil");
             bar.removeStatusItem(itemConv);
             TestKit.probe("removeStatusItem convenience item no crash");
+            // Lengths above 10000 abort natively (verified: 10000 accepted,
+            // 10001 and +Inf raise "maximum is 10000"); -Inf aborts on layout
+            // via _adjustLength, so it is rejected too. NaN and negatives are
+            // tolerated, so they stay accepted.
+            final NSStatusBar fbar = bar;
+            final NSStatusItem fvar = itemVar;
+            TestKit.expectThrows("statusItemWithLength(10001) rejected", IllegalArgumentException.class,
+                    () -> fbar.statusItemWithLength(10001.0));
+            TestKit.expectThrows("statusItemWithLength(+Inf) rejected", IllegalArgumentException.class,
+                    () -> fbar.statusItemWithLength(Double.POSITIVE_INFINITY));
+            TestKit.expectThrows("statusItemWithLength(-Inf) rejected", IllegalArgumentException.class,
+                    () -> fbar.statusItemWithLength(Double.NEGATIVE_INFINITY));
+            TestKit.expectThrows("setLength(10001) rejected", IllegalArgumentException.class,
+                    () -> fvar.setLength(10001.0));
+            TestKit.expectThrows("setLength(-Inf) rejected", IllegalArgumentException.class,
+                    () -> fvar.setLength(Double.NEGATIVE_INFINITY));
+            TestKit.noThrow("statusItemWithLength(10000) accepted", () -> {
+                NSStatusItem atMax = fbar.statusItemWithLength(10000.0);
+                fbar.removeStatusItem(atMax);
+            });
+            TestKit.noThrow("setLength tolerates -1/-2/NaN", () -> {
+                fvar.setLength(-1.0);
+                fvar.setLength(-2.0);
+                fvar.setLength(Double.NaN);
+                fvar.setLength(NSStatusBar.VARIABLE_LENGTH);
+            });
         } catch (Throwable t) {
             check(false, "statusItem creation threw: " + t);
             t.printStackTrace(System.out);

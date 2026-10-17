@@ -634,6 +634,31 @@ public final class MetalDepthStencilTest {
         TestKit.expectThrows("pipeline colorAttachment(99) rejected",
                 IllegalArgumentException.class, () -> pipeForGuard.colorAttachment(99));
 
+        MTLRenderPassDescriptor encPass = MTLRenderPassDescriptor.create();
+        encPass.colorAttachment(0).setTexture(color);
+        encPass.colorAttachment(0).setLoadAction(LOAD_LOAD);
+        encPass.colorAttachment(0).setStoreAction(STORE_STORE);
+        MemorySegment encPool = Autorelease.push();
+        try {
+            MTLCommandBuffer ecb = queue.commandBuffer();
+            MTLRenderCommandEncoder enc = ecb.renderEncoder(encPass);
+            TestKit.noThrow("setStencilReferenceValue(0) accepted", () -> enc.setStencilReferenceValue(0L));
+            TestKit.noThrow("setStencilReferenceValue(max) accepted", () -> enc.setStencilReferenceValue(0xFFFFFFFFL));
+            TestKit.expectThrows("setStencilReferenceValue(-1) rejected",
+                    IllegalArgumentException.class, () -> enc.setStencilReferenceValue(-1L));
+            TestKit.expectThrows("setStencilReferenceValue(0x1_00000000) rejected",
+                    IllegalArgumentException.class, () -> enc.setStencilReferenceValue(0x1_00000000L));
+            TestKit.expectThrows("setStencilFrontReferenceValue front out-of-range rejected",
+                    IllegalArgumentException.class, () -> enc.setStencilFrontReferenceValue(-1L, 0L));
+            TestKit.expectThrows("setStencilFrontReferenceValue back out-of-range rejected",
+                    IllegalArgumentException.class, () -> enc.setStencilFrontReferenceValue(0L, 0x1_00000000L));
+            enc.endEncoding();
+            ecb.commit();
+            ecb.waitUntilCompleted();
+        } finally {
+            Autorelease.pop(encPool);
+        }
+
         TestKit.check(color.pixelFormat() == COLOR_FORMAT, "colour texture reports BGRA8Unorm");
     }
 }

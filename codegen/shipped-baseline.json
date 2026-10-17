@@ -1116,6 +1116,9 @@
     "NSWorkspace.URLsForApplicationsToOpenContentType.nil": "objc-abort",
     "NSWorkspace.openFile.nil": "tolerated",
     "NSWorkspace.launchApplication.nil": "tolerated",
-    "NSWorkspace.iconForFileType.nil": "tolerated"
+    "NSWorkspace.iconForFileType.nil": "tolerated",
+    "NSClipView.scrollToPoint.inf": "tolerated",
+    "NSClipView.constrainBoundsRect.inf": "tolerated",
+    "MTLRenderCommandEncoder.setViewport.inf": "java-exception"
   }
 }

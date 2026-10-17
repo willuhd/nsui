@@ -18297,6 +18297,150 @@
       "guards": [
         "Bounds.nonNull({p}, \"setObjectValue:\");"
       ]
+    },
+    {
+      "class": "NSBox",
+      "selector": "setContentViewMargins:",
+      "param": "contentViewMargins",
+      "param_index": 0,
+      "probe_id": "NSBox.setContentViewMargins.inf",
+      "badness": "inf",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSBox",
+      "selector": "setFrameFromContentFrame:",
+      "param": "contentFrame",
+      "param_index": 0,
+      "probe_id": "NSBox.setFrameFromContentFrame.inf",
+      "badness": "inf",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSBox",
+      "selector": "setBorderWidth:",
+      "param": "borderWidth",
+      "param_index": 0,
+      "probe_id": "NSBox.setBorderWidth.inf",
+      "badness": "inf",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSBox",
+      "selector": "setCornerRadius:",
+      "param": "cornerRadius",
+      "param_index": 0,
+      "probe_id": "NSBox.setCornerRadius.inf",
+      "badness": "inf",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSClipView",
+      "selector": "scrollToPoint:",
+      "param": "newOrigin",
+      "param_index": 0,
+      "probe_id": "NSClipView.scrollToPoint.inf",
+      "badness": "inf",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSClipView",
+      "selector": "constrainBoundsRect:",
+      "param": "proposedBounds",
+      "param_index": 0,
+      "probe_id": "NSClipView.constrainBoundsRect.inf",
+      "badness": "inf",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSClipView",
+      "selector": "constrainScrollPoint:",
+      "param": "newOrigin",
+      "param_index": 0,
+      "probe_id": "NSClipView.constrainScrollPoint.inf",
+      "badness": "inf",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSSlider",
+      "selector": "setMinValue:",
+      "param": "minValue",
+      "param_index": 0,
+      "probe_id": "NSSlider.setMinValue.inf",
+      "badness": "inf",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSSlider",
+      "selector": "setMaxValue:",
+      "param": "maxValue",
+      "param_index": 0,
+      "probe_id": "NSSlider.setMaxValue.inf",
+      "badness": "inf",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSSlider",
+      "selector": "setNeutralValue:",
+      "param": "neutralValue",
+      "param_index": 0,
+      "probe_id": "NSSlider.setNeutralValue.inf",
+      "badness": "inf",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSSlider",
+      "selector": "setAltIncrementValue:",
+      "param": "altIncrementValue",
+      "param_index": 0,
+      "probe_id": "NSSlider.setAltIncrementValue.inf",
+      "badness": "inf",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSSlider",
+      "selector": "setKnobThickness:",
+      "param": "thickness",
+      "param_index": 0,
+      "probe_id": "NSSlider.setKnobThickness.inf",
+      "badness": "inf",
+      "unguarded": "tolerated",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "MTLRenderCommandEncoder",
+      "selector": "setViewport:",
+      "param": "viewport",
+      "param_index": 0,
+      "probe_id": "MTLRenderCommandEncoder.setViewport.inf",
+      "badness": "inf",
+      "unguarded": "objc-abort",
+      "guards": [
+        "Bounds.finite({p}, \"setViewport:\");"
+      ]
     }
   ],
   "enumerated_with": "codegen/probe.py --enumerate (nil/NaN/index candidates derived from the generator's plans)",

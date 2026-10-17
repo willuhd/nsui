@@ -179,6 +179,18 @@ def struct_kind(t):
         return "MTLVIEWPORT"
     if name in ("MTLScissorRect", "_MTLScissorRect"):
         return "MTLSCISSORRECT"
+    # R1-live: the runtime strips the typedef name for by-value Metal structs, encoding
+    # setViewport:/setScissorRect: as `{?=dddddd}` / `{?=QQQQ}` (anonymous `?`). The field
+    # pattern is the only signal left. 6 doubles is the viewport (48 bytes, unique in the
+    # Metal headers; MTLClearColor is 4 doubles), 4 Qs the scissor rect (32 bytes; MTLRegion
+    # is 6 Qs in two triples, MTLOrigin/MTLSize 3 Qs each). Named structs still win above.
+    if name in ("?", ""):
+        eq = t.find("=")
+        fields = t[eq + 1:-1] if eq > 0 else ""
+        if fields == "dddddd":
+            return "MTLVIEWPORT"
+        if fields == "QQQQ":
+            return "MTLSCISSORRECT"
     return "OTHER"
 
 

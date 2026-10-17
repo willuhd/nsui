@@ -818,6 +818,11 @@ def guard_template(case, param_kind=None):
     # per-selector maxima such as MAX_BUFFER_SLOTS). Signed longs never reach here:
     # the probe only synthesizes negatives for unsigned kinds.
     if badness == "negative":
+        # The scissor struct has no whole-value nonNegative overload; emit the 4
+        # component guards null-first so the generated method compiles. Scalars
+        # keep the single form.
+        if param_kind == "mtlscissorrect" or case.get("param_kind") == "mtlscissorrect":
+            return struct_decomposition("mtlscissorrect", "{p}", sel)
         return ['Bounds.nonNegative({p}, "%s");' % sel]
     return []
 
@@ -1950,6 +1955,14 @@ def gen_classes(args, sdk, vocab, wrappers, rt):
                         wanted = struct_decomposition("mtlviewport", "{p}", q.decl.selector)
                         lines.append("    GUARD-DECOMPOSED %s%s  [viewport INF expands to 6x finite "
                                      "null-first]" % ("+" if q.is_class else "", q.decl.selector))
+                # A stored single nonNegative for a scissor rect expands the same way:
+                # the evidence row keeps one guard, the emitter needs four + null-first.
+                if target_kind == "mtlscissorrect" and case.get("badness") == "negative" and wanted:
+                    if not any(".x()" in g for g in wanted):
+                        wanted = struct_decomposition("mtlscissorrect", "{p}", q.decl.selector)
+                        lines.append("    GUARD-DECOMPOSED %s%s  [scissor negative expands to 4x "
+                                     "nonNegative null-first]" % ("+" if q.is_class else "",
+                                                                  q.decl.selector))
                 if not wanted and case.get("control") and shipped in (
                         "java-exception", "objc-abort", "sigtrap", "sigill"):
                     # Measured: the generated wrapper tolerates an argument the shipped wrapper
@@ -2009,16 +2022,18 @@ def gen_classes(args, sdk, vocab, wrappers, rt):
                     continue          # reported as a match; its guard is in the list once
                 lines.append("    GUARD %s%s  [measured %s]" % (
                     "+" if q.is_class else "", q.decl.selector, case.get("unguarded")))
-            # R2: type-driven struct policy. The probe has no negative candidate for ulong
-            # structs, so setScissorRect: carries no evidence row; negatives are still always
-            # caller errors (live: neg-w aborts 134 with validation, finite tolerated, huge
-            # target-dependent so only nonNegative is safe). Emit 4x nonNegative null-first
-            # whenever the method takes a scissor rect and has no guard for it yet, so the
-            # generated wrapper matches the hand-written one without a per-class exception.
+            # R2: type-driven struct policy. The probe now synthesizes a negative-width
+            # scissor candidate, but no evidence row is measured yet; negatives are still
+            # always caller errors (live: neg-w aborts 134 with validation, finite
+            # tolerated, huge target-dependent so only nonNegative is safe). Emit 4x
+            # nonNegative null-first whenever the method takes a scissor rect and has no
+            # guard for it yet, so the generated wrapper matches the hand-written one
+            # without a per-class exception. Once a negative row is measured the evidence
+            # path above (GUARD-DECOMPOSED) takes over and this is skipped as guarded.
             # Viewport is evidence-driven (R1 row) and already decomposed above; if a future
             # viewport method arrives with no evidence, the same type policy would apply, but
             # emitting it unconditionally would hide a missing measurement, so only scissor
-            # (which cannot be measured as INF) is unconditional here.
+            # (whose only candidate is the new negative form) is unconditional here.
             for k, _jt, nm in q.params:
                 if k != "mtlscissorrect" or q.is_class:
                     continue

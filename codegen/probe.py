@@ -184,6 +184,11 @@ def _bad_expr(kind, badness):
             return "-1"
         if kind == "uint32":
             return "-1"
+        # Scissor components are NSUInteger-backed with no signed form: a negative
+        # width is the caller error the validation layer aborts on (neg-w exits 134
+        # with validation, finite tolerated). One bad component preserves attribution.
+        if kind == "mtlscissorrect":
+            return "new MTLScissorRect(0, 0, -1, 10)"
         return _default_expr(kind)
     # R1-live: INF synthesis. Double.POSITIVE_INFINITY inside a struct (or as a bare double)
     # is the Metal viewport abort; AppKit geometry tolerates it, so those rows become controls.
@@ -375,6 +380,13 @@ def _cases_for_class(cls, plans, wrappers, recv_expr, ancestors=None, skip_cases
         for i, (k, _j, n) in enumerate(kinds):
             if k in ("ulong", "uint32") and not is_index(n):
                 wanted.append((i, "negative"))
+        # Scissor negative: exactly one scissor rect gets a negative-width case.
+        # The struct has no INF form (unlike the viewport), so this is its only
+        # measured candidate; the single-bad-component rule keeps the abort
+        # attributable when other parameters are present.
+        scissors = [i for i, (k, _j, _n) in enumerate(kinds) if k == "mtlscissorrect"]
+        if len(scissors) == 1:
+            wanted.append((scissors[0], "negative"))
         for target, badness in wanted:
             args = [_bad_expr(k, badness) if i == target else _default_expr(k)
                     for i, (k, _j, _n) in enumerate(kinds)]

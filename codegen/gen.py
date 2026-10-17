@@ -218,7 +218,40 @@ PRIMITIVES = {
     # R1: the INF-finite emitter needs Bounds.finite; registering it here keeps the
     # "only emit what the target provides" rule instead of adding a per-class exception.
     "Bounds.finite": ("src/nsui/Bounds.java", r"\bfinite\s*\("),
+    # R2: the scissor decomposition emits Bounds.nonNegative; same rule — the target must
+    # provide it, otherwise the guard is reported GUARD-UNAVAILABLE rather than emitted broken.
+    "Bounds.nonNegative": ("src/nsui/Bounds.java", r"\bnonNegative\s*\("),
 }
+
+
+# R2: viewport/scissor decomposition. A struct value type has no Bounds overload for the whole
+# value, so each component is validated. Messages match the hand-written wrappers
+# (MTLRenderCommandEncoder.setViewport:/setScissorRect:) so a reader sees one policy.
+VIEWPORT_COMPONENTS = ("originX", "originY", "width", "height", "znear", "zfar")
+SCISSOR_COMPONENTS = ("x", "y", "width", "height")
+
+
+def struct_decomposition(kind, param, selector):
+    """6xfinite null-first for MTLVIEWPORT, 4xnonNegative for MTLSCISSORRECT, else None.
+
+    Null-first: the component guards dereference the struct, so a null value would throw
+    NullPointerException at the accessor instead of IllegalArgumentException. The nonNull
+    guard needs no setup and fails fast; render_method's null-first hoist emits it above
+    the rest (R4), so the order here is documentation — the hoist is what guarantees it.
+    The {p} placeholder form is for guard_template (replaced with the target later); a real
+    parameter name works the same for the type-driven path in gen_classes.
+    """
+    if kind == "mtlviewport":
+        guards = ['Bounds.nonNull(%s, "%s");' % (param, selector)]
+        guards += ['Bounds.finite(%s.%s(), "%s (%s)");' % (param, comp, selector, comp)
+                   for comp in VIEWPORT_COMPONENTS]
+        return guards
+    if kind == "mtlscissorrect":
+        guards = ['Bounds.nonNull(%s, "%s");' % (param, selector)]
+        guards += ['Bounds.nonNegative(%s.%s(), "%s (%s)");' % (param, comp, selector, comp)
+                   for comp in SCISSOR_COMPONENTS]
+        return guards
+    return None
 
 
 class Toolkit:
@@ -753,13 +786,15 @@ def bound_is_usable(bound, plans, repo):
     return True
 
 
-def guard_template(case):
+def guard_template(case, param_kind=None):
     """The guard statement for a measured case, derived from what was measured.
 
     The evidence stores the statement for the cases it emitted from, and for a control — a call the
     generated wrapper tolerated — the kind is enough: a nil argument takes nonNull, NaN geometry
     notNaN, a non-finite (infinite or NaN) double takes finite, and an index takes the bound the
-    shipped wrapper uses.
+    shipped wrapper uses. R2: a viewport INF case decomposes to 6 component finite guards
+    null-first (a single finite does not compile for a struct param); the kind comes from the
+    plan when the control needs a guard to match the shipped wrapper (GUARD-MATCH).
     """
     sel, badness = case.get("selector"), case.get("badness")
     if badness == "nil":
@@ -770,6 +805,10 @@ def guard_template(case):
     # viewport validation aborts on infinite as well as NaN ("must not be infinite or NaN",
     # exit 134); Bounds.finite is the separate helper for that policy.
     if badness == "inf":
+        # R2: the viewport struct has no whole-value finite overload; emit the 6 component
+        # guards null-first so the generated method compiles. Scalars keep the single form.
+        if param_kind == "mtlviewport" or case.get("param_kind") == "mtlviewport":
+            return struct_decomposition("mtlviewport", "{p}", sel)
         return ['Bounds.finite({p}, "%s");' % sel]
     if badness == "index" and case.get("bound"):
         return ['Bounds.index({p}, %s, "%s");' % (case["bound"], sel)]
@@ -861,11 +900,14 @@ def render_method(p, class_name):
         if p.ret_java in STRUCT_JAVA.values():
             default = p.ret_java + ".ZERO"
         lines.append("        if (%s == null) return%s;" % (name, (" " + default) if default else ""))
-    # R4: null-first hoist. A component guard such as Bounds.finite(viewport.originX(), ...)
+    # R4 + R2: null-first hoist. A component guard such as Bounds.finite(viewport.originX(), ...)
     # dereferences its struct parameter, so a null viewport would throw NullPointerException at
     # the accessor instead of the documented IllegalArgumentException. Hoist every
     # Bounds.nonNull guard above guard_setup and the remaining guards: nonNull needs no setup
-    # local, and failing fast on null keeps the later statements from observing it.
+    # local, and failing fast on null keeps the later statements from observing it. R2's
+    # viewport (6x finite) and scissor (4x nonNegative) decompositions rely on this: they emit
+    # nonNull first, and the hoist is what guarantees it stays first even when guard_setup
+    # exists.
     _null_guards = [g for g in (getattr(p, "guards", []) or []) if "Bounds.nonNull" in g]
     _rest_guards = [g for g in (getattr(p, "guards", []) or []) if "Bounds.nonNull" not in g]
     for guard in _null_guards:
@@ -1889,11 +1931,23 @@ def gen_classes(args, sdk, vocab, wrappers, rt):
                     lines.append("    GUARD-MISS %s  [no parameter named %s]" % (
                         q.decl.selector, case.get("param")))
                     continue
+                # R2: the parameter kind, for struct decomposition (viewport needs 6
+                # component guards; a single finite does not compile for a struct param).
+                target_kind = next((k for k, _jt, nm in q.params if nm == target), None)
+                # R2: expand the R1 single-finite scaffolding to the compilable 6x form.
+                # The evidence row stores one finite; the emitter needs six + null-first.
+                if target_kind == "mtlviewport" and case.get("badness") == "inf" and wanted:
+                    # Only the single form needs expanding; a row that already stores the
+                    # decomposition (future probe with param_kind) passes through unchanged.
+                    if not any(".originX()" in g for g in wanted):
+                        wanted = struct_decomposition("mtlviewport", "{p}", q.decl.selector)
+                        lines.append("    GUARD-DECOMPOSED %s%s  [viewport INF expands to 6x finite "
+                                     "null-first]" % ("+" if q.is_class else "", q.decl.selector))
                 if not wanted and case.get("control") and shipped in (
                         "java-exception", "objc-abort", "sigtrap", "sigill"):
                     # Measured: the generated wrapper tolerates an argument the shipped wrapper
                     # rejects. Matching it is conformance, not extra strictness.
-                    wanted = guard_template(case)
+                    wanted = guard_template(case, target_kind)
                     if wanted:
                         lines.append("    GUARD-MATCH %s%s  [the shipped wrapper rejects this "
                                      "argument]" % ("+" if q.is_class else "", q.decl.selector))
@@ -1948,6 +2002,30 @@ def gen_classes(args, sdk, vocab, wrappers, rt):
                     continue          # reported as a match; its guard is in the list once
                 lines.append("    GUARD %s%s  [measured %s]" % (
                     "+" if q.is_class else "", q.decl.selector, case.get("unguarded")))
+            # R2: type-driven struct policy. The probe has no negative candidate for ulong
+            # structs, so setScissorRect: carries no evidence row; negatives are still always
+            # caller errors (live: neg-w aborts 134 with validation, finite tolerated, huge
+            # target-dependent so only nonNegative is safe). Emit 4x nonNegative null-first
+            # whenever the method takes a scissor rect and has no guard for it yet, so the
+            # generated wrapper matches the hand-written one without a per-class exception.
+            # Viewport is evidence-driven (R1 row) and already decomposed above; if a future
+            # viewport method arrives with no evidence, the same type policy would apply, but
+            # emitting it unconditionally would hide a missing measurement, so only scissor
+            # (which cannot be measured as INF) is unconditional here.
+            for k, _jt, nm in q.params:
+                if k != "mtlscissorrect" or q.is_class:
+                    continue
+                if any(re.search(r"\b%s\b" % re.escape(nm), g) for g in q.guards):
+                    continue
+                dec = struct_decomposition("mtlscissorrect", nm, q.decl.selector)
+                need = [g.split("(")[0] for g in dec]
+                if any(n in PRIMITIVES and not toolkit.has(n) for n in need):
+                    lines.append("    GUARD-UNAVAILABLE %s  [target tree lacks %s]" % (
+                        q.decl.selector, ", ".join(need)))
+                    continue
+                q.guards.extend(dec)
+                lines.append("    GUARD-TYPE %s%s  [scissor 4x nonNegative null-first]" % (
+                    "+" if q.is_class else "", q.decl.selector))
         # A member typed by a class this same run creates is not reproducible by a later run that
         # generates only this class (the other file may be missing): say so rather than let the
         # output drift silently between a batch and an incremental regeneration.

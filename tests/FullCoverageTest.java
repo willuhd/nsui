@@ -305,8 +305,10 @@ public final class FullCoverageTest {
             check(backing.width()>0, "convertRectToBacking");
             v.setWantsLayer(true); check(v.wantsLayer(), "wantsLayer true");
             v.setWantsLayer(false);
-            check(v.autoresizesSubviews() || !v.autoresizesSubviews(), "autoresizesSubviews");
-            v.setAutoresizesSubviews(true);
+            // The old ||-both-ways check passed whatever the flag held and evaded the
+            // tautology gate; toggle both directions so the setter is actually verified.
+            v.setAutoresizesSubviews(false); check(!v.autoresizesSubviews(), "autoresizesSubviews false after set");
+            v.setAutoresizesSubviews(true); check(v.autoresizesSubviews(), "autoresizesSubviews true after set");
             check(v.translatesAutoresizingMaskIntoConstraints(), "translates");
             v.setTranslatesAutoresizingMaskIntoConstraints(false);
             // anchors

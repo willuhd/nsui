@@ -354,7 +354,7 @@ def param_name(raw, i):
 class Plan:
     __slots__ = ("decl", "shape", "enc", "kind", "is_class", "skip", "reason",
                  "java_name", "field", "handle", "params", "ret_kind", "ret_java", "renamed_from",
-                 "guards", "guard_setup", "nil_skips", "is_constructor")
+                 "guards", "guard_setup", "nil_skips", "nil_returns", "is_constructor")
 
     def __init__(self, decl):
         self.decl = decl
@@ -373,6 +373,7 @@ class Plan:
         self.guards = []
         self.guard_setup = []
         self.nil_skips = []
+        self.nil_returns = {}
         self.is_constructor = False
         self.ret_java = None
 
@@ -703,6 +704,31 @@ def struct_zero(struct_name, repo):
                                               text) else None
 
 
+# Zero literals for the struct wrappers that declare no ZERO constant (CATransform3D has
+# IDENTITY, the Metal value types have none). A nil-tolerated struct return still needs an
+# early-return default, and adding public ZERO constants would widen the shipped API surface,
+# so the emitter inlines the zero value instead. Each literal must match the record's canonical
+# constructor arity (checked against src/nsui/<Type>.java when this table changes); a field
+# added to one of these records without updating its literal here miscompiles loudly (wrong
+# arity is a compile error, not silent drift).
+STRUCT_ZERO_LITERAL = {
+    "MTLViewport": "new MTLViewport(0, 0, 0, 0, 0, 0)",
+    "MTLScissorRect": "new MTLScissorRect(0, 0, 0, 0)",
+    "MTLRegion": "new MTLRegion(0, 0, 0, 0, 0, 0)",
+    "CATransform3D": "new CATransform3D(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)",
+}
+
+
+def struct_default(struct_name, repo):
+    """The early-return default for a nil-tolerated struct return: `.ZERO`, else the inline literal.
+    Returns None when the tree provides neither (the caller then reports GUARD-SKIPPED).
+    """
+    zero = struct_zero(struct_name, repo)
+    if zero:
+        return zero
+    return STRUCT_ZERO_LITERAL.get(struct_name)
+
+
 def shipped_index_setup(selector, bound, repo, cls):
     """The shipped method's own statements that declare the locals its bound uses.
 
@@ -910,7 +936,11 @@ def render_method(p, class_name):
                    "byte": "(byte) 0", "uint32": "0", "double": "0.0", "float": "0.0f"}.get(
                        p.ret_java, "null")
         if p.ret_java in STRUCT_JAVA.values():
-            default = p.ret_java + ".ZERO"
+            # The default recorded at NIL-SKIP time (.ZERO or the inline literal for
+            # ZERO-less types); the .ZERO form below only fires for plans built before
+            # that record existed.
+            default = ((getattr(p, "nil_returns", {}) or {}).get(name)
+                       or p.ret_java + ".ZERO")
         lines.append("        if (%s == null) return%s;" % (name, (" " + default) if default else ""))
     # R4 + R2: null-first hoist. A component guard such as Bounds.finite(viewport.originX(), ...)
     # dereferences its struct parameter, so a null viewport would throw NullPointerException at
@@ -1977,10 +2007,18 @@ def gen_classes(args, sdk, vocab, wrappers, rt):
                     # stricter than the code it replaces. For nil its own body must be skipping the
                     # send (a nil aborts natively), so match that with an early return.
                     struct_ret = q.ret_java in STRUCT_JAVA.values()
-                    zero = struct_zero(q.ret_java, getattr(args, "repo", ".")) if struct_ret else None
-                    if case.get("badness") == "nil" and (not struct_ret or zero):
+                    default = (struct_default(q.ret_java, getattr(args, "repo", "."))
+                               if struct_ret else "null")
+                    if case.get("badness") == "nil" and (not struct_ret or default):
                         if target not in q.nil_skips:
                             q.nil_skips.append(target)
+                        if struct_ret:
+                            # The renderer inlines this instead of assuming .ZERO, so
+                            # ZERO-less structs (Metal value types, CATransform3D) compile.
+                            # A future selector family needing a non-zero sentinel (the
+                            # NSString search family's NOT_FOUND) wants a per-family override
+                            # here; the generic zero stays until such a method is generated.
+                            q.nil_returns[target] = default
                         lines.append("    NIL-SKIP %s%s  [the shipped wrapper tolerates nil]"
                                      % ("+" if q.is_class else "", q.decl.selector))
                     else:

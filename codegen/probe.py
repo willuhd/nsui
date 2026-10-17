@@ -400,11 +400,25 @@ def _cases_for_class(cls, plans, wrappers, recv_expr, ancestors=None, skip_cases
         scissors = [i for i, (k, _j, _n) in enumerate(kinds) if k == "mtlscissorrect"]
         if len(scissors) == 1:
             wanted.append((scissors[0], "negative"))
+        # Per-param ids: a method yielding two same-badness targets (two index params,
+        # offset+stride negatives) shares one id under the historical scheme, so the
+        # differential's id-keyed dicts keep only the last param. Suffix ambiguous groups
+        # with .<param_index>_<param> (stable under renames via the index); single-target
+        # groups keep the historical unsuffixed form, so only colliding ids change.
+        group_counts = {}
+        for _t, b in wanted:
+            group_counts[b] = group_counts.get(b, 0) + 1
+        plan_ids = set()
         for target, badness in wanted:
             args = [_bad_expr(k, badness) if i == target else _default_expr(k)
                     for i, (k, _j, _n) in enumerate(kinds)]
+            pid = "%s.%s.%s%s" % (cls, plan.java_name, badness,
+                                  (".%d_%s" % (target, kinds[target][2])
+                                   if group_counts[badness] > 1 else ""))
+            assert pid not in plan_ids, "duplicate probe id %s" % pid
+            plan_ids.add(pid)
             out.append({
-                "id": "%s.%s.%s" % (cls, plan.java_name, badness),
+                "id": pid,
                 "class": cls, "selector": plan.decl.selector,
                 "guard": {"nil": "nonNull", "nan": "notNaN", "index": "index",
                           "inf": "finite", "negative": "nonNegative"}[badness],

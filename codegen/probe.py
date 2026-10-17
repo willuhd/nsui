@@ -423,6 +423,11 @@ def _cases_for_class(cls, plans, wrappers, recv_expr, ancestors=None, skip_cases
                 "guard": {"nil": "nonNull", "nan": "notNaN", "index": "index",
                           "inf": "finite", "negative": "nonNegative"}[badness],
                 "param": kinds[target][2], "param_index": target, "badness": badness,
+                # R10-H3: the ABI kind of the bad parameter (mtlviewport, double, ...).
+                # case_entry records it on the evidence row, which is what lets the
+                # generator's GUARD-DECOMPOSED passthrough tell a row that already
+                # stores a struct decomposition from one that still needs expanding.
+                "param_kind": kinds[target][0],
                 "bound": (shipped_bound(cls, plan.decl.selector, kinds[target][2], target)
                           if badness == "index" else None),
                 "bound_setup": None,
@@ -851,6 +856,11 @@ def case_entry(case, verdict):
     entry = {"class": case["class"], "selector": case["selector"], "param": case.get("param"),
              "param_index": case.get("param_index"), "probe_id": case["id"],
              "badness": case.get("badness"), "unguarded": verdict}
+    # R10-H4: carry the parameter kind onto the row (non-key field: existing rows are
+    # untouched, merge keys unchanged). Without it every struct row looks scalar and
+    # the generator must re-derive the decomposition from its own plans each run.
+    if case.get("param_kind"):
+        entry["param_kind"] = case["param_kind"]
     if case.get("bound"):
         entry["bound"] = case["bound"]
         entry["bound_from"] = case.get("bound_from")

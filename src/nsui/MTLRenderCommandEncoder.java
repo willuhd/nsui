@@ -86,6 +86,10 @@ public final class MTLRenderCommandEncoder extends NSObject {
 
     /// setStencilReferenceValue: (uint32_t, exact 32-bit INT32 call shape).
     public void setStencilReferenceValue(long value) {
+        if (value < 0 || value > 0xFFFFFFFFL) {
+            throw new IllegalArgumentException("setStencilReferenceValue: value " + value
+                    + " out of range (0..4294967295)");
+        }
         ensureInit();
         try {
             ObjC.handle(Sig.of(Ret.VOID, Arg.INT32)).invokeExact(peer, ObjC.sel("setStencilReferenceValue:"), (int) value);
@@ -94,6 +98,14 @@ public final class MTLRenderCommandEncoder extends NSObject {
 
     /// setStencilFrontReferenceValue:backReferenceValue: (two uint32_t).
     public void setStencilFrontReferenceValue(long front, long back) {
+        if (front < 0 || front > 0xFFFFFFFFL) {
+            throw new IllegalArgumentException("setStencilFrontReferenceValue:backReferenceValue: front " + front
+                    + " out of range (0..4294967295)");
+        }
+        if (back < 0 || back > 0xFFFFFFFFL) {
+            throw new IllegalArgumentException("setStencilFrontReferenceValue:backReferenceValue: back " + back
+                    + " out of range (0..4294967295)");
+        }
         ensureInit();
         try {
             handles.hStencilFront().invokeExact(peer, ObjC.sel("setStencilFrontReferenceValue:backReferenceValue:"),

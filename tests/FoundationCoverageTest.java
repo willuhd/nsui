@@ -916,6 +916,17 @@ public final class FoundationCoverageTest {
             TestKit.check(stencil.writeMask() == 0x80000001L, "stencil writeMask high-bit round-trip");
             stencil.setWriteMask(0L);
             TestKit.check(stencil.writeMask() == 0L, "stencil writeMask zero");
+            // Out-of-range masks truncated silently before the guard (0x1_00000001 became 1);
+            // the uint32 domain is 0..4294967295, unlike the edge-antialiasing mask which
+            // documents keeping the low 32 bits.
+            TestKit.expectThrows("stencil setReadMask(-1) rejected", IllegalArgumentException.class,
+                    () -> stencil.setReadMask(-1L));
+            TestKit.expectThrows("stencil setReadMask(0x1_00000000) rejected", IllegalArgumentException.class,
+                    () -> stencil.setReadMask(0x1_00000000L));
+            TestKit.expectThrows("stencil setWriteMask(-1) rejected", IllegalArgumentException.class,
+                    () -> stencil.setWriteMask(-1L));
+            TestKit.expectThrows("stencil setWriteMask(0x1_00000000) rejected", IllegalArgumentException.class,
+                    () -> stencil.setWriteMask(0x1_00000000L));
             // clearStencil (uint32_t) via a render-pass descriptor (no device needed).
             MTLRenderPassDescriptor pass = MTLRenderPassDescriptor.create();
             pass.stencilAttachment().setClearStencil(0x80000001L);

@@ -135,7 +135,7 @@ STRUCT_DEFAULTS = {
     "edgeinsets": ("new NSEdgeInsets(0, 0, 0, 0)", None),
 }
 SCALAR_DEFAULTS = {
-    "long": "0", "int": "0", "short": "(short) 0", "byte": "(byte) 0", "uint32": "0",
+    "long": "0", "ulong": "0", "int": "0", "short": "(short) 0", "byte": "(byte) 0", "uint32": "0",
     "boolean": "false", "double": "0.0", "float": "0.0f",
 }
 OBJECT_KINDS = ("id", "string")
@@ -308,7 +308,7 @@ def _cases_for_class(cls, plans, wrappers, recv_expr, ancestors=None, skip_cases
             return not re.search(r"indextype|indexpath|indexset|indexrange|indexes|indexof", n)
 
         idx = [i for i, (k, _j, n) in enumerate(kinds)
-               if k in ("long", "int", "short", "byte", "uint32") and is_index(n)]
+               if k in ("long", "ulong", "int", "short", "byte", "uint32") and is_index(n)]
         wanted = []
         if len(objs) == 1:
             wanted.append((objs[0], "nil"))

@@ -731,6 +731,39 @@ def struct_default(struct_name, repo):
     return STRUCT_ZERO_LITERAL.get(struct_name)
 
 
+# Search-family sentinel overrides: nil input to an NSString search means "not found",
+# not a zero geometry, so the early return must be NOT_FOUND rather than .ZERO or (0,0).
+# Keyed by exact ObjC selector (never a prefix: rangeOfComposedCharacterSequenceAtIndex: and
+# its kin take index/range inputs and correctly use generic zero / Bounds guards). This is a
+# semantic contract of the search family, not a measured probe verdict, so it lives here
+# rather than in guard-evidence.json and survives evidence regeneration.
+NSRANGE_SEARCH_SENTINEL = {
+    "rangeOfString:": "new NSRange(NSRange.NOT_FOUND, 0)",
+    "rangeOfString:options:": "new NSRange(NSRange.NOT_FOUND, 0)",
+    "rangeOfString:options:range:": "new NSRange(NSRange.NOT_FOUND, 0)",
+    "localizedStandardRangeOfString:": "new NSRange(NSRange.NOT_FOUND, 0)",
+    "rangeOfCharacterFromSet:": "new NSRange(NSRange.NOT_FOUND, 0)",
+    "rangeOfCharacterFromSet:options:": "new NSRange(NSRange.NOT_FOUND, 0)",
+}
+
+# Stems that mark a future NSString NSRange search (an Apple-added
+# rangeOfString:options:locale:-style variant). Explicitly excludes the
+# rangeOfComposed... expansion family, which takes index/range inputs.
+_SEARCH_SENTINEL_STEMS = ("rangeOfString", "localizedStandardRangeOfString",
+                          "rangeOfCharacterFromSet")
+
+
+def is_sentinel_family(cls, selector, ret_java):
+    """Whether a nil-tolerated return needs the search sentinel rather than generic zero."""
+    if cls != "NSString" or ret_java != "NSRange":
+        return False
+    if selector in NSRANGE_SEARCH_SENTINEL:
+        return True
+    if selector.startswith("rangeOfComposed"):
+        return False
+    return selector.startswith(_SEARCH_SENTINEL_STEMS)
+
+
 def shipped_index_setup(selector, bound, repo, cls):
     """The shipped method's own statements that declare the locals its bound uses.
 
@@ -2044,6 +2077,27 @@ def gen_classes(args, sdk, vocab, wrappers, rt):
                     # stricter than the code it replaces. For nil its own body must be skipping the
                     # send (a nil aborts natively), so match that with an early return.
                     struct_ret = q.ret_java in STRUCT_JAVA.values()
+                    if (case.get("badness") == "nil" and struct_ret
+                            and is_sentinel_family(cls, q.decl.selector, q.ret_java)):
+                        # A nil search input means "not found", never a zero geometry: take the
+                        # family sentinel, and refuse loudly (keep the guard, no early return)
+                        # when no override exists rather than emitting a silently wrong zero.
+                        sentinel = NSRANGE_SEARCH_SENTINEL.get(q.decl.selector)
+                        if sentinel:
+                            if target not in q.nil_skips:
+                                q.nil_skips.append(target)
+                            q.nil_returns[target] = sentinel
+                            lines.append("    NIL-SKIP %s%s  [the shipped wrapper tolerates nil; "
+                                         "search sentinel]" % ("+" if q.is_class else "",
+                                                               q.decl.selector))
+                        else:
+                            lines.append("    NIL-SENTINEL-MISSING %s%s  [nil-tolerated NSRange "
+                                         "search needs a NOT_FOUND override, refusing NIL-SKIP]"
+                                         % ("+" if q.is_class else "", q.decl.selector))
+                            lines.append("    GUARD-SKIPPED %s%s  [the shipped wrapper tolerates "
+                                         "this argument]" % ("+" if q.is_class else "",
+                                                              q.decl.selector))
+                        continue
                     default = (struct_default(q.ret_java, getattr(args, "repo", "."))
                                if struct_ret else "null")
                     if case.get("badness") == "nil" and (not struct_ret or default):
@@ -2052,9 +2106,8 @@ def gen_classes(args, sdk, vocab, wrappers, rt):
                         if struct_ret:
                             # The renderer inlines this instead of assuming .ZERO, so
                             # ZERO-less structs (Metal value types, CATransform3D) compile.
-                            # A future selector family needing a non-zero sentinel (the
-                            # NSString search family's NOT_FOUND) wants a per-family override
-                            # here; the generic zero stays until such a method is generated.
+                            # Search-family sentinels are handled above (nil_returns already
+                            # carries NOT_FOUND); the generic default stays for the rest.
                             q.nil_returns[target] = default
                         lines.append("    NIL-SKIP %s%s  [the shipped wrapper tolerates nil]"
                                      % ("+" if q.is_class else "", q.decl.selector))

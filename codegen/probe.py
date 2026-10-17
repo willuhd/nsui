@@ -970,7 +970,14 @@ def _differential_slice(repo, args, classes):
                                if r["id"] in case_by_id) if e]
         added, replaced, total = merge_entries(args.merge_evidence, entries)
         print("   evidence: +%d, upgraded %d (%d total)" % (added, replaced, total))
-    return buckets
+    # Teardown-after-guard proof: how many of this slice's fixed cases measured the
+    # guard's IAE before the process still aborted (stdout only; routing already files
+    # them as fixed via the run_cases verdict flip, so buckets stay untouched).
+    n_fix = len(buckets.get("fixed", []))
+    n_torn = sum(1 for cid, _s, _g in buckets.get("fixed", [])
+                 if by_id.get(cid, {}).get("guard_fired"))
+    print("   fixed-via-teardown-guard: %d of %d fixed" % (n_torn, n_fix))
+    return buckets, n_torn, n_fix
 
 
 def fold_evidence(paths, target):
@@ -1034,6 +1041,7 @@ def differential(repo, args):
     slice_size = getattr(args, "slice", 20) or 20
     buckets = defaultdict(list)
     failed = []
+    torn_total = fixed_total = 0
     for i in range(0, len(classes), slice_size):
         chunk = classes[i:i + slice_size]
         print("-- differential slice %d/%d: %s"
@@ -1043,11 +1051,15 @@ def differential(repo, args):
         if part is None:
             failed.append(chunk)
             continue
+        part, n_torn, n_fix = part
+        torn_total += n_torn
+        fixed_total += n_fix
         for key, items in part.items():
             buckets[key].extend(items)
     for name in ("fixed", "parity", "unchanged-tolerated", "STRICTER-GUARD", "STRICTER-BODY",
                  "STILL-ABORTS", "LESS-SAFE", "LOOSER"):
         print("%-22s %4d" % (name, len(buckets.get(name, []))))
+    print("fixed-via-teardown-guard: %d of %d fixed (all slices)" % (torn_total, fixed_total))
     # A guard that over-rejects, a case that still aborts, and a generated wrapper that aborts
     # where the shipped one raised a clear error are defects. STRICTER-BODY and LOOSER are
     # conformance differences, reported but not failures.
@@ -1106,6 +1118,7 @@ def enumerate_measure(repo, args):
                 continue      # already fails safely in Java; nothing to record or emit
         entries.append(entry)
     print("\nmeasured: %s" % ", ".join("%s=%d" % kv for kv in sorted(counts.items())))
+    print("measured-via-teardown-guard: %d" % sum(1 for r in results if r.get("guard_fired")))
     path = args.out or os.path.join(REPO, "codegen", "guard-evidence.json")
     if args.merge and os.path.exists(path):
         existing = json.load(open(path))

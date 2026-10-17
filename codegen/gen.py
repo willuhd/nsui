@@ -1757,6 +1757,15 @@ def survey(frameworks, args):
                     bump("decls_deprecated")
                 if d.unavailable:
                     bump("decls_unavailable")
+                # Version gates are report-only: API_AVAILABLE/API_UNAVAILABLE payloads are
+                # retained on Decl.availability for triage, but no skip or emission reads
+                # them (a version-gated selector present on the build runtime is still
+                # emitted unguarded; guard emission for older deployment targets is deferred).
+                if getattr(d, "availability", ""):
+                    bump("decls_version_gated")
+                    ex("version-gated", "%s %s%s [%s]" % (
+                        d.owner, "-" if not d.is_class else "+", d.selector,
+                        getattr(d, "availability", "")))
                 key = (d.owner, d.selector, d.is_class)
                 if key in seen:
                     bump("duplicate_decls")
@@ -1801,7 +1810,7 @@ def survey(frameworks, args):
     L.append("-- features (of %d distinct decls) --" % len(seen))
     for k in ("multiline_decls", "decls_with_block_param", "decls_with_out_param",
               "decls_with_generics", "decls_variadic", "decls_deprecated",
-              "decls_unavailable"):
+              "decls_unavailable", "decls_version_gated"):
         L.append("  %-28s %d" % (k, c.get(k, 0)))
     L.append("")
     L.append("-- runtime resolution --")

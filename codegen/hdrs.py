@@ -147,7 +147,7 @@ class Decl:
     """One method or property accessor ready to be ABI-checked."""
 
     __slots__ = ("owner", "kind", "is_class", "selector", "ret_raw", "params",
-                 "nullable", "deprecated", "unavailable", "raw", "line",
+                 "nullable", "deprecated", "unavailable", "availability", "raw", "line",
                  "declared_in", "property", "multiline")
 
     def __init__(self, **kw):
@@ -295,6 +295,29 @@ def strip_macros(s):
     return "".join(out)
 
 
+_AVAIL_RE = re.compile(r"\b(API_AVAILABLE|API_UNAVAILABLE\w*|API_TO_BE_DEPRECATED"
+                        r"|API_DEPRECATED\w*)\b")
+
+
+def availability_of(stmt):
+    """Version-gate payloads on a header statement, before strip_macros drops them.
+
+    Returns the macro call(s) verbatim, e.g. `API_AVAILABLE(macos(14.0))`, joined by `;`
+    (empty string when the statement carries no version gate). Display and survey only:
+    no skip or emission decision reads this field.
+    """
+    out = []
+    for m in _AVAIL_RE.finditer(stmt):
+        k = m.end()
+        while k < len(stmt) and stmt[k].isspace():
+            k += 1
+        if k < len(stmt) and stmt[k] == "(":
+            out.append(stmt[m.start():match_balanced(stmt, k)])
+        else:
+            out.append(m.group(1))
+    return ";".join(out)
+
+
 def split_statements(body):
     """Split an interface body into top-level ;-terminated statements."""
     stmts = []
@@ -407,6 +430,7 @@ def parse_method(stmt, owner, is_class, file, line, declared_in, in_protocol=Fal
              ret_raw=ret_raw, params=params, nullable=_nullability(ret_raw),
              deprecated=bool(re.search(r"API_DEPRECATED|DEPRECATED_ATTRIBUTE", stmt)),
              unavailable=bool(re.search(r"NS_UNAVAILABLE", stmt)),
+             availability=availability_of(stmt),
              raw=" ".join(stmt.split()), line=line, declared_in=declared_in,
              property=False, multiline=("\n" in stmt.strip()))
     return d
@@ -449,6 +473,7 @@ def parse_property(stmt, owner, file, line, declared_in):
     get = Decl(owner=owner, kind="property-get", is_class=is_class_prop,
                selector=getter, ret_raw=type_raw, params=[],
                nullable=nullable, deprecated=dep, unavailable=unavail,
+               availability=availability_of(stmt),
                raw=" ".join(stmt.split()),
                line=line, declared_in=declared_in, property=name,
                multiline=("\n" in stmt.strip()))
@@ -458,6 +483,7 @@ def parse_property(stmt, owner, file, line, declared_in):
         out.append(Decl(owner=owner, kind="property-set", is_class=is_class_prop,
                         selector=setter, ret_raw="void", params=[prop],
                         nullable=nullable, deprecated=dep, unavailable=unavail,
+                        availability=availability_of(stmt),
                         raw=" ".join(stmt.split()), line=line,
                         declared_in=declared_in, property=name,
                         multiline=("\n" in stmt.strip())))

@@ -51,6 +51,10 @@ public final class NSStatusBar extends NSObject {
 
     /// -[NSStatusBar statusItemWithLength:] -> NSStatusItem
     public NSStatusItem statusItemWithLength(double length) {
+        if (length > 10000.0) {
+            throw new IllegalArgumentException("statusItemWithLength: length " + length
+                    + " exceeds maximum 10000");
+        }
         ensureInit();
         try {
             MemorySegment p = (MemorySegment) handles.hWithLength().invokeExact(peer, ObjC.sel("statusItemWithLength:"), length);

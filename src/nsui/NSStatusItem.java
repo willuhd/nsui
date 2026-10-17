@@ -227,6 +227,10 @@ public final class NSStatusItem extends NSObject {
         try { return (double) handles.hDouble().invokeExact(peer, ObjC.sel("length")); } catch (Throwable t) { throw new RuntimeException("length failed", t); }
     }
     public void setLength(double len) {
+        if (len > 10000.0) {
+            throw new IllegalArgumentException("setLength: length " + len
+                    + " exceeds maximum 10000");
+        }
         ensureInit();
         try { handles.hSetDouble().invokeExact(peer, ObjC.sel("setLength:"), len); } catch (Throwable t) { throw new RuntimeException("setLength: failed", t); }
     }

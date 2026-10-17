@@ -329,8 +329,9 @@ def shipped_bound(cls, selector, param_name, param_index):
 def _cases_for_class(cls, plans, wrappers, recv_expr, ancestors=None, skip_cases=None):
     """Nil/NaN/INF/index/negative candidates for one class, one bad argument per call.
 
-    A nil case needs exactly one object parameter, a NaN case exactly one geometry parameter, an
-    INF case exactly one INF-capable parameter (rect/point/size/viewport/double/float — R1-live),
+    A nil case needs exactly one object parameter, a NaN case exactly one geometry parameter
+    or one scalar double (alongside its INF case, so notNaN stays apart from finite),
+    an INF case exactly one INF-capable parameter (rect/point/size/viewport/double/float — R1-live),
     a negative case every non-index unsigned (NSUInteger/uint32) parameter,
     and an index case a parameter that names an index with every other parameter a scalar — so the
     abort can only be that argument's doing. Other parameters get benign defaults.
@@ -370,6 +371,15 @@ def _cases_for_class(cls, plans, wrappers, recv_expr, ancestors=None, skip_cases
             wanted.append((inf_targets[0], "inf"))
         elif len(doubles) == 1 and not inf_targets and not structs:
             wanted.append((doubles[0], "inf"))
+        # Scalar NaN: the last unreachable _bad_expr arm. A lone double gets a NaN
+        # case alongside its INF case: AppKit geometry tolerates INF but traps NaN
+        # (split-view divider SIGTRAP on NaN, exit 0 on INF), so the pair tells the
+        # emitter notNaN apart from finite. Structs with a NaN form keep their struct
+        # case instead (one nan case per method preserves the id scheme); range and
+        # edgeinsets have no NaN form and no longer veto the scalar case.
+        nan_structs = [i for i in structs if STRUCT_DEFAULTS[kinds[i][0]][1]]
+        if len(doubles) == 1 and not inf_targets and not nan_structs:
+            wanted.append((doubles[0], "nan"))
         for target in idx:                      # every index parameter, not just the first
             wanted.append((target, "index"))
         # Unsigned negatives: every non-index NSUInteger parameter gets a -1 case.

@@ -808,13 +808,16 @@ def merge_evidence(src, path):
     entries = json.load(open(src))["cases"]
     existing = json.load(open(path)) if os.path.exists(path) else {"cases": []}
     cases = existing.get("cases", [])
-    by_key = {(c.get("class"), c.get("selector"), c.get("param"), c.get("unguarded")): i
+    # Keyed on the case and its kind like merge_entries: without badness, two tolerated
+    # same-param rows (a .nan and a .inf control for one parameter) collapse to one key
+    # and the second silently replaces the first, losing a measured verdict.
+    by_key = {(c.get("class"), c.get("selector"), c.get("param"), c.get("badness")): i
               for i, c in enumerate(cases)}
     added = replaced = 0
     for e in entries:
         if e.get("verification") or e.get("baseline") or e.get("unguarded") == "java-exception":
             continue                       # a verification row, not evidence to emit from
-        key = (e.get("class"), e.get("selector"), e.get("param"), e.get("unguarded"))
+        key = (e.get("class"), e.get("selector"), e.get("param"), e.get("badness"))
         i = by_key.get(key)
         if i is None:
             by_key[key] = len(cases)

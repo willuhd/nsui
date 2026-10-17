@@ -51,7 +51,7 @@ public final class NSStatusBar extends NSObject {
 
     /// -[NSStatusBar statusItemWithLength:] -> NSStatusItem
     public NSStatusItem statusItemWithLength(double length) {
-        if (length > 10000.0) {
+        if (length > 10000.0 || length == Double.NEGATIVE_INFINITY) {
             throw new IllegalArgumentException("statusItemWithLength: length " + length
                     + " exceeds maximum 10000");
         }

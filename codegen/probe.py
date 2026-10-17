@@ -173,6 +173,18 @@ def _bad_expr(kind, badness):
         return "null"
     if badness == "index":
         return "7"                      # out of range for the empty receiver the setup builds
+    # Unsigned wrapping: a negative Java long passed as NSUInteger wraps to a huge
+    # unsigned value natively (grid factory count, completion-range location, table
+    # drop row all wrapped before their hand-written guards). Synthesize -1 only for
+    # unsigned kinds, where a negative is always a caller error; signed longs keep
+    # their existing coverage (index cases, NaN/INF for doubles) so legal -1 values
+    # such as NSNotFound are never rejected.
+    if badness == "negative":
+        if kind == "ulong":
+            return "-1"
+        if kind == "uint32":
+            return "-1"
+        return _default_expr(kind)
     # R1-live: INF synthesis. Double.POSITIVE_INFINITY inside a struct (or as a bare double)
     # is the Metal viewport abort; AppKit geometry tolerates it, so those rows become controls.
     if badness == "inf":
@@ -310,10 +322,11 @@ def shipped_bound(cls, selector, param_name, param_index):
 
 
 def _cases_for_class(cls, plans, wrappers, recv_expr, ancestors=None, skip_cases=None):
-    """Nil/NaN/INF/index candidates for one class, one bad argument per call.
+    """Nil/NaN/INF/index/negative candidates for one class, one bad argument per call.
 
     A nil case needs exactly one object parameter, a NaN case exactly one geometry parameter, an
     INF case exactly one INF-capable parameter (rect/point/size/viewport/double/float — R1-live),
+    a negative case every non-index unsigned (NSUInteger/uint32) parameter,
     and an index case a parameter that names an index with every other parameter a scalar — so the
     abort can only be that argument's doing. Other parameters get benign defaults.
     """
@@ -354,6 +367,14 @@ def _cases_for_class(cls, plans, wrappers, recv_expr, ancestors=None, skip_cases
             wanted.append((doubles[0], "inf"))
         for target in idx:                      # every index parameter, not just the first
             wanted.append((target, "index"))
+        # Unsigned negatives: every non-index NSUInteger parameter gets a -1 case.
+        # Index-named params already have an index case (bound guard is tighter where
+        # a bound exists); emitting both would double-report the same wrapping, so
+        # the negative case covers the plain counts/lengths/locations the index rule
+        # never reaches. One bad argument per call preserves attribution.
+        for i, (k, _j, n) in enumerate(kinds):
+            if k in ("ulong", "uint32") and not is_index(n):
+                wanted.append((i, "negative"))
         for target, badness in wanted:
             args = [_bad_expr(k, badness) if i == target else _default_expr(k)
                     for i, (k, _j, _n) in enumerate(kinds)]
@@ -361,7 +382,7 @@ def _cases_for_class(cls, plans, wrappers, recv_expr, ancestors=None, skip_cases
                 "id": "%s.%s.%s" % (cls, plan.java_name, badness),
                 "class": cls, "selector": plan.decl.selector,
                 "guard": {"nil": "nonNull", "nan": "notNaN", "index": "index",
-                          "inf": "finite"}[badness],
+                          "inf": "finite", "negative": "nonNegative"}[badness],
                 "param": kinds[target][2], "param_index": target, "badness": badness,
                 "bound": (shipped_bound(cls, plan.decl.selector, kinds[target][2], target)
                           if badness == "index" else None),
@@ -794,6 +815,8 @@ def case_entry(case, verdict):
             entry["guards"] = ['Bounds.finite({p}, "%s");' % case["selector"]]
         elif kind == "index" and case.get("bound"):
             entry["guards"] = ['Bounds.index({p}, %s, "%s");' % (case["bound"], case["selector"])]
+        elif kind == "negative":
+            entry["guards"] = ['Bounds.nonNegative({p}, "%s");' % case["selector"]]
         else:
             entry["needs_local_guard"] = "the corpus does not bound this index"
             entry["guards"] = []

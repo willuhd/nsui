@@ -791,7 +791,8 @@ def guard_template(case, param_kind=None):
 
     The evidence stores the statement for the cases it emitted from, and for a control — a call the
     generated wrapper tolerated — the kind is enough: a nil argument takes nonNull, NaN geometry
-    notNaN, a non-finite (infinite or NaN) double takes finite, and an index takes the bound the
+    notNaN, a non-finite (infinite or NaN) double takes finite, a negative unsigned takes
+    nonNegative, and an index takes the bound the
     shipped wrapper uses. R2: a viewport INF case decomposes to 6 component finite guards
     null-first (a single finite does not compile for a struct param); the kind comes from the
     plan when the control needs a guard to match the shipped wrapper (GUARD-MATCH).
@@ -812,6 +813,12 @@ def guard_template(case, param_kind=None):
         return ['Bounds.finite({p}, "%s");' % sel]
     if badness == "index" and case.get("bound"):
         return ['Bounds.index({p}, %s, "%s");' % (case["bound"], sel)]
+    # Unsigned wrapping: a measured negative abort on an NSUInteger parameter takes
+    # nonNegative (no upper bound; the native slot/length limits stay hand-written
+    # per-selector maxima such as MAX_BUFFER_SLOTS). Signed longs never reach here:
+    # the probe only synthesizes negatives for unsigned kinds.
+    if badness == "negative":
+        return ['Bounds.nonNegative({p}, "%s");' % sel]
     return []
 
 

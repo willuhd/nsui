@@ -23,7 +23,10 @@ generated wrapper rejects it only because of the evidence (STRICTER-GUARD); when
 build rejects it too, the difference is in the generated body (STRICTER-BODY).
 
 Exit codes are read directly: 0 tolerated, 1 a Java exception (a guard fired), 134 uncaught ObjC
-exception, 133 SIGTRAP (NaN geometry), 132 SIGILL (self/ancestor cycle).
+exception, 133 SIGTRAP (NaN geometry), 132 SIGILL (self/ancestor cycle). One exception: an abort
+exit whose captured output already holds the guard's IAE (IllegalArgumentException through a
+Bounds frame) reads as java-exception — a stateful teardown can abort the process after the
+guard fired, and the guard, not the teardown, is what the measurement attributes.
 """
 
 import argparse
@@ -134,8 +137,18 @@ STRUCT_DEFAULTS = {
     "range": ("new NSRange(0, 0)", None),
     "edgeinsets": ("new NSEdgeInsets(0, 0, 0, 0)", None),
 }
+# R1-live: INF variants for the same geometry NaN covers, plus the Metal viewport.
+# AppKit view/window geometry tolerates INF (measured exit 0) so those rows become controls;
+# Metal's viewport validation aborts on INF ("must not be infinite or NaN", exit 134) so that
+# row becomes a finite guard. The viewport default mirrors MTLViewport.of(10,10) (znear 0,zfar 1).
+INF_STRUCT_EXPRS = {
+    "rect": "new NSRect(Double.POSITIVE_INFINITY, 0, 0, 0)",
+    "point": "new NSPoint(Double.POSITIVE_INFINITY, 0)",
+    "size": "new NSSize(Double.POSITIVE_INFINITY, 0)",
+    "mtlviewport": "new MTLViewport(Double.POSITIVE_INFINITY, 0, 10, 10, 0, 1)",
+}
 SCALAR_DEFAULTS = {
-    "long": "0", "int": "0", "short": "(short) 0", "byte": "(byte) 0", "uint32": "0",
+    "long": "0", "ulong": "0", "int": "0", "short": "(short) 0", "byte": "(byte) 0", "uint32": "0",
     "boolean": "false", "double": "0.0", "float": "0.0f",
 }
 OBJECT_KINDS = ("id", "string")
@@ -144,6 +157,13 @@ OBJECT_KINDS = ("id", "string")
 def _default_expr(kind):
     if kind in STRUCT_DEFAULTS:
         return STRUCT_DEFAULTS[kind][0]
+    # R1-live: value-type defaults for the Metal structs, so a method with a viewport plus
+    # other params still gets benign defaults for the non-target. Mirrors the hand-written
+    # wrappers (MTLViewport.of(10,10); scissor origin 0 size 10).
+    if kind == "mtlviewport":
+        return "new MTLViewport(0, 0, 10, 10, 0, 1)"
+    if kind == "mtlscissorrect":
+        return "new MTLScissorRect(0, 0, 10, 10)"
     if kind in SCALAR_DEFAULTS:
         return SCALAR_DEFAULTS[kind]
     if kind == "string":
@@ -156,6 +176,33 @@ def _bad_expr(kind, badness):
         return "null"
     if badness == "index":
         return "7"                      # out of range for the empty receiver the setup builds
+    # Unsigned wrapping: a negative Java long passed as NSUInteger wraps to a huge
+    # unsigned value natively (grid factory count, completion-range location, table
+    # drop row all wrapped before their hand-written guards). Synthesize -1 only for
+    # unsigned kinds, where a negative is always a caller error; signed longs keep
+    # their existing coverage (index cases, NaN/INF for doubles) so legal -1 values
+    # such as NSNotFound are never rejected.
+    if badness == "negative":
+        if kind == "ulong":
+            return "-1"
+        if kind == "uint32":
+            return "-1"
+        # Scissor components are NSUInteger-backed with no signed form: a negative
+        # width is the caller error the validation layer aborts on (neg-w exits 134
+        # with validation, finite tolerated). One bad component preserves attribution.
+        if kind == "mtlscissorrect":
+            return "new MTLScissorRect(0, 0, -1, 10)"
+        return _default_expr(kind)
+    # R1-live: INF synthesis. Double.POSITIVE_INFINITY inside a struct (or as a bare double)
+    # is the Metal viewport abort; AppKit geometry tolerates it, so those rows become controls.
+    if badness == "inf":
+        if kind in INF_STRUCT_EXPRS:
+            return INF_STRUCT_EXPRS[kind]
+        if kind == "double":
+            return "Double.POSITIVE_INFINITY"
+        if kind == "float":
+            return "Float.POSITIVE_INFINITY"
+        return _default_expr(kind)
     if kind in STRUCT_DEFAULTS:
         return STRUCT_DEFAULTS[kind][1]
     if kind == "double":
@@ -191,7 +238,8 @@ def enumerate_cases(classes, frameworks):
     """Bad-argument candidates taken from the generator's own plans.
 
     One bad argument per call, so an abort is attributable to it: a method qualifies for a nil case
-    when exactly one parameter is an object, for a NaN case when exactly one is geometry, and for
+    when exactly one parameter is an object, for a NaN case when exactly one is geometry, for an
+    INF case when exactly one is INF-capable geometry/scalar/viewport (R1-live), and for
     an index case when it names an index and every other parameter is a scalar.
     """
     import objcabi
@@ -282,10 +330,13 @@ def shipped_bound(cls, selector, param_name, param_index):
 
 
 def _cases_for_class(cls, plans, wrappers, recv_expr, ancestors=None, skip_cases=None):
-    """Nil/NaN/index candidates for one class, one bad argument per call.
+    """Nil/NaN/INF/index/negative candidates for one class, one bad argument per call.
 
-    A nil case needs exactly one object parameter, a NaN case exactly one geometry parameter, and
-    an index case a parameter that names an index with every other parameter a scalar — so the
+    A nil case needs exactly one object parameter, a NaN case exactly one geometry parameter
+    or one scalar double (alongside its INF case, so notNaN stays apart from finite),
+    an INF case exactly one INF-capable parameter (rect/point/size/viewport/double/float — R1-live),
+    a negative case every non-index unsigned (NSUInteger/uint32) parameter,
+    and an index case a parameter that names an index with every other parameter a scalar — so the
     abort can only be that argument's doing. Other parameters get benign defaults.
     """
     out = []
@@ -308,21 +359,55 @@ def _cases_for_class(cls, plans, wrappers, recv_expr, ancestors=None, skip_cases
             return not re.search(r"indextype|indexpath|indexset|indexrange|indexes|indexof", n)
 
         idx = [i for i, (k, _j, n) in enumerate(kinds)
-               if k in ("long", "int", "short", "byte", "uint32") and is_index(n)]
+               if k in ("long", "ulong", "int", "short", "byte", "uint32") and is_index(n)]
         wanted = []
         if len(objs) == 1:
             wanted.append((objs[0], "nil"))
         if len(structs) == 1 and STRUCT_DEFAULTS[kinds[structs[0]][0]][1]:
             wanted.append((structs[0], "nan"))
+        # R1-live: INF candidate for the same single-geometry attribution as NaN, plus the
+        # Metal viewport struct (outside STRUCT_DEFAULTS) and single double/float scalars.
+        # One bad argument per call preserves attribution; others get benign defaults.
+        inf_targets = [i for i, (k, _j, _n) in enumerate(kinds) if k in INF_STRUCT_EXPRS]
+        doubles = [i for i, (k, _j, _n) in enumerate(kinds) if k in ("double", "float")]
+        if len(inf_targets) == 1:
+            wanted.append((inf_targets[0], "inf"))
+        elif len(doubles) == 1 and not inf_targets and not structs:
+            wanted.append((doubles[0], "inf"))
+        # Scalar NaN: the last unreachable _bad_expr arm. A lone double gets a NaN
+        # case alongside its INF case: AppKit geometry tolerates INF but traps NaN
+        # (split-view divider SIGTRAP on NaN, exit 0 on INF), so the pair tells the
+        # emitter notNaN apart from finite. Structs with a NaN form keep their struct
+        # case instead (one nan case per method preserves the id scheme); range and
+        # edgeinsets have no NaN form and no longer veto the scalar case.
+        nan_structs = [i for i in structs if STRUCT_DEFAULTS[kinds[i][0]][1]]
+        if len(doubles) == 1 and not inf_targets and not nan_structs:
+            wanted.append((doubles[0], "nan"))
         for target in idx:                      # every index parameter, not just the first
             wanted.append((target, "index"))
+        # Unsigned negatives: every non-index NSUInteger parameter gets a -1 case.
+        # Index-named params already have an index case (bound guard is tighter where
+        # a bound exists); emitting both would double-report the same wrapping, so
+        # the negative case covers the plain counts/lengths/locations the index rule
+        # never reaches. One bad argument per call preserves attribution.
+        for i, (k, _j, n) in enumerate(kinds):
+            if k in ("ulong", "uint32") and not is_index(n):
+                wanted.append((i, "negative"))
+        # Scissor negative: exactly one scissor rect gets a negative-width case.
+        # The struct has no INF form (unlike the viewport), so this is its only
+        # measured candidate; the single-bad-component rule keeps the abort
+        # attributable when other parameters are present.
+        scissors = [i for i, (k, _j, _n) in enumerate(kinds) if k == "mtlscissorrect"]
+        if len(scissors) == 1:
+            wanted.append((scissors[0], "negative"))
         for target, badness in wanted:
             args = [_bad_expr(k, badness) if i == target else _default_expr(k)
                     for i, (k, _j, _n) in enumerate(kinds)]
             out.append({
                 "id": "%s.%s.%s" % (cls, plan.java_name, badness),
                 "class": cls, "selector": plan.decl.selector,
-                "guard": {"nil": "nonNull", "nan": "notNaN", "index": "index"}[badness],
+                "guard": {"nil": "nonNull", "nan": "notNaN", "index": "index",
+                          "inf": "finite", "negative": "nonNegative"}[badness],
                 "param": kinds[target][2], "param_index": target, "badness": badness,
                 "bound": (shipped_bound(cls, plan.decl.selector, kinds[target][2], target)
                           if badness == "index" else None),
@@ -686,8 +771,19 @@ def run_cases(repo, cases, timeout=25, generated=None, use_evidence=True):
             verdict = "no-receiver"        # the wrapper was never reached, so nothing was measured
         else:
             verdict = VERDICTS.get(rc, "exit-%d" % rc)
+        guard_fired = False
+        if verdict in STRICTER and "IllegalArgumentException" in text and "Bounds." in text:
+            # The guard threw before the native abort: an open Metal encoder's teardown
+            # asserts at process exit even when the IAE fired first (viewport INF reads
+            # exit 134 with the guard's IAE line already printed). Attribute the outcome
+            # to the guard, so the differential files it as fixed rather than STILL-ABORTS.
+            # Both markers are required: a bare IAE match would also fire on setup or
+            # chained exceptions, and only a Bounds frame proves the guard itself threw.
+            guard_fired = True
+            verdict = "java-exception"
         results.append({"id": c["id"], "class": c["class"], "guard": c["guard"],
-                        "param": c.get("param"), "exit": rc, "verdict": verdict, "tail": tail})
+                        "param": c.get("param"), "exit": rc, "verdict": verdict, "tail": tail,
+                        "guard_fired": guard_fired})
         print("%-52s exit=%-4s %s" % (c["id"], rc, verdict))
     shutil.rmtree(os.path.dirname(probe_out), ignore_errors=True)
     return results
@@ -747,8 +843,16 @@ def case_entry(case, verdict):
             entry["guards"] = ['Bounds.nonNull({p}, "%s");' % case["selector"]]
         elif kind == "nan":
             entry["guards"] = ['Bounds.notNaN({p}, "%s");' % case["selector"]]
+        elif kind == "inf":
+            # R1-live: INF abort maps to the finite helper (AppKit notNaN stays, finite is
+            # reserved for Metal's infinite-or-NaN validation). For the viewport struct this
+            # single statement does not compile yet — R2 decomposes it to 6 component
+            # finite guards null-first; the single form here is scaffolding until then.
+            entry["guards"] = ['Bounds.finite({p}, "%s");' % case["selector"]]
         elif kind == "index" and case.get("bound"):
             entry["guards"] = ['Bounds.index({p}, %s, "%s");' % (case["bound"], case["selector"])]
+        elif kind == "negative":
+            entry["guards"] = ['Bounds.nonNegative({p}, "%s");' % case["selector"]]
         else:
             entry["needs_local_guard"] = "the corpus does not bound this index"
             entry["guards"] = []

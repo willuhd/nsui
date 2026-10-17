@@ -215,7 +215,43 @@ PRIMITIVES = {
     "Bounds.nonNull": ("src/nsui/Bounds.java", r"\bnonNull\s*\("),
     "Bounds.index": ("src/nsui/Bounds.java", r"\bindex\s*\("),
     "Bounds.notNaN": ("src/nsui/Bounds.java", r"\bnotNaN\s*\("),
+    # R1: the INF-finite emitter needs Bounds.finite; registering it here keeps the
+    # "only emit what the target provides" rule instead of adding a per-class exception.
+    "Bounds.finite": ("src/nsui/Bounds.java", r"\bfinite\s*\("),
+    # R2: the scissor decomposition emits Bounds.nonNegative; same rule — the target must
+    # provide it, otherwise the guard is reported GUARD-UNAVAILABLE rather than emitted broken.
+    "Bounds.nonNegative": ("src/nsui/Bounds.java", r"\bnonNegative\s*\("),
 }
+
+
+# R2: viewport/scissor decomposition. A struct value type has no Bounds overload for the whole
+# value, so each component is validated. Messages match the hand-written wrappers
+# (MTLRenderCommandEncoder.setViewport:/setScissorRect:) so a reader sees one policy.
+VIEWPORT_COMPONENTS = ("originX", "originY", "width", "height", "znear", "zfar")
+SCISSOR_COMPONENTS = ("x", "y", "width", "height")
+
+
+def struct_decomposition(kind, param, selector):
+    """6xfinite null-first for MTLVIEWPORT, 4xnonNegative for MTLSCISSORRECT, else None.
+
+    Null-first: the component guards dereference the struct, so a null value would throw
+    NullPointerException at the accessor instead of IllegalArgumentException. The nonNull
+    guard needs no setup and fails fast; render_method's null-first hoist emits it above
+    the rest (R4), so the order here is documentation — the hoist is what guarantees it.
+    The {p} placeholder form is for guard_template (replaced with the target later); a real
+    parameter name works the same for the type-driven path in gen_classes.
+    """
+    if kind == "mtlviewport":
+        guards = ['Bounds.nonNull(%s, "%s");' % (param, selector)]
+        guards += ['Bounds.finite(%s.%s(), "%s (%s)");' % (param, comp, selector, comp)
+                   for comp in VIEWPORT_COMPONENTS]
+        return guards
+    if kind == "mtlscissorrect":
+        guards = ['Bounds.nonNull(%s, "%s");' % (param, selector)]
+        guards += ['Bounds.nonNegative(%s.%s(), "%s (%s)");' % (param, comp, selector, comp)
+                   for comp in SCISSOR_COMPONENTS]
+        return guards
+    return None
 
 
 class Toolkit:
@@ -318,7 +354,7 @@ def param_name(raw, i):
 class Plan:
     __slots__ = ("decl", "shape", "enc", "kind", "is_class", "skip", "reason",
                  "java_name", "field", "handle", "params", "ret_kind", "ret_java", "renamed_from",
-                 "guards", "guard_setup", "nil_skips", "is_constructor")
+                 "guards", "guard_setup", "nil_skips", "nil_returns", "is_constructor")
 
     def __init__(self, decl):
         self.decl = decl
@@ -337,6 +373,7 @@ class Plan:
         self.guards = []
         self.guard_setup = []
         self.nil_skips = []
+        self.nil_returns = {}
         self.is_constructor = False
         self.ret_java = None
 
@@ -362,6 +399,13 @@ def classify_param_java(abi_class, raw, name, wrappers, cls_name, token=None):
         # house form carries it in a Java long and narrows at the call (see
         # MTLStencilDescriptor.setReadMask:), so a mask with bit 31 set stays positive.
         return "uint32", "long"
+    # R3: NSUInteger kind. The ABI collapses NSInteger (q/l) and NSUInteger (Q/L) to one INT
+    # shape, so the vocabulary is unchanged; the kind keeps the signedness the encoding had.
+    # A negative Java long passed as NSUInteger wraps to a huge unsigned value natively
+    # (measured aborts on scissor components, buffer lengths, array capacities), so a future
+    # nonNegative guard needs to tell the two apart. The call emission is identical to long.
+    if abi_class == "INT" and token in ("Q", "L"):
+        return "ulong", "long"
     if abi_class in SCALAR_JAVA:
         return SCALAR_KIND[abi_class], SCALAR_JAVA[abi_class]
     if abi_class in STRUCT_JAVA:
@@ -383,6 +427,11 @@ def classify_ret_java(abi_class, raw, wrappers, cls_name, token=None):
         return "id", "MemorySegment"
     if abi_class == "INT32" and token == "I":
         return "uint32", "long"
+    # R3: NSUInteger return kind, mirroring the parameter side. The shape stays INT so the
+    # vocabulary is unchanged; the kind records that the value is unsigned (a negative Java
+    # long would wrap). The exact-width read below still casts to long, as for INT.
+    if abi_class == "INT" and token in ("Q", "L"):
+        return "ulong", "long"
     if abi_class == "BYTE" and token == "C":
         # unsigned char: the handle returns a signed byte, so -1 for 255 unless it is masked into
         # the long surface, exactly as uint16 and uint32 are. The shipped NSNumber.unsignedCharValue
@@ -655,6 +704,31 @@ def struct_zero(struct_name, repo):
                                               text) else None
 
 
+# Zero literals for the struct wrappers that declare no ZERO constant (CATransform3D has
+# IDENTITY, the Metal value types have none). A nil-tolerated struct return still needs an
+# early-return default, and adding public ZERO constants would widen the shipped API surface,
+# so the emitter inlines the zero value instead. Each literal must match the record's canonical
+# constructor arity (checked against src/nsui/<Type>.java when this table changes); a field
+# added to one of these records without updating its literal here miscompiles loudly (wrong
+# arity is a compile error, not silent drift).
+STRUCT_ZERO_LITERAL = {
+    "MTLViewport": "new MTLViewport(0, 0, 0, 0, 0, 0)",
+    "MTLScissorRect": "new MTLScissorRect(0, 0, 0, 0)",
+    "MTLRegion": "new MTLRegion(0, 0, 0, 0, 0, 0)",
+    "CATransform3D": "new CATransform3D(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)",
+}
+
+
+def struct_default(struct_name, repo):
+    """The early-return default for a nil-tolerated struct return: `.ZERO`, else the inline literal.
+    Returns None when the tree provides neither (the caller then reports GUARD-SKIPPED).
+    """
+    zero = struct_zero(struct_name, repo)
+    if zero:
+        return zero
+    return STRUCT_ZERO_LITERAL.get(struct_name)
+
+
 def shipped_index_setup(selector, bound, repo, cls):
     """The shipped method's own statements that declare the locals its bound uses.
 
@@ -738,20 +812,44 @@ def bound_is_usable(bound, plans, repo):
     return True
 
 
-def guard_template(case):
+def guard_template(case, param_kind=None):
     """The guard statement for a measured case, derived from what was measured.
 
     The evidence stores the statement for the cases it emitted from, and for a control — a call the
     generated wrapper tolerated — the kind is enough: a nil argument takes nonNull, NaN geometry
-    notNaN, and an index takes the bound the shipped wrapper uses.
+    notNaN, a non-finite (infinite or NaN) double takes finite, a negative unsigned takes
+    nonNegative, and an index takes the bound the
+    shipped wrapper uses. R2: a viewport INF case decomposes to 6 component finite guards
+    null-first (a single finite does not compile for a struct param); the kind comes from the
+    plan when the control needs a guard to match the shipped wrapper (GUARD-MATCH).
     """
     sel, badness = case.get("selector"), case.get("badness")
     if badness == "nil":
         return ['Bounds.nonNull({p}, "%s");' % sel]
     if badness == "nan":
         return ['Bounds.notNaN({p}, "%s");' % sel]
+    # R1: INF-finite emitter. AppKit geometry tolerates infinity (so notNaN stays), but Metal's
+    # viewport validation aborts on infinite as well as NaN ("must not be infinite or NaN",
+    # exit 134); Bounds.finite is the separate helper for that policy.
+    if badness == "inf":
+        # R2: the viewport struct has no whole-value finite overload; emit the 6 component
+        # guards null-first so the generated method compiles. Scalars keep the single form.
+        if param_kind == "mtlviewport" or case.get("param_kind") == "mtlviewport":
+            return struct_decomposition("mtlviewport", "{p}", sel)
+        return ['Bounds.finite({p}, "%s");' % sel]
     if badness == "index" and case.get("bound"):
         return ['Bounds.index({p}, %s, "%s");' % (case["bound"], sel)]
+    # Unsigned wrapping: a measured negative abort on an NSUInteger parameter takes
+    # nonNegative (no upper bound; the native slot/length limits stay hand-written
+    # per-selector maxima such as MAX_BUFFER_SLOTS). Signed longs never reach here:
+    # the probe only synthesizes negatives for unsigned kinds.
+    if badness == "negative":
+        # The scissor struct has no whole-value nonNegative overload; emit the 4
+        # component guards null-first so the generated method compiles. Scalars
+        # keep the single form.
+        if param_kind == "mtlscissorrect" or case.get("param_kind") == "mtlscissorrect":
+            return struct_decomposition("mtlscissorrect", "{p}", sel)
+        return ['Bounds.nonNegative({p}, "%s");' % sel]
     return []
 
 
@@ -793,7 +891,9 @@ def render_method(p, class_name):
             args_java.append("(MemorySegment) (%s == null ? MemorySegment.NULL : ObjC.nsstring(%s))" % (nm, nm))
         elif k.startswith("typed:"):
             args_java.append("(MemorySegment) (%s == null ? MemorySegment.NULL : %s.peer())" % (nm, nm))
-        elif k in ("long", "boolean", "double", "float", "byte", "int", "short"):
+        elif k in ("long", "ulong", "boolean", "double", "float", "byte", "int", "short"):
+            # R3: ulong emits exactly like long (a Java long at the call site); the distinct kind
+            # exists so a nonNegative guard can tell NSUInteger from NSInteger.
             args_java.append(nm)
         elif k == "uint32":
             args_java.append("(int) " + nm)
@@ -836,11 +936,28 @@ def render_method(p, class_name):
                    "byte": "(byte) 0", "uint32": "0", "double": "0.0", "float": "0.0f"}.get(
                        p.ret_java, "null")
         if p.ret_java in STRUCT_JAVA.values():
-            default = p.ret_java + ".ZERO"
+            # The default recorded at NIL-SKIP time (.ZERO or the inline literal for
+            # ZERO-less types); the .ZERO form below only fires for plans built before
+            # that record existed.
+            default = ((getattr(p, "nil_returns", {}) or {}).get(name)
+                       or p.ret_java + ".ZERO")
         lines.append("        if (%s == null) return%s;" % (name, (" " + default) if default else ""))
+    # R4 + R2: null-first hoist. A component guard such as Bounds.finite(viewport.originX(), ...)
+    # dereferences its struct parameter, so a null viewport would throw NullPointerException at
+    # the accessor instead of the documented IllegalArgumentException. Hoist every
+    # Bounds.nonNull guard above guard_setup and the remaining guards: nonNull needs no setup
+    # local, and failing fast on null keeps the later statements from observing it. R2's
+    # viewport (6x finite) and scissor (4x nonNegative) decompositions rely on this: they emit
+    # nonNull first, and the hoist is what guarantees it stays first even when guard_setup
+    # exists.
+    _null_guards = [g for g in (getattr(p, "guards", []) or []) if "Bounds.nonNull" in g]
+    _rest_guards = [g for g in (getattr(p, "guards", []) or []) if "Bounds.nonNull" not in g]
+    for guard in _null_guards:
+        for gl in guard.split("\n"):       # an evidence statement may be a small block
+            lines.append("        " + gl)
     for setup in getattr(p, "guard_setup", []) or []:
         lines.append("        " + setup)
-    for guard in getattr(p, "guards", []) or []:
+    for guard in _rest_guards:
         for gl in guard.split("\n"):       # an evidence statement may be a small block
             lines.append("        " + gl)
     lines.append("        try {")
@@ -1856,11 +1973,31 @@ def gen_classes(args, sdk, vocab, wrappers, rt):
                     lines.append("    GUARD-MISS %s  [no parameter named %s]" % (
                         q.decl.selector, case.get("param")))
                     continue
+                # R2: the parameter kind, for struct decomposition (viewport needs 6
+                # component guards; a single finite does not compile for a struct param).
+                target_kind = next((k for k, _jt, nm in q.params if nm == target), None)
+                # R2: expand the R1 single-finite scaffolding to the compilable 6x form.
+                # The evidence row stores one finite; the emitter needs six + null-first.
+                if target_kind == "mtlviewport" and case.get("badness") == "inf" and wanted:
+                    # Only the single form needs expanding; a row that already stores the
+                    # decomposition (future probe with param_kind) passes through unchanged.
+                    if not any(".originX()" in g for g in wanted):
+                        wanted = struct_decomposition("mtlviewport", "{p}", q.decl.selector)
+                        lines.append("    GUARD-DECOMPOSED %s%s  [viewport INF expands to 6x finite "
+                                     "null-first]" % ("+" if q.is_class else "", q.decl.selector))
+                # A stored single nonNegative for a scissor rect expands the same way:
+                # the evidence row keeps one guard, the emitter needs four + null-first.
+                if target_kind == "mtlscissorrect" and case.get("badness") == "negative" and wanted:
+                    if not any(".x()" in g for g in wanted):
+                        wanted = struct_decomposition("mtlscissorrect", "{p}", q.decl.selector)
+                        lines.append("    GUARD-DECOMPOSED %s%s  [scissor negative expands to 4x "
+                                     "nonNegative null-first]" % ("+" if q.is_class else "",
+                                                                  q.decl.selector))
                 if not wanted and case.get("control") and shipped in (
                         "java-exception", "objc-abort", "sigtrap", "sigill"):
                     # Measured: the generated wrapper tolerates an argument the shipped wrapper
                     # rejects. Matching it is conformance, not extra strictness.
-                    wanted = guard_template(case)
+                    wanted = guard_template(case, target_kind)
                     if wanted:
                         lines.append("    GUARD-MATCH %s%s  [the shipped wrapper rejects this "
                                      "argument]" % ("+" if q.is_class else "", q.decl.selector))
@@ -1870,10 +2007,18 @@ def gen_classes(args, sdk, vocab, wrappers, rt):
                     # stricter than the code it replaces. For nil its own body must be skipping the
                     # send (a nil aborts natively), so match that with an early return.
                     struct_ret = q.ret_java in STRUCT_JAVA.values()
-                    zero = struct_zero(q.ret_java, getattr(args, "repo", ".")) if struct_ret else None
-                    if case.get("badness") == "nil" and (not struct_ret or zero):
+                    default = (struct_default(q.ret_java, getattr(args, "repo", "."))
+                               if struct_ret else "null")
+                    if case.get("badness") == "nil" and (not struct_ret or default):
                         if target not in q.nil_skips:
                             q.nil_skips.append(target)
+                        if struct_ret:
+                            # The renderer inlines this instead of assuming .ZERO, so
+                            # ZERO-less structs (Metal value types, CATransform3D) compile.
+                            # A future selector family needing a non-zero sentinel (the
+                            # NSString search family's NOT_FOUND) wants a per-family override
+                            # here; the generic zero stays until such a method is generated.
+                            q.nil_returns[target] = default
                         lines.append("    NIL-SKIP %s%s  [the shipped wrapper tolerates nil]"
                                      % ("+" if q.is_class else "", q.decl.selector))
                     else:
@@ -1915,6 +2060,32 @@ def gen_classes(args, sdk, vocab, wrappers, rt):
                     continue          # reported as a match; its guard is in the list once
                 lines.append("    GUARD %s%s  [measured %s]" % (
                     "+" if q.is_class else "", q.decl.selector, case.get("unguarded")))
+            # R2: type-driven struct policy. The probe now synthesizes a negative-width
+            # scissor candidate, but no evidence row is measured yet; negatives are still
+            # always caller errors (live: neg-w aborts 134 with validation, finite
+            # tolerated, huge target-dependent so only nonNegative is safe). Emit 4x
+            # nonNegative null-first whenever the method takes a scissor rect and has no
+            # guard for it yet, so the generated wrapper matches the hand-written one
+            # without a per-class exception. Once a negative row is measured the evidence
+            # path above (GUARD-DECOMPOSED) takes over and this is skipped as guarded.
+            # Viewport is evidence-driven (R1 row) and already decomposed above; if a future
+            # viewport method arrives with no evidence, the same type policy would apply, but
+            # emitting it unconditionally would hide a missing measurement, so only scissor
+            # (whose only candidate is the new negative form) is unconditional here.
+            for k, _jt, nm in q.params:
+                if k != "mtlscissorrect" or q.is_class:
+                    continue
+                if any(re.search(r"\b%s\b" % re.escape(nm), g) for g in q.guards):
+                    continue
+                dec = struct_decomposition("mtlscissorrect", nm, q.decl.selector)
+                need = [g.split("(")[0] for g in dec]
+                if any(n in PRIMITIVES and not toolkit.has(n) for n in need):
+                    lines.append("    GUARD-UNAVAILABLE %s  [target tree lacks %s]" % (
+                        q.decl.selector, ", ".join(need)))
+                    continue
+                q.guards.extend(dec)
+                lines.append("    GUARD-TYPE %s%s  [scissor 4x nonNegative null-first]" % (
+                    "+" if q.is_class else "", q.decl.selector))
         # A member typed by a class this same run creates is not reproducible by a later run that
         # generates only this class (the other file may be missing): say so rather than let the
         # output drift silently between a batch and an incremental regeneration.

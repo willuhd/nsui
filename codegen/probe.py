@@ -400,11 +400,25 @@ def _cases_for_class(cls, plans, wrappers, recv_expr, ancestors=None, skip_cases
         scissors = [i for i, (k, _j, _n) in enumerate(kinds) if k == "mtlscissorrect"]
         if len(scissors) == 1:
             wanted.append((scissors[0], "negative"))
+        # Per-param ids: a method yielding two same-badness targets (two index params,
+        # offset+stride negatives) shares one id under the historical scheme, so the
+        # differential's id-keyed dicts keep only the last param. Suffix ambiguous groups
+        # with .<param_index>_<param> (stable under renames via the index); single-target
+        # groups keep the historical unsuffixed form, so only colliding ids change.
+        group_counts = {}
+        for _t, b in wanted:
+            group_counts[b] = group_counts.get(b, 0) + 1
+        plan_ids = set()
         for target, badness in wanted:
             args = [_bad_expr(k, badness) if i == target else _default_expr(k)
                     for i, (k, _j, _n) in enumerate(kinds)]
+            pid = "%s.%s.%s%s" % (cls, plan.java_name, badness,
+                                  (".%d_%s" % (target, kinds[target][2])
+                                   if group_counts[badness] > 1 else ""))
+            assert pid not in plan_ids, "duplicate probe id %s" % pid
+            plan_ids.add(pid)
             out.append({
-                "id": "%s.%s.%s" % (cls, plan.java_name, badness),
+                "id": pid,
                 "class": cls, "selector": plan.decl.selector,
                 "guard": {"nil": "nonNull", "nan": "notNaN", "index": "index",
                           "inf": "finite", "negative": "nonNegative"}[badness],
@@ -794,13 +808,16 @@ def merge_evidence(src, path):
     entries = json.load(open(src))["cases"]
     existing = json.load(open(path)) if os.path.exists(path) else {"cases": []}
     cases = existing.get("cases", [])
-    by_key = {(c.get("class"), c.get("selector"), c.get("param"), c.get("unguarded")): i
+    # Keyed on the case and its kind like merge_entries: without badness, two tolerated
+    # same-param rows (a .nan and a .inf control for one parameter) collapse to one key
+    # and the second silently replaces the first, losing a measured verdict.
+    by_key = {(c.get("class"), c.get("selector"), c.get("param"), c.get("badness")): i
               for i, c in enumerate(cases)}
     added = replaced = 0
     for e in entries:
         if e.get("verification") or e.get("baseline") or e.get("unguarded") == "java-exception":
             continue                       # a verification row, not evidence to emit from
-        key = (e.get("class"), e.get("selector"), e.get("param"), e.get("unguarded"))
+        key = (e.get("class"), e.get("selector"), e.get("param"), e.get("badness"))
         i = by_key.get(key)
         if i is None:
             by_key[key] = len(cases)
@@ -953,7 +970,14 @@ def _differential_slice(repo, args, classes):
                                if r["id"] in case_by_id) if e]
         added, replaced, total = merge_entries(args.merge_evidence, entries)
         print("   evidence: +%d, upgraded %d (%d total)" % (added, replaced, total))
-    return buckets
+    # Teardown-after-guard proof: how many of this slice's fixed cases measured the
+    # guard's IAE before the process still aborted (stdout only; routing already files
+    # them as fixed via the run_cases verdict flip, so buckets stay untouched).
+    n_fix = len(buckets.get("fixed", []))
+    n_torn = sum(1 for cid, _s, _g in buckets.get("fixed", [])
+                 if by_id.get(cid, {}).get("guard_fired"))
+    print("   fixed-via-teardown-guard: %d of %d fixed" % (n_torn, n_fix))
+    return buckets, n_torn, n_fix
 
 
 def fold_evidence(paths, target):
@@ -1017,6 +1041,7 @@ def differential(repo, args):
     slice_size = getattr(args, "slice", 20) or 20
     buckets = defaultdict(list)
     failed = []
+    torn_total = fixed_total = 0
     for i in range(0, len(classes), slice_size):
         chunk = classes[i:i + slice_size]
         print("-- differential slice %d/%d: %s"
@@ -1026,11 +1051,15 @@ def differential(repo, args):
         if part is None:
             failed.append(chunk)
             continue
+        part, n_torn, n_fix = part
+        torn_total += n_torn
+        fixed_total += n_fix
         for key, items in part.items():
             buckets[key].extend(items)
     for name in ("fixed", "parity", "unchanged-tolerated", "STRICTER-GUARD", "STRICTER-BODY",
                  "STILL-ABORTS", "LESS-SAFE", "LOOSER"):
         print("%-22s %4d" % (name, len(buckets.get(name, []))))
+    print("fixed-via-teardown-guard: %d of %d fixed (all slices)" % (torn_total, fixed_total))
     # A guard that over-rejects, a case that still aborts, and a generated wrapper that aborts
     # where the shipped one raised a clear error are defects. STRICTER-BODY and LOOSER are
     # conformance differences, reported but not failures.
@@ -1089,6 +1118,7 @@ def enumerate_measure(repo, args):
                 continue      # already fails safely in Java; nothing to record or emit
         entries.append(entry)
     print("\nmeasured: %s" % ", ".join("%s=%d" % kv for kv in sorted(counts.items())))
+    print("measured-via-teardown-guard: %d" % sum(1 for r in results if r.get("guard_fired")))
     path = args.out or os.path.join(REPO, "codegen", "guard-evidence.json")
     if args.merge and os.path.exists(path):
         existing = json.load(open(path))

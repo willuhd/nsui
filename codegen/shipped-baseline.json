@@ -355,15 +355,12 @@
     "NSGridView.indexOfRow.nil": "java-exception",
     "NSGridView.columnAtIndex.index": "java-exception",
     "NSGridView.indexOfColumn.nil": "java-exception",
-    "NSGridView.cellAtColumnIndexRowIndex.index": "java-exception",
     "NSGridView.cellForView.nil": "java-exception",
     "NSGridView.addRowWithViews.nil": "java-exception",
     "NSGridView.insertRowAtIndexWithViews.nil": "java-exception",
-    "NSGridView.moveRowAtIndexToIndex.index": "java-exception",
     "NSGridView.removeRowAtIndex.index": "java-exception",
     "NSGridView.addColumnWithViews.nil": "java-exception",
     "NSGridView.insertColumnAtIndexWithViews.nil": "java-exception",
-    "NSGridView.moveColumnAtIndexToIndex.index": "java-exception",
     "NSGridView.removeColumnAtIndex.index": "java-exception",
     "NSHelpManager.__baseline": "tolerated",
     "NSHelpManager.removeContextHelpForObject.nil": "objc-abort",
@@ -1119,6 +1116,12 @@
     "NSWorkspace.iconForFileType.nil": "tolerated",
     "NSClipView.scrollToPoint.inf": "tolerated",
     "NSClipView.constrainBoundsRect.inf": "tolerated",
-    "MTLRenderCommandEncoder.setViewport.inf": "java-exception"
+    "MTLRenderCommandEncoder.setViewport.inf": "java-exception",
+    "NSGridView.cellAtColumnIndexRowIndex.index.0_columnIndex": "java-exception",
+    "NSGridView.cellAtColumnIndexRowIndex.index.1_rowIndex": "java-exception",
+    "NSGridView.moveColumnAtIndexToIndex.index.0_fromIndex": "java-exception",
+    "NSGridView.moveColumnAtIndexToIndex.index.1_toIndex": "java-exception",
+    "NSGridView.moveRowAtIndexToIndex.index.0_fromIndex": "java-exception",
+    "NSGridView.moveRowAtIndexToIndex.index.1_toIndex": "java-exception"
   }
 }

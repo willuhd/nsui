@@ -1925,7 +1925,7 @@
       "selector": "setCharacterIndex:forGlyphAtIndex:",
       "param": "charIndex",
       "param_index": 0,
-      "probe_id": "NSLayoutManager.setCharacterIndexForGlyphAtIndex.index",
+      "probe_id": "NSLayoutManager.setCharacterIndexForGlyphAtIndex.index.0_charIndex",
       "unguarded": "tolerated",
       "control": "the unguarded call survived, so no guard is emitted",
       "guards": [],
@@ -12591,7 +12591,7 @@
       "selector": "moveItemAtIndex:toIndex:",
       "param": "oldIndex",
       "param_index": 0,
-      "probe_id": "NSScrubber.moveItemAtIndexToIndex.index",
+      "probe_id": "NSScrubber.moveItemAtIndexToIndex.index.0_oldIndex",
       "unguarded": "tolerated",
       "control": "the unguarded call survived, so no guard is emitted",
       "guards": [],
@@ -13701,7 +13701,7 @@
       "selector": "cellAtColumnIndex:rowIndex:",
       "param": "columnIndex",
       "param_index": 0,
-      "probe_id": "NSGridView.cellAtColumnIndexRowIndex.index",
+      "probe_id": "NSGridView.cellAtColumnIndexRowIndex.index.0_columnIndex",
       "unguarded": "objc-abort",
       "guards": [
         "Bounds.index({p}, numberOfColumns(), \"cellAtColumnIndex:rowIndex:\");"
@@ -13715,7 +13715,7 @@
       "selector": "cellAtColumnIndex:rowIndex:",
       "param": "rowIndex",
       "param_index": 1,
-      "probe_id": "NSGridView.cellAtColumnIndexRowIndex.index",
+      "probe_id": "NSGridView.cellAtColumnIndexRowIndex.index.1_rowIndex",
       "unguarded": "objc-abort",
       "guards": [
         "Bounds.index({p}, numberOfRows(), \"cellAtColumnIndex:rowIndex:\");"
@@ -13740,7 +13740,7 @@
       "selector": "moveRowAtIndex:toIndex:",
       "param": "fromIndex",
       "param_index": 0,
-      "probe_id": "NSGridView.moveRowAtIndexToIndex.index",
+      "probe_id": "NSGridView.moveRowAtIndexToIndex.index.0_fromIndex",
       "unguarded": "objc-abort",
       "guards": [
         "Bounds.index({p}, numberOfRows(), \"moveRowAtIndex:toIndex:\");"
@@ -13754,7 +13754,7 @@
       "selector": "moveRowAtIndex:toIndex:",
       "param": "toIndex",
       "param_index": 1,
-      "probe_id": "NSGridView.moveRowAtIndexToIndex.index",
+      "probe_id": "NSGridView.moveRowAtIndexToIndex.index.1_toIndex",
       "unguarded": "objc-abort",
       "guards": [
         "Bounds.index({p}, numberOfRows(), \"moveRowAtIndex:toIndex:\");"
@@ -13793,7 +13793,7 @@
       "selector": "moveColumnAtIndex:toIndex:",
       "param": "fromIndex",
       "param_index": 0,
-      "probe_id": "NSGridView.moveColumnAtIndexToIndex.index",
+      "probe_id": "NSGridView.moveColumnAtIndexToIndex.index.0_fromIndex",
       "unguarded": "objc-abort",
       "guards": [
         "Bounds.index({p}, numberOfColumns(), \"moveColumnAtIndex:toIndex:\");"
@@ -13807,7 +13807,7 @@
       "selector": "moveColumnAtIndex:toIndex:",
       "param": "toIndex",
       "param_index": 1,
-      "probe_id": "NSGridView.moveColumnAtIndexToIndex.index",
+      "probe_id": "NSGridView.moveColumnAtIndexToIndex.index.1_toIndex",
       "unguarded": "objc-abort",
       "guards": [
         "Bounds.index({p}, numberOfColumns(), \"moveColumnAtIndex:toIndex:\");"
@@ -13849,7 +13849,7 @@
       "selector": "setCharacterIndex:forGlyphAtIndex:",
       "param": "glyphIndex",
       "param_index": 1,
-      "probe_id": "NSLayoutManager.setCharacterIndexForGlyphAtIndex.index",
+      "probe_id": "NSLayoutManager.setCharacterIndexForGlyphAtIndex.index.1_glyphIndex",
       "unguarded": "tolerated",
       "control": "the unguarded call survived, so no guard is emitted",
       "guards": [],
@@ -13899,7 +13899,7 @@
       "selector": "moveRowAtIndex:toIndex:",
       "param": "oldIndex",
       "param_index": 0,
-      "probe_id": "NSOutlineView.moveRowAtIndexToIndex.index",
+      "probe_id": "NSOutlineView.moveRowAtIndexToIndex.index.0_oldIndex",
       "unguarded": "objc-abort",
       "needs_local_guard": "no count accessor on this class to bound the index; supply the guard statement in the evidence",
       "guards": [],
@@ -13910,7 +13910,7 @@
       "selector": "moveRowAtIndex:toIndex:",
       "param": "newIndex",
       "param_index": 1,
-      "probe_id": "NSOutlineView.moveRowAtIndexToIndex.index",
+      "probe_id": "NSOutlineView.moveRowAtIndexToIndex.index.1_newIndex",
       "unguarded": "objc-abort",
       "needs_local_guard": "no count accessor on this class to bound the index; supply the guard statement in the evidence",
       "guards": [],
@@ -13987,7 +13987,7 @@
       "selector": "moveItemAtIndex:toIndex:",
       "param": "newIndex",
       "param_index": 1,
-      "probe_id": "NSScrubber.moveItemAtIndexToIndex.index",
+      "probe_id": "NSScrubber.moveItemAtIndexToIndex.index.1_newIndex",
       "unguarded": "tolerated",
       "control": "the unguarded call survived, so no guard is emitted",
       "guards": [],

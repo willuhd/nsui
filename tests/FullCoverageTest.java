@@ -372,7 +372,9 @@ public final class FullCoverageTest {
             check(w.contentView()!=null, "contentView");
             NSView cv = NSView.create(new NSRect(0,0,100,100),(ctx,d)->{});
             w.setContentView(cv);
-            check(w.isVisible() || !w.isVisible(), "isVisible");
+            // Never ordered front, so visibility is determined (cf. the never-shown
+            // panel pins): an ||-both-ways check here passed visible or not.
+            check(!w.isVisible(), "isVisible false (never shown)");
             check(w.standardWindowButton(0)!=null, "standardWindowButton");
             check(!w.isUtilityWindow(), "isUtilityWindow normal false");
             NSWindow panel = NSWindow.createPanel(new NSRect(0,0,100,100), 15L|16L, 2L, false);

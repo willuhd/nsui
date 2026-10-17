@@ -706,7 +706,9 @@ public final class ControlsCoverageTest {
             TestKit.noThrow("NSPopUpButton setTitle no crash", () -> pop.setTitle("CustomTitle"));
             long stag = pop.selectedTag();
             System.out.println("  selectedTag = " + stag);
-            TestKit.probe("selectedTag getter no crash (got " + stag + ")");
+            // selectItemWithTag(777) returned true above with indexOfSelectedItem()==0,
+            // so the tag is determined: a probe here passed with any value, wrong or not.
+            TestKit.check(stag == 777L, "selectedTag == 777 after selectItemWithTag(777) (got " + stag + ")");
             TestKit.noThrow("synchronizeTitleAndSelectedItem no crash", () -> pop.synchronizeTitleAndSelectedItem());
             // usesItemFromMenu / altersStateOfSelectedItem (guard: 15.0+)
             if (responds(pop.peer(), "usesItemFromMenu")) {

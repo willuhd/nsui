@@ -305,8 +305,10 @@ public final class FullCoverageTest {
             check(backing.width()>0, "convertRectToBacking");
             v.setWantsLayer(true); check(v.wantsLayer(), "wantsLayer true");
             v.setWantsLayer(false);
-            check(v.autoresizesSubviews() || !v.autoresizesSubviews(), "autoresizesSubviews");
-            v.setAutoresizesSubviews(true);
+            // The old ||-both-ways check passed whatever the flag held and evaded the
+            // tautology gate; toggle both directions so the setter is actually verified.
+            v.setAutoresizesSubviews(false); check(!v.autoresizesSubviews(), "autoresizesSubviews false after set");
+            v.setAutoresizesSubviews(true); check(v.autoresizesSubviews(), "autoresizesSubviews true after set");
             check(v.translatesAutoresizingMaskIntoConstraints(), "translates");
             v.setTranslatesAutoresizingMaskIntoConstraints(false);
             // anchors
@@ -372,7 +374,9 @@ public final class FullCoverageTest {
             check(w.contentView()!=null, "contentView");
             NSView cv = NSView.create(new NSRect(0,0,100,100),(ctx,d)->{});
             w.setContentView(cv);
-            check(w.isVisible() || !w.isVisible(), "isVisible");
+            // Never ordered front, so visibility is determined (cf. the never-shown
+            // panel pins): an ||-both-ways check here passed visible or not.
+            check(!w.isVisible(), "isVisible false (never shown)");
             check(w.standardWindowButton(0)!=null, "standardWindowButton");
             check(!w.isUtilityWindow(), "isUtilityWindow normal false");
             NSWindow panel = NSWindow.createPanel(new NSRect(0,0,100,100), 15L|16L, 2L, false);

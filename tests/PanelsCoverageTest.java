@@ -522,7 +522,7 @@ public final class PanelsCoverageTest {
             tb.setAllowsUserCustomization(origCustom);
             boolean origVis = tb.isVisible();
             tb.setVisible(!origVis);
-            TestKit.probe("NSToolbar setVisible no crash (got " + tb.isVisible() + ")");
+            check(tb.isVisible() == !origVis, "NSToolbar visible toggle");
             tb.setVisible(origVis);
             boolean origBase = tb.showsBaselineSeparator();
             TestKit.noThrow("NSToolbar setShowsBaselineSeparator no crash", () -> tb.setShowsBaselineSeparator(!origBase));

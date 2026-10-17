@@ -688,6 +688,25 @@ public final class FoundationCoverageTest {
         TestKit.check(NSNumber.numberWithUnsignedShort(60000).unsignedShortValue() == 60000, "unsigned short high value");
         TestKit.check(NSNumber.numberWithInt(-1).intValue() == -1, "int sign-extends");
         TestKit.check(NSNumber.numberWithUnsignedInt(4294967295L).unsignedIntValue() == 4294967295L, "unsigned int high value");
+        TestKit.check(NSNumber.numberWithInt(Integer.MAX_VALUE).intValue() == Integer.MAX_VALUE, "int max boundary");
+        TestKit.check(NSNumber.numberWithInt(Integer.MIN_VALUE).intValue() == Integer.MIN_VALUE, "int min boundary");
+        TestKit.check(NSNumber.numberWithChar(Byte.MAX_VALUE).charValue() == Byte.MAX_VALUE, "char max boundary");
+        TestKit.check(NSNumber.numberWithChar(Byte.MIN_VALUE).charValue() == Byte.MIN_VALUE, "char min boundary");
+        TestKit.check(NSNumber.numberWithShort(Short.MAX_VALUE).shortValue() == Short.MAX_VALUE, "short max boundary");
+        TestKit.check(NSNumber.numberWithShort(Short.MIN_VALUE).shortValue() == Short.MIN_VALUE, "short min boundary");
+        // Narrowing silently wrapped before the guard (2^31 became -2^31, 128 became -128).
+        TestKit.expectThrows("numberWithInt(2^31) rejected", IllegalArgumentException.class,
+                () -> NSNumber.numberWithInt(2147483648L));
+        TestKit.expectThrows("numberWithInt(-2^31-1) rejected", IllegalArgumentException.class,
+                () -> NSNumber.numberWithInt(-2147483649L));
+        TestKit.expectThrows("numberWithChar(128) rejected", IllegalArgumentException.class,
+                () -> NSNumber.numberWithChar(128L));
+        TestKit.expectThrows("numberWithChar(-129) rejected", IllegalArgumentException.class,
+                () -> NSNumber.numberWithChar(-129L));
+        TestKit.expectThrows("numberWithShort(32768) rejected", IllegalArgumentException.class,
+                () -> NSNumber.numberWithShort(32768L));
+        TestKit.expectThrows("numberWithShort(-32769) rejected", IllegalArgumentException.class,
+                () -> NSNumber.numberWithShort(-32769L));
         CALayer maskLayer = CALayer.create();
         maskLayer.setEdgeAntialiasingMask(7);
         TestKit.check(maskLayer.edgeAntialiasingMask() == 7, "edgeAntialiasingMask round-trip");

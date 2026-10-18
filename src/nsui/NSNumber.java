@@ -14,13 +14,9 @@ import static nsui.objc.Sig.Ret;
 /// Header-completeness (`NSValue.h`, NSNumber interface + creation): every safe method
 /// whose shape is in the Sig vocabulary is wrapped below. Narrow-width factories use
 /// exact shapes — of(ID,BYTE) for Char/UnsignedChar, of(ID,SHORT) for Short/
-/// UnsignedShort — while the int/long/long-long/integer families keep of(ID,INT)
+/// UnsignedShort, of(ID,FLOAT) for Float — while the int/long/long-long/integer families keep of(ID,INT)
 /// (real encodings i/I/l/Q/q map nominally to INT and the callee reads the low bits
-/// correctly on LE). OMITTED — numberWithFloat: NATIVE form
-/// (needs of(ID,FLOAT), not in Sig): numberWithFloat(float) below doubles through
-/// numberWithDouble (exact: every float is exactly representable as a double; objCType
-/// reports "d" instead of "f" — flagged for the Sig owner to add of(ID,FLOAT));
-/// initWithChar:/.../initWithInteger:/... (covered by the numberWith* factories);
+/// correctly on LE). OMITTED — initWithChar:/.../initWithInteger:/... (covered by the numberWith* factories);
 /// initWithCoder: (needs NSCoder).
 public final class NSNumber extends NSValue {
 
@@ -96,9 +92,14 @@ public final class NSNumber extends NSValue {
         } catch (Throwable t) { throw new RuntimeException("numberWithBool: failed", t); }
     }
 
-    /// numberWithFloat: — via numberWithDouble (of(ID,FLOAT) is not in Sig; see class docs).
+    /// numberWithFloat: — exact FLOAT call shape (real `f` encoding).
     public static NSNumber numberWithFloat(float value) {
-        return numberWithDouble((double) value);
+        ensureNumInit();
+        try {
+            MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.FLOAT));
+            MemorySegment s = (MemorySegment) h.invokeExact(ObjC.cls("NSNumber"), ObjC.sel("numberWithFloat:"), value);
+            return wrap(s);
+        } catch (Throwable t) { throw new RuntimeException("numberWithFloat: failed", t); }
     }
 
     /// numberWithChar: (C char, 1 byte).

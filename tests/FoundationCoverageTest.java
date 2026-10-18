@@ -725,8 +725,8 @@ public final class FoundationCoverageTest {
         maskLayer.setEdgeAntialiasingMask(0xFFFFFFFFL);
         TestKit.check(maskLayer.edgeAntialiasingMask() == 0xFL, "edgeAntialiasingMask clamps to valid bits");
         TestKit.check(Math.abs(NSNumber.numberWithDouble(3.14).doubleValue() - 3.14) < 1e-12, "double");
-        TestKit.check(NSNumber.numberWithFloat(1.5f).floatValue() == 1.5f, "float fallback exact");
-        TestKit.check("d".equals(NSNumber.numberWithFloat(1.5f).objCType()), "float fallback objCType d (documented)");
+        TestKit.check(NSNumber.numberWithFloat(1.5f).floatValue() == 1.5f, "float exact");
+        TestKit.check("f".equals(NSNumber.numberWithFloat(1.5f).objCType()), "float objCType f");
         TestKit.check(NSNumber.numberWithBool(true).boolValue(), "bool true");
         TestKit.check(!NSNumber.numberWithBool(false).boolValue(), "bool false");
         TestKit.check(NSNumber.numberWithInt(2).compare(NSNumber.numberWithInt(3)) < 0, "number compare <");

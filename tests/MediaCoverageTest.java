@@ -152,6 +152,10 @@ public final class MediaCoverageTest {
         try {
             NSImage icon = NSWorkspace.sharedWorkspace().iconForFileType("txt");
             check(icon != null, "icon source non-nil");
+            // nil guard (83046ca): null aborts natively (NSInvalidArgumentException, exit 134).
+            TestKit.expectThrows("activateFileViewerSelectingURLs(null) rejects",
+                    IllegalArgumentException.class,
+                    () -> NSWorkspace.sharedWorkspace().activateFileViewerSelectingURLs(null));
             NSColor pattern = NSColor.colorWithPatternImage(icon);
             check(pattern != null && pattern.type() == 1, "pattern color type == 1");
             check(pattern.patternImage() != null, "patternImage non-nil");

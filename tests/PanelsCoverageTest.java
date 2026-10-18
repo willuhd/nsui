@@ -273,12 +273,15 @@ public final class PanelsCoverageTest {
             check(info.verticalPagination() == 2L && info.verticalPaginationEnum() == NSPrintInfo.PaginationMode.clip,
                     "NSPrintInfo verticalPagination clip(2) typed");
             info.setVerticalPagination(origVP);
-            // jobDisposition only accepts NSPrintSpoolJob/Preview/Save/CancelJob constants; round-trip the
-            // current value instead of inventing one (an invalid string makes AppKit throw).
+            // jobDisposition only accepts NSPrintSpoolJob/Preview/Save/CancelJob constants;
+            // toggle to a different legal constant so a no-op setter cannot pass.
             String origDisp2 = info.jobDisposition();
             if (origDisp2 != null) {
+                String altDisp2 = origDisp2.equals("NSPrintSpoolJob") ? "NSPrintPreviewJob" : "NSPrintSpoolJob";
+                info.setJobDisposition(altDisp2);
+                check(altDisp2.equals(info.jobDisposition()), "NSPrintInfo jobDisposition toggle " + altDisp2);
                 info.setJobDisposition(origDisp2);
-                check(origDisp2.equals(info.jobDisposition()), "NSPrintInfo jobDisposition round-trip current value (" + origDisp2 + ")");
+                check(origDisp2.equals(info.jobDisposition()), "NSPrintInfo jobDisposition restore " + origDisp2);
             } else {
                 TestKit.skipCase("NSPrintInfo jobDisposition null (headless default) — skip round-trip");
             }

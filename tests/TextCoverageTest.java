@@ -450,6 +450,9 @@ public final class TextCoverageTest {
         c.replaceLayoutManager(lm2);
         TestKit.check(c.layoutManager() != null && c.layoutManager().peer().address() == lm2.peer().address(),
                 "replaceLayoutManager swaps");
+        // nil guard (2ae035e): null aborts natively (NSInvalidArgumentException, exit 134).
+        TestKit.expectThrows("replaceLayoutManager(null) rejects",
+                IllegalArgumentException.class, () -> c.replaceLayoutManager(null));
         // restore web for the view test below
         c.replaceLayoutManager(lm);
 
@@ -568,6 +571,9 @@ public final class TextCoverageTest {
         lm.replaceTextStorage(storage2);
         TestKit.check(lm.textStorage() != null && lm.textStorage().peer().address() == storage2.peer().address(),
                 "replaceTextStorage swaps");
+        // nil guard (89d2fdf): null aborts natively (NSInvalidArgumentException, exit 134).
+        TestKit.expectThrows("replaceTextStorage(null) rejects",
+                IllegalArgumentException.class, () -> lm.replaceTextStorage(null));
         lm.ensureLayoutForTextContainer(c);
         NSRect used = lm.usedRectForTextContainer(c);
         TestKit.check(used.height() > 0 && used.width() > 0,

@@ -365,6 +365,9 @@ public final class WindowCoverageTest {
             check(fromVC != null && fromVC.isKindOfClass("NSWindow"),
                     "windowWithContentViewController non-null NSWindow");
             TestKit.close(fromVC);
+            // nil guard (e9698ac): null aborts natively (NSInvalidArgumentException, exit 134).
+            TestKit.expectThrows("windowWithContentViewController(null) rejects",
+                    IllegalArgumentException.class, () -> NSWindow.windowWithContentViewController(null));
             CADisplayLink wlink = w1.displayLinkWithTarget(app, "updateWindows");
             check(wlink != null, "window displayLinkWithTarget non-null");
             if (wlink != null) wlink.invalidate();

@@ -68,6 +68,9 @@ public final class TableCoverageTest {
             NSTableColumn c2 = NSTableColumn.create("Score");
             tv.addTableColumn(c1);
             tv.addTableColumn(c2);
+            // nil guard: null aborts natively; happy-path adds above stay.
+            TestKit.expectThrows("addTableColumn(null) rejects",
+                    IllegalArgumentException.class, () -> tv.addTableColumn(null));
 
             // owning-table link (NSTableColumn addition)
             check(isNil(NSTableColumn.create("Detached").tableView()), "detached NSTableColumn.tableView nil");

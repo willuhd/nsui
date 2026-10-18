@@ -219,6 +219,11 @@ public final class AttributedLayerTest {
             TestKit.check(Math.abs(layer.opacity() - 0.5) < 0.02, "CALayer opacity 0.5 round-trip (got " + layer.opacity() + ")");
             layer.setOpacity(1.0);
             TestKit.check(Math.abs(layer.opacity() - 1.0) < 0.01, "CALayer opacity 1.0 round-trip");
+            // Wire is float: pin truncation with a non-representable value (0.5/1.0 are exact in float).
+            double trunc = 0.123456789;
+            layer.setOpacity(trunc);
+            TestKit.check(Math.abs(layer.opacity() - (double) (float) trunc) < 1e-6
+                    && layer.opacity() != trunc, "CALayer opacity float truncation (got " + layer.opacity() + ")");
 
             // null handling — must not throw WrongMethodType
             try {

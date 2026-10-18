@@ -170,6 +170,9 @@ public final class TouchBarWindowDocTest {
             doc.addWindowController(wc);
             NSArray after = doc.windowControllers();
             check(after != null && after.count() == 1, "NSDocument addWindowController count 1 (got " + (after==null? "null": after.count()) + ")");
+            // nil guard (689945b): null aborts natively (NSInvalidArgumentException, exit 134).
+            TestKit.expectThrows("NSDocument addWindowController(null) rejects",
+                    IllegalArgumentException.class, () -> doc.addWindowController(null));
             // displayName no crash
             try { TestKit.noThrow("NSDocument displayName no crash (got \"" + doc.displayName() + "\")", () -> doc.displayName()); } catch (Throwable t){ check(false, "displayName threw: "+t); }
 

@@ -1416,6 +1416,9 @@ public final class AuditRegressionTest {
                     IllegalArgumentException.class, () -> tabV.selectTabViewItem(foreign));
             TestKit.expectThrows("selectTabViewItem(null) rejects",
                     IllegalArgumentException.class, () -> tabV.selectTabViewItem(null));
+            // nil guard on the add path: null aborts natively; happy-path add above stays.
+            TestKit.expectThrows("addTabViewItem(null) rejects",
+                    IllegalArgumentException.class, () -> tabV.addTabViewItem(null));
 
             TestKit.check(nsui.MTLRenderCommandEncoder.MAX_SET_BYTES == 4096L,
                     "Metal set*Bytes cap is documented as 4096");

@@ -77,6 +77,9 @@ public final class NSLayoutManager extends NSObject {
 
     /// [layoutManager replaceTextStorage:]
     public void replaceTextStorage(NSTextStorage storage) {
+        // Measured one process per case: null aborts (NSInvalidArgumentException
+        // "nil NSTextStorage given", exit 134).
+        Bounds.nonNull(storage, "replaceTextStorage:");
         ObjC.msgSendVoidId(peer, ObjC.sel("replaceTextStorage:"), (MemorySegment) (storage == null ? MemorySegment.NULL : storage.peer()));
     }
 

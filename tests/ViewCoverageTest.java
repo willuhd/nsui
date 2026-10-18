@@ -12,6 +12,7 @@ import nsui.NSGlassEffectContainerView;
 import nsui.NSGlassEffectView;
 import nsui.NSGridView;
 import nsui.NSImage;
+import nsui.NSMenu;
 import nsui.NSPoint;
 import nsui.NSRect;
 import nsui.NSSize;
@@ -122,8 +123,10 @@ public final class ViewCoverageTest {
         TestKit.check(v.frameRotation() == rot + 10, "NSView frameRotation set +10");
         v.setFrameRotation(rot);
         double crot = v.frameCenterRotation();
+        v.setFrameCenterRotation(crot + 10);
+        TestKit.check(v.frameCenterRotation() == crot + 10, "NSView frameCenterRotation toggle +10");
         v.setFrameCenterRotation(crot);
-        TestKit.check(v.frameCenterRotation() == crot, "NSView frameCenterRotation round-trip");
+        TestKit.check(v.frameCenterRotation() == crot, "NSView frameCenterRotation restore");
         double brot = v.boundsRotation();
         v.setBoundsRotation(brot);
         TestKit.check(v.boundsRotation() == brot, "NSView boundsRotation round-trip");
@@ -178,8 +181,7 @@ public final class ViewCoverageTest {
         }
 
         // scrolling / hit testing
-        v.scrollPoint(new NSPoint(5, 5));
-        TestKit.probe("NSView scrollPoint no-throw");
+        TestKit.noThrow("NSView scrollPoint no-throw", () -> v.scrollPoint(new NSPoint(5, 5)));
         TestKit.check(v.hitTest(new NSPoint(10, 10)) != null, "NSView hitTest inside non-nil");
         TestKit.check(v.tag() == -1, "NSView default tag -1 (got " + v.tag() + ")");
         TestKit.check(v.viewWithTag(999999) == null, "NSView viewWithTag unknown -> nil");
@@ -218,8 +220,10 @@ public final class ViewCoverageTest {
         v.drawFocusRingMask();
         v.noteFocusRingMaskChanged();
         TestKit.check(Double.isFinite(v.focusRingMaskBounds().width()), "NSView focusRingMaskBounds finite");
-        TestKit.check(NSView.focusView() == null || NSView.focusView().peer().address() != 0, "NSView focusView no-throw");
-        TestKit.check(NSView.defaultMenu() == null || NSView.defaultMenu().peer().address() != 0, "NSView defaultMenu no-throw");
+        NSView fv = TestKit.attempt("NSView focusView no-throw", NSView::focusView);
+        TestKit.probe("NSView focusView read (environment-defined " + (fv == null ? "null" : "non-nil") + ")");
+        NSMenu dm = TestKit.attempt("NSView defaultMenu no-throw", NSView::defaultMenu);
+        TestKit.probe("NSView defaultMenu read (environment-defined " + (dm == null ? "null" : "non-nil") + ")");
 
         // key views
         NSView other = NSView.create(new NSRect(0, 0, 40, 40), (ctx, d) -> {});
@@ -233,13 +237,20 @@ public final class ViewCoverageTest {
         TestKit.check(v.previousValidKeyView() == null || v.previousValidKeyView().peer().address() != 0, "NSView previousValidKeyView no-throw");
         other.removeFromSuperview();
 
-        // layer props
+        // layer props — toggle to a different valid value so a no-op setter
+        // cannot pass (same-value round-trips are vacuous); 0/1 are both valid.
         long rp = v.layerContentsRedrawPolicy();
+        long rpAlt = (rp == 0 ? 1 : 0);
+        v.setLayerContentsRedrawPolicy(rpAlt);
+        TestKit.check(v.layerContentsRedrawPolicy() == rpAlt, "NSView layerContentsRedrawPolicy toggle " + rpAlt);
         v.setLayerContentsRedrawPolicy(rp);
-        TestKit.check(v.layerContentsRedrawPolicy() == rp, "NSView layerContentsRedrawPolicy round-trip " + rp);
+        TestKit.check(v.layerContentsRedrawPolicy() == rp, "NSView layerContentsRedrawPolicy restore " + rp);
         long lp = v.layerContentsPlacement();
+        long lpAlt = (lp == 0 ? 1 : 0);
+        v.setLayerContentsPlacement(lpAlt);
+        TestKit.check(v.layerContentsPlacement() == lpAlt, "NSView layerContentsPlacement toggle " + lpAlt);
         v.setLayerContentsPlacement(lp);
-        TestKit.check(v.layerContentsPlacement() == lp, "NSView layerContentsPlacement round-trip " + lp);
+        TestKit.check(v.layerContentsPlacement() == lp, "NSView layerContentsPlacement restore " + lp);
         // Measured live on a plain NSView: wantsUpdateLayer false, deterministic.
         TestKit.check(!v.wantsUpdateLayer(), "NSView wantsUpdateLayer default NO");
         boolean wul1 = v.wantsUpdateLayer();
@@ -334,7 +345,10 @@ public final class ViewCoverageTest {
         boolean fdi1 = v.isDrawingFindIndicator();
         boolean fdi2 = v.isDrawingFindIndicator();
         TestKit.check(fdi1 == fdi2, "NSView isDrawingFindIndicator deterministic");
-        TestKit.check(Double.isFinite(v.alphaValue()), "NSView alphaValue finite");
+        double origAlpha = v.alphaValue();
+        v.setAlphaValue(0.5);
+        TestKit.check(Math.abs(v.alphaValue() - 0.5) < 0.01, "NSView alphaValue 0.5 round-trip (got " + v.alphaValue() + ")");
+        v.setAlphaValue(origAlpha);
     }
 
     private static void clipViewTests(NSView content) {
@@ -732,6 +746,9 @@ public final class ViewCoverageTest {
         TestKit.noThrow("NSViewController dismissController:null no-throw", () -> vc.dismissController(null));
         TestKit.check(vc.parentViewController() == null, "NSViewController parentViewController nil");
         TestKit.check(vc.childViewControllers().count() == 0, "NSViewController childViewControllers initially 0");
+        // nil guard: null aborts natively; happy-path adds below stay.
+        TestKit.expectThrows("NSViewController addChildViewController(null) rejects",
+                IllegalArgumentException.class, () -> vc.addChildViewController(null));
         NSViewController k1 = NSViewController.create();
         NSViewController k2 = NSViewController.create();
         vc.addChildViewController(k1);

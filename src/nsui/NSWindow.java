@@ -1551,6 +1551,9 @@ ensureInit(); return ObjC.msgSendBool(peer, Sels.hasDynamicDepthLimit); }
     /// +windowWithContentViewController: — titled window hosting the controller.
     public static NSWindow windowWithContentViewController(NSViewController controller) {
         ensureInit();
+        // Measured one process per case: null aborts (NSInvalidArgumentException
+        // "Controller cannot be nil", exit 134).
+        Bounds.nonNull(controller, "windowWithContentViewController:");
         MemorySegment w = ObjC.msgSendIdId(ObjC.cls("NSWindow"),
                 Sels.windowWithContentViewController,
                 controller == null ? MemorySegment.NULL : controller.peer());

@@ -113,6 +113,10 @@ public final class NSFontDescriptor extends NSObject {
     /// (the mask is a 32-bit unsigned int — exact INT32 call shape).
     public NSFontDescriptor fontDescriptorWithSymbolicTraits(long traits) {
         ensureInit();
+        if (traits < 0 || traits > 0xFFFFFFFFL) {
+            throw new IllegalArgumentException("fontDescriptorWithSymbolicTraits: traits " + traits
+                    + " out of range (0..4294967295)");
+        }
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.ID, Arg.INT32));
             MemorySegment d = (MemorySegment) h.invokeExact(peer, ObjC.sel("fontDescriptorWithSymbolicTraits:"), (int) traits);

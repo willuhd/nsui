@@ -2334,6 +2334,30 @@ def gen_classes(args, sdk, vocab, wrappers, rt):
                 q.guards.extend(dec)
                 lines.append("    GUARD-TYPE %s%s  [scissor 4x nonNegative null-first]" % (
                     "+" if q.is_class else "", q.decl.selector))
+            # Type-driven uint32 range policy. A uint32_t parameter is carried in a Java long
+            # and narrowed with (int) at the call, so a value outside 0..4294967295 silently
+            # wraps (bit 31 set goes negative; high bits are lost) instead of failing loudly.
+            # The shipped wrappers guard this inline (MTLStencilDescriptor.setReadMask:, the
+            # stencil setters, clearStencil:); the generator emitted the same (int) cast with
+            # no guard, so regenerating one of those classes stripped the shipped check.
+            # Emit the same inline range check for every uint32 parameter with no guard yet.
+            for k, _jt, nm in q.params:
+                if k != "uint32":
+                    continue
+                # Match the guard statement itself (`if (<nm> < 0`), not a bare name search:
+                # the message embeds the selector, and a multi-param selector
+                # (`setStencilFrontReferenceValue:backReferenceValue:`) contains the second
+                # parameter's name, so a substring test falsely read the first guard as
+                # covering the second and left it unguarded.
+                if any(re.search(r"if\s*\(\s*%s\s*<" % re.escape(nm), g) for g in q.guards):
+                    continue
+                q.guards.extend([
+                    'if (%s < 0 || %s > 0xFFFFFFFFL) {' % (nm, nm),
+                    '    throw new IllegalArgumentException("%s %s " + %s + " out of range '
+                    '(0..4294967295)");' % (q.decl.selector, nm, nm),
+                    '}'])
+                lines.append("    GUARD-TYPE %s%s  [uint32 range 0..4294967295 for %s]" % (
+                    "+" if q.is_class else "", q.decl.selector, nm))
         # Emitter nan/inf union: a scalar carrying both notNaN (nan case) and finite
         # (inf case or GUARD-MATCH control) keeps finite only — finite already rejects
         # NaN, so the pair is one policy, not two. Runs after every guard source above

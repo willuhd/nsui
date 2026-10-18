@@ -98,12 +98,23 @@ def check_determinism():
           "exit %d" % r.returncode)
 
 
+def _drop(path):
+    # A producer that crashes must not leave the previous run's output behind for the
+    # consumer to trust: remove the expected file first so a stale artifact reads as
+    # "not produced", never as a pass.
+    try:
+        os.remove(path)
+    except FileNotFoundError:
+        pass
+
+
 def check_coverage():
     classes = []
     for c in COVERAGE:
         classes += ["--class", c]
-    r = run([sys.executable, os.path.join(HERE, "bench.py"), "--matrix", "--no-gate"] + classes)
     out = os.path.join(bench.REPORTS, "matrix.json")
+    _drop(out)
+    r = run([sys.executable, os.path.join(HERE, "bench.py"), "--matrix", "--no-gate"] + classes)
     if not os.path.exists(out):
         check("coverage: bench matrix produced results", False, r.stdout[-200:])
         return
@@ -170,6 +181,7 @@ def check_guards():
     so it is what proves the emitted guards do something rather than merely compile.
     """
     out = os.path.join(bench.REPORTS, "selftest-guards.json")
+    _drop(out)
     r = run([sys.executable, os.path.join(HERE, "probe.py"), "--repo", REPO, "--generated",
              "NSViewController", "NSMenu", "NSView", "NSClipView", "--out", out],
             timeout=900)
@@ -205,6 +217,7 @@ def check_enumerated_guards():
     real: an abort that still carries a guard statement is a guard that does not work.
     """
     out = os.path.join(bench.REPORTS, "selftest-enum.json")
+    _drop(out)
     r = run([sys.executable, os.path.join(HERE, "probe.py"), "--enumerate", "NSMenu",
              "--out", out], timeout=1800)
     if not os.path.exists(out):
@@ -265,6 +278,7 @@ def check_rotating_verification():
     if not sample:
         sample = [ranked[start]]
     out = os.path.join(bench.REPORTS, "selftest-verify.json")
+    _drop(out)
     r = run([sys.executable, os.path.join(HERE, "probe.py"), "--enumerate"] + sample +
             ["--no-evidence", "--record-all", "--out", out], timeout=1800)
     if not os.path.exists(out):
@@ -298,6 +312,7 @@ def check_flaw_patch():
     apply is worth nothing to the maintainer.
     """
     patch_path = os.path.join(bench.REPORTS, "selftest-guard.patch")
+    _drop(patch_path)
     r = run([sys.executable, os.path.join(HERE, "flaws.py"), "--check", "F3", "--patch", patch_path])
     if not os.path.exists(patch_path) or os.path.getsize(patch_path) == 0:
         check("flaws: proposed guard patch emitted", False, (r.stdout + r.stderr)[-160:])

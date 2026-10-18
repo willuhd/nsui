@@ -239,9 +239,11 @@ public final class NSMenuItem extends NSObject {
     ///
     /// CORRECTED: the try/catch this used to rely on is not a guard (see sectionHeaderWithTitle).
     public boolean isHighlighted() {
+        if (!respondsToSelector(ObjC.sel("isHighlighted"))) return false;
         return ObjC.msgSendBool(peer, ObjC.sel("isHighlighted"));
     }
     public boolean isHiddenOrHasHiddenAncestor() {
+        if (!respondsToSelector(ObjC.sel("isHiddenOrHasHiddenAncestor"))) return false;
         return ObjC.msgSendBool(peer, ObjC.sel("isHiddenOrHasHiddenAncestor"));
     }
     public boolean isSectionHeader() {

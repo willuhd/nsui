@@ -93,7 +93,6 @@ public final class TouchBarWindowDocTest {
                         () -> item.setView(null));
             } catch (Throwable t){ check(false, "setView null threw: "+t); }
             try { TestKit.noThrow("NSTouchBarItem view accessor no crash", () -> item.view()); } catch (Throwable t){ check(false, "view threw: "+t); }
-            try { TestKit.noThrow("NSTouchBarItem view accessor no crash", () -> item.view()); } catch (Throwable t){ check(false, "view threw: "+t); }
 
         } catch (Throwable t) {
             check(false, "NSTouchBarItem section threw: " + t);

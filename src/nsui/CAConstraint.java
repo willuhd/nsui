@@ -56,6 +56,14 @@ public final class CAConstraint extends NSObject {
     /// exact INT32 call shape.
     public static CAConstraint relativeTo(long attr, String sourceId, long sourceAttr, double scale, double offset) {
         ensureInit();
+        if (attr < Integer.MIN_VALUE || attr > Integer.MAX_VALUE) {
+            throw new IllegalArgumentException("constraintWithAttribute:... attr " + attr
+                    + " out of int range (" + Integer.MIN_VALUE + ".." + Integer.MAX_VALUE + ")");
+        }
+        if (sourceAttr < Integer.MIN_VALUE || sourceAttr > Integer.MAX_VALUE) {
+            throw new IllegalArgumentException("constraintWithAttribute:... sourceAttr " + sourceAttr
+                    + " out of int range (" + Integer.MIN_VALUE + ".." + Integer.MAX_VALUE + ")");
+        }
         try {
             return wrap((MemorySegment) handles.hFull().invokeExact(ObjC.cls("CAConstraint"),
                     ObjC.sel("constraintWithAttribute:relativeTo:attribute:scale:offset:"),
@@ -68,6 +76,14 @@ public final class CAConstraint extends NSObject {
     /// constraintWithAttribute:relativeTo:attribute:offset:.
     public static CAConstraint relativeTo(long attr, String sourceId, long sourceAttr, double offset) {
         ensureInit();
+        if (attr < Integer.MIN_VALUE || attr > Integer.MAX_VALUE) {
+            throw new IllegalArgumentException("constraintWithAttribute:... attr " + attr
+                    + " out of int range (" + Integer.MIN_VALUE + ".." + Integer.MAX_VALUE + ")");
+        }
+        if (sourceAttr < Integer.MIN_VALUE || sourceAttr > Integer.MAX_VALUE) {
+            throw new IllegalArgumentException("constraintWithAttribute:... sourceAttr " + sourceAttr
+                    + " out of int range (" + Integer.MIN_VALUE + ".." + Integer.MAX_VALUE + ")");
+        }
         try {
             return wrap((MemorySegment) handles.hOffset().invokeExact(ObjC.cls("CAConstraint"),
                     ObjC.sel("constraintWithAttribute:relativeTo:attribute:offset:"),
@@ -80,6 +96,14 @@ public final class CAConstraint extends NSObject {
     /// constraintWithAttribute:relativeTo:attribute:.
     public static CAConstraint relativeTo(long attr, String sourceId, long sourceAttr) {
         ensureInit();
+        if (attr < Integer.MIN_VALUE || attr > Integer.MAX_VALUE) {
+            throw new IllegalArgumentException("constraintWithAttribute:... attr " + attr
+                    + " out of int range (" + Integer.MIN_VALUE + ".." + Integer.MAX_VALUE + ")");
+        }
+        if (sourceAttr < Integer.MIN_VALUE || sourceAttr > Integer.MAX_VALUE) {
+            throw new IllegalArgumentException("constraintWithAttribute:... sourceAttr " + sourceAttr
+                    + " out of int range (" + Integer.MIN_VALUE + ".." + Integer.MAX_VALUE + ")");
+        }
         try {
             return wrap((MemorySegment) handles.hPlain().invokeExact(ObjC.cls("CAConstraint"),
                     ObjC.sel("constraintWithAttribute:relativeTo:attribute:"),

@@ -652,6 +652,10 @@ public final class MetalDepthStencilTest {
                     IllegalArgumentException.class, () -> enc.setStencilFrontReferenceValue(-1L, 0L));
             TestKit.expectThrows("setStencilFrontReferenceValue back out-of-range rejected",
                     IllegalArgumentException.class, () -> enc.setStencilFrontReferenceValue(0L, 0x1_00000000L));
+            TestKit.expectThrows("setStencilFrontReferenceValue front too-large rejected",
+                    IllegalArgumentException.class, () -> enc.setStencilFrontReferenceValue(0x1_00000000L, 0L));
+            TestKit.expectThrows("setStencilFrontReferenceValue back negative rejected",
+                    IllegalArgumentException.class, () -> enc.setStencilFrontReferenceValue(0L, -1L));
             enc.endEncoding();
             ecb.commit();
             ecb.waitUntilCompleted();

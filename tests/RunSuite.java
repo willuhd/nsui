@@ -332,7 +332,8 @@ public final class RunSuite {
         System.out.println("ALL TESTS PASSED");
     }
 
-    /// True when any RESULT line states a failure: "RESULT: N FAILURE(S)" (TestKit.end) or
+    /// True when any RESULT line states a failure: "RESULT: N FAILURE(S)" (TestKit.end),
+    /// "RESULT: N FAILED" (the bar-init early-abort shape in MenuBarStatusTest) or
     /// "RESULT: FAIL (...)" (the hand-rolled tests). "ALL PASS", "PASS (...)", "PARTIAL PASS",
     /// "N CASE SKIP(S)" and "N PROBE(S)" are not failures.
     private static boolean reportsFailure(String log) {
@@ -342,6 +343,7 @@ public final class RunSuite {
             String rest = t.substring("RESULT:".length()).trim();
             if (rest.startsWith("FAIL")) return true;
             if (rest.matches("\\d+\\s+FAILURE.*")) return true;
+            if (rest.matches("\\d+\\s+FAILED.*")) return true;
             if (rest.matches("\\d+\\s+of\\s+\\d+\\s+assertions\\s+FAILED.*")) return true;
         }
         return false;

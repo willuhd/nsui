@@ -300,18 +300,10 @@ public final class EventCoverageTest {
             }
             TestKit.check(guarded, "synthetic " + which + " guarded (IllegalStateException)");
         }
-        try {
-            ev.charactersIgnoringModifiers();
-            TestKit.check(false, "charactersIgnoringModifiers should guard");
-        } catch (IllegalStateException expected) {
-            TestKit.skipCase("synthetic charactersIgnoringModifiers guarded");
-        }
-        try {
-            ev.charactersByApplyingModifiers(0);
-            TestKit.check(false, "charactersByApplyingModifiers should guard");
-        } catch (IllegalStateException expected) {
-            TestKit.skipCase("synthetic charactersByApplyingModifiers guarded");
-        }
+        TestKit.expectThrows("synthetic charactersIgnoringModifiers guarded (IllegalStateException)",
+                IllegalStateException.class, () -> ev.charactersIgnoringModifiers());
+        TestKit.expectThrows("synthetic charactersByApplyingModifiers guarded (IllegalStateException)",
+                IllegalStateException.class, () -> ev.charactersByApplyingModifiers(0));
 
         // ---- synthetic CG key event: key-only accessors ----
         FunctionDescriptor keyDesc = FunctionDescriptor.of(ValueLayout.ADDRESS, ValueLayout.ADDRESS,
@@ -645,6 +637,10 @@ public final class EventCoverageTest {
         NSPasteboardItem witem = NSPasteboardItem.withString("drag-me", ptype);
         NSArray writers = NSArray.mutableArray();
         writers.addObject(witem.peer());
+        // writeObjects: appends to existing contents (the "hello-events" string
+        // above is still element 0), so clear first: the written item must be
+        // the sole content for the first-element round-trip below.
+        board.clearContents();
         TestKit.check(board.writeObjects(writers), "writeObjects([item]) true");
         NSArray afterWrite = board.pasteboardItems();
         TestKit.check(afterWrite != null && afterWrite.count() >= 1, "pasteboardItems non-empty after writeObjects");

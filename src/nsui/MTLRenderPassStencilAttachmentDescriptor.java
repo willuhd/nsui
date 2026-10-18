@@ -75,6 +75,10 @@ public final class MTLRenderPassStencilAttachmentDescriptor extends NSObject {
 
     /// setClearStencil: — uint32_t (exact 32-bit INT32 call shape).
     public void setClearStencil(long value) {
+        if (value < 0 || value > 0xFFFFFFFFL) {
+            throw new IllegalArgumentException("setClearStencil: value " + value
+                    + " out of range (0..4294967295)");
+        }
         try {
             ObjC.handle(Sig.of(Ret.VOID, Arg.INT32)).invokeExact(peer, ObjC.sel("setClearStencil:"), (int) value);
         } catch (Throwable t) { throw new RuntimeException("setClearStencil: failed", t); }

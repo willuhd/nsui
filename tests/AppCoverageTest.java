@@ -184,6 +184,12 @@ public final class AppCoverageTest {
                 NSRunningApplication.runningApplicationWithProcessIdentifier(-1L);
                 NSRunningApplication.runningApplicationWithProcessIdentifier(0L);
             });
+            // Boundary pins: Integer.MAX_VALUE/MIN_VALUE pass the guard (only
+            // outside the int range is rejected) and resolve to nil, no throw.
+            TestKit.noThrow("runningApplicationWithProcessIdentifier(int boundaries) accepted", () -> {
+                NSRunningApplication.runningApplicationWithProcessIdentifier(2147483647L);
+                NSRunningApplication.runningApplicationWithProcessIdentifier(-2147483648L);
+            });
             // Bundle-id lookup with our own id (may be nil without bundle metadata) — no crash is pass.
             try {
                 String bid = cur.bundleIdentifier();

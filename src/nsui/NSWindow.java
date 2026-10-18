@@ -2311,6 +2311,10 @@ ensureInit(); return ObjC.msgSendBool(peer, Sels.hasDynamicDepthLimit); }
     /// [window setDepthLimit:] — NSWindowDepth is a 32-bit int (exact INT32 shape).
     public void setDepthLimit(long limit) {
         ensureInit();
+        if (limit < Integer.MIN_VALUE || limit > Integer.MAX_VALUE) {
+            throw new IllegalArgumentException("setDepthLimit: limit " + limit
+                    + " out of int range (" + Integer.MIN_VALUE + ".." + Integer.MAX_VALUE + ")");
+        }
         try {
             ObjC.handle(Sig.of(Ret.VOID, Arg.INT32)).invokeExact(peer, Sels.setDepthLimit, (int) limit);
         } catch (Throwable t) { throw new RuntimeException("setDepthLimit: failed", t); }

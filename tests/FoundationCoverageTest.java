@@ -707,6 +707,12 @@ public final class FoundationCoverageTest {
                 () -> NSNumber.numberWithShort(32768L));
         TestKit.expectThrows("numberWithShort(-32769) rejected", IllegalArgumentException.class,
                 () -> NSNumber.numberWithShort(-32769L));
+        // Unsigned factories intentionally keep the low bits (documented in
+        // NSNumber): pin the wrap so a future guard cannot silently change it.
+        TestKit.check(NSNumber.numberWithUnsignedChar(256L).unsignedCharValue() == 0, "unsigned char wraps 256 -> 0");
+        TestKit.check(NSNumber.numberWithUnsignedShort(65536L).unsignedShortValue() == 0, "unsigned short wraps 65536 -> 0");
+        TestKit.check(NSNumber.numberWithUnsignedInt(0x1_00000000L).unsignedIntValue() == 0, "unsigned int wraps 2^32 -> 0");
+        TestKit.check(NSNumber.numberWithUnsignedInt(-1L).unsignedIntValue() == 4294967295L, "unsigned int wraps -1 -> max");
         CALayer maskLayer = CALayer.create();
         maskLayer.setEdgeAntialiasingMask(7);
         TestKit.check(maskLayer.edgeAntialiasingMask() == 7, "edgeAntialiasingMask round-trip");

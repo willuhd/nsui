@@ -441,7 +441,11 @@ public final class PanelsCoverageTest {
             NSColor origColor = cp.color();
             cp.setColor(NSColor.create(1.0, 0.0, 0.0, 1.0));
             NSColor got = cp.color();
-            check(got != null, "NSColorPanel color round-trip non-nil after set red");
+            double[] rgba = got != null ? got.rgba() : null;
+            check(rgba != null && Math.abs(rgba[0] - 1.0) < 0.01 && Math.abs(rgba[1]) < 0.01
+                    && Math.abs(rgba[2]) < 0.01 && Math.abs(rgba[3] - 1.0) < 0.01,
+                    "NSColorPanel color red components (got " + (rgba == null ? "null"
+                            : rgba[0] + "," + rgba[1] + "," + rgba[2] + "," + rgba[3]) + ")");
             if (origColor != null) cp.setColor(origColor);
             boolean origAlpha = cp.showsAlpha();
             cp.setShowsAlpha(!origAlpha);

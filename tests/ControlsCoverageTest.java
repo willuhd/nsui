@@ -120,6 +120,9 @@ public final class ControlsCoverageTest {
         // ------------------------------------------------------------ NSControl (via hello)
         hello.setTag(42L);
         TestKit.check(hello.tag() == 42L, "NSControl tag 42 round-trip");
+        hello.setTag(0x1_0000_0001L);
+        TestKit.check(hello.tag() == 0x1_0000_0001L, "NSControl tag >32-bit round-trip (got " + hello.tag() + ")");
+        hello.setTag(42L);
         TestKit.check(hello.currentEditor() == null, "currentEditor null when idle");
         boolean aborted = TestKit.attempt("abortEditing no crash", () -> hello.abortEditing());
         TestKit.noThrow("validateEditing no crash", () -> hello.validateEditing());

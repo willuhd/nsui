@@ -208,7 +208,7 @@ public final class NSSlider extends NSControl {
     /// [slider neutralValue] — value the slider fills from (26.0+; defaults to minValue).
     /// Shapes (DOUBLE ()) / (VOID,DOUBLE) are in the vocabulary; reuses hDouble/hSetDouble.
     public double neutralValue() {
-        if (!respondsToSelector(ObjC.sel("neutralValue"))) return 0.0;     // macOS 26+
+        if (!respondsToSelector(ObjC.sel("neutralValue"))) return minValue();     // macOS 26+, default minValue
         try {
             return (double) hDouble.invokeExact(peer, ObjC.sel("neutralValue"));
         } catch (Throwable t) {

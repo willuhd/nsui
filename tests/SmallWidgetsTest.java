@@ -33,24 +33,32 @@ public final class SmallWidgetsTest {
 
         // ------------------------------------------------------------ NSDatePicker
         NSDatePicker picker = NSDatePicker.create(new NSRect(0, 0, 180, 27));
-        picker.setDatePickerElements(0x3L);                 // NSHourMinuteDatePickerElementFlag
-        picker.setDatePickerStyle(1L);                      // NSDatePickerStyleTextFieldAndStepper
+        picker.setDatePickerElements(0xcL);                 // NSDatePickerElementFlagHourMinute
+        picker.setDatePickerStyle(0L);                      // NSDatePickerStyleTextFieldAndStepper
         MemorySegment now = ObjC.msgSendIdDouble(
                 ObjC.cls("NSDate"), ObjC.sel("dateWithTimeIntervalSinceNow:"), 0.0);
         TestKit.check(now != null && now.address() != 0, "NSDate created via dateWithTimeIntervalSinceNow: 0 (non-nil)");
         picker.setDateValue(now);
         MemorySegment gotDate = picker.dateValue();
         TestKit.check(gotDate != null && gotDate.address() != 0, "NSDatePicker.dateValue() non-nil after setDateValue(now)");
-        // Neutral: style/elements have exact round-trip oracles (just set above).
-        TestKit.check(picker.datePickerStyle() == 1L, "NSDatePicker style(1) round-trip (got " + picker.datePickerStyle() + ")");
-        TestKit.check(picker.datePickerElements() == 0x3L, "NSDatePicker elements(0x3) round-trip (got " + picker.datePickerElements() + ")");
+        // Style 1 is not the default: round-tripping through it proves the setter works
+        // (style(0) alone would also read 0 if the setter were a no-op).
+        picker.setDatePickerStyle(1L);                      // NSDatePickerStyleTextField
+        TestKit.check(picker.datePickerStyle() == 1L, "NSDatePicker style(1) TextField round-trip (got " + picker.datePickerStyle() + ")");
+        picker.setDatePickerStyle(0L);                      // NSDatePickerStyleTextFieldAndStepper
+        TestKit.check(picker.datePickerStyle() == 0L, "NSDatePicker style(0) TextFieldAndStepper round-trip (got " + picker.datePickerStyle() + ")");
+        TestKit.check(picker.datePickerElements() == 0xcL, "NSDatePicker elements(0xc HourMinute) round-trip (got " + picker.datePickerElements() + ")");
 
         // ------------------------------------------------------------ NSColorWell
         NSColorWell well = NSColorWell.create(new NSRect(0, 0, 60, 24));
         NSColor c = NSColor.create(0.2, 0.4, 0.6, 1.0);
         well.setColor(c);
         NSColor gotColor = well.color();
-        TestKit.check(gotColor != null && gotColor.peer().address() != 0, "NSColorWell.color() non-nil after setColor");
+        double[] wellRgba = gotColor != null ? gotColor.rgba() : null;
+        TestKit.check(wellRgba != null && Math.abs(wellRgba[0] - 0.2) < 0.03 && Math.abs(wellRgba[1] - 0.4) < 0.03
+                && Math.abs(wellRgba[2] - 0.6) < 0.03 && Math.abs(wellRgba[3] - 1.0) < 0.03,
+                "NSColorWell.color() components (got " + (wellRgba == null ? "null"
+                        : wellRgba[0] + "," + wellRgba[1] + "," + wellRgba[2] + "," + wellRgba[3]) + ")");
         if (gotColor != null && gotColor.peer().address() != 0) {
             System.out.println("  color() description = " + gotColor.description());
             // also verify raw segment accessor still works

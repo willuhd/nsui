@@ -42,6 +42,13 @@ public final class WindowStyleTest {
 
         win.setLevel(3 /* NSFloatingWindowLevel */);
         TestKit.check(win.level() == 3L, "setLevel(3) -> level() == 3 (got " + win.level() + ")");
+        // Distinct levels catch a stuck-at-3 setter; AppKit stores levels as 32-bit,
+        // so no beyond-32-bit round-trip (platform wraps even with a correct 64-bit binding).
+        win.setLevel(0);
+        TestKit.check(win.level() == 0L, "setLevel(0) -> level() == 0 (got " + win.level() + ")");
+        win.setLevel(25);
+        TestKit.check(win.level() == 25L, "setLevel(25) -> level() == 25 (got " + win.level() + ")");
+        win.setLevel(3L);
 
         win.setCollectionBehavior(0); // no behavior
         System.out.println("PASS: setCollectionBehavior(0) did not crash");

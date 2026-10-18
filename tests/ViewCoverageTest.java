@@ -128,8 +128,10 @@ public final class ViewCoverageTest {
         v.setFrameCenterRotation(crot);
         TestKit.check(v.frameCenterRotation() == crot, "NSView frameCenterRotation restore");
         double brot = v.boundsRotation();
+        v.setBoundsRotation(brot + 10);
+        TestKit.check(v.boundsRotation() == brot + 10, "NSView boundsRotation toggle +10");
         v.setBoundsRotation(brot);
-        TestKit.check(v.boundsRotation() == brot, "NSView boundsRotation round-trip");
+        TestKit.check(v.boundsRotation() == brot, "NSView boundsRotation restore");
         boolean pfc = v.postsFrameChangedNotifications();
         v.setPostsFrameChangedNotifications(!pfc);
         TestKit.check(v.postsFrameChangedNotifications() == !pfc, "NSView postsFrameChangedNotifications toggle");

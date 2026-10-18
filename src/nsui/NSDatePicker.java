@@ -77,7 +77,7 @@ public final class NSDatePicker extends NSControl {
         }
     }
 
-    /// [picker setDatePickerStyle:] — NSDatePickerStyle (1 = TextFieldAndStepper).
+    /// [picker setDatePickerStyle:] — NSDatePickerStyle (0 = TextFieldAndStepper, 1 = ClockAndCalendar, 2 = TextField).
     public void setDatePickerStyle(long style) {
         try {
             hSetInt.invokeExact(peer, ObjC.sel("setDatePickerStyle:"), style);
@@ -91,7 +91,7 @@ public final class NSDatePicker extends NSControl {
         return ObjC.msgSendLong(peer, ObjC.sel("datePickerStyle"));
     }
 
-    /// [picker setDatePickerElements:] — bitmask of NSDatePickerElementFlags (0x3 = Hour|Minute).
+    /// [picker setDatePickerElements:] — bitmask of NSDatePickerElementFlags (e.g. 0x000c = HourMinute).
     public void setDatePickerElements(long elements) {
         try {
             hSetInt.invokeExact(peer, ObjC.sel("setDatePickerElements:"), elements);

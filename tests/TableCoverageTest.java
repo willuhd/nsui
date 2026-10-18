@@ -234,11 +234,15 @@ public final class TableCoverageTest {
             tv.setUsesAutomaticRowHeights(false);
 
             check(tv.selectionHighlightStyle() == 0, "selectionHighlightStyle default Regular(0)");
+            tv.setSelectionHighlightStyle(1);
+            check(tv.selectionHighlightStyle() == 1, "selectionHighlightStyle toggle 1");
             tv.setSelectionHighlightStyle(0);
-            check(tv.selectionHighlightStyle() == 0, "selectionHighlightStyle round-trip");
+            check(tv.selectionHighlightStyle() == 0, "selectionHighlightStyle restore 0");
             check(tv.draggingDestinationFeedbackStyle() == 0, "draggingDestinationFeedbackStyle default Regular(0)");
+            tv.setDraggingDestinationFeedbackStyle(1);
+            check(tv.draggingDestinationFeedbackStyle() == 1, "draggingDestinationFeedbackStyle toggle 1");
             tv.setDraggingDestinationFeedbackStyle(0);
-            check(tv.draggingDestinationFeedbackStyle() == 0, "draggingDestinationFeedbackStyle round-trip");
+            check(tv.draggingDestinationFeedbackStyle() == 0, "draggingDestinationFeedbackStyle restore 0");
         } catch (Throwable t) {
             check(false, "NSTableView section threw: " + t);
             t.printStackTrace(System.out);
@@ -444,11 +448,15 @@ public final class TableCoverageTest {
             check(row.indentationForDropOperation() == 8.0, "indentationForDropOperation round-trip");
             row.setIndentationForDropOperation(0);
             check(row.draggingDestinationFeedbackStyle() == 0, "draggingDestinationFeedbackStyle 0");
+            row.setDraggingDestinationFeedbackStyle(1);
+            check(row.draggingDestinationFeedbackStyle() == 1, "draggingDestinationFeedbackStyle toggle 1");
             row.setDraggingDestinationFeedbackStyle(0);
-            check(row.draggingDestinationFeedbackStyle() == 0, "draggingDestinationFeedbackStyle round-trip");
+            check(row.draggingDestinationFeedbackStyle() == 0, "draggingDestinationFeedbackStyle restore 0");
             check(row.selectionHighlightStyle() == 0, "selectionHighlightStyle 0");
+            row.setSelectionHighlightStyle(1);
+            check(row.selectionHighlightStyle() == 1, "selectionHighlightStyle toggle 1");
             row.setSelectionHighlightStyle(0);
-            check(row.selectionHighlightStyle() == 0, "selectionHighlightStyle round-trip");
+            check(row.selectionHighlightStyle() == 0, "selectionHighlightStyle restore 0");
         } catch (Throwable t) {
             check(false, "NSTableRowView section threw: " + t);
             t.printStackTrace(System.out);

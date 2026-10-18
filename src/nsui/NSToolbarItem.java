@@ -398,9 +398,10 @@ public final class NSToolbarItem extends NSObject implements NSUserInterfaceItem
     }
 
     // ---- visible (readonly, macOS 12, getter isVisible) ----
-    /// isVisible.
+    /// isVisible — visible iff in a toolbar and not in overflow; pre-12 fallback emulates
+    /// attached (toolbar() != null), which matches every case except attached-but-overflow.
     public boolean isVisible() {
-        if (!respondsToSelector(ObjC.sel("isVisible"))) return false;   // macOS 12+
+        if (!respondsToSelector(ObjC.sel("isVisible"))) return toolbar() != null;   // macOS 12+
         return ObjC.msgSendBool(peer, ObjC.sel("isVisible"));
     }
 

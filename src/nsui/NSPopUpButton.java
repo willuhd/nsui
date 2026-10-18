@@ -345,10 +345,10 @@ public final class NSPopUpButton extends NSControl {
     }
 
     // ---- completeness: remaining header API in registered shapes ----
-    /// [popup usesItemFromMenu] — pull-down uses first-item title (15.0+).
+    /// [popup usesItemFromMenu] — pull-down uses first-item title (15.0+; default YES per header).
     /// Shapes (BOOL ()) / (VOID,BOOL) are in the vocabulary.
     public boolean usesItemFromMenu() {
-        if (!respondsToSelector(ObjC.sel("usesItemFromMenu"))) return false;   // macOS 15+
+        if (!respondsToSelector(ObjC.sel("usesItemFromMenu"))) return true;   // macOS 15+, default YES
         return ObjC.msgSendBool(peer, ObjC.sel("usesItemFromMenu"));
     }
     /// [popup setUsesItemFromMenu:].
@@ -356,9 +356,9 @@ public final class NSPopUpButton extends NSControl {
         if (!respondsToSelector(ObjC.sel("setUsesItemFromMenu:"))) return;     // macOS 15+
         ObjC.msgSendVoidBool(peer, ObjC.sel("setUsesItemFromMenu:"), flag);
     }
-    /// [popup altersStateOfSelectedItem] — selected item gets NSControlStateValueOn (15.0+).
+    /// [popup altersStateOfSelectedItem] — selected item gets NSControlStateValueOn (15.0+; default YES per cell header).
     public boolean altersStateOfSelectedItem() {
-        if (!respondsToSelector(ObjC.sel("altersStateOfSelectedItem"))) return false;   // macOS 15+
+        if (!respondsToSelector(ObjC.sel("altersStateOfSelectedItem"))) return true;   // macOS 15+, default YES
         return ObjC.msgSendBool(peer, ObjC.sel("altersStateOfSelectedItem"));
     }
     /// [popup setAltersStateOfSelectedItem:].

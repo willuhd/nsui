@@ -354,6 +354,8 @@ public final class Sig {
         of(Ret.VOID, Arg.INT32, Arg.INT32),                 // MTL setStencilFrontReferenceValue:backReferenceValue: (two uint32_t)
         of(Ret.ID, Arg.FLOAT),                             // numberWithFloat: (real `f`)
         // --- WebKit (WKWebView designated initializer, append-only) ---
-        of(Ret.ID, Arg.RECT, Arg.ID)                      // initWithFrame:configuration: (macOS 10.10+)
+        of(Ret.ID, Arg.RECT, Arg.ID),                     // initWithFrame:configuration: (macOS 10.10+)
+        // --- NSTask modern factory (append-only) ---
+        of(Ret.ID, Arg.ID, Arg.ID, Arg.ID, Arg.ID)  // NSTask.launchedTaskWithExecutableURL:arguments:error:terminationHandler:
     );
 }

@@ -1051,7 +1051,77 @@ def union_nan_inf_guards(guards):
     return kept, sorted(set(dropped))
 
 
-def render_method(p, class_name):
+# Version-guard scan shared with tests/VersionGuardScanTest: a method whose
+# documentation names a version trips the suite unless its body checks for the
+# selector before sending (an unrecognized selector aborts the process, exit
+# 134, before any Java catch can run). The generator used to travel the gate
+# as a doc note only (R9-b emission); the Tier A landings then needed hand
+# guards that a future --apply would drop. Emission now guards directly so a
+# re-applied tree keeps the check by construction.
+VERSION_GATE_RE = re.compile(r"(?:macOS\s+(1[1-9]|2[0-9])|[(\s](1[1-9]|2[0-9])\.\d+\+?)")
+VERSION_MACOS_FLOOR_RE = re.compile(r"macos\w*\(\s*(\d+\.\d+)")
+
+
+def version_guard_floor(avail):
+    """macOS floor (e.g. "14.4") when `avail` trips the version-guard scan.
+
+    The scan matches macOS 11+ or any (11-29).x parenthesized/platform version,
+    so an iOS-11-parallel gate (macOS 10.13) trips it too; the reported floor
+    stays the macOS one, matching the hand-guard docs ("hosts before macOS
+    10.13"). None when the gate is absent or below the scan's floor.
+    """
+    if not avail or not VERSION_GATE_RE.search(avail):
+        return None
+    m = VERSION_MACOS_FLOOR_RE.search(avail)
+    return m.group(1) if m else "11.0"
+
+
+def version_absent_default(p, ret):
+    """Absent-selector return for a version-guarded method, or None for void."""
+    if ret == "VOID":
+        return None
+    if p.ret_java == "long":
+        return "0L"
+    if p.ret_java == "int":
+        return "0"
+    if p.ret_java == "short":
+        return "(short) 0"
+    if p.ret_java == "byte":
+        return "(byte) 0"
+    if p.ret_java == "double":
+        return "0.0"
+    if p.ret_java == "float":
+        return "0.0f"
+    if p.ret_java == "boolean":
+        return "false"
+    if ret in STRUCT_JAVA:
+        return STRUCT_JAVA[ret] + ".ZERO"
+    if getattr(p, "ret_kind", "") in ("string", "typed"):
+        return "null"
+    return "MemorySegment.NULL"
+
+
+def version_absent_doc(p, ret, floor):
+    """Absent-default doc line in the hand-guard idiom ("Nil when ...").
+
+    Wording matches the Tier A hand guards verbatim (NSProgress nil/no-op,
+    NSUndoManager MemorySegment.NULL/0) so a future --apply over those files
+    converges instead of churning the docs.
+    """
+    if ret == "VOID":
+        return "/// No-op when the selector is absent (hosts before macOS %s)." % floor
+    if p.ret_java == "boolean":
+        return "/// false when the selector is absent (hosts before macOS %s)." % floor
+    if p.ret_java in ("long", "int", "short", "byte", "double", "float"):
+        return "/// 0 when the selector is absent (hosts before macOS %s)." % floor
+    if ret in STRUCT_JAVA:
+        return "/// Zero when the selector is absent (hosts before macOS %s)." % floor
+    if getattr(p, "ret_kind", "") in ("string", "typed"):
+        return "/// Nil when the selector is absent (hosts before macOS %s)." % floor
+    return "/// MemorySegment.NULL when the selector is absent (hosts before macOS %s)." % floor
+
+
+def render_method(p, class_name, is_protocol=False):
     d, shape = p.decl, p.shape
     ret, args = shape
     ctor = getattr(p, "is_constructor", False)
@@ -1108,11 +1178,17 @@ def render_method(p, class_name):
     # Cut the header text at a word boundary: a hard [:90] slice left a dangling half-word before
     # the note that follows it.
     raw = d.raw if len(d.raw) <= 90 else d.raw[:90].rsplit(" ", 1)[0] + " ..."
-    # R9-b emission: the SDK's version gate travels as a doc note, not a rule. A
-    # version-gated selector present on the build runtime is still emitted unguarded
-    # (no respondsToSelector guard: older-deployement behavior is unmeasured, and an
-    # unmeasured guard is a guess). The note keeps the gate visible on review instead
-    # of silently dropping it the way the pre-R9 parser did.
+    # R9-b emission, revised: the SDK's version gate travels as a doc note AND a
+    # rule. A version-gated selector present on the build runtime is still emitted,
+    # but the body first checks respondsToSelector: — an unrecognized selector
+    # aborts the process (measured, exit 134) before any Java catch can run, and
+    # the pre-revision unguarded emit faulted on older hosts exactly that way.
+    # The gate trips on the same pattern tests/VersionGuardScanTest scans for
+    # (macOS 11+, or any (11-29).x platform version such as an iOS-11 parallel),
+    # so the emitted tree passes that gate without hand edits, and a future
+    # --apply reproduces the guard instead of dropping it. Protocol-backed
+    # surfaces are exempt (is_protocol): the facade has no class object, so the
+    # guard's own presence check would not resolve there.
     avail = getattr(d, "availability", "") or ""
     # The captured payload can span header lines (balanced-parens capture keeps raw
     # newlines, e.g. multi-line API_DEPRECATED_WITH_REPLACEMENT). A raw newline inside
@@ -1121,6 +1197,14 @@ def render_method(p, class_name):
     avail_note = (" [available: %s]" % " ".join(avail.split())) if avail else ""
     lines.append("    /// %s%s - generated from %s.%s%s" % (d.selector, dep, raw, block_note,
                                                             avail_note))
+    # Protocol-backed wrappers (Metal device/queue/buffer/texture/encoder families)
+    # have no class object, so the conformance gate cannot resolve respondsToSelector:
+    # against the facade — every guard site would read as a noMatch and inflate the
+    # ratchet baseline that guards real regressions. Guards stay doc-notes there until
+    # the gate learns the universal-responder carve-out; concrete classes emit them.
+    guard_floor = None if is_protocol else version_guard_floor(avail)
+    if guard_floor:
+        lines.append("    " + version_absent_doc(p, ret, guard_floor))
     if ctor:
         # The corpus idiom: alloc, send the initializer to the allocated object, wrap what comes
         # back (an initializer is free to return a different object).
@@ -1161,6 +1245,18 @@ def render_method(p, class_name):
         for gl in guard.split("\n"):       # an evidence statement may be a small block
             lines.append("        " + gl)
     lines.append("        try {")
+    if guard_floor:
+        # The presence check lives inside the try so a codegen reader sees the
+        # guarded send and its fallback together; the absent default mirrors the
+        # hand-guard idiom (nil/0/false/NULL/ZERO, no-op for void, null for ctors).
+        lines.append("            boolean responds = (boolean) H.hResponds().invokeExact(%s, Sels.respondsToSelector, Sels.%s);" % (recv, p.field))
+        absent = version_absent_default(p, ret)
+        if absent is None:
+            lines.append("            if (!responds) return;")
+        elif ctor:
+            lines.append("            if (!responds) return null;")
+        else:
+            lines.append("            if (!responds) return %s;" % absent)
     if ret == "VOID":
         lines.append("            H.%s().invokeExact(%s);" % (p.handle, call_args))
     elif ret == "INT32" and p.ret_kind == "uint32":
@@ -1401,6 +1497,18 @@ def render_class(class_name, superclass, header_rel, plans, surface, framework="
     fields = OrderedDict()
     for p in sorted(used, key=lambda q: q.field):
         fields[p.field] = p.decl.selector
+    # A version-gated method needs the presence-check selector and its handle.
+    # Both are emitted (not hand-added) so a future --apply reproduces the guard
+    # instead of dropping it; hResponds rides last, matching the hand-guard idiom.
+    # Protocol-backed surfaces are exempt (see render_method): their guards would
+    # not resolve against the facade and would inflate the noMatch ratchet.
+    is_protocol = bool(surface is not None and surface.parts
+                       and surface.parts[0][0].kind == "protocol")
+    if not is_protocol and any(version_guard_floor(getattr(p.decl, "availability", "") or "")
+                               for p in used):
+        fields["respondsToSelector"] = "respondsToSelector:"
+        fields = OrderedDict(sorted(fields.items()))
+        handles["hResponds"] = ("BOOL", ("ID",))
 
     L = []
     L.append(MARKER)
@@ -1492,7 +1600,7 @@ def render_class(class_name, superclass, header_rel, plans, surface, framework="
     L.append("    }")
     L.append("")
     for p in sorted(used, key=lambda q: (q.is_class, q.java_name)):
-        L.append(render_method(p, class_name))
+        L.append(render_method(p, class_name, is_protocol))
 
         L.append("")
     L.append("}")

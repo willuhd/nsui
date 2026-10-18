@@ -95,10 +95,14 @@ public final class SignatureConformanceTest {
     /// facade class even though the calls work at runtime. It is a RATCHET: a new entry must be
     /// named here. 244 = 243 + MTLTexture.mipmapLevelCount, added with the mip-level guard and
     /// verified live (4 for a mipmapped 8x8 texture, 1 for a plain one).
+    /// 245 = 244 + NSTask.waitUntilExit, which the facade lookup misses: the method lives on
+    /// the NSConcreteTask cluster subclass (objcabi's concrete fallback resolves it to v16@0:8
+    /// there), while dispatch on a real task works — exercised live by NSTaskCoverageTest
+    /// (launch, waitUntilExit, terminationStatus 0).
     /// Batch override: the selftest 29-class surface tree carries 172 more (pinned 416 in
     /// codegen/surface-baseline.json for the new protocol/cluster stubs). Pass
-    /// -Dsignature.noMatchBaseline=416 to measure that tree; the default stays 244 for the repo.
-    private static final int NO_MATCH_BASELINE = 244;
+    /// -Dsignature.noMatchBaseline=416 to measure that tree; the default stays 245 for the repo.
+    private static final int NO_MATCH_BASELINE = 245;
     private static int noMatchBaseline() {
         String v = System.getProperty("signature.noMatchBaseline");
         if (v != null) {

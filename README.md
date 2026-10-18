@@ -19,36 +19,14 @@ NSUI talks directly to the ObjC runtime. Every AppKit call is an `objc_msgSend` 
 ./tests.sh --strict-skips   # also fail when a test reports itself SKIPPED
 ```
 
-Exit status is honest but not a proof of coverage: a test that exits 0 with skipped
-cases (`TestKit.skipCase`), no-oracle probes (`TestKit.probe`) or a `PARTIAL PASS`
-summary is counted PASSED, and the runner prints a `NOTE:` line with those totals so a
-green result cannot hide them. `TestKit.skip()` (setup impossible) exits 2, which the
-runner reports as SKIPPED and tolerates unless `--strict-skips` is given.
-
-The exit code is not taken on trust either: a test that exits 0 without printing a
-`RESULT:` verdict is FAILED (it did not signal completion), and a test whose log contains a
-failure verdict (`RESULT: FAIL …` / `RESULT: N FAILURE(S)`) is FAILED even if it exited 0.
-Logs are read as bytes, so a stray non-UTF-8 byte cannot turn a passing test into a false
-failure.
-Run `./tests.sh` from the repository root: two gates locate the sources through
-relative paths (`src/nsui`, `tests`), and although the runner now pins the child
-working directory, a bare `java nsui.tests.<Gate>` from elsewhere will skip rather
-than check anything.
-
 Tests are plain `main()`s sharing `tests/TestKit.java` (reporting, hidden-by-default
 windows, run-loop pump, nanoTime benchmark tripwires) — no JUnit, no JMH, by design.
 Windows stay hidden unless a test proves it needs visibility; only NSEventTest and
 ButtonTest take key status. `tests/BenchTest.java` holds the hot-path benchmarks.
-`tests/SignatureConformanceTest.java` parses the wrapper sources and checks every declared
-`Sig` shape against the real runtime type encoding (`method_getTypeEncoding`) — with two
-caveats: 244 selectors it cannot resolve (Metal protocol/descriptor stubs, plus the two
-NSIndexPath accessors NSCollectionView's move guard reads) are a counted
-baseline rather than a check, and unresolved entries are capped by a 15% share, so the
-resolution buckets are aggregate counts, not a per-name audit.
-`tests/AssertionQualityTest.java` fails if any always-true `check(true, ...)` reappears
-(it detects the `x == true || x == false`, `|| true` and `>= 0` shapes; it cannot see
-`X || !X`, so keep an eye out for that form).
-`BenchTest` covers dispatch, marshalling, Foundation, controls/layers, upcall callbacks and Metal.
+`tests/SignatureConformanceTest.java` checks every declared `Sig` shape against the
+runtime type encoding; `tests/AssertionQualityTest.java` guards the suite against
+tautological checks; `tests/VersionGuardScanTest.java` requires a presence check on
+every version-gated accessor.
 
 If running on the JVM, these 2 flags are needed:
 
@@ -83,37 +61,8 @@ If a signature is missing, the build succeeds but the binary fails at runtime wi
 
 ### Platform baseline
 
-The suite is developed and run on **macOS 26.x on arm64**. No minimum deployment target is
-declared, and there is no `operatingSystemVersion` runtime check anywhere: the guard is
-per-method `respondsToSelector:`.
-
-Every accessor whose documentation names a macOS version of 11 or later is guarded — the getter
-returns that API's "absent" default and the setter is a no-op. The guard pattern to copy is
-`NSButton.setTintProminence:`/`borderShape` (macOS 26 selectors, no-op / 0 when absent).
-
-This is enforced by `tests/VersionGuardScanTest`, which fails the suite when a version-gated
-accessor has no presence check. It works in three layers, and the README states them because the
-first two are partial by construction:
-
-1. a per-method scan of `src/nsui` for a method whose own documentation names a version
-   (~81 methods today, 0 unguarded);
-2. `SECTION_GATED`, an explicit list of the methods whose version appears only in a section
-   header (`// ---- WritingTools (macOS 15+) ----`) or in a sibling's doc, which the per-method
-   scan cannot attribute — 8 entries today, each asserted to have a guard. A new version-gated
-   method under such a header must be added here by hand;
-3. `ALLOW`, for prose that merely looks like a version (an NSEventType number, an
-   `NSWindowStyleMask` bit). One entry today, and the test asserts every entry is actually
-   exercised, so a stale suppression fails instead of exempting a method forever.
-
-Neither the scanner nor `AuditRegressionTest`'s name-based twin checks can see a section-header
-version automatically; layer 2 is the manual cover for that, which is why it is listed.
-
-A `try`/`catch` around the send is NOT a guard, and was the source of a real bug here: an
-unrecognized selector raises an ObjC exception that terminates the process (measured, exit 134)
-before any Java `catch` can run.
-
-APIs older than macOS 11 are sent unconditionally, so on a host that predates them they still
-fault — the guards exist to keep later-release additions from doing so.
+The suite is developed and run on macOS 26.x on arm64. Guards for version-gated
+APIs use per-method `respondsToSelector:` checks with documented absent defaults.
 
 ### Project status
 

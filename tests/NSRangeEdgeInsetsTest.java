@@ -247,6 +247,11 @@ public final class NSRangeEdgeInsetsTest {
         // location+length overflows to Long.MIN_VALUE, so the index is not contained.
         TestKit.check(!new NSRange(Long.MAX_VALUE, 1).contains(Long.MAX_VALUE), "NOT_FOUND contains check (overflow handled)");
         TestKit.check(new NSRange(0, Long.MAX_VALUE).max() == Long.MAX_VALUE, "max with huge length");
+        // Saturated max: overflow cannot wrap negative and flip range predicates.
+        TestKit.check(new NSRange(Long.MAX_VALUE - 5, 10).max() == Long.MAX_VALUE, "saturated max caps at Long.MAX_VALUE");
+        TestKit.check(!new NSRange(5, 10).contains(new NSRange(Long.MAX_VALUE - 5, 10)), "overflow range not contained");
+        TestKit.check(!new NSRange(5, 10).intersects(new NSRange(Long.MAX_VALUE - 5, 10)), "overflow range no intersect");
+        TestKit.check(new NSRange(5, 10).intersection(new NSRange(Long.MAX_VALUE - 5, 10)).isEmpty(), "overflow intersection empty");
         // Double.MAX_VALUE + Double.MAX_VALUE overflows to +Infinity.
         TestKit.check(new NSEdgeInsets(Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE).horizontal() == Double.POSITIVE_INFINITY, "huge insets horizontal not crash");
         NSRect hugeRect = new NSRect(0,0,1e9,1e9);

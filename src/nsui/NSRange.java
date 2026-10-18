@@ -33,8 +33,12 @@ public record NSRange(long location, long length) {
     /// NSMakeRange equivalent.
     public static NSRange make(long loc, long len) { return new NSRange(loc, len); }
 
-    /// Max range = location + length.
-    public long max() { return location + length; }
+    /// Max range = location + length, saturated at Long.MAX_VALUE so a
+    /// location+length overflow cannot wrap negative and flip range predicates.
+    public long max() {
+        if (length > 0 && location >= 0 && length > Long.MAX_VALUE - location) return Long.MAX_VALUE;
+        return location + length;
+    }
 
     /// End location (exclusive).
     public long end() { return max(); }
@@ -45,9 +49,9 @@ public record NSRange(long location, long length) {
     /// Length == 0.
     public boolean isNotFound() { return location == NOT_FOUND; }
 
-    /// Contains index (inclusive location, exclusive max).
+    /// Contains index (inclusive location, exclusive max — saturated so overflow cannot wrap).
     public boolean contains(long index) {
-        return index >= location && index < location + length;
+        return index >= location && index < max();
     }
 
     /// Contains range fully.
@@ -58,14 +62,14 @@ public record NSRange(long location, long length) {
     /// documented special case), which is why `{5,10}.contains({15,0})` is true while
     /// `NSLocationInRange(15, {5,10})` is false.
     public boolean contains(NSRange other) {
-        if (other.isEmpty()) return contains(other.location) || other.location == location + length;
+        if (other.isEmpty()) return contains(other.location) || other.location == max();
         return other.location >= location && other.max() <= max();
     }
 
-    /// Intersects.
+    /// Intersects (saturated ends so overflow cannot wrap and flip the result).
     public boolean intersects(NSRange other) {
         if (isEmpty() || other.isEmpty()) return false;
-        return !(other.location + other.length <= location || other.location >= location + length);
+        return !(other.max() <= location || other.location >= max());
     }
 
     /// Intersection range, or `{0, 0}` when the ranges do not overlap — matching

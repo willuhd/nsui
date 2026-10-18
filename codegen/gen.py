@@ -563,7 +563,7 @@ def build_plan(surface, rt, vocab, wrappers, cls_name, include_deprecated=True, 
         prev = seen_names.get(p.java_name)
         if prev is not None:
             prev_class, prev_arity = prev
-            if prev_class == p.is_class or prev_arity != len(p.params):
+            if prev_class == p.is_class and prev_arity == len(decl.params):
                 p.skip, p.reason = True, "duplicate Java name (first declared wins)"
                 plans.append(p)
                 continue
@@ -572,7 +572,7 @@ def build_plan(surface, rt, vocab, wrappers, cls_name, include_deprecated=True, 
             while p.java_name in seen_names:
                 p.java_name += "_"
             p.renamed_from = base_name
-        seen_names[p.java_name] = (p.is_class, len(p.params))
+        seen_names[p.java_name] = (p.is_class, len(decl.params))
         # The raw token stream, matching shape_of: the normalized stream has already collapsed a
         # pointer (`^@`) into ID, so a parameter the shape calls INT arrived here as a scalar and
         # was typed `long` — an address in a long where the design says MemorySegment.
@@ -789,10 +789,11 @@ def shipped_index_setup(selector, bound, repo, cls):
     start = None
     for i, line in enumerate(lines):
         if "Bounds." in line and needle in line:
-            start = i
+            if start is None:
+                start = i
         elif needle in line and "Bounds." not in line:
             back = next((j for j in range(i, max(-1, i - 4), -1) if "Bounds." in lines[j]), None)
-            if back is not None:
+            if back is not None and start is None:
                 start = back
     if start is None:
         return None

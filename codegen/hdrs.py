@@ -604,7 +604,7 @@ def parse_text(text, file="<text>", keep_private=False):
             continue
         iface = Interface(kind, name, superclass, category, proto_list, file,
                           _line_of(clean, m.start()), body)
-        _parse_body(iface, clean, m.end(), file)
+        _parse_body(iface, clean, hend, file)
         out.append(iface)
         pos = end + 4
     return out
@@ -625,7 +625,10 @@ def _parse_body(iface, clean, body_start, file):
             s = "\n".join(ln for ln in s.splitlines() if not ln.lstrip().startswith("#")).strip()
         if not s:
             continue
-        line = _line_of(clean, body_start + iface.body.find(stmt))
+        # stmt keeps the body's leading whitespace (usually the newline ending the
+        # previous line), so point at the declaration itself, not the gap before it.
+        decl_at = iface.body.find(stmt) + (len(stmt) - len(stmt.lstrip()))
+        line = _line_of(clean, body_start + decl_at)
         # An instance-variable block starts with `{` and `split_statements` cannot end a statement
         # on it, so the block ran into the NEXT declaration and the combined text matched no branch:
         # NSDatePicker's datePickerStyle() and NSPrintOperation's +printOperationWithView:printInfo:

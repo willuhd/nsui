@@ -356,6 +356,8 @@ public final class Sig {
         // --- WebKit (WKWebView designated initializer, append-only) ---
         of(Ret.ID, Arg.RECT, Arg.ID),                     // initWithFrame:configuration: (macOS 10.10+)
         // --- NSTask modern factory (append-only) ---
-        of(Ret.ID, Arg.ID, Arg.ID, Arg.ID, Arg.ID)  // NSTask.launchedTaskWithExecutableURL:arguments:error:terminationHandler:
+        of(Ret.ID, Arg.ID, Arg.ID, Arg.ID, Arg.ID),  // NSTask.launchedTaskWithExecutableURL:arguments:error:terminationHandler:
+        // --- Formatter out-param getObjectValue (append-only; shared by NSNumberFormatter/NSDateFormatter) ---
+        of(Ret.BOOL, Arg.ID, Arg.ID, Arg.ID, Arg.ID)  // -getObjectValue:forString:range:error: (obj** out-slot, string, range*, error**)
     );
 }

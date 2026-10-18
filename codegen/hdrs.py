@@ -94,13 +94,14 @@ def expand_type(text, typedefs, depth=4):
     """
     t = text or ""
     for _ in range(depth):
-        m = re.search(r"(?:%s\s+)*([A-Za-z_]\w*)" % TYPE_QUALIFIERS, t)
+        s = re.sub(r"^(?:\s*(?:%s)\b)+" % TYPE_QUALIFIERS, "", t).strip()
+        m = re.match(r"([A-Za-z_]\w*)", s)
         if not m:
             break
         base = typedefs.get(m.group(1))
         if not base:
             break
-        t = t[:m.start(1)] + base + t[m.end(1):]
+        t = s[:m.start(1)] + base + s[m.end(1):]
     return t
 
 

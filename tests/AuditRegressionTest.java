@@ -672,6 +672,12 @@ public final class AuditRegressionTest {
                     nsui.MTLRenderPassDescriptor.create().depthAttachment();
             TestKit.expectThrows("setClearDepth(NaN) rejects, not validation-layer abort",
                     IllegalArgumentException.class, () -> dd.setClearDepth(Double.NaN));
+            TestKit.expectThrows("setClearDepth(2.0) rejects, not validation-layer abort",
+                    IllegalArgumentException.class, () -> dd.setClearDepth(2.0));
+            TestKit.expectThrows("setClearDepth(-1.0) rejects, not validation-layer abort",
+                    IllegalArgumentException.class, () -> dd.setClearDepth(-1.0));
+            TestKit.expectThrows("setClearDepth(+Inf) rejects, not validation-layer abort",
+                    IllegalArgumentException.class, () -> dd.setClearDepth(Double.POSITIVE_INFINITY));
             TestKit.expectThrows("setLevel(-1) rejects, not NSUInteger wrap",
                     IllegalArgumentException.class, () -> dd.setLevel(-1));
             TestKit.expectThrows("setSlice(-1) rejects, not NSUInteger wrap",

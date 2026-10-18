@@ -347,14 +347,14 @@ def check_f5(rt):
                 enc = lib.method_getTypeEncoding(m)
                 if not enc:
                     continue
-                length = ctypes.string_at(enc, GATE_WINDOW * 4).find(b"\x00")
-                if length < 0 or length > GATE_WINDOW:
+                length = len(ctypes.string_at(enc))
+                if length > GATE_WINDOW:
                     findings.append({"check": "F5", "class": cls, "selector": sel,
                                      "side": "class" if side else "inst",
                                      "file": os.path.relpath(path, REPO),
                                      "evidence": "type encoding is %s bytes; the signature gate reads "
                                                  "%d, so it crashes rather than checking the method"
-                                                 % (length if length >= 0 else ">4096", GATE_WINDOW)})
+                                                 % (length, GATE_WINDOW)})
     return findings
 
 

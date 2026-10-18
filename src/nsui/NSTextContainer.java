@@ -268,6 +268,9 @@ public final class NSTextContainer extends NSObject {
 
     /// [container replaceLayoutManager:] — web-safe layout-manager swap.
     public void replaceLayoutManager(NSLayoutManager newLayoutManager) {
+        // Measured one process per case: null aborts (NSInvalidArgumentException
+        // "nil NSLayoutManager given", exit 134).
+        Bounds.nonNull(newLayoutManager, "replaceLayoutManager:");
         ObjC.msgSendVoidId(peer, ObjC.sel("replaceLayoutManager:"),
                 (MemorySegment) (newLayoutManager == null ? MemorySegment.NULL : newLayoutManager.peer()));
     }

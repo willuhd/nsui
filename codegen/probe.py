@@ -291,7 +291,77 @@ def enumerate_cases(classes, frameworks):
     return out
 
 
-SHIPPED_INDEX_GUARD = re.compile(r'Bounds\.index\(\s*(\w+)\s*,\s*([^,]+?)\s*,\s*"([^"]+)"\s*\)')
+def _split_top_level_args(body):
+    """Split a call's argument body on top-level commas.
+
+    Parenthesis depth and double-quoted string literals are respected, so a
+    bound expression containing a call (e.g. ``Math.max(a, b)``) stays whole.
+    """
+    args, depth, cur, instr, esc = [], 0, [], False, False
+    for ch in body:
+        if instr:
+            cur.append(ch)
+            if esc:
+                esc = False
+            elif ch == "\\":
+                esc = True
+            elif ch == '"':
+                instr = False
+            continue
+        if ch == '"':
+            instr = True
+            cur.append(ch)
+        elif ch == "(":
+            depth += 1
+            cur.append(ch)
+        elif ch == ")":
+            depth -= 1
+            cur.append(ch)
+        elif ch == "," and depth == 0:
+            args.append("".join(cur))
+            cur = []
+        else:
+            cur.append(ch)
+    args.append("".join(cur))
+    return args
+
+
+def _iter_index_guards(text):
+    """Yield (param, bound, selector) for each Bounds.index(...) guard.
+
+    A balanced-paren scan from the opening paren replaces the old
+    ``([^,]+?)`` bound group, which broke on commas inside parens (a
+    method-call bound such as ``Math.max(a, b)`` never matched at all).
+    """
+    for m in re.finditer(r"Bounds\.index\s*\(", text):
+        i, depth, instr, esc = m.end(), 1, False, False
+        while i < len(text) and depth:
+            ch = text[i]
+            if instr:
+                if esc:
+                    esc = False
+                elif ch == "\\":
+                    esc = True
+                elif ch == '"':
+                    instr = False
+            elif ch == '"':
+                instr = True
+            elif ch == "(":
+                depth += 1
+            elif ch == ")":
+                depth -= 1
+            i += 1
+        if depth:
+            continue
+        args = _split_top_level_args(text[m.end():i - 1])
+        if len(args) != 3:
+            continue
+        sel = args[2].strip()
+        if len(sel) < 2 or not (sel.startswith('"') and sel.endswith('"')):
+            continue
+        if not re.fullmatch(r"\w+", args[0].strip()):
+            continue
+        yield args[0].strip(), args[1].strip(), sel[1:-1]
 
 
 def shipped_index_bounds(cls):
@@ -306,8 +376,8 @@ def shipped_index_bounds(cls):
     if not os.path.exists(path):
         return out
     text = open(path, encoding="utf-8", errors="replace").read()
-    for m in SHIPPED_INDEX_GUARD.finditer(text):
-        out.setdefault(m.group(3), {})[m.group(1)] = m.group(2).strip()
+    for param, bound, sel in _iter_index_guards(text):
+        out.setdefault(sel, {})[param] = bound
     return out
 
 

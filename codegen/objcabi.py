@@ -233,8 +233,11 @@ def _ctypes_of(tok, i):
     if i >= len(tok):
         return ctypes.c_void_p, i
     c = tok[i]
-    if c == "^" or c in "*#:":
-        return ctypes.c_void_p, (i + 1 if c != "^" else i + 1)
+    if c == "^":
+        _, j = _ctypes_of(tok, i + 1)
+        return ctypes.c_void_p, j
+    if c in "*#:":
+        return ctypes.c_void_p, i + 1
     if c == "@":
         if i + 1 < len(tok) and tok[i + 1] == "?":
             return ctypes.c_void_p, i + 2

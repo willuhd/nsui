@@ -127,7 +127,7 @@ def emission_counts(summary_lines):
     counts = Counter()
     for ln in summary_lines:
         s = ln.strip()
-        if re.match(r"GUARD(-MATCH|-BOUND-SETUP|-UNAVAILABLE|-MISS|-LOCAL)?\s", s):
+        if re.match(r"GUARD(-MATCH|-BOUND-SETUP|-UNAVAILABLE|-MISS|-LOCAL|-TYPE|-SETUP)?\s", s):
             counts["guards emitted"] += 1
         elif s.startswith("NIL-SKIP "):
             counts["nil tolerance matched"] += 1

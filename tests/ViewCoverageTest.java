@@ -313,7 +313,11 @@ public final class ViewCoverageTest {
         NSRect pcr = v.preparedContentRect();
         v.setPreparedContentRect(pcr);
         TestKit.check(v.preparedContentRect().width() == pcr.width(), "NSView preparedContentRect round-trip");
-        TestKit.check(!v.allowsVibrancy() || v.allowsVibrancy(), "NSView allowsVibrancy no-throw");
+        // Measured live on a plain NSView: allowsVibrancy false, deterministic.
+        TestKit.check(!v.allowsVibrancy(), "NSView allowsVibrancy default NO");
+        boolean avb1 = v.allowsVibrancy();
+        boolean avb2 = v.allowsVibrancy();
+        TestKit.check(avb1 == avb2, "NSView allowsVibrancy deterministic");
         TestKit.check(Double.isFinite(v.safeAreaInsets().top() + v.safeAreaInsets().left() + v.safeAreaInsets().bottom() + v.safeAreaInsets().right()), "NSView safeAreaInsets finite");
         TestKit.check(Double.isFinite(v.safeAreaRect().width()), "NSView safeAreaRect finite");
         var sai = v.additionalSafeAreaInsets();
@@ -325,7 +329,11 @@ public final class ViewCoverageTest {
         v.setPrefersCompactControlSizeMetrics(!pcm);
         TestKit.check(v.prefersCompactControlSizeMetrics() == !pcm, "NSView prefersCompactControlSizeMetrics toggle");
         v.setPrefersCompactControlSizeMetrics(pcm);
-        TestKit.check(!v.isDrawingFindIndicator() || v.isDrawingFindIndicator(), "NSView isDrawingFindIndicator no-throw");
+        // Measured live on a plain quiescent NSView: not drawing a find indicator.
+        TestKit.check(!v.isDrawingFindIndicator(), "NSView isDrawingFindIndicator default NO");
+        boolean fdi1 = v.isDrawingFindIndicator();
+        boolean fdi2 = v.isDrawingFindIndicator();
+        TestKit.check(fdi1 == fdi2, "NSView isDrawingFindIndicator deterministic");
         TestKit.check(Double.isFinite(v.alphaValue()), "NSView alphaValue finite");
     }
 

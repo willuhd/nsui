@@ -65,6 +65,10 @@ public class NSDocument extends NSObject {
     /// addWindowController:
     public void addWindowController(NSWindowController controller) {
         ensureInit();
+        // Measured one process per case: null aborts (NSInvalidArgumentException
+        // "object cannot be nil", exit 134). removeWindowController: is NOT
+        // bundled here — probe it separately.
+        Bounds.nonNull(controller, "addWindowController:");
         try {
             handles.hVoidId().invokeExact(peer, ObjC.sel("addWindowController:"), (MemorySegment) (controller == null ? MemorySegment.NULL : controller.peer()));
         } catch (Throwable t) {

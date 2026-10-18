@@ -155,6 +155,9 @@ public final class NSWorkspace extends NSObject {
 
     /// activateFileViewerSelectingURLs: (NSArray of NSURL).
     public void activateFileViewerSelectingURLs(NSArray urls) {
+        // Measured one process per case: null aborts
+        // (NSInternalInconsistencyException "fileURLs != nil", exit 134).
+        Bounds.nonNull(urls, "activateFileViewerSelectingURLs:");
         ObjC.msgSendVoidId(peer, ObjC.sel("activateFileViewerSelectingURLs:"),
                 (MemorySegment) (urls == null ? MemorySegment.NULL : urls.peer()));
     }

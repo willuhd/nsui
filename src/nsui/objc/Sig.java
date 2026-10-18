@@ -352,6 +352,8 @@ public final class Sig {
         of(Ret.ID, Arg.INT32, Arg.ID, Arg.INT32, Arg.DOUBLE),                     // ...attribute:offset:
         of(Ret.ID, Arg.INT32, Arg.ID, Arg.INT32, Arg.DOUBLE, Arg.DOUBLE),         // ...attribute:scale:offset:
         of(Ret.VOID, Arg.INT32, Arg.INT32),                 // MTL setStencilFrontReferenceValue:backReferenceValue: (two uint32_t)
-        of(Ret.ID, Arg.FLOAT)                              // numberWithFloat: (real `f`)
+        of(Ret.ID, Arg.FLOAT),                             // numberWithFloat: (real `f`)
+        // --- WebKit (WKWebView designated initializer, append-only) ---
+        of(Ret.ID, Arg.RECT, Arg.ID)                      // initWithFrame:configuration: (macOS 10.10+)
     );
 }

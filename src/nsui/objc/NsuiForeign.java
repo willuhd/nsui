@@ -124,6 +124,14 @@ public final class NsuiForeign {
     public static FunctionDescriptor delegateIdIdUpcall() { return FunctionDescriptor.of(PTR, PTR, PTR, PTR, PTR); }
     /// -(id)applicationDockMenu:(id) — Dock menu delegate (id return, id arg)
     public static FunctionDescriptor delegateDockMenu() { return FunctionDescriptor.of(PTR, PTR, PTR, PTR); }
+    /// -(void)method:(id):(id) — WK navigation lifecycle (didStart/didFinish/didCommit)
+    public static FunctionDescriptor delegateVoidIdIdUpcall() { return FunctionDescriptor.ofVoid(PTR, PTR, PTR, PTR); }
+    /// -(void)method:(id):(id):(id) — WK navigation fail/policy (didFail+error, decidePolicy+handler)
+    public static FunctionDescriptor delegateVoidIdIdIdUpcall() { return FunctionDescriptor.ofVoid(PTR, PTR, PTR, PTR, PTR); }
+    /// void (^)(NSArray *) — WKHTTPCookieStore getAllCookies: block (blockSelf + array)
+    public static FunctionDescriptor wkCookieArrayUpcall() { return FunctionDescriptor.ofVoid(PTR, PTR); }
+    /// void (^)(id, NSError *) — WKWebView evaluateJavaScript: completion (blockSelf + result + error)
+    public static FunctionDescriptor wkJsResultUpcall() { return FunctionDescriptor.ofVoid(PTR, PTR, PTR); }
 
     // ------------------------------------------- NSView input-event upcalls (responder chain)
 

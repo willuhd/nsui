@@ -79,18 +79,27 @@ public final class DelegateProxy {
     /// Java-side `-(id)method:(id)` — e.g. applicationDockMenu: returns NSMenu for sender.
     public interface IdArg { MemorySegment call(MemorySegment sender); }
 
+    /// Java-side `-(void)method:(id):(id)` — e.g. webView:didFinishNavigation:.
+    public interface VoidIdIdArg { void call(MemorySegment first, MemorySegment second); }
+
+    /// Java-side `-(void)method:(id):(id):(id)` — e.g. webView:didFailNavigation:withError:.
+    public interface VoidIdIdIdArg { void call(MemorySegment first, MemorySegment second, MemorySegment third); }
+
     /// Per-instance dispatch state, keyed by the native instance address.
         private record Holder(Map<Long, BoolArg> bools, Map<Long, VoidArg> voids,
                            Map<Long, IntArg> ints, Map<Long, IdIdIntArg> idIdInts,
                            Map<Long, WindowSizeArg> windowSizes,
                            Map<Long, IdIdArg> idIds,
                            Map<Long, IdArg> ids,
+                           Map<Long, VoidIdIdArg> voidIdIds,
+                           Map<Long, VoidIdIdIdArg> voidIdIdIds,
                            MemorySegment superClass) {}
 
     /// ObjC class pair (native class + the selector names already installed on it).
     private record RuntimeClass(MemorySegment cls, Set<String> boolMethods, Set<String> voidMethods,
                                  Set<String> intMethods, Set<String> idIdIntMethods,
-                                 Set<String> windowSizeMethods, Set<String> idIdMethods, Set<String> idMethods) {}
+                                 Set<String> windowSizeMethods, Set<String> idIdMethods, Set<String> idMethods,
+                                 Set<String> voidIdIdMethods, Set<String> voidIdIdIdMethods) {}
 
     // A registry keyed by the native instance address -> its dispatch holder.
     private static final ConcurrentMap<Long, Holder> REGISTRY = new ConcurrentHashMap<>();
@@ -126,6 +135,8 @@ public final class DelegateProxy {
     private static MemorySegment windowSizeStub;
     private static MemorySegment idIdStub;
     private static MemorySegment idStub;
+    private static MemorySegment voidIdIdStub;
+    private static MemorySegment voidIdIdIdStub;
     private static MemorySegment deallocStub;
     private static MemorySegment sigStub;    // methodSignatureForSelector: (returns an NSMethodSignature)
     private static MemorySegment invStub;    // forwardInvocation: (swallows unknown selectors)
@@ -234,6 +245,33 @@ public final class DelegateProxy {
         }
     }
 
+    /// FFM upcall target: `-(void)method:(id):(id)` — e.g. webView:didFinishNavigation:.
+    static void dispatchVoidIdId(MemorySegment self, MemorySegment sel, MemorySegment a, MemorySegment b) {
+        Holder h = REGISTRY.get(self.address());
+        VoidIdIdArg f = (h == null) ? null : h.voidIdIds().get(sel.address());
+        if (f == null) return;
+        Scratch.beginTurn();
+        try {
+            f.call(a, b);
+        } finally {
+            Scratch.endTurn();
+        }
+    }
+
+    /// FFM upcall target: `-(void)method:(id):(id):(id)` — e.g. webView:didFailNavigation:withError:.
+    static void dispatchVoidIdIdId(MemorySegment self, MemorySegment sel,
+            MemorySegment a, MemorySegment b, MemorySegment c) {
+        Holder h = REGISTRY.get(self.address());
+        VoidIdIdIdArg f = (h == null) ? null : h.voidIdIdIds().get(sel.address());
+        if (f == null) return;
+        Scratch.beginTurn();
+        try {
+            f.call(a, b, c);
+        } finally {
+            Scratch.endTurn();
+        }
+    }
+
     /// FFM upcall target: `-(void)dealloc` — unregister the instance, then chain `[super dealloc]`.
     ///
     /// Chaining is not optional: NSObject's `-dealloc` (`objc_destructInstance`) is what
@@ -320,7 +358,9 @@ public final class DelegateProxy {
         Map<Long, WindowSizeArg> windowSizes = new ConcurrentHashMap<>();
         Map<Long, IdIdArg> idIds = new ConcurrentHashMap<>();
         Map<Long, IdArg> ids = new ConcurrentHashMap<>();
-        REGISTRY.put(instance.address(), new Holder(bools, voids, ints, idIdInts, windowSizes, idIds, ids, ObjC.classGetSuperclass(pair)));
+        Map<Long, VoidIdIdArg> voidIdIds = new ConcurrentHashMap<>();
+        Map<Long, VoidIdIdIdArg> voidIdIdIds = new ConcurrentHashMap<>();
+        REGISTRY.put(instance.address(), new Holder(bools, voids, ints, idIdInts, windowSizes, idIds, ids, voidIdIds, voidIdIdIds, ObjC.classGetSuperclass(pair)));
         return instance;
     }
 
@@ -347,7 +387,9 @@ public final class DelegateProxy {
         Map<String, WindowSizeArg> windowSizes = Map.of();
         Map<String, IdIdArg> idIds = Map.of();
         Map<String, IdArg> ids = Map.of();
-        return delegate(superClassName, className, boolSelectors, voidSelectors, ints, idIdInts, windowSizes, idIds, ids);
+        Map<String, VoidIdIdArg> voidIdIds = Map.of();
+        Map<String, VoidIdIdIdArg> voidIdIdIds = Map.of();
+        return delegate(superClassName, className, boolSelectors, voidSelectors, ints, idIdInts, windowSizes, idIds, ids, voidIdIds, voidIdIdIds);
     }
 
     /// Build (lazily) a protocol-ish delegate / data-source object subclassing
@@ -375,7 +417,9 @@ public final class DelegateProxy {
         Map<String, WindowSizeArg> windowSizes = Map.of();
         Map<String, IdIdArg> idIds = Map.of();
         Map<String, IdArg> ids = Map.of();
-        return delegate(superClassName, className, boolSelectors, voidSelectors, intSelectors, idIdIntSelectors, windowSizes, idIds, ids);
+        Map<String, VoidIdIdArg> voidIdIds = Map.of();
+        Map<String, VoidIdIdIdArg> voidIdIdIds = Map.of();
+        return delegate(superClassName, className, boolSelectors, voidSelectors, intSelectors, idIdIntSelectors, windowSizes, idIds, ids, voidIdIds, voidIdIdIds);
     }
 
     /// Build (lazily) a protocol-ish delegate / data-source / window-delegate object subclassing
@@ -405,7 +449,9 @@ public final class DelegateProxy {
             Map<String, WindowSizeArg> windowSizeSelectors) {
         Map<String, IdIdArg> idIds = Map.of();
         Map<String, IdArg> ids = Map.of();
-        return delegate(superClassName, className, boolSelectors, voidSelectors, intSelectors, idIdIntSelectors, windowSizeSelectors, idIds, ids);
+        Map<String, VoidIdIdArg> voidIdIds = Map.of();
+        Map<String, VoidIdIdIdArg> voidIdIdIds = Map.of();
+        return delegate(superClassName, className, boolSelectors, voidSelectors, intSelectors, idIdIntSelectors, windowSizeSelectors, idIds, ids, voidIdIds, voidIdIdIds);
     }
 
     /// Build delegate for `NSApplication` dock menu `applicationDockMenu:` → `"@@:@"` → `dispatchId`.
@@ -415,6 +461,21 @@ public final class DelegateProxy {
             Map<String, WindowSizeArg> windowSizeSelectors,
             Map<String, IdIdArg> idIdSelectors,
             Map<String, IdArg> idSelectors) {
+        return delegate(superClassName, className, boolSelectors, voidSelectors, intSelectors,
+                idIdIntSelectors, windowSizeSelectors, idIdSelectors, idSelectors,
+                Map.of(), Map.of());
+    }
+
+    /// Full delegate with WK navigation lifecycle (`void(id,id)` didStart/didFinish +
+    /// `void(id,id,id)` didFail) via `voidIdIdSelectors`/`voidIdIdIdSelectors`.
+    public static MemorySegment delegate(String superClassName, String className,
+            Map<String, BoolArg> boolSelectors, Map<String, VoidArg> voidSelectors,
+            Map<String, IntArg> intSelectors, Map<String, IdIdIntArg> idIdIntSelectors,
+            Map<String, WindowSizeArg> windowSizeSelectors,
+            Map<String, IdIdArg> idIdSelectors,
+            Map<String, IdArg> idSelectors,
+            Map<String, VoidIdIdArg> voidIdIdSelectors,
+            Map<String, VoidIdIdIdArg> voidIdIdIdSelectors) {
         MemorySegment pair = ensureClassPair(superClassName + "\0" + className);
         Map<Long, BoolArg> bools = new ConcurrentHashMap<>();
         Map<Long, VoidArg> voids = new ConcurrentHashMap<>();
@@ -452,9 +513,19 @@ public final class DelegateProxy {
             addIdMethod(pair, e.getKey());
             ids.put(ObjC.sel(e.getKey()).address(), e.getValue());
         }
+        Map<Long, VoidIdIdArg> voidIdIds = new ConcurrentHashMap<>();
+        Map<Long, VoidIdIdIdArg> voidIdIdIds = new ConcurrentHashMap<>();
+        for (Map.Entry<String, VoidIdIdArg> e : voidIdIdSelectors.entrySet()) {
+            addVoidIdIdMethod(pair, e.getKey());
+            voidIdIds.put(ObjC.sel(e.getKey()).address(), e.getValue());
+        }
+        for (Map.Entry<String, VoidIdIdIdArg> e : voidIdIdIdSelectors.entrySet()) {
+            addVoidIdIdIdMethod(pair, e.getKey());
+            voidIdIdIds.put(ObjC.sel(e.getKey()).address(), e.getValue());
+        }
 
         MemorySegment instance = allocInit(pair);
-        REGISTRY.put(instance.address(), new Holder(bools, voids, ints, idIdInts, windowSizes, idIds, ids, ObjC.classGetSuperclass(pair)));
+        REGISTRY.put(instance.address(), new Holder(bools, voids, ints, idIdInts, windowSizes, idIds, ids, voidIdIds, voidIdIdIds, ObjC.classGetSuperclass(pair)));
         return instance;
     }
 
@@ -473,6 +544,8 @@ public final class DelegateProxy {
         Map<Long, WindowSizeArg> windowSizes = new ConcurrentHashMap<>();
         Map<Long, IdIdArg> idIds = new ConcurrentHashMap<>();
         Map<Long, IdArg> ids = new ConcurrentHashMap<>();
+        Map<Long, VoidIdIdArg> voidIdIds = new ConcurrentHashMap<>();
+        Map<Long, VoidIdIdIdArg> voidIdIdIds = new ConcurrentHashMap<>();
 
         for (Map.Entry<String, BoolArg> e : boolSelectors.entrySet()) {
             addBoolMethod(pair, e.getKey());
@@ -500,7 +573,7 @@ public final class DelegateProxy {
         }
 
         MemorySegment instance = allocInit(pair);
-        REGISTRY.put(instance.address(), new Holder(bools, voids, ints, idIdInts, windowSizes, idIds, ids, ObjC.classGetSuperclass(pair)));
+        REGISTRY.put(instance.address(), new Holder(bools, voids, ints, idIdInts, windowSizes, idIds, ids, voidIdIds, voidIdIdIds, ObjC.classGetSuperclass(pair)));
         return instance;
     }
 
@@ -597,6 +670,15 @@ public final class DelegateProxy {
                     MethodType.methodType(MemorySegment.class, MemorySegment.class, MemorySegment.class, MemorySegment.class));
             idStub = ObjC.upcall(idTarget, NsuiForeign.delegateDockMenu()); // (PTR, PTR, PTR, PTR) applicationDockMenu:
 
+            MethodHandle voidIdIdTarget = MethodHandles.lookup().findStatic(DelegateProxy.class, "dispatchVoidIdId",
+                    MethodType.methodType(void.class, MemorySegment.class, MemorySegment.class, MemorySegment.class, MemorySegment.class));
+            voidIdIdStub = ObjC.upcall(voidIdIdTarget, NsuiForeign.delegateVoidIdIdUpcall());
+
+            MethodHandle voidIdIdIdTarget = MethodHandles.lookup().findStatic(DelegateProxy.class, "dispatchVoidIdIdId",
+                    MethodType.methodType(void.class, MemorySegment.class, MemorySegment.class,
+                            MemorySegment.class, MemorySegment.class, MemorySegment.class));
+            voidIdIdIdStub = ObjC.upcall(voidIdIdIdTarget, NsuiForeign.delegateVoidIdIdIdUpcall());
+
             MethodHandle deallocTarget = MethodHandles.lookup().findStatic(DelegateProxy.class, "dispatchDealloc",
                     MethodType.methodType(void.class, MemorySegment.class, MemorySegment.class));
             deallocStub = ObjC.upcall(deallocTarget, NsuiForeign.deallocUpcall());        // (VOID, PTR, PTR)
@@ -645,7 +727,8 @@ public final class DelegateProxy {
             rc = new RuntimeClass(pair,
                     new CopyOnWriteArraySet<>(), new CopyOnWriteArraySet<>(),
                     new CopyOnWriteArraySet<>(), new CopyOnWriteArraySet<>(),
-                    new CopyOnWriteArraySet<>(), new CopyOnWriteArraySet<>(), new CopyOnWriteArraySet<>());
+                    new CopyOnWriteArraySet<>(), new CopyOnWriteArraySet<>(), new CopyOnWriteArraySet<>(),
+                    new CopyOnWriteArraySet<>(), new CopyOnWriteArraySet<>());
             CLASSES.put(key, rc);
         }
         return rc.cls();
@@ -725,6 +808,26 @@ public final class DelegateProxy {
         if (rc.idIdMethods().add(selector)) {
             if (!ObjC.addMethod(pair, selector, idIdStub, "@@:@@")) {
                 throw new RuntimeException("class_addMethod idId " + selector + " failed");
+            }
+        }
+    }
+
+    /// Add a `-(void)method:(id):(id)` (encoding "v@:@@") to a class pair unless already present.
+    private static void addVoidIdIdMethod(MemorySegment pair, String selector) {
+        RuntimeClass rc = classInfo(pair);
+        if (rc.voidIdIdMethods().add(selector)) {
+            if (!ObjC.addMethod(pair, selector, voidIdIdStub, "v@:@@")) {
+                throw new RuntimeException("class_addMethod void-id-id " + selector + " failed");
+            }
+        }
+    }
+
+    /// Add a `-(void)method:(id):(id):(id)` (encoding "v@:@@@") to a class pair unless already present.
+    private static void addVoidIdIdIdMethod(MemorySegment pair, String selector) {
+        RuntimeClass rc = classInfo(pair);
+        if (rc.voidIdIdIdMethods().add(selector)) {
+            if (!ObjC.addMethod(pair, selector, voidIdIdIdStub, "v@:@@@")) {
+                throw new RuntimeException("class_addMethod void-id-id-id " + selector + " failed");
             }
         }
     }

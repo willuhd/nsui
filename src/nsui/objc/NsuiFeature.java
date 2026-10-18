@@ -159,6 +159,41 @@ public final class NsuiFeature implements Feature {
                             MethodType.methodType(MemorySegment.class, MemorySegment.class, MemorySegment.class, MemorySegment.class, MemorySegment.class)),
                     NsuiForeign.delegateIdIdUpcall());
             upcalls++;
+            RuntimeForeignAccess.registerForDirectUpcall(
+                    MethodHandles.lookup().findStatic(DelegateProxy.class, "dispatchVoidIdId",
+                            MethodType.methodType(void.class, MemorySegment.class, MemorySegment.class, MemorySegment.class, MemorySegment.class)),
+                    NsuiForeign.delegateVoidIdIdUpcall());
+            upcalls++;
+            RuntimeForeignAccess.registerForDirectUpcall(
+                    MethodHandles.lookup().findStatic(DelegateProxy.class, "dispatchVoidIdIdId",
+                            MethodType.methodType(void.class, MemorySegment.class, MemorySegment.class,
+                                    MemorySegment.class, MemorySegment.class, MemorySegment.class)),
+                    NsuiForeign.delegateVoidIdIdIdUpcall());
+            upcalls++;
+            // WKHTTPCookieStore getAllCookies: block body (void(blockSelf, NSArray*))
+            RuntimeForeignAccess.registerForDirectUpcall(
+                    MethodHandles.lookup().findStatic(nsui.WKHTTPCookieStore.class, "cookieArrayThunk",
+                            MethodType.methodType(void.class, MemorySegment.class, MemorySegment.class)),
+                    NsuiForeign.wkCookieArrayUpcall());
+            upcalls++;
+            // WKHTTPCookieStore void completions (void(blockSelf)) — same shape as CATransaction
+            RuntimeForeignAccess.registerForDirectUpcall(
+                    MethodHandles.lookup().findStatic(nsui.WKHTTPCookieStore.class, "voidThunk",
+                            MethodType.methodType(void.class, MemorySegment.class)),
+                    NsuiForeign.blockVoidUpcall());
+            upcalls++;
+            // WKHTTPCookieStore getCookiePolicy: block body (void(blockSelf, NSInteger))
+            RuntimeForeignAccess.registerForDirectUpcall(
+                    MethodHandles.lookup().findStatic(nsui.WKHTTPCookieStore.class, "policyThunk",
+                            MethodType.methodType(void.class, MemorySegment.class, long.class)),
+                    NsuiForeign.sheetBlockUpcall());
+            upcalls++;
+            // WKWebView evaluateJavaScript: completion (void(blockSelf, id, NSError*))
+            RuntimeForeignAccess.registerForDirectUpcall(
+                    MethodHandles.lookup().findStatic(nsui.WKWebView.class, "jsResultThunk",
+                            MethodType.methodType(void.class, MemorySegment.class, MemorySegment.class, MemorySegment.class)),
+                    NsuiForeign.wkJsResultUpcall());
+            upcalls++;
             // ThemeObserver — CoreFoundation dark-mode upcall
             for (FunctionDescriptor d : NsuiForeign.THEME) {
                 RuntimeForeignAccess.registerForDowncall(d);

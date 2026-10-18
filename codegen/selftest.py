@@ -13,6 +13,7 @@ Nothing under src/ or tests/ is written: the checks work in copies under codegen
 import argparse
 import json
 import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -157,10 +158,41 @@ def check_surface_batch():
           errs[0][:120] if errs else "")
     if errs or not tests:
         return
+    # The gate scans Path.of("src","nsui") relative to cwd: it must run with cwd=where
+    # (the batch tree, 5917 checked / 416 noMatch). The caller's cwd (REPO, 4565 / 244)
+    # measures the live repo instead and reads as a pass while checking nothing new.
+    # The batch baseline lives in codegen/surface-baseline.json (no-drop: checked is a
+    # floor so a wrong-cwd run fails, noMatch is a cap so growth fails, mismatches stay 0).
+    baseline = {}
+    try:
+        with open(os.path.join(HERE, "surface-baseline.json"), encoding="utf-8") as fh:
+            baseline = json.load(fh)
+    except (OSError, ValueError):
+        pass
+    counts = baseline.get("counts", {}) if isinstance(baseline, dict) else {}
+    try:
+        batchNoMatch = int(counts.get("noMatch", 416))
+    except (TypeError, ValueError):
+        batchNoMatch = 416
+    try:
+        batchCheckedFloor = int(counts.get("checked", 5917))
+    except (TypeError, ValueError):
+        batchCheckedFloor = 5917
     g = subprocess.run([JAVA, "-XstartOnFirstThread", "--enable-native-access=ALL-UNNAMED",
+                        "-Dsignature.noMatchBaseline=%d" % batchNoMatch,
                         "-cp", out, "nsui.tests.SignatureConformanceTest"],
-                       capture_output=True, text=True)
+                       capture_output=True, text=True, cwd=where)
     text = g.stdout + g.stderr
+    mChecked = re.search(r"call sites checked:\s*(\d+)", text)
+    mNoMatch = re.search(r"no runtime method:\s*(\d+)", text)
+    mBad = re.search(r"ABI mismatches:\s*(\d+)", text)
+    gotChecked = int(mChecked.group(1)) if mChecked else -1
+    gotNoMatch = int(mNoMatch.group(1)) if mNoMatch else -1
+    gotBad = int(mBad.group(1)) if mBad else -1
+    check("surface: batch tree measured (cwd=where, %d checked / %d noMatch / %d MISMATCH)"
+          % (gotChecked, gotNoMatch, gotBad),
+          gotChecked >= batchCheckedFloor and gotNoMatch <= batchNoMatch and gotBad == 0,
+          "baseline %d checked floor / %d noMatch cap / 0 MISMATCH" % (batchCheckedFloor, batchNoMatch))
     check("surface: signature gate ALL PASS", "RESULT: ALL PASS" in text,
           next((ln for ln in text.splitlines() if ln.startswith("RESULT")), ""))
 

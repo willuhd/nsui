@@ -183,8 +183,14 @@ public final class ViewCoverageTest {
         TestKit.check(v.hitTest(new NSPoint(10, 10)) != null, "NSView hitTest inside non-nil");
         TestKit.check(v.tag() == -1, "NSView default tag -1 (got " + v.tag() + ")");
         TestKit.check(v.viewWithTag(999999) == null, "NSView viewWithTag unknown -> nil");
-        TestKit.check(!v.needsPanelToBecomeKey() || v.needsPanelToBecomeKey(), "NSView needsPanelToBecomeKey no-throw");
-        TestKit.check(!v.mouseDownCanMoveWindow() || v.mouseDownCanMoveWindow(), "NSView mouseDownCanMoveWindow no-throw");
+        TestKit.check(!v.needsPanelToBecomeKey(), "NSView needsPanelToBecomeKey default NO");
+        boolean npk1 = v.needsPanelToBecomeKey();
+        boolean npk2 = v.needsPanelToBecomeKey();
+        TestKit.check(npk1 == npk2, "NSView needsPanelToBecomeKey deterministic");
+        TestKit.check(v.mouseDownCanMoveWindow(), "NSView mouseDownCanMoveWindow default YES");
+        boolean mdmw1 = v.mouseDownCanMoveWindow();
+        boolean mdmw2 = v.mouseDownCanMoveWindow();
+        TestKit.check(mdmw1 == mdmw2, "NSView mouseDownCanMoveWindow deterministic");
 
         // tooltip
         v.setToolTip("tip");
@@ -196,7 +202,11 @@ public final class ViewCoverageTest {
 
         // live resize / focus ring
         TestKit.check(!v.inLiveResize(), "NSView inLiveResize false outside resize");
-        TestKit.check(!v.preservesContentDuringLiveResize() || v.preservesContentDuringLiveResize(), "NSView preservesContentDuringLiveResize no-throw");
+        // Measured live on a plain NSView: preservesContent false, deterministic.
+        TestKit.check(!v.preservesContentDuringLiveResize(), "NSView preservesContentDuringLiveResize default NO");
+        boolean pclr1 = v.preservesContentDuringLiveResize();
+        boolean pclr2 = v.preservesContentDuringLiveResize();
+        TestKit.check(pclr1 == pclr2, "NSView preservesContentDuringLiveResize deterministic");
         TestKit.check(Double.isFinite(v.rectPreservedDuringLiveResize().width()), "NSView rectPreservedDuringLiveResize finite");
         v.viewWillStartLiveResize();
         v.viewDidEndLiveResize();
@@ -230,7 +240,11 @@ public final class ViewCoverageTest {
         long lp = v.layerContentsPlacement();
         v.setLayerContentsPlacement(lp);
         TestKit.check(v.layerContentsPlacement() == lp, "NSView layerContentsPlacement round-trip " + lp);
-        TestKit.check(!v.wantsUpdateLayer() || v.wantsUpdateLayer(), "NSView wantsUpdateLayer no-throw");
+        // Measured live on a plain NSView: wantsUpdateLayer false, deterministic.
+        TestKit.check(!v.wantsUpdateLayer(), "NSView wantsUpdateLayer default NO");
+        boolean wul1 = v.wantsUpdateLayer();
+        boolean wul2 = v.wantsUpdateLayer();
+        TestKit.check(wul1 == wul2, "NSView wantsUpdateLayer deterministic");
         boolean cdsl = v.canDrawSubviewsIntoLayer();
         v.setCanDrawSubviewsIntoLayer(!cdsl);
         TestKit.check(v.canDrawSubviewsIntoLayer() == !cdsl, "NSView canDrawSubviewsIntoLayer toggle");

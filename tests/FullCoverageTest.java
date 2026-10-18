@@ -326,14 +326,19 @@ public final class FullCoverageTest {
             check(v.heightAnchor()!=null, "heightAnchor");
             check(v.centerXAnchor()!=null, "centerX");
             check(v.centerYAnchor()!=null, "centerY");
-            // constraints — use valid width attribute 7, guarded for NSException
+            // constraints — use valid width attribute 7; creation runs outside
+            // the guard so a guard regression on valid inputs fails loudly
+            // instead of skipping (the add/remove calls stay guarded: native
+            // NSException paths vary by host, but a Java IAE is rethrown).
+            NSLayoutConstraint c = NSLayoutConstraint.constraintWithItem(v,7,0, v,7,1.0,0);
+            check(c != null, "constraintWithItem valid");
             try {
-                NSLayoutConstraint c = NSLayoutConstraint.constraintWithItem(v,7,0, v,7,1.0,0);
                 v.addConstraint(c); check(v.constraints().size()>=1, "addConstraint");
                 v.removeConstraint(c); check(v.constraints().size()==0, "removeConstraint");
                 v.addConstraints(List.of(NSLayoutConstraint.constraintWithItem(v,7,0,v,7,1.0,5)));
                 v.removeConstraints(v.constraints());
-            } catch (Throwable tt) { TestKit.skipCase("SKIP constraints (NSException or vocab): "+tt.getMessage()); }
+            } catch (IllegalArgumentException iae) { throw iae; }
+            catch (Throwable tt) { TestKit.skipCase("SKIP constraints (NSException or vocab): "+tt.getMessage()); }
             v.displayIfNeeded();
             v.displayIfNeededInRect(new NSRect(0,0,10,10));
             v.layoutSubtreeIfNeeded();

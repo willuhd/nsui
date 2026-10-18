@@ -5,6 +5,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.function.Consumer;
 
+import nsui.MPSImageMedian;
 import nsui.MTLBuffer;
 import nsui.MTLCommandBuffer;
 import nsui.MTLCommandQueue;
@@ -623,6 +624,20 @@ public final class MetalDepthStencilTest {
                 () -> passForGuard.colorAttachment(MTLRenderPassDescriptor.MAX_COLOR_ATTACHMENTS));
         TestKit.expectThrows("render pass colorAttachment(99) rejected",
                 IllegalArgumentException.class, () -> passForGuard.colorAttachment(99));
+        // MPSImageMedian requires an odd kernel diameter >= 3; the guard fires
+        // before native, so only a live device is needed (present here — the
+        // suite skips without a GPU).
+        final MTLDevice medianDevice = device;
+        TestKit.expectThrows("MPSImageMedian.create(diameter 0) rejected",
+                IllegalArgumentException.class, () -> MPSImageMedian.create(medianDevice, 0));
+        TestKit.expectThrows("MPSImageMedian.create(diameter 2) rejected",
+                IllegalArgumentException.class, () -> MPSImageMedian.create(medianDevice, 2));
+        TestKit.expectThrows("MPSImageMedian.create(diameter 4) rejected",
+                IllegalArgumentException.class, () -> MPSImageMedian.create(medianDevice, 4));
+        TestKit.expectThrows("MPSImageMedian.create(diameter -1) rejected",
+                IllegalArgumentException.class, () -> MPSImageMedian.create(medianDevice, -1));
+        TestKit.noThrow("MPSImageMedian.create(diameter 3) accepted",
+                () -> MPSImageMedian.create(medianDevice, 3));
         MTLRenderPipelineDescriptor pipeForGuard = MTLRenderPipelineDescriptor.create();
         TestKit.expectThrows("pipeline colorAttachment(negative) rejected",
                 IllegalArgumentException.class, () -> pipeForGuard.colorAttachment(-1));

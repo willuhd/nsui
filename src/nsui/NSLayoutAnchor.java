@@ -70,6 +70,12 @@ public class NSLayoutAnchor extends NSObject {
     public NSLayoutConstraint constraintEqualToAnchor(NSLayoutAnchor anchor, double constant) {
         ensureInit();
         Bounds.nonNull(anchor, "constraintEqualToAnchor:constant:");
+        // Measured one process per case: a non-finite constant aborts
+        // ("NSLayoutConstraint constant is not finite!  That's illegal.", exit 134).
+        if (!Double.isFinite(constant)) {
+            throw new IllegalArgumentException("constraintEqualToAnchor:constant: constant " + constant
+                    + " is not finite (NSLayoutAnchor aborts on a non-finite constant)");
+        }
         try {
             MemorySegment c = (MemorySegment) hEqualToAnchorConstant.invokeExact(peer, ObjC.sel("constraintEqualToAnchor:constant:"), anchor.peer(), constant);
             return NSLayoutConstraint.wrap(c);
@@ -92,6 +98,11 @@ public class NSLayoutAnchor extends NSObject {
     public NSLayoutConstraint constraintGreaterThanOrEqualToAnchor(NSLayoutAnchor anchor, double constant) {
         ensureInit();
         Bounds.nonNull(anchor, "constraintGreaterThanOrEqualToAnchor:constant:");
+        // Same native validator as constraintEqualToAnchor:constant: (measured NaN aborts, exit 134).
+        if (!Double.isFinite(constant)) {
+            throw new IllegalArgumentException("constraintGreaterThanOrEqualToAnchor:constant: constant " + constant
+                    + " is not finite (NSLayoutAnchor aborts on a non-finite constant)");
+        }
         try {
             MemorySegment c = (MemorySegment) hEqualToAnchorConstant.invokeExact(peer, ObjC.sel("constraintGreaterThanOrEqualToAnchor:constant:"), anchor.peer(), constant);
             return NSLayoutConstraint.wrap(c);
@@ -114,6 +125,11 @@ public class NSLayoutAnchor extends NSObject {
     public NSLayoutConstraint constraintLessThanOrEqualToAnchor(NSLayoutAnchor anchor, double constant) {
         ensureInit();
         Bounds.nonNull(anchor, "constraintLessThanOrEqualToAnchor:constant:");
+        // Same native validator as constraintEqualToAnchor:constant: (measured NaN aborts, exit 134).
+        if (!Double.isFinite(constant)) {
+            throw new IllegalArgumentException("constraintLessThanOrEqualToAnchor:constant: constant " + constant
+                    + " is not finite (NSLayoutAnchor aborts on a non-finite constant)");
+        }
         try {
             MemorySegment c = (MemorySegment) hEqualToAnchorConstant.invokeExact(peer, ObjC.sel("constraintLessThanOrEqualToAnchor:constant:"), anchor.peer(), constant);
             return NSLayoutConstraint.wrap(c);
@@ -144,6 +160,12 @@ public class NSLayoutAnchor extends NSObject {
     public NSLayoutConstraint constraintEqualToConstant(double constant) {
         ensureInit();
         requireDimension("constraintEqualToConstant");
+        // Measured one process per case: NaN/+Inf/-Inf each abort
+        // ("NSLayoutConstraint constant is not finite!  That's illegal.", exit 134).
+        if (!Double.isFinite(constant)) {
+            throw new IllegalArgumentException("constraintEqualToConstant: constant " + constant
+                    + " is not finite (NSLayoutAnchor aborts on a non-finite constant)");
+        }
         try {
             MemorySegment c = (MemorySegment) hEqualToConstant.invokeExact(peer, ObjC.sel("constraintEqualToConstant:"), constant);
             return NSLayoutConstraint.wrap(c);
@@ -155,6 +177,11 @@ public class NSLayoutAnchor extends NSObject {
     public NSLayoutConstraint constraintGreaterThanOrEqualToConstant(double constant) {
         ensureInit();
         requireDimension("constraintGreaterThanOrEqualToConstant");
+        // Same native validator as constraintEqualToConstant: (measured NaN aborts, exit 134).
+        if (!Double.isFinite(constant)) {
+            throw new IllegalArgumentException("constraintGreaterThanOrEqualToConstant: constant " + constant
+                    + " is not finite (NSLayoutAnchor aborts on a non-finite constant)");
+        }
         try {
             MemorySegment c = (MemorySegment) hEqualToConstant.invokeExact(peer, ObjC.sel("constraintGreaterThanOrEqualToConstant:"), constant);
             return NSLayoutConstraint.wrap(c);
@@ -166,6 +193,11 @@ public class NSLayoutAnchor extends NSObject {
     public NSLayoutConstraint constraintLessThanOrEqualToConstant(double constant) {
         ensureInit();
         requireDimension("constraintLessThanOrEqualToConstant");
+        // Same native validator as constraintEqualToConstant: (measured NaN aborts, exit 134).
+        if (!Double.isFinite(constant)) {
+            throw new IllegalArgumentException("constraintLessThanOrEqualToConstant: constant " + constant
+                    + " is not finite (NSLayoutAnchor aborts on a non-finite constant)");
+        }
         try {
             MemorySegment c = (MemorySegment) hEqualToConstant.invokeExact(peer, ObjC.sel("constraintLessThanOrEqualToConstant:"), constant);
             return NSLayoutConstraint.wrap(c);
@@ -179,6 +211,18 @@ public class NSLayoutAnchor extends NSObject {
         ensureInit();
         requireDimension("constraintEqualToAnchorWithMultiplier");
         Bounds.nonNull(anchor, "constraintEqualToAnchor:multiplier:constant:");
+        // Measured one process per case: a non-finite multiplier aborts
+        // ("Multiplier is not finite!  That's illegal.", exit 134) and a non-finite
+        // constant aborts ("NSLayoutConstraint constant is not finite!  That's
+        // illegal.", exit 134).
+        if (!Double.isFinite(multiplier)) {
+            throw new IllegalArgumentException("constraintEqualToAnchor:multiplier:constant: multiplier " + multiplier
+                    + " is not finite (NSLayoutAnchor aborts on a non-finite multiplier)");
+        }
+        if (!Double.isFinite(constant)) {
+            throw new IllegalArgumentException("constraintEqualToAnchor:multiplier:constant: constant " + constant
+                    + " is not finite (NSLayoutAnchor aborts on a non-finite constant)");
+        }
         try {
             MemorySegment c = (MemorySegment) hEqualToAnchorMultiplierConstant.invokeExact(peer, ObjC.sel("constraintEqualToAnchor:multiplier:constant:"), anchor.peer(), multiplier, constant);
             return NSLayoutConstraint.wrap(c);
@@ -192,6 +236,12 @@ public class NSLayoutAnchor extends NSObject {
         ensureInit();
         requireDimension("constraintEqualToAnchorWithMultiplier");
         Bounds.nonNull(anchor, "constraintEqualToAnchor:multiplier:");
+        // Measured one process per case: NaN/+Inf/-Inf each abort
+        // ("Multiplier is not finite!  That's illegal.", exit 134).
+        if (!Double.isFinite(multiplier)) {
+            throw new IllegalArgumentException("constraintEqualToAnchor:multiplier: multiplier " + multiplier
+                    + " is not finite (NSLayoutAnchor aborts on a non-finite multiplier)");
+        }
         try {
             MemorySegment c = (MemorySegment) hEqualToAnchorMultiplier.invokeExact(peer, ObjC.sel("constraintEqualToAnchor:multiplier:"), anchor.peer(), multiplier);
             return NSLayoutConstraint.wrap(c);

@@ -903,7 +903,7 @@ def merge_entries(path, entries):
     # side, so the generator emitted the same guard twice.
     by_key = {(c.get("class"), c.get("selector"), c.get("param"), c.get("badness")): i
               for i, c in enumerate(cases)}
-    added = superseded = 0
+    added = superseded = kept = 0
     for e in entries:
         key = (e["class"], e["selector"], e.get("param"), e.get("badness"))
         i = by_key.get(key)
@@ -911,11 +911,19 @@ def merge_entries(path, entries):
             by_key[key] = len(cases)
             cases.append(e)
             added += 1
+        elif cases[i].get("verbatim"):
+            # A hand-mirrored row stores the shipped statement verbatim (e.g. the status-length
+            # 10000 cap, where the re-derived Bounds.finite would over-guard NaN the shipped
+            # wrapper tolerates): feedback never supersedes it. A changed native behaviour needs
+            # a human re-mirror, not a silent derived replacement.
+            kept += 1
         else:
             cases[i] = e
             superseded += 1
     existing["cases"] = cases
     json.dump(existing, open(path, "w"), indent=2)
+    if kept:
+        print("kept %d verbatim row(s) in %s" % (kept, path))
     return added, superseded, len(cases)
 
 
@@ -1135,7 +1143,7 @@ def enumerate_measure(repo, args):
         old_cases = existing.get("cases", [])
         by_key = {(c.get("class"), c.get("selector"), c.get("param"), c.get("badness")): i
                   for i, c in enumerate(old_cases)}
-        added = replaced = 0
+        added = replaced = kept = 0
         for e in entries:
             if e.get("baseline"):
                 continue                       # scaffolding, not a case
@@ -1145,6 +1153,9 @@ def enumerate_measure(repo, args):
                 by_key[key] = len(old_cases)
                 old_cases.append(e)
                 added += 1
+            elif old_cases[i].get("verbatim"):
+                # Hand-mirrored rows store the shipped statement verbatim; see merge_entries.
+                kept += 1
             else:
                 old_cases[i] = e
                 replaced += 1
@@ -1152,6 +1163,8 @@ def enumerate_measure(repo, args):
         json.dump(existing, open(path, "w"), indent=2)
         print("merged %d new case(s), superseded %d in %s (%d total)"
               % (added, replaced, path, len(old_cases)))
+        if kept:
+            print("kept %d verbatim row(s) in %s" % (kept, path))
     else:
         json.dump({"measured_with": "codegen/probe.py --enumerate",
                    "cases": entries}, open(path, "w"), indent=2)

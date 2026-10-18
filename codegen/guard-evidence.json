@@ -7801,10 +7801,11 @@
       "param": "item",
       "param_index": 0,
       "probe_id": "NSStatusBar.removeStatusItem.nil",
+      "badness": "nil",
       "unguarded": "tolerated",
+      "param_kind": "typed:NSStatusItem",
       "control": "the unguarded call survived, so no guard is emitted",
-      "guards": [],
-      "badness": "nil"
+      "guards": []
     },
     {
       "class": "NSStatusItem",
@@ -7812,10 +7813,11 @@
       "param": "menu",
       "param_index": 0,
       "probe_id": "NSStatusItem.setMenu.nil",
+      "badness": "nil",
       "unguarded": "tolerated",
+      "param_kind": "typed:NSMenu",
       "control": "the unguarded call survived, so no guard is emitted",
-      "guards": [],
-      "badness": "nil"
+      "guards": []
     },
     {
       "class": "NSStatusItem",
@@ -7823,10 +7825,11 @@
       "param": "autosaveName",
       "param_index": 0,
       "probe_id": "NSStatusItem.setAutosaveName.nil",
+      "badness": "nil",
       "unguarded": "tolerated",
+      "param_kind": "string",
       "control": "the unguarded call survived, so no guard is emitted",
-      "guards": [],
-      "badness": "nil"
+      "guards": []
     },
     {
       "class": "NSStatusItem",
@@ -7834,10 +7837,11 @@
       "param": "title",
       "param_index": 0,
       "probe_id": "NSStatusItem.setTitle.nil",
+      "badness": "nil",
       "unguarded": "tolerated",
+      "param_kind": "string",
       "control": "the unguarded call survived, so no guard is emitted",
-      "guards": [],
-      "badness": "nil"
+      "guards": []
     },
     {
       "class": "NSStatusItem",
@@ -7845,10 +7849,11 @@
       "param": "attributedTitle",
       "param_index": 0,
       "probe_id": "NSStatusItem.setAttributedTitle.nil",
+      "badness": "nil",
       "unguarded": "tolerated",
+      "param_kind": "typed:NSAttributedString",
       "control": "the unguarded call survived, so no guard is emitted",
-      "guards": [],
-      "badness": "nil"
+      "guards": []
     },
     {
       "class": "NSStatusItem",
@@ -7856,10 +7861,11 @@
       "param": "image",
       "param_index": 0,
       "probe_id": "NSStatusItem.setImage.nil",
+      "badness": "nil",
       "unguarded": "tolerated",
+      "param_kind": "typed:NSImage",
       "control": "the unguarded call survived, so no guard is emitted",
-      "guards": [],
-      "badness": "nil"
+      "guards": []
     },
     {
       "class": "NSStatusItem",
@@ -7867,10 +7873,11 @@
       "param": "alternateImage",
       "param_index": 0,
       "probe_id": "NSStatusItem.setAlternateImage.nil",
+      "badness": "nil",
       "unguarded": "tolerated",
+      "param_kind": "typed:NSImage",
       "control": "the unguarded call survived, so no guard is emitted",
-      "guards": [],
-      "badness": "nil"
+      "guards": []
     },
     {
       "class": "NSStatusItem",
@@ -7878,10 +7885,11 @@
       "param": "toolTip",
       "param_index": 0,
       "probe_id": "NSStatusItem.setToolTip.nil",
+      "badness": "nil",
       "unguarded": "tolerated",
+      "param_kind": "string",
       "control": "the unguarded call survived, so no guard is emitted",
-      "guards": [],
-      "badness": "nil"
+      "guards": []
     },
     {
       "class": "NSStatusItem",
@@ -7889,10 +7897,11 @@
       "param": "view",
       "param_index": 0,
       "probe_id": "NSStatusItem.setView.nil",
+      "badness": "nil",
       "unguarded": "tolerated",
+      "param_kind": "typed:NSView",
       "control": "the unguarded call survived, so no guard is emitted",
-      "guards": [],
-      "badness": "nil"
+      "guards": []
     },
     {
       "class": "NSStatusItem",
@@ -7900,10 +7909,11 @@
       "param": "rect",
       "param_index": 0,
       "probe_id": "NSStatusItem.drawStatusBarBackgroundInRectWithHighlight.nan",
+      "badness": "nan",
       "unguarded": "tolerated",
+      "param_kind": "rect",
       "control": "the unguarded call survived, so no guard is emitted",
-      "guards": [],
-      "badness": "nan"
+      "guards": []
     },
     {
       "class": "NSStatusItem",
@@ -7911,10 +7921,11 @@
       "param": "menu",
       "param_index": 0,
       "probe_id": "NSStatusItem.popUpStatusItemMenu.nil",
+      "badness": "nil",
       "unguarded": "tolerated",
+      "param_kind": "typed:NSMenu",
       "control": "the unguarded call survived, so no guard is emitted",
-      "guards": [],
-      "badness": "nil"
+      "guards": []
     },
     {
       "class": "NSString",
@@ -18664,14 +18675,15 @@
       "param_index": 0,
       "probe_id": "NSStatusBar.statusItemWithLength.inf",
       "badness": "inf",
-      "param_kind": "double",
       "unguarded": "objc-abort",
+      "param_kind": "double",
       "guards": [
         "if ({p} > 10000.0 || {p} == Double.NEGATIVE_INFINITY) {",
         "    throw new IllegalArgumentException(\"statusItemWithLength: length \" + {p} + \" exceeds maximum 10000\");",
         "}"
       ],
-      "note": "Hand-mirror of the shipped guard: 10001 and +Inf abort natively (measured 2026-10-18, guard-free objc-abort vs shipped java-exception); -Inf is fail-fast (deferred layout abort per 3334157, tolerated in a minimal probe so no badness synthesizes it). NaN is tolerated on both trees, so Bounds.finite would over-guard; the shipped statement is stored verbatim. A future --merge re-derives finite from badness=inf and must keep this row."
+      "note": "Hand-mirror of the shipped guard: 10001 and +Inf abort natively (measured 2026-10-18, guard-free objc-abort vs shipped java-exception); -Inf is fail-fast (deferred layout abort per 3334157, tolerated in a minimal probe so no badness synthesizes it). NaN is tolerated on both trees, so Bounds.finite would over-guard; the shipped statement is stored verbatim. Flagged verbatim: feedback merges keep this row (see merge_entries).",
+      "verbatim": true
     },
     {
       "class": "NSStatusItem",
@@ -18680,14 +18692,111 @@
       "param_index": 0,
       "probe_id": "NSStatusItem.setLength.inf",
       "badness": "inf",
-      "param_kind": "double",
       "unguarded": "objc-abort",
+      "param_kind": "double",
       "guards": [
         "if ({p} > 10000.0 || {p} == Double.NEGATIVE_INFINITY) {",
         "    throw new IllegalArgumentException(\"setLength: length \" + {p} + \" exceeds maximum 10000\");",
         "}"
       ],
-      "note": "Hand-mirror of the shipped guard: 10001 and +Inf abort natively (measured 2026-10-18, guard-free objc-abort vs shipped java-exception); -Inf is fail-fast (deferred layout abort per 3334157, tolerated in a minimal probe so no badness synthesizes it). NaN is tolerated on both trees, so Bounds.finite would over-guard; the shipped statement is stored verbatim. A future --merge re-derives finite from badness=inf and must keep this row."
+      "note": "Hand-mirror of the shipped guard: 10001 and +Inf abort natively (measured 2026-10-18, guard-free objc-abort vs shipped java-exception); -Inf is fail-fast (deferred layout abort per 3334157, tolerated in a minimal probe so no badness synthesizes it). NaN is tolerated on both trees, so Bounds.finite would over-guard; the shipped statement is stored verbatim. Flagged verbatim: feedback merges keep this row (see merge_entries).",
+      "verbatim": true
+    },
+    {
+      "class": "NSStatusBar",
+      "selector": "statusItemWithLength:",
+      "param": "length",
+      "param_index": 0,
+      "probe_id": "NSStatusBar.statusItemWithLength.nan",
+      "badness": "nan",
+      "unguarded": "tolerated",
+      "param_kind": "double",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSStatusItem",
+      "selector": "setLength:",
+      "param": "length",
+      "param_index": 0,
+      "probe_id": "NSStatusItem.setLength.nan",
+      "badness": "nan",
+      "unguarded": "tolerated",
+      "param_kind": "double",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSStatusItem",
+      "selector": "setBehavior:",
+      "param": "behavior",
+      "param_index": 0,
+      "probe_id": "NSStatusItem.setBehavior.negative",
+      "badness": "negative",
+      "unguarded": "tolerated",
+      "param_kind": "ulong",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSStatusItem",
+      "selector": "setAction:",
+      "param": "action",
+      "param_index": 0,
+      "probe_id": "NSStatusItem.setAction.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "param_kind": "id",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSStatusItem",
+      "selector": "setDoubleAction:",
+      "param": "doubleAction",
+      "param_index": 0,
+      "probe_id": "NSStatusItem.setDoubleAction.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "param_kind": "id",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSStatusItem",
+      "selector": "setTarget:",
+      "param": "target",
+      "param_index": 0,
+      "probe_id": "NSStatusItem.setTarget.nil",
+      "badness": "nil",
+      "unguarded": "tolerated",
+      "param_kind": "id",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSStatusItem",
+      "selector": "sendActionOn:",
+      "param": "mask",
+      "param_index": 0,
+      "probe_id": "NSStatusItem.sendActionOn.negative",
+      "badness": "negative",
+      "unguarded": "tolerated",
+      "param_kind": "ulong",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
+    },
+    {
+      "class": "NSStatusItem",
+      "selector": "drawStatusBarBackgroundInRect:withHighlight:",
+      "param": "rect",
+      "param_index": 0,
+      "probe_id": "NSStatusItem.drawStatusBarBackgroundInRectWithHighlight.inf",
+      "badness": "inf",
+      "unguarded": "tolerated",
+      "param_kind": "rect",
+      "control": "the unguarded call survived, so no guard is emitted",
+      "guards": []
     }
   ],
   "enumerated_with": "codegen/probe.py --enumerate (nil/NaN/index candidates derived from the generator's plans)",

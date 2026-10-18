@@ -262,6 +262,19 @@ public final class CACompletenessTest {
                     () -> root.insertSublayer(badChild, 0x1_00000000L));
             TestKit.check(root.sublayers().count() == 4,
                     "sublayer count stays 4 after rejected inserts");
+            // Index 0 (above) pins the front; representable-but-beyond-count
+            // indices clamp to the end (documented Core Animation behavior
+            // for indices the guard lets through): 99 and UINT_MAX land last.
+            CALayer clampA = CALayer.create();
+            root.insertSublayer(clampA, 99L);
+            TestKit.check(indexOf(root, clampA) == root.sublayers().count() - 1,
+                    "insertSublayer:atIndex:(99) clamps to end");
+            CALayer clampB = CALayer.create();
+            root.insertSublayer(clampB, 0xFFFFFFFFL);
+            TestKit.check(indexOf(root, clampB) == root.sublayers().count() - 1,
+                    "insertSublayer:atIndex:(UINT_MAX) clamps to end");
+            TestKit.check(root.sublayers().count() == 6,
+                    "sublayer count grows by 2 after clamped inserts");
         } catch (Throwable t) {
             TestKit.check(false, "sublayer ordering section threw: " + t);
         }

@@ -188,6 +188,14 @@ public class NSLayoutConstraint extends NSObject {
     }
 
     public void setPriority(float p) {
+        // Measured one process per case: NaN/+Inf/-Inf each abort, as do
+        // finite 0, -5, 1001 and Float.MAX_VALUE ("It's illegal to set
+        // priority:...", exit 134); 0.5/1.0/750/1000 are accepted.
+        // The negated form keeps NaN rejected (NaN > 0 is false).
+        if (!(p > 0.0f && p <= 1000.0f)) {
+            throw new IllegalArgumentException("setPriority: priority " + p
+                    + " must be > 0 and <= 1000 (NSLayoutConstraint aborts on out-of-range priority)");
+        }
         try {
             MethodHandle h = ObjC.handle(Sig.of(Ret.VOID, Arg.FLOAT));
             h.invokeExact(peer, ObjC.sel("setPriority:"), p);

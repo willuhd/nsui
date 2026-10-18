@@ -278,7 +278,7 @@ public final class RunSuite {
                 // failure mode: a new test that called check(false, ...) but forgot end() was
                 // reported PASSED while its log contained FAIL lines.
                 String log = readText(finalLogsDir, o.name);
-                if (!log.contains("RESULT:")) {
+                if (!hasResultLine(log)) {
                     System.out.println("FAIL: " + o.name + " exited 0 without a RESULT line "
                             + "(it did not signal completion, so its verdict is unknown)");
                     failed++;
@@ -350,6 +350,18 @@ public final class RunSuite {
             return;
         }
         System.out.println("ALL TESTS PASSED");
+    }
+
+    /// True when any line is a verdict line: "RESULT:" at the line start (leading
+    /// whitespace tolerated). This is the presence half of the 1155bc8 gate and must
+    /// recognize exactly the lines reportsFailure scans: the old shape
+    /// (log.contains("RESULT:")) also matched a mid-line mention, so a test that printed
+    /// "note: RESULT: deferred" and exited 0 was counted PASSED with nothing asserted.
+    private static boolean hasResultLine(String log) {
+        for (String line : log.split("\n")) {
+            if (line.trim().startsWith("RESULT:")) return true;
+        }
+        return false;
     }
 
     /// True when any RESULT line states a failure: "RESULT: N FAILURE(S)" (TestKit.end),

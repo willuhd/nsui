@@ -17,6 +17,7 @@ import nsui.NSDate;
 import nsui.NSDictionary;
 import nsui.NSEdgeInsets;
 import nsui.NSIndexSet;
+import nsui.NSLayoutConstraint;
 import nsui.NSMutableAttributedString;
 import nsui.NSMutableData;
 import nsui.NSMutableIndexSet;
@@ -35,6 +36,7 @@ import nsui.NSSize;
 import nsui.NSString;
 import nsui.NSTextField;
 import nsui.NSValue;
+import nsui.NSView;
 import nsui.NSWindow;
 import nsui.objc.ObjC;
 
@@ -994,6 +996,17 @@ public final class FoundationCoverageTest {
                 CAConstraint.ATTR_MAX_X, "super", CAConstraint.ATTR_WIDTH, 1.0, 0.0);
         TestKit.check(c.attribute() == CAConstraint.ATTR_MAX_X, "constraint attribute round-trip");
         TestKit.check(c.sourceAttribute() == CAConstraint.ATTR_WIDTH, "constraint sourceAttribute round-trip");
+        // The 4-arg (offset) and 3-arg (plain) overloads take the same C ints
+        // with the same guards: valid creations round-trip through the same
+        // readers (only the 5-arg shape had a creation pin).
+        CAConstraint c4 = CAConstraint.relativeTo(
+                CAConstraint.ATTR_MAX_X, "super", CAConstraint.ATTR_WIDTH, 0.0);
+        TestKit.check(c4.attribute() == CAConstraint.ATTR_MAX_X, "constraint(offset) attribute round-trip");
+        TestKit.check(c4.sourceAttribute() == CAConstraint.ATTR_WIDTH, "constraint(offset) sourceAttribute round-trip");
+        CAConstraint c3 = CAConstraint.relativeTo(
+                CAConstraint.ATTR_MAX_X, "super", CAConstraint.ATTR_WIDTH);
+        TestKit.check(c3.attribute() == CAConstraint.ATTR_MAX_X, "constraint(plain) attribute round-trip");
+        TestKit.check(c3.sourceAttribute() == CAConstraint.ATTR_WIDTH, "constraint(plain) sourceAttribute round-trip");
         // relativeTo takes C ints: out-of-int values truncated before the guard,
         // so pin both sides for both the attr and sourceAttr params.
         TestKit.expectThrows("constraint attr above int range rejected", IllegalArgumentException.class,
@@ -1041,6 +1054,15 @@ public final class FoundationCoverageTest {
                     () -> win.setDepthLimit((long) Integer.MAX_VALUE + 1));
             TestKit.expectThrows("depthLimit setDepthLimit(-2^31-1) rejected", IllegalArgumentException.class,
                     () -> win.setDepthLimit((long) Integer.MIN_VALUE - 1));
+            // Boundary pins: Integer.MAX_VALUE/MIN_VALUE pass the guard (only
+            // outside the int range is rejected) — mirror the accepted pattern
+            // (AppCoverageTest runningApplicationWithProcessIdentifier
+            // int-boundaries noThrow). Restore d0 afterwards.
+            TestKit.noThrow("depthLimit setDepthLimit(int boundaries) accepted", () -> {
+                win.setDepthLimit((long) Integer.MAX_VALUE);
+                win.setDepthLimit((long) Integer.MIN_VALUE);
+                win.setDepthLimit(d0);
+            });
         } finally {
             TestKit.close(win);
         }
@@ -1164,6 +1186,39 @@ public final class FoundationCoverageTest {
                 () -> NSData.dataWithBytes(new byte[]{1, 2}, 5));
         TestKit.expectThrows("NSData.dataWithBytes negative length rejected", IllegalArgumentException.class,
                 () -> NSData.dataWithBytes(new byte[]{1, 2}, -1));
+        // NSLayoutConstraint non-finite constant/multiplier abort the JVM
+        // (NSInternalInconsistencyException, exit 134), so the factory and
+        // setConstant: refuse them in Java. Null items never reach native:
+        // the guard throws first, so (NSObject) nulls keep the pins view-free.
+        TestKit.expectThrows("constraintWithItem NaN multiplier rejected", IllegalArgumentException.class,
+                () -> NSLayoutConstraint.constraintWithItem((NSObject) null, 7, 0, (NSObject) null, 7, Double.NaN, 0.0));
+        TestKit.expectThrows("constraintWithItem +Inf multiplier rejected", IllegalArgumentException.class,
+                () -> NSLayoutConstraint.constraintWithItem((NSObject) null, 7, 0, (NSObject) null, 7, Double.POSITIVE_INFINITY, 0.0));
+        TestKit.expectThrows("constraintWithItem -Inf multiplier rejected", IllegalArgumentException.class,
+                () -> NSLayoutConstraint.constraintWithItem((NSObject) null, 7, 0, (NSObject) null, 7, Double.NEGATIVE_INFINITY, 0.0));
+        TestKit.expectThrows("constraintWithItem NaN constant rejected", IllegalArgumentException.class,
+                () -> NSLayoutConstraint.constraintWithItem((NSObject) null, 7, 0, (NSObject) null, 7, 1.0, Double.NaN));
+        TestKit.expectThrows("constraintWithItem +Inf constant rejected", IllegalArgumentException.class,
+                () -> NSLayoutConstraint.constraintWithItem((NSObject) null, 7, 0, (NSObject) null, 7, 1.0, Double.POSITIVE_INFINITY));
+        TestKit.expectThrows("constraintWithItem -Inf constant rejected", IllegalArgumentException.class,
+                () -> NSLayoutConstraint.constraintWithItem((NSObject) null, 7, 0, (NSObject) null, 7, 1.0, Double.NEGATIVE_INFINITY));
+        // setConstant: needs a live instance: a first layout item is required
+        // natively (nil aborts with NSInvalidArgumentException), so the
+        // vehicle uses a hidden window's contentView — same shape as the
+        // FullCoverageTest constraint section. Window stays open for the pins.
+        NSWindow cwin = TestKit.hiddenWindow(100, 100);
+        try {
+            NSView cv = cwin.contentView();
+            NSLayoutConstraint finiteConstraint = NSLayoutConstraint.constraintWithItem(cv, 7, 0, cv, 7, 1.0, 0.0);
+            TestKit.expectThrows("setConstant(NaN) rejected", IllegalArgumentException.class,
+                    () -> finiteConstraint.setConstant(Double.NaN));
+            TestKit.expectThrows("setConstant(+Inf) rejected", IllegalArgumentException.class,
+                    () -> finiteConstraint.setConstant(Double.POSITIVE_INFINITY));
+            TestKit.expectThrows("setConstant(-Inf) rejected", IllegalArgumentException.class,
+                    () -> finiteConstraint.setConstant(Double.NEGATIVE_INFINITY));
+        } finally {
+            TestKit.close(cwin);
+        }
         // NSDictionary dictionaryWithObjects:forKeys:count: has no wrapper in-file
         // (document-only, no guard) — no negative test. MTL colorAttachment
         // negatives live in MetalDepthStencilTest (owning suite).

@@ -128,9 +128,14 @@ def check_f1(rt):
     F1b the SDK declares it but this runtime lacks it (a version-gated API) and the method has no
         respondsToSelector guard: calling it aborts. F1b is the baseline the signature gate already
         tracks; separating it keeps the report from claiming 290 flaws where most are version gates.
-        NOTE (2026-10-18): most F1b rows are lookup artifacts, not version gates — a named Metal
-        class is an abstract shell, so has_method misses what encoding() resolves via the concrete
-        subclass (90 of 95 F1b rows on 2026-10-18); only the 5 NSWindowTabGroup rows are truly absent.
+        A named class can be an abstract shell (the Metal descriptor family): has_method misses
+        what the generator's own encoding() resolves via the concrete subclass, so an F1b row
+        encoding() resolves is a lookup artifact, not a version gate, and is skipped below. Only
+        F1b rows consult encoding(): realization sends +alloc, and at least one wrapper class
+        traps it (+[NSPasteboard alloc] raises NSInvalidArgumentException, which aborts the
+        audit through ctypes — observed 2026-10-18 when the fallback stood before the F1a/F1b
+        split), while an undeclared selector is F1a whatever any subclass implements. Only rows
+        neither path resolves are reported (5 NSWindowTabGroup rows on 2026-10-18).
     """
     findings = []
     for cls, path in wrapper_files():
@@ -183,6 +188,20 @@ def check_f1(rt):
                 if helper_guarded:
                     continue
                 if declared_here and "respondsToSelector" not in block:
+                    # Concrete-subclass fallback (lookup-only, F1b rows only): the named class
+                    # may be an abstract shell whose implementations live on a private concrete
+                    # subclass, which is exactly what the generator's encoding() realizes
+                    # through (one cached +alloc per class, never -init — the same lookup
+                    # build_plan performs for every planned declaration). A row it resolves is
+                    # a lookup artifact, not a version gate. F1a rows never reach it: +alloc can
+                    # trap (see the docstring), and an undeclared selector is F1a regardless.
+                    # Verified 2026-10-18: every current F1b owner realizes cleanly (90 of 95
+                    # rows resolve; the 5 NSWindowTabGroup rows do not). A future F1b owner that
+                    # traps +alloc would abort here naming its class; that name belongs in
+                    # REALIZE_OPT_OUT (or this fallback needs subprocess isolation).
+                    enc, _kind = rt.encoding(owner, sel)
+                    if enc is not None:
+                        continue
                     findings.append({"check": "F1b", "class": cls, "line": i, "selector": sel,
                                      "side": side, "file": os.path.relpath(path, REPO),
                                      "evidence": "SDK-declared but absent at runtime, and the method "

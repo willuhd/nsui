@@ -88,9 +88,14 @@ public final class MTLRenderPassDepthAttachmentDescriptor extends NSObject {
         }
     }
 
-    /// setClearDepth: (double by value in an FP register).
+    /// setClearDepth: valid range is [0, 1] — outside aborts under Metal
+    /// API validation ("clear depth ... is outside of the range [0..1]",
+    /// exit 134). The negated form also rejects NaN.
     public void setClearDepth(double depth) {
-        Bounds.finite(depth, "setClearDepth:");
+        if (!(depth >= 0.0 && depth <= 1.0)) {
+            throw new IllegalArgumentException("setClearDepth:: depth " + depth
+                    + " is outside [0, 1] (Metal validation aborts on out-of-range clear depth)");
+        }
         ensureInit();
         try {
             handles.hSetClearDepth().invokeExact(peer, ObjC.sel("setClearDepth:"), depth);

@@ -11,6 +11,9 @@
 #   ./tests.sh -j 4            # all tests on 4 jobs
 #   ./tests.sh Bench -j 1      # filtered tests, one job (sequential)
 #   ./tests.sh --timeout 60    # per-test timeout 60s (default 300s)
+#   OUTDIR=/tmp/nsui-out ./tests.sh Bench  # isolated out dir (default: $ROOT/out);
+#                              #   parallel runs must use private OUTDIRs: they share
+#                              #   no classes/tests/logs, so rm -rf + javac cannot clobber each other
 #
 # Convention: every test is a plain main() in its own JVM (no JUnit),
 # sharing the TestKit primitives (reporting, unobtrusive windows, pump,
@@ -21,6 +24,11 @@
 #
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")" && pwd)"
+# Isolated builds: OUTDIR defaults to $ROOT/out, so plain ./tests.sh is unchanged.
+# Parallel runs export a private OUTDIR each; RunSuite inherits tests.sh's cwd
+# ($ROOT), so the relative-path gates (src/, tests/) still resolve even when the
+# classes dir lives outside the repo and repoRoot lookup finds nothing.
+OUTDIR=${OUTDIR:-$ROOT/out}
 # Run everything from the repo root: two gates (SignatureConformanceTest,
 # AssertionQualityTest) locate sources via relative paths (src/nsui, tests) and
 # silently skip() if the working directory is somewhere else — while the runner
@@ -32,16 +40,16 @@ JAVAC="$GRAM_VM_DIR/bin/javac"
 JAVA="$GRAM_VM_DIR/bin/java"
 SVM_JAR="$GRAM_VM_DIR/lib/svm/builder/svm.jar"
 echo "==> compiling toolkit (clean)"
-rm -rf "$ROOT/out/classes" "$ROOT/out/tests" "$ROOT/out/logs" || true
-mkdir -p "$ROOT/out/classes" "$ROOT/out/tests" "$ROOT/out/logs"
+rm -rf "$OUTDIR/classes" "$OUTDIR/tests" "$OUTDIR/logs" || true
+mkdir -p "$OUTDIR/classes" "$OUTDIR/tests" "$OUTDIR/logs"
 SRC_LIST=$(mktemp)
 TEST_LIST=$(mktemp)
 find "$ROOT/src" -name "*.java" > "$SRC_LIST"
-"$JAVAC" -cp "$SVM_JAR" -d "$ROOT/out/classes" @"$SRC_LIST"
+"$JAVAC" -cp "$SVM_JAR" -d "$OUTDIR/classes" @"$SRC_LIST"
 rm -f "$SRC_LIST"
 echo "==> compiling tests"
 find "$ROOT/tests" -name "*.java" > "$TEST_LIST"
-"$JAVAC" -cp "$ROOT/out/classes" -d "$ROOT/out/tests" @"$TEST_LIST"
+"$JAVAC" -cp "$OUTDIR/classes" -d "$OUTDIR/tests" @"$TEST_LIST"
 rm -f "$TEST_LIST"
 echo "==> compiled"
 # One compile, then the pooled launcher runs each test main in its own JVM.
@@ -54,5 +62,5 @@ for a in "$@"; do
 done
 # shellcheck disable=SC2086
 "$JAVA" -XstartOnFirstThread --enable-native-access=ALL-UNNAMED \
-    -cp "$ROOT/out/classes:$ROOT/out/tests" nsui.tests.RunSuite \
-    --classes "$ROOT/out/classes" --tests "$ROOT/out/tests" --logs "$ROOT/out/logs" $TIMEOUT_ARGS "$@"
+    -cp "$OUTDIR/classes:$OUTDIR/tests" nsui.tests.RunSuite \
+    --classes "$OUTDIR/classes" --tests "$OUTDIR/tests" --logs "$OUTDIR/logs" $TIMEOUT_ARGS "$@"

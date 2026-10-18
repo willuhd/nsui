@@ -138,11 +138,14 @@ def abi(t):
     if t in ("s", "S"):
         return "SHORT"
     if t.startswith("^") or t == "*":
-        # A pointer is one machine word, and INT is the vocabulary's 64-bit slot (a Java long), so
-        # an address is representable without a new Arg kind: `NSError **`, `CGRect *`, a buffer and
-        # a C string all pass their address through it. These used to fall through to OTHER, which
-        # is not in any vocabulary, so every method with an out-parameter was skipped wholesale.
-        return "INT"
+        # A pointer is one machine word and Sig documents it as ID (PTR/ADDRESS, same
+        # register class as id on both x86_64 and arm64). The Java gate maps ^/* to ID,
+        # and the shipped wrappers pass out-buffers as MemorySegment (e.g.
+        # NSAttributedString attribute:atIndex:effectiveRange: is ID(ID,INT,ID) with the
+        # NSRange* slot as ADDRESS). Mapping here to INT produced declared INT shapes
+        # where the runtime says ID (measured: 37 MISMATCHes on the 29-class surface
+        # batch, e.g. NSMatrix getNumberOfRows:columns: VOID(INT,INT) vs VOID(ID,ID)).
+        return "ID"
     if t.startswith("["):
         # A fixed-size C array ([2f], [16C]) is a value type, never a scalar: it is
         # passed by pointer in the ABI this bridge models, exactly like an id.

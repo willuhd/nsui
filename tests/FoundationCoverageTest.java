@@ -17,6 +17,7 @@ import nsui.NSDate;
 import nsui.NSDictionary;
 import nsui.NSEdgeInsets;
 import nsui.NSIndexSet;
+import nsui.NSLayoutAnchor;
 import nsui.NSLayoutConstraint;
 import nsui.NSMutableAttributedString;
 import nsui.NSMutableData;
@@ -1218,6 +1219,100 @@ public final class FoundationCoverageTest {
                     () -> finiteConstraint.setConstant(Double.NEGATIVE_INFINITY));
         } finally {
             TestKit.close(cwin);
+        }
+        // NSLayoutAnchor non-finite guards (3befba5): all 8 double-taking
+        // entries refuse NaN/+Inf/-Inf in Java (native aborts, exit 134).
+        // Guards fire before native, so a detached view is a safe vehicle;
+        // dimension-only entries ride the width anchor, axis entries the
+        // leading/trailing anchors.
+        NSView anchorView = NSView.create(new NSRect(0, 0, 100, 100), (v, d) -> {});
+        NSLayoutAnchor xAxis = anchorView.leadingAnchor();
+        NSLayoutAnchor.Dimension dimAnchor = anchorView.widthAnchor();
+        TestKit.expectThrows("equalToAnchor NaN constant rejected", IllegalArgumentException.class,
+                () -> xAxis.constraintEqualToAnchor(anchorView.trailingAnchor(), Double.NaN));
+        TestKit.expectThrows("equalToAnchor +Inf constant rejected", IllegalArgumentException.class,
+                () -> xAxis.constraintEqualToAnchor(anchorView.trailingAnchor(), Double.POSITIVE_INFINITY));
+        TestKit.expectThrows("equalToAnchor -Inf constant rejected", IllegalArgumentException.class,
+                () -> xAxis.constraintEqualToAnchor(anchorView.trailingAnchor(), Double.NEGATIVE_INFINITY));
+        TestKit.expectThrows("greaterThanOrEqualToAnchor NaN constant rejected", IllegalArgumentException.class,
+                () -> xAxis.constraintGreaterThanOrEqualToAnchor(anchorView.trailingAnchor(), Double.NaN));
+        TestKit.expectThrows("greaterThanOrEqualToAnchor +Inf constant rejected", IllegalArgumentException.class,
+                () -> xAxis.constraintGreaterThanOrEqualToAnchor(anchorView.trailingAnchor(), Double.POSITIVE_INFINITY));
+        TestKit.expectThrows("greaterThanOrEqualToAnchor -Inf constant rejected", IllegalArgumentException.class,
+                () -> xAxis.constraintGreaterThanOrEqualToAnchor(anchorView.trailingAnchor(), Double.NEGATIVE_INFINITY));
+        TestKit.expectThrows("lessThanOrEqualToAnchor NaN constant rejected", IllegalArgumentException.class,
+                () -> xAxis.constraintLessThanOrEqualToAnchor(anchorView.trailingAnchor(), Double.NaN));
+        TestKit.expectThrows("lessThanOrEqualToAnchor +Inf constant rejected", IllegalArgumentException.class,
+                () -> xAxis.constraintLessThanOrEqualToAnchor(anchorView.trailingAnchor(), Double.POSITIVE_INFINITY));
+        TestKit.expectThrows("lessThanOrEqualToAnchor -Inf constant rejected", IllegalArgumentException.class,
+                () -> xAxis.constraintLessThanOrEqualToAnchor(anchorView.trailingAnchor(), Double.NEGATIVE_INFINITY));
+        TestKit.expectThrows("equalToConstant NaN rejected", IllegalArgumentException.class,
+                () -> dimAnchor.constraintEqualToConstant(Double.NaN));
+        TestKit.expectThrows("equalToConstant +Inf rejected", IllegalArgumentException.class,
+                () -> dimAnchor.constraintEqualToConstant(Double.POSITIVE_INFINITY));
+        TestKit.expectThrows("equalToConstant -Inf rejected", IllegalArgumentException.class,
+                () -> dimAnchor.constraintEqualToConstant(Double.NEGATIVE_INFINITY));
+        TestKit.expectThrows("greaterThanOrEqualToConstant NaN rejected", IllegalArgumentException.class,
+                () -> dimAnchor.constraintGreaterThanOrEqualToConstant(Double.NaN));
+        TestKit.expectThrows("greaterThanOrEqualToConstant +Inf rejected", IllegalArgumentException.class,
+                () -> dimAnchor.constraintGreaterThanOrEqualToConstant(Double.POSITIVE_INFINITY));
+        TestKit.expectThrows("greaterThanOrEqualToConstant -Inf rejected", IllegalArgumentException.class,
+                () -> dimAnchor.constraintGreaterThanOrEqualToConstant(Double.NEGATIVE_INFINITY));
+        TestKit.expectThrows("lessThanOrEqualToConstant NaN rejected", IllegalArgumentException.class,
+                () -> dimAnchor.constraintLessThanOrEqualToConstant(Double.NaN));
+        TestKit.expectThrows("lessThanOrEqualToConstant +Inf rejected", IllegalArgumentException.class,
+                () -> dimAnchor.constraintLessThanOrEqualToConstant(Double.POSITIVE_INFINITY));
+        TestKit.expectThrows("lessThanOrEqualToConstant -Inf rejected", IllegalArgumentException.class,
+                () -> dimAnchor.constraintLessThanOrEqualToConstant(Double.NEGATIVE_INFINITY));
+        TestKit.expectThrows("multiplier NaN rejected", IllegalArgumentException.class,
+                () -> dimAnchor.constraintEqualToAnchorWithMultiplier(dimAnchor, Double.NaN));
+        TestKit.expectThrows("multiplier +Inf rejected", IllegalArgumentException.class,
+                () -> dimAnchor.constraintEqualToAnchorWithMultiplier(dimAnchor, Double.POSITIVE_INFINITY));
+        TestKit.expectThrows("multiplier -Inf rejected", IllegalArgumentException.class,
+                () -> dimAnchor.constraintEqualToAnchorWithMultiplier(dimAnchor, Double.NEGATIVE_INFINITY));
+        TestKit.expectThrows("multiplier+constant NaN multiplier rejected", IllegalArgumentException.class,
+                () -> dimAnchor.constraintEqualToAnchorWithMultiplier(dimAnchor, Double.NaN, 0.0));
+        TestKit.expectThrows("multiplier+constant +Inf multiplier rejected", IllegalArgumentException.class,
+                () -> dimAnchor.constraintEqualToAnchorWithMultiplier(dimAnchor, Double.POSITIVE_INFINITY, 0.0));
+        TestKit.expectThrows("multiplier+constant -Inf multiplier rejected", IllegalArgumentException.class,
+                () -> dimAnchor.constraintEqualToAnchorWithMultiplier(dimAnchor, Double.NEGATIVE_INFINITY, 0.0));
+        TestKit.expectThrows("multiplier+constant NaN constant rejected", IllegalArgumentException.class,
+                () -> dimAnchor.constraintEqualToAnchorWithMultiplier(dimAnchor, 1.0, Double.NaN));
+        TestKit.expectThrows("multiplier+constant +Inf constant rejected", IllegalArgumentException.class,
+                () -> dimAnchor.constraintEqualToAnchorWithMultiplier(dimAnchor, 1.0, Double.POSITIVE_INFINITY));
+        TestKit.expectThrows("multiplier+constant -Inf constant rejected", IllegalArgumentException.class,
+                () -> dimAnchor.constraintEqualToAnchorWithMultiplier(dimAnchor, 1.0, Double.NEGATIVE_INFINITY));
+        TestKit.noThrow("equalToAnchor finite constant still works",
+                () -> xAxis.constraintEqualToAnchor(anchorView.trailingAnchor(), 10.0));
+        TestKit.noThrow("equalToConstant finite still works", () -> dimAnchor.constraintEqualToConstant(10.0));
+        TestKit.noThrow("multiplier+constant finite still works",
+                () -> dimAnchor.constraintEqualToAnchorWithMultiplier(dimAnchor, 1.0, 0.0));
+        // setPriority guards (9148f58 non-finite + finite range): NaN/+Inf/-Inf
+        // and finite 0, -5, 1001, MAX abort natively (exit 134); 0.5/1.0/750/1000
+        // are accepted. Reuses the hidden-window vehicle above.
+        NSWindow pwin = TestKit.hiddenWindow(100, 100);
+        try {
+            NSView pv = pwin.contentView();
+            NSLayoutConstraint pConstraint = NSLayoutConstraint.constraintWithItem(pv, 7, 0, pv, 7, 1.0, 0.0);
+            TestKit.expectThrows("setPriority(NaN) rejected", IllegalArgumentException.class,
+                    () -> pConstraint.setPriority(Float.NaN));
+            TestKit.expectThrows("setPriority(+Inf) rejected", IllegalArgumentException.class,
+                    () -> pConstraint.setPriority(Float.POSITIVE_INFINITY));
+            TestKit.expectThrows("setPriority(-Inf) rejected", IllegalArgumentException.class,
+                    () -> pConstraint.setPriority(Float.NEGATIVE_INFINITY));
+            TestKit.expectThrows("setPriority(0) rejected", IllegalArgumentException.class,
+                    () -> pConstraint.setPriority(0f));
+            TestKit.expectThrows("setPriority(-5) rejected", IllegalArgumentException.class,
+                    () -> pConstraint.setPriority(-5f));
+            TestKit.expectThrows("setPriority(1001) rejected", IllegalArgumentException.class,
+                    () -> pConstraint.setPriority(1001f));
+            TestKit.expectThrows("setPriority(MAX_VALUE) rejected", IllegalArgumentException.class,
+                    () -> pConstraint.setPriority(Float.MAX_VALUE));
+            TestKit.noThrow("setPriority(750) accepted", () -> pConstraint.setPriority(750f));
+            TestKit.check(pConstraint.priority() == 750f, "setPriority(750) round-trips");
+            TestKit.noThrow("setPriority(1000) accepted", () -> pConstraint.setPriority(1000f));
+        } finally {
+            TestKit.close(pwin);
         }
         // NSDictionary dictionaryWithObjects:forKeys:count: has no wrapper in-file
         // (document-only, no guard) — no negative test. MTL colorAttachment

@@ -110,9 +110,19 @@ public final class MenuBarStatusTest {
                     () -> fvar.setLength(10001.0));
             TestKit.expectThrows("setLength(-Inf) rejected", IllegalArgumentException.class,
                     () -> fvar.setLength(Double.NEGATIVE_INFINITY));
+            TestKit.expectThrows("setLength(+Inf) rejected", IllegalArgumentException.class,
+                    () -> fvar.setLength(Double.POSITIVE_INFINITY));
             TestKit.noThrow("statusItemWithLength(10000) accepted", () -> {
                 NSStatusItem atMax = fbar.statusItemWithLength(10000.0);
                 fbar.removeStatusItem(atMax);
+            });
+            TestKit.noThrow("statusItemWithLength(NaN) accepted", () -> {
+                NSStatusItem nanItem = fbar.statusItemWithLength(Double.NaN);
+                fbar.removeStatusItem(nanItem);
+            });
+            TestKit.noThrow("setLength(10000) accepted", () -> {
+                fvar.setLength(10000.0);
+                fvar.setLength(NSStatusBar.VARIABLE_LENGTH);
             });
             TestKit.noThrow("setLength tolerates -1/-2/NaN", () -> {
                 fvar.setLength(-1.0);

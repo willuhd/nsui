@@ -384,8 +384,9 @@ def classify_param_java(abi_class, raw, name, wrappers, cls_name, token=None):
     """Returns ('kind', java_type) where kind drives the argument expression."""
     if token and (token.startswith("^") or token == "*"):
         # An address: an out-parameter slot (`NSError **`), a buffer (`const float *`) or a C
-        # string. The caller supplies the memory; the call passes its address, which is exactly
-        # what the ABI's 64-bit slot carries. Without this the whole method was skipped.
+        # string. The caller supplies the memory; the call passes the segment itself through
+        # the ID (ADDRESS) slot, matching Sig and the shipped out-param wrappers. Without
+        # this the whole method was skipped.
         return "ptr", "MemorySegment"
     if abi_class == "ID":
         if is_string(raw):
@@ -1066,9 +1067,11 @@ def render_method(p, class_name):
             # rejects it with WrongMethodTypeException (found (…,Object)void).
             args_java.append("(MemorySegment) (%s == null ? MemorySegment.NULL : %s)" % (nm, nm))
         elif k == "ptr":
-            # The vocabulary's 64-bit slot carries the address. A null slot is address 0, which is
-            # the same "no pointer" the caller passed.
-            args_java.append("(long) (%s == null ? 0L : %s.address())" % (nm, nm))
+            # An out-slot or buffer (NSError**, NSZone*, NSInteger*/float*). The handle is
+            # ID (ADDRESS, per Sig and the Java gate), so pass the segment itself, exactly
+            # as the shipped wrappers do (NSAttributedString passes its NSRange* slot as
+            # MemorySegment, not as a long address). A null slot is MemorySegment.NULL.
+            args_java.append("(MemorySegment) (%s == null ? MemorySegment.NULL : %s)" % (nm, nm))
         elif k == "string":
             # The explicit cast is load-bearing (same as the hand-written wrappers):
             # without it javac types the conditional as Object and invokeExact rejects it.

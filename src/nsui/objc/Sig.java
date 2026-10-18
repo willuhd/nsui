@@ -358,6 +358,8 @@ public final class Sig {
         // --- NSTask modern factory (append-only) ---
         of(Ret.ID, Arg.ID, Arg.ID, Arg.ID, Arg.ID),  // NSTask.launchedTaskWithExecutableURL:arguments:error:terminationHandler:
         // --- Formatter out-param getObjectValue (append-only; shared by NSNumberFormatter/NSDateFormatter) ---
-        of(Ret.BOOL, Arg.ID, Arg.ID, Arg.ID, Arg.ID)  // -getObjectValue:forString:range:error: (obj** out-slot, string, range*, error**)
+        of(Ret.BOOL, Arg.ID, Arg.ID, Arg.ID, Arg.ID),  // -getObjectValue:forString:range:error: (obj** out-slot, string, range*, error**)
+        // --- NSDateFormatter localized factory (append-only) ---
+        of(Ret.ID, Arg.ID, Arg.INT, Arg.INT)  // +localizedStringFromDate:dateStyle:timeStyle: (date, two NSDateFormatterStyles)
     );
 }

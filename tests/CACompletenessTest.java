@@ -250,6 +250,18 @@ public final class CACompletenessTest {
                     "replaceSublayer:with: swaps in place at index " + oldIndex);
             TestKit.check(root.sublayers() != null && root.sublayers().count() == 4,
                     "sublayer count stays 4 after replace");
+            // insertSublayer:atIndex: takes an unsigned int: out-of-range
+            // indices wrapped before the guard (-1 became UINT_MAX, 2^32
+            // became 0 and spliced at the front instead of clamping to the
+            // end), so pin both sides. badChild is a fresh layer, so the
+            // cycle guard passes and the index guard is what throws.
+            CALayer badChild = CALayer.create();
+            TestKit.expectThrows("insertSublayer:atIndex:(-1) rejected", IllegalArgumentException.class,
+                    () -> root.insertSublayer(badChild, -1L));
+            TestKit.expectThrows("insertSublayer:atIndex:(0x1_00000000) rejected", IllegalArgumentException.class,
+                    () -> root.insertSublayer(badChild, 0x1_00000000L));
+            TestKit.check(root.sublayers().count() == 4,
+                    "sublayer count stays 4 after rejected inserts");
         } catch (Throwable t) {
             TestKit.check(false, "sublayer ordering section threw: " + t);
         }

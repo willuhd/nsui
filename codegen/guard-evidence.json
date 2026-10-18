@@ -18656,6 +18656,38 @@
       "param_kind": "ulong",
       "control": "the unguarded call survived, so no guard is emitted",
       "guards": []
+    },
+    {
+      "class": "NSStatusBar",
+      "selector": "statusItemWithLength:",
+      "param": "length",
+      "param_index": 0,
+      "probe_id": "NSStatusBar.statusItemWithLength.inf",
+      "badness": "inf",
+      "param_kind": "double",
+      "unguarded": "objc-abort",
+      "guards": [
+        "if ({p} > 10000.0 || {p} == Double.NEGATIVE_INFINITY) {",
+        "    throw new IllegalArgumentException(\"statusItemWithLength: length \" + {p} + \" exceeds maximum 10000\");",
+        "}"
+      ],
+      "note": "Hand-mirror of the shipped guard: 10001 and +Inf abort natively (measured 2026-10-18, guard-free objc-abort vs shipped java-exception); -Inf is fail-fast (deferred layout abort per 3334157, tolerated in a minimal probe so no badness synthesizes it). NaN is tolerated on both trees, so Bounds.finite would over-guard; the shipped statement is stored verbatim. A future --merge re-derives finite from badness=inf and must keep this row."
+    },
+    {
+      "class": "NSStatusItem",
+      "selector": "setLength:",
+      "param": "length",
+      "param_index": 0,
+      "probe_id": "NSStatusItem.setLength.inf",
+      "badness": "inf",
+      "param_kind": "double",
+      "unguarded": "objc-abort",
+      "guards": [
+        "if ({p} > 10000.0 || {p} == Double.NEGATIVE_INFINITY) {",
+        "    throw new IllegalArgumentException(\"setLength: length \" + {p} + \" exceeds maximum 10000\");",
+        "}"
+      ],
+      "note": "Hand-mirror of the shipped guard: 10001 and +Inf abort natively (measured 2026-10-18, guard-free objc-abort vs shipped java-exception); -Inf is fail-fast (deferred layout abort per 3334157, tolerated in a minimal probe so no badness synthesizes it). NaN is tolerated on both trees, so Bounds.finite would over-guard; the shipped statement is stored verbatim. A future --merge re-derives finite from badness=inf and must keep this row."
     }
   ],
   "enumerated_with": "codegen/probe.py --enumerate (nil/NaN/index candidates derived from the generator's plans)",

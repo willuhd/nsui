@@ -84,6 +84,10 @@ def check_determinism():
     outs = []
     for i in (1, 2):
         out = os.path.join(bench.WORK, "selftest-%d.patch" % i)
+        # A crashed producer writes nothing (gen.py only opens patch_out at the end), so a
+        # previous run's file would compare equal to itself and read as a pass. Drop first,
+        # like every other stage that consumes a produced file (1ad1915).
+        _drop(out)
         r = run([sys.executable, os.path.join(HERE, "gen.py"), "--repo", c,
                  "--class", "NSMatrix", "--class", "NSCell", "--framework", "AppKit",
                  "--patch-out", out])

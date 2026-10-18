@@ -960,6 +960,12 @@ public final class FoundationCoverageTest {
             pass.stencilAttachment().setClearStencil(0xFFFFFFFFL);
             TestKit.check(pass.stencilAttachment().clearStencil() == 0xFFFFFFFFL,
                     "clearStencil all-bits round-trip");
+            // setClearStencil: is uint32 like the stencil masks above: out-of-range
+            // values threw silently-wrapping before the guard, so pin both sides.
+            TestKit.expectThrows("clearStencil setClearStencil(-1) rejected", IllegalArgumentException.class,
+                    () -> pass.stencilAttachment().setClearStencil(-1L));
+            TestKit.expectThrows("clearStencil setClearStencil(0x1_00000000) rejected", IllegalArgumentException.class,
+                    () -> pass.stencilAttachment().setClearStencil(0x1_00000000L));
         }
         // NSControl intValue (C int): negative round-trips on a detached text
         // field. (A button coerces intValue to its 0/1 state, so a text field —
@@ -988,6 +994,35 @@ public final class FoundationCoverageTest {
                 CAConstraint.ATTR_MAX_X, "super", CAConstraint.ATTR_WIDTH, 1.0, 0.0);
         TestKit.check(c.attribute() == CAConstraint.ATTR_MAX_X, "constraint attribute round-trip");
         TestKit.check(c.sourceAttribute() == CAConstraint.ATTR_WIDTH, "constraint sourceAttribute round-trip");
+        // relativeTo takes C ints: out-of-int values truncated before the guard,
+        // so pin both sides for both the attr and sourceAttr params.
+        TestKit.expectThrows("constraint attr above int range rejected", IllegalArgumentException.class,
+                () -> CAConstraint.relativeTo((long) Integer.MAX_VALUE + 1, "super", CAConstraint.ATTR_WIDTH, 1.0, 0.0));
+        TestKit.expectThrows("constraint attr below int range rejected", IllegalArgumentException.class,
+                () -> CAConstraint.relativeTo((long) Integer.MIN_VALUE - 1, "super", CAConstraint.ATTR_WIDTH, 1.0, 0.0));
+        TestKit.expectThrows("constraint sourceAttr above int range rejected", IllegalArgumentException.class,
+                () -> CAConstraint.relativeTo(CAConstraint.ATTR_MAX_X, "super", (long) Integer.MAX_VALUE + 1, 1.0, 0.0));
+        TestKit.expectThrows("constraint sourceAttr below int range rejected", IllegalArgumentException.class,
+                () -> CAConstraint.relativeTo(CAConstraint.ATTR_MAX_X, "super", (long) Integer.MIN_VALUE - 1, 1.0, 0.0));
+        // The 4-arg (offset) and 3-arg (plain) overloads take the same C ints
+        // with the same guards (6b1ed31 covers all three overloads x 2 params),
+        // so pin both sides for both params on each overload too.
+        TestKit.expectThrows("constraint(offset) attr above int range rejected", IllegalArgumentException.class,
+                () -> CAConstraint.relativeTo((long) Integer.MAX_VALUE + 1, "super", CAConstraint.ATTR_WIDTH, 0.0));
+        TestKit.expectThrows("constraint(offset) attr below int range rejected", IllegalArgumentException.class,
+                () -> CAConstraint.relativeTo((long) Integer.MIN_VALUE - 1, "super", CAConstraint.ATTR_WIDTH, 0.0));
+        TestKit.expectThrows("constraint(offset) sourceAttr above int range rejected", IllegalArgumentException.class,
+                () -> CAConstraint.relativeTo(CAConstraint.ATTR_MAX_X, "super", (long) Integer.MAX_VALUE + 1, 0.0));
+        TestKit.expectThrows("constraint(offset) sourceAttr below int range rejected", IllegalArgumentException.class,
+                () -> CAConstraint.relativeTo(CAConstraint.ATTR_MAX_X, "super", (long) Integer.MIN_VALUE - 1, 0.0));
+        TestKit.expectThrows("constraint(plain) attr above int range rejected", IllegalArgumentException.class,
+                () -> CAConstraint.relativeTo((long) Integer.MAX_VALUE + 1, "super", CAConstraint.ATTR_WIDTH));
+        TestKit.expectThrows("constraint(plain) attr below int range rejected", IllegalArgumentException.class,
+                () -> CAConstraint.relativeTo((long) Integer.MIN_VALUE - 1, "super", CAConstraint.ATTR_WIDTH));
+        TestKit.expectThrows("constraint(plain) sourceAttr above int range rejected", IllegalArgumentException.class,
+                () -> CAConstraint.relativeTo(CAConstraint.ATTR_MAX_X, "super", (long) Integer.MAX_VALUE + 1));
+        TestKit.expectThrows("constraint(plain) sourceAttr below int range rejected", IllegalArgumentException.class,
+                () -> CAConstraint.relativeTo(CAConstraint.ATTR_MAX_X, "super", (long) Integer.MIN_VALUE - 1));
         // NSWindowDepth (int32_t): class default needs no window.
         long ddl = NSWindow.defaultDepthLimit();
         TestKit.check(ddl == (long) (int) ddl, "defaultDepthLimit fits 32 bits");
@@ -999,6 +1034,13 @@ public final class FoundationCoverageTest {
             TestKit.check(d0 == (long) (int) d0, "depthLimit fits 32 bits");
             win.setDepthLimit(d0);
             TestKit.check(win.depthLimit() == d0, "depthLimit self round-trip");
+            // setDepthLimit: takes a C int (NSWindowDepth): out-of-int values
+            // truncated before the guard, so pin both sides (like numberWithInt
+            // and the constraint attrs below).
+            TestKit.expectThrows("depthLimit setDepthLimit(2^31) rejected", IllegalArgumentException.class,
+                    () -> win.setDepthLimit((long) Integer.MAX_VALUE + 1));
+            TestKit.expectThrows("depthLimit setDepthLimit(-2^31-1) rejected", IllegalArgumentException.class,
+                    () -> win.setDepthLimit((long) Integer.MIN_VALUE - 1));
         } finally {
             TestKit.close(win);
         }

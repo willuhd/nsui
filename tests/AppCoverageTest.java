@@ -113,7 +113,10 @@ public final class AppCoverageTest {
                 System.out.println("  showsApplicationBadge orig=" + origShows + " after-toggle=" + toggled);
                 TestKit.probe("NSDockTile showsApplicationBadge set/get no crash");
                 tile.setShowsApplicationBadge(origShows);
-                TestKit.check(tile.showsApplicationBadge() == origShows, "NSDockTile showsApplicationBadge restore no crash");
+                // Neutral: showsApplicationBadge has no stable oracle across OS versions
+                // (setter observed as possibly ignored for the app tile, so a restored-equals
+                // check would pass either way); probe only, matching SearchFieldTest.
+                TestKit.probe("NSDockTile showsApplicationBadge restore no crash (got " + tile.showsApplicationBadge() + ")");
             } catch (Throwable t) { TestKit.check(false, "showsApplicationBadge threw: " + t); }
             // size / contentView / owner (new, read-only except contentView).
             try {

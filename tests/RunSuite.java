@@ -12,7 +12,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 /// Parallel JVM test runner (one OS process per test, pooled threads).
 ///
@@ -31,9 +30,14 @@ public final class RunSuite {
     private static final class Outcome {
         final String name;
         final int code;
+        final boolean timedOut;
         Outcome(String name, int code) {
+            this(name, code, false);
+        }
+        Outcome(String name, int code, boolean timedOut) {
             this.name = name;
             this.code = code;
+            this.timedOut = timedOut;
         }
     }
 
@@ -170,12 +174,10 @@ public final class RunSuite {
             }
         }
         final Path childCwd = repoRoot;
-        Process[] live = new Process[tests.size()];
         ExecutorService pool = Executors.newFixedThreadPool(jobs);
         List<Future<Outcome>> futures = new ArrayList<>();
         for (int k = 0; k < tests.size(); k++) {
             String t = tests.get(k);
-            int slot = k;
             System.out.println("== " + t);
             Callable<Outcome> task = () -> {
                 Path log = Path.of(finalLogsDir, t + ".log");
@@ -195,17 +197,44 @@ public final class RunSuite {
                 pb.redirectOutput(log.toFile());
                 pb.redirectErrorStream(true);
                 int code;
+                boolean timedOut = false;
                 try {
                     Process p = pb.start();
-                    synchronized (live) {
-                        live[slot] = p;
+                    if (limitSecs > 0) {
+                        // Per-test deadline anchored at process start, enforced by the worker
+                        // that owns the process. The old shape (f.get(limit) in the collector
+                        // below) handed every still-running test a fresh full grace period from
+                        // the moment collection reached it: with jobs < tests, or one hung test
+                        // ahead in collection order, a late test's process wall could reach
+                        // limit + collection delay (measured 8s wall with --timeout 5 on two
+                        // 4s sleeps, 1 job). waitFor(limit) here gives each test exactly its
+                        // limit from its own start; queue wait never consumes it and a slow
+                        // sibling never extends it.
+                        if (p.waitFor(limitSecs, TimeUnit.SECONDS)) {
+                            code = p.exitValue();
+                        } else {
+                            p.destroyForcibly();
+                            p.waitFor();
+                            code = 1;
+                            timedOut = true;
+                            // Leave the reason in the test's own log: otherwise collection
+                            // reports "no log", which reads as a harness gap rather than the
+                            // timeout it was.
+                            try {
+                                Files.writeString(log, "FAIL: timed out after " + limitSecs + "s\n",
+                                        java.nio.file.StandardOpenOption.CREATE,
+                                        java.nio.file.StandardOpenOption.APPEND);
+                            } catch (IOException ignored) {
+                            }
+                        }
+                    } else {
+                        code = p.waitFor();
                     }
-                    code = p.waitFor();
                 } catch (IOException | InterruptedException e) {
                     Thread.currentThread().interrupt();
                     code = 1;
                 }
-                return new Outcome(t, code);
+                return new Outcome(t, code, timedOut);
             };
             futures.add(pool.submit(task));
         }
@@ -220,27 +249,18 @@ public final class RunSuite {
             Future<Outcome> f = futures.get(k);
             Outcome o;
             try {
-                if (limitSecs > 0) {
-                    o = f.get(limitSecs, TimeUnit.SECONDS);
-                } else {
-                    o = f.get();
-                }
-            } catch (TimeoutException e) {
-                Process timed;
-                synchronized (live) {
-                    timed = live[k];
-                }
-                if (timed != null) {
-                    timed.destroyForcibly();
-                }
-                f.cancel(true);
-                System.out.println("FAIL: " + tests.get(k) + " timed out after " + limitSecs + "s");
-                failed++;
-                failedList.append(" ").append(tests.get(k));
-                continue;
+                // Untimed: the worker bounds each test's wall itself, so collection here
+                // waits only for an already-bounded outcome and adds no grace of its own.
+                o = f.get();
             } catch (Exception e) {
                 System.out.println("FAIL: runner could not collect a result (" + e + ")");
                 failed++;
+                continue;
+            }
+            if (o.timedOut) {
+                System.out.println("FAIL: " + tests.get(k) + " timed out after " + limitSecs + "s");
+                failed++;
+                failedList.append(" ").append(tests.get(k));
                 continue;
             }
             if (o.code == 2) {

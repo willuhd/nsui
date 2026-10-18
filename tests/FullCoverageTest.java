@@ -258,6 +258,12 @@ public final class FullCoverageTest {
             check(desc.pointSize()==12, "descriptor pointSize");
             NSFontDescriptor d2 = desc.fontDescriptorWithSymbolicTraits(1);
             check(d2!=null, "withSymbolicTraits");
+            // fontDescriptorWithSymbolicTraits: takes a 32-bit unsigned mask, so
+            // pin both out-of-range sides (was silent truncation before the guard).
+            TestKit.expectThrows("withSymbolicTraits(-1) rejected", IllegalArgumentException.class,
+                    () -> desc.fontDescriptorWithSymbolicTraits(-1L));
+            TestKit.expectThrows("withSymbolicTraits(0x1_00000000) rejected", IllegalArgumentException.class,
+                    () -> desc.fontDescriptorWithSymbolicTraits(0x1_00000000L));
             NSFontDescriptor d3 = desc.fontDescriptorWithSize(14);
             check(d3.pointSize()==14, "fontDescriptorWithSize");
             check(desc.fontDescriptorWithFace("Bold")!=null, "withFace");

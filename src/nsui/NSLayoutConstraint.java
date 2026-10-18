@@ -80,6 +80,18 @@ public class NSLayoutConstraint extends NSObject {
     /// Mirrors ObjC handle creation. Null items are allowed (pass null -> nil).
     public static NSLayoutConstraint constraintWithItem(NSObject view1, int attr1, int relation, NSObject view2, int attr2, double multiplier, double constant) {
         ensureInit();
+        // Measured one process per case: a non-finite multiplier aborts
+        // ("Multiplier is not finite!  That's illegal.", exit 134) and a non-finite
+        // constant aborts ("NSLayoutConstraint constant is not finite!  That's illegal.",
+        // exit 134) — both via setConstant:/_setMultiplier: inside the factory.
+        if (!Double.isFinite(multiplier)) {
+            throw new IllegalArgumentException("constraintWithItem:attribute:... multiplier " + multiplier
+                    + " is not finite (NSLayoutConstraint aborts on a non-finite multiplier)");
+        }
+        if (!Double.isFinite(constant)) {
+            throw new IllegalArgumentException("constraintWithItem:attribute:... constant " + constant
+                    + " is not finite (NSLayoutConstraint aborts on a non-finite constant)");
+        }
         MemorySegment p1 = (view1 == null) ? MemorySegment.NULL : view1.peer();
         MemorySegment p2 = (view2 == null) ? MemorySegment.NULL : view2.peer();
         try {
@@ -136,6 +148,11 @@ public class NSLayoutConstraint extends NSObject {
 
     public void setConstant(double c) {
         ensureInit();
+        // Measured: NaN/+Inf/-Inf each abort ("constant is not finite", exit 134).
+        if (!Double.isFinite(c)) {
+            throw new IllegalArgumentException("setConstant: constant " + c
+                    + " is not finite (NSLayoutConstraint aborts on a non-finite constant)");
+        }
         if (hSetConstant == null) {
             throw new RuntimeException("setConstant handle not available");
         }

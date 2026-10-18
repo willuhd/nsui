@@ -128,6 +128,9 @@ def check_f1(rt):
     F1b the SDK declares it but this runtime lacks it (a version-gated API) and the method has no
         respondsToSelector guard: calling it aborts. F1b is the baseline the signature gate already
         tracks; separating it keeps the report from claiming 290 flaws where most are version gates.
+        NOTE (2026-10-18): most F1b rows are lookup artifacts, not version gates — a named Metal
+        class is an abstract shell, so has_method misses what encoding() resolves via the concrete
+        subclass (90 of 95 F1b rows on 2026-10-18); only the 5 NSWindowTabGroup rows are truly absent.
     """
     findings = []
     for cls, path in wrapper_files():

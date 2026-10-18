@@ -1326,6 +1326,10 @@ public class CALayer extends NSObject {
     public void insertSublayer(CALayer sublayer, long index) {
         ensureInit();
         requireNotSelfOrAncestor(sublayer, "insertSublayer:atIndex:");
+        if (index < 0 || index > 0xFFFFFFFFL) {
+            throw new IllegalArgumentException("insertSublayer:atIndex: index " + index
+                    + " out of range (0..4294967295)");
+        }
         try {
             handles.hSetIdInt().invokeExact(peer, Sels.insertSublayer_atIndex,
                     (MemorySegment) (sublayer == null ? MemorySegment.NULL : sublayer.peer()), (int) index);
